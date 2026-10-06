@@ -109,6 +109,10 @@ spec:
     - from:
         - podSelector: {matchLabels: {app.kubernetes.io/name: mongodb-initialize}}
         - podSelector: {matchLabels: {app.kubernetes.io/name: mongodb}}
+{% if services_mongo_express_enabled | default(false) | bool %}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: '{{ ops_namespace }}'}}
+          podSelector: {matchLabels: {sunmoonai.com/mongodb-client: 'true'}}
+{% endif %}
       ports: [{protocol: TCP, port: {{ mongodb_port }}}]
   egress:
     - to:

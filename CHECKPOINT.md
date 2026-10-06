@@ -104,4 +104,36 @@ Casdoor真实检查先失败，原因是把Go IsGlobalAdmin()方法当JSON属性
 
 离线验证：渲染的62个Kustomization文档与HEAD五文件逐文档相等；47个OBJECT（含分组、模块、两个非法值）在select动作下选择JSON（三个列表字段按集合比较）、.mk与退出状态与HEAD完全一致，另抽5对象×deploy/stage/check一致；`required_stages`仍满足拓扑序；`services-render OBJECT=all`实际运行（575任务）75个公开声明与已提交相等，`application-render APP=knowledge`14个相等；6个剧本syntax-check通过；`make -n`对比只多出topology步骤。
 
-待办门：工作树gitops已与晋级对象e59bdc00不同，`platform-deploy`会被validate-release拒绝直到下一次flux-release+晋级（对象不变，Flux应为无变更收敛）；`platform-check`不受影响。下一步A2：合并services/applications渲染实现到components，按组件`prepare.yaml`/`verify`契约拆分1010行deploy.yaml。
+## 所有者补充的范围（2026-10-05 23:20）
+
+旧体系有而新体系缺的组件，在通用渲染器完成后按组件契约补齐：`ops-platform/pgadmin`（密码表14）、`ops-platform/redisinsight`、`ops-platform/flower`（依赖rabbitmq）、`ops-platform/mongo-express`（旧KIND默认关，沿用）；`relay-platform/relay`与`sandbox-platform/provisioner`（自研镜像，走应用构建链）。待所有者决定：`cicd-platform/jenkins`（旧KIND未启用、仅远程集群；新体系CI为make ci+宿主Harbor）。不加：`question-data-demo`（演示）、`utils/db-provisioner`（已由common/backend/database替代）。
+
+有Web界面但新体系未暴露的组件，各加`ui`子阶段，沿用`elk/kibana/ui`模式（独立hostname、平台CA证书、IngressRoute、NetworkPolicy、入口SNI路由、组件自身账号）：RabbitMQ管理台（15672）、Neo4j Browser（7473）、AIStor控制台（9001）已按该契约写入gitops并`services-stage`；拓扑`gitops/clusters/kind/stages.yaml`现含`rabbitmq-ui`/`neo4j-ui`/`object-storage-ui`。Kibana原本已有。RAGFlow本fork的9380是自定义HTTPS API（`/sunmoon/ready`），不是库存Web UI，本轮不加。Traefik仪表盘默认关。不做：Elasticsearch API路由、数据库TCP直通到公共入口。
+
+所有者更正：新集群管理员从一开始全部映射密码表。已打开 1/4/8/10/11/12/15a/15d/18/19 的 `table_import`；第8/11/19项用户名改为新体系现网名以便导入校验。导入只写首次预设，不覆盖 sunmoon-kind 已有身份。冷建 `sunmoonai-kind` 时首次初始化读取这些预设。应用账号2/3/5–7/9不映射；Jenkins 待组件接入。pgAdmin 第14项已随 ops-platform 接入。
+
+验证脚本已接到`services/verify.yaml`（选中对应`*-ui`或 ops 控制台阶段时走集群入口端口做TLS/登录页/有界API核对）。尚未flux-release、未晋级、未`platform-deploy`、未应用宿主entry；浏览器不可用。Traefik CRD命名空间已加入`messaging-platform-dev`与`ops-platform-dev`（已改生成的`traefik/workload.yaml`）；完整`OBJECT=ingress-platform/traefik make services-render`依赖`services-chart`产生的`.build/components/chart-source.yaml`，本轮未跑chart以免动Harbor。
+
+待办门：工作树gitops已与晋级对象e59bdc00不同，`platform-deploy`会被validate-release拒绝直到下一次flux-release+晋级；`platform-check`不受影响。
+
+## A2 已完成切片：应用渲染并入通用组件渲染器
+
+已抽出 `gitops/components/app-platform/common/backend/prepare.yaml` 与 `common/frontend/prepare.yaml`；四应用 backend/web/admin 的 `stage.yaml` 指向它们。加密路径改为 `.build/components/<object>/...`。`application-render/stage/validate-release` 转接 `services-render/stage`（`OBJECT=app-platform/<app>-app`）；`platform-stage OBJECT=all` 只跑一次 `services-stage`。`applications/deploy.yaml` 负责 plan/validate。
+
+离线/等价验证：阶段图 65/34，12 条应用 prepare 入图；`render.yaml`/`deploy.yaml` syntax-check 通过；`make application-render APP=tpl` 196 任务 failed=0，26 个候选与已提交公开结构及 SOPS 语义全等；`APP=info` 250 任务 failed=0，34 个候选（含 storage/service-identity）全等。未跑 knowledge（provider 会访问 RAGFlow API）、未 stage、未 flux-release。
+
+## ops-platform：运维控制台已完成切片
+
+已按 Kibana UI 契约写入 `ops-platform/{pgadmin,redisinsight,flower,mongo-express}`：独立 hostname、平台 CA、IngressRoute、NetworkPolicy、入口 SNI；命名空间 `ops-platform-dev`。pgAdmin 映射密码表第14项（`table_import` 已写入首次预设，未改现网其他账号）；Flower 独立 basic-auth（无表行）；RedisInsight 无控制台登录；mongo-express 默认关（镜像锁未收录，未渲染）。Traefik CRD 命名空间已含 `ops-platform-dev`。foundations 增加 ops 命名空间/puller，并把 ops 列为 PG/Redis/Rabbit 客户端。
+
+离线验证：阶段图 69/38（含禁用的 mongo-express）；`render.yaml`/`topology.yaml`/`verify.yaml`/`accounts.yaml` syntax-check 通过；`OBJECT=ops-platform make platform-account-import` 仅第14项 `preset_changed=true, live_account_changed=false`；`make services-stage OBJECT=ops-platform` 178 任务 failed=0（flower/pgadmin/redisinsight 候选入树，mongo-express 未渲染）；随后 `OBJECT=foundations` 61 任务 failed=0（runtime/network/kustomization 含 ops，新增 `ops-platform-dev-puller.sops.yaml`；既有三个 puller 密文载荷与 HEAD 相同，已恢复以免无意义轮换）。拓扑 68 个启用阶段，含 `pgadmin`/`redisinsight`/`flower`。未 flux-release、未晋级、未 platform-deploy、未应用宿主 entry。
+
+## 应用 check 拆分、relay 与 sandbox（本切片）
+
+`application-check` / `application-check-public` 改为 `applications/verify.yaml`；`deploy.yaml` 只保留 plan/validate。`deploy.yaml`/`verify.yaml`/`render.yaml`/`topology.yaml`/`services/verify.yaml` syntax-check 通过。
+
+`relay-platform/relay` 已写入并 stage：独立 hostname `relay.sunmoonai.com`、平台 CA、IngressRoute、无 NodePort；镜像钉 KIND v1-r3 的 `app-images/relay` 摘要。`sandbox-platform/provisioner` 契约已写但默认关：现镜像把沙箱 NP 写死 `edge`，动态 Pod 不满足 restricted PSS，启用前须经应用构建链重建。foundations 增加 `relay-platform-dev`/`sandbox-platform-dev` 命名空间与 puller。
+
+离线验证：阶段图 71/40（含禁用的 mongo-express 与 sandbox-provisioner）；`OBJECT=relay-platform make services-stage` 82 任务 failed=0；随后 `OBJECT=foundations` 67 任务 failed=0。拓扑 69 个启用阶段，含 `relay`，不含 `sandbox-provisioner`。既有 data/messaging/app 三个 puller 密文载荷与 HEAD 相同，已恢复。未 flux-release、未晋级、未 platform-deploy、未应用宿主 entry、未跑应用构建链。
+
+所有者决定（2026-10-06）：mongo-express / sandbox 保持默认关；不重建 Harbor 自研镜像。Jenkins 再议：现网 Harbor 已是宿主模块，不是集群内 `cicd-platform`；本机 KIND 旧体系也未跑 Jenkins。冷建路径下 A 收口不必 flux-release/晋级/deploy；这三步只在 D 冷建 `sunmoonai-kind` 前做一次，且只发布到 Harbor、晋级环境源指针，不往现网 `sunmoon-kind` 部署。当前主线：A 离线收口（审阅/本地提交）→ B `make ci` → C 环境参数化 → D 发布晋级并冷建。

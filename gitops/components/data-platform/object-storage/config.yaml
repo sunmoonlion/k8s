@@ -21,14 +21,16 @@ operator_account_object_storage:
   id: administrator
   username: sunmoon_storage_root
   account_type: platform-administrator
-  table_row: ''
-  table_import: false
+  table_row: '19'
+  table_import: true
   current_file: '{{ services_config_dir }}/object-storage.yaml'
   current_field: root_password
   backup_file: '{{ services_backup_dir }}/object-storage.yaml'
   minimum_length: 8
   maximum_length: 128
   adapter: object-storage
-  initial_preset_supported: false
+  initial_preset_supported: true
+  initial_file: '{{ services_config_dir }}/presets/object-storage-admin-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/object-storage-admin-password'
   protocol_check_supported: false
   rotation_supported: false

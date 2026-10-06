@@ -32,7 +32,7 @@ make -C infrastructure platform-account-view OBJECT=data-platform/postgresql
 
 首次预设是计划中给出的root0700目录/root0600文件，内容为一个8–128字符值，不附换行；Casdoor不允许空白。不要把密码放在命令参数、环境变量或Git普通配置里。已支持的原生初始化器读取预设；未提供则随机生成。已有实际输入及其独立备份始终优先，改变预设不会改现有账号。预设自身缺主副本时从另一份恢复，两份不一致则停止。当前数据库管理员的首次预设代码仍待新建环境实演，不能用现有输入沿用证明首次创建通过。
 
-所有者批准的表映射仅为第12项→Harbor、第18项→Casdoor；第15d项是新Kibana当前独立只读密码，禁止复用旧ELK共用密码。
+所有者批准新集群管理员从一开始全部映射密码表：1 Redis、4 PostgreSQL、8 MongoDB、10 Neo4j、11 RabbitMQ、12 Harbor、15a Elasticsearch、15d Kibana reader、18 Casdoor、19 对象存储。应用运行账号不映射。导入只写首次预设，不改已有 sunmoon-kind 现网口令。
 
 ```bash
 make -C infrastructure platform-account-import OBJECT=all

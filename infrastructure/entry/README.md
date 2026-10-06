@@ -15,7 +15,7 @@ HAProxy仅读取ClientHello的SNI做TCP分流，不终止TLS、不持应用或Ha
 | `entry_runtime_dir` | 文本/表达式 | 目录责任；已有输入/数据需完整恢复和路径守卫，不能换空目录重建身份。 |
 | `entry_cluster_routes` | 列表 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
 
-Harbor域名优先转registry配置的loopback后端。`entry_cluster_routes`按精确域名分组，域名取各应用config，backend取cluster端口；当前Casdoor、四应用Web/Admin及Kibana均声明到新集群29443。未知域名仍按`entry_cluster_backend`走原kind-worker过渡地址；不能据此宣布旧环境已完全退役。实际已验切换日期见[验收边界](../../docs/platform-kind-v1/verification.md#应用与业务链路)。
+Harbor域名优先转registry配置的loopback后端。`entry_cluster_routes`按精确域名分组，域名取各应用与组件config，backend取cluster端口；当前Casdoor、四应用Web/Admin、Kibana、operator-consoles（RabbitMQ/Neo4j/AIStor/pgAdmin/RedisInsight/Flower/Mongo Express）及 relay 均声明到新集群29443。未知域名仍按`entry_cluster_backend`走原kind-worker过渡地址；不能据此宣布旧环境已完全退役。实际已验切换日期见[验收边界](../../docs/platform-kind-v1/verification.md#应用与业务链路)。入口候选变更后须`entry-preview`/`entry`应用才会改宿主HAProxy；仅改config不会让浏览器立刻解析到新域名。
 
 路由拒绝重复域名、覆盖Harbor、回指监听端口。更换域名联动证书SAN、应用origin、OAuth回调、Ingress和public检查；更改公开30443影响镜像引用及全部客户端，不能单处修改。
 

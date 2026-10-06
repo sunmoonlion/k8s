@@ -6,3 +6,5 @@ stages:
   dependsOn: [platform-foundations]
   enabled: '{{ services_enabled and services_valkey_enabled }}'
   images: [valkey]
+  resources: [workload.yaml, auth.sops.yaml, storage.yaml]
+  volume: valkey

@@ -14,8 +14,8 @@ operator_account_postgresql:
   id: administrator
   username: postgres
   account_type: platform-administrator
-  table_row: ''
-  table_import: false
+  table_row: '4'
+  table_import: true
   current_file: '{{ services_config_dir }}/credentials.yaml'
   current_field: service_credentials.postgresql_password
   backup_file: '{{ services_backup_dir }}/credentials.yaml'

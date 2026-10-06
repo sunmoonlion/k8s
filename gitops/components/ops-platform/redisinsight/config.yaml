@@ -1,0 +1,9 @@
+---
+# Browser console for Redis. No shared human login; Redis credentials stay with Redis.
+services_redisinsight_enabled: true
+redisinsight_origin: 'https://redisinsight.sunmoonai.com:{{ entry_port }}'
+redisinsight_port: 5540
+redisinsight_volume: {name: redisinsight, node: worker2, size: 2Gi, uid: 1000, gid: 1000}
+redisinsight_resources:
+  requests: {cpu: 50m, memory: 256Mi}
+  limits: {cpu: '1', memory: 768Mi}

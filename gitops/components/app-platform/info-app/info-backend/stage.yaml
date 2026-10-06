@@ -1,33 +1,40 @@
 # 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
 # enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
 ---
-defaults:
-  enabled: '{{ info_deployment.enabled }}'
-  timeout: 8m
+prepare: {file: app-platform/common/backend/prepare.yaml, vars: {application_name: info}}
+defaults: {enabled: '{{ info_deployment.enabled }}', timeout: 8m}
 stages:
 - name: info-database
   path: database
   dependsOn: [postgresql]
+  resources: [workload.yaml, bootstrap.sops.yaml, runtime.sops.yaml]
 - name: info-migration
   path: migration
   dependsOn: [info-database]
+  resources: [workload.yaml, auth.sops.yaml]
 - name: info-redis
   path: redis
   dependsOn: [info-migration, redis]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
 - name: info-rabbitmq
   path: rabbitmq
   dependsOn: [info-redis, rabbitmq]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
 - name: info-identity
   path: identity
   dependsOn: [info-rabbitmq, casdoor]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
 - name: info-runtime
   path: runtime
   dependsOn: '{{ ["info-identity"] + (["info-service-identity"] if info_backend_deployment.knowledge_service.enabled | default(false) else []) + (["info-storage"] if info_backend_deployment.object_storage.enabled | default(false) else []) }}'
+  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["storage.sops.yaml"] if info_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if info_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if info_backend_deployment.knowledge_service.enabled | default(false) else []) }}'
 - name: info-storage
   path: storage
   dependsOn: [object-storage]
   enabled: '{{ info_deployment.enabled and info_backend_deployment.object_storage.enabled | default(false) }}'
+  resources: [workload.yaml, provision.sops.yaml]
 - name: info-service-identity
   path: service-identity
   dependsOn: [casdoor, postgresql]
   enabled: '{{ info_deployment.enabled and info_backend_deployment.knowledge_service.enabled | default(false) }}'
+  resources: [workload.yaml, provision.sops.yaml]

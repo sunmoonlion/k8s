@@ -1,0 +1,206 @@
+---
+# Generic component renderer: one mechanism for every object under gitops/components.
+# Per object the stage graph (stage.yaml) says which templates to render, which retained
+# volume to declare, which prepare.yaml produces private inputs and which files form each
+# Kustomize root. Nothing here knows component names.
+- import_playbook: ../host/deployment.yaml
+  vars: {deployment_action: select, selection_persist: false, selection_report: false}
+- import_playbook: ../host/preflight.yaml
+- name: Prepare private inputs, retained storage and reviewable GitOps candidates
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars_files: [layout.yaml]
+  vars:
+    components_action: render
+    capacity_operation: services-render
+    tools: '{{ playbook_dir }}/../.tools/bin'
+    build: '{{ playbook_dir }}/../.build/components'
+    components_root: '{{ playbook_dir }}/../../gitops/components'
+    recipient: '{{ lookup("file", playbook_dir + "/../environments/kind/sops-recipient.txt") | trim }}'
+    image_lock: '{{ lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
+    image_map: '{{ dict(image_lock.images | map(attribute="id") | zip(image_lock.images)) }}'
+    kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    selected_stages: '{{ component_stages | selectattr("name", "in", selection.selected_stages) | list }}'
+    selected_objects: '{{ selected_stages | map(attribute="object") | unique | list }}'
+    selected_paths: '{{ selected_stages | map(attribute="path") | unique | list }}'
+    # Resource entries without a dot are nested Kustomize directories rendered beside the stage.
+    selected_candidate_paths: >-
+      {%- set nested = [] -%}
+      {%- for stage in selected_stages -%}
+        {%- for entry in stage.resources if "." not in entry -%}
+          {%- set _ = nested.append(stage.path ~ "/" ~ entry) -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ (selected_paths + nested) | unique | list }}
+    selected_templates: >-
+      {%- set out = [] -%}
+      {%- for stage in selected_stages -%}
+        {%- for name in stage.render -%}
+          {%- set _ = out.append({"template": stage.path ~ "/" ~ name ~ ".j2", "path": stage.path ~ "/" ~ name}) -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ out }}
+    selected_prepares: >-
+      {%- set out = [] -%}
+      {%- for prepare in component_prepares if prepare.object in selected_objects -%}
+        {%- set entry = {"file": prepare.file, "vars": prepare.vars} -%}
+        {%- if entry not in out -%}{%- set _ = out.append(entry) -%}{%- endif -%}
+      {%- endfor -%}
+      {{ out }}
+    volume_stage_paths: '{{ dict(selected_stages | selectattr("volume") | map(attribute="volume") | zip(selected_stages | selectattr("volume") | map(attribute="path"))) }}'
+    selected_volumes: '{{ services_volumes | selectattr("name", "in", volume_stage_paths.keys() | list) | list }}'
+  tasks:
+    - name: Require owned first-batch configuration
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - services_enabled | bool or selection.services == ["foundations"]
+          - cluster_name == 'sunmoon-kind'
+          - data_namespace == 'data-platform-dev'
+          - messaging_namespace == 'messaging-platform-dev'
+          - app_namespace == 'app-platform-dev'
+          - ingress_namespace == 'ingress-platform-dev'
+          - ops_namespace == 'ops-platform-dev'
+          - relay_namespace == 'relay-platform-dev'
+          - sandbox_namespace == 'sandbox-platform-dev'
+          - rabbitmq_node_hostname is match('^[a-z0-9][a-z0-9.-]+$')
+          - services_config_dir == '/etc/sunmoon/services/' + cluster_name
+          - services_backup_dir == '/mnt/sunmoon-data/backups/services/' + cluster_name
+          - not services_casdoor_enabled or services_postgresql_enabled
+          - casdoor_database is match('^[a-z][a-z0-9_]+$')
+          - casdoor_database_user is match('^[a-z][a-z0-9_]+$')
+    - name: Enforce this batch capacity ceiling before initialization
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      # Rendering writes configuration/ciphertext only; data initialization is in Flux.
+      vars:
+        capacity_planned_bytes: '{{ 67108864 + (elk_collector_initial_budget_bytes | int if services_elk_enabled and elk_collector_enabled else 0) }}'
+    - name: Read independent cluster ownership receipt
+      ansible.builtin.slurp:
+        src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'
+      register: identity
+    - name: Require the owned live API
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "ns", "kube-system", "-o", "jsonpath={.metadata.uid}"] }}'
+      register: uid
+      changed_when: false
+      failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+    - name: Require every declared retained volume to be known to the layout
+      ansible.builtin.assert:
+        quiet: true
+        that: volume_stage_paths.keys() | list | difference(services_volumes | map(attribute="name") | list) | length == 0
+    - name: Validate component storage declarations
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.name in ['postgresql','redis','rabbitmq','casdoor','object-storage','text-embeddings','elasticsearch','kibana','logstash','neo4j','mongodb','infinity','valkey','pgadmin','redisinsight']
+          - item.node in ['worker','worker2']
+          - item.uid in [999,1000,5050,7474]
+          - item.gid == item.uid
+          - item.size is match('^[1-9][0-9]*Gi$')
+      loop: '{{ selected_volumes }}'
+    - name: Inspect private and storage paths without following links
+      ansible.builtin.stat: {path: '{{ item }}', follow: false}
+      loop: '{{ [services_config_dir, services_backup_dir, build] + (selected_volumes | map(attribute="node") | unique | map("regex_replace", "^(.*)$", cluster_data_root + "/" + cluster_name + "/\1/static") | list) }}'
+      register: directories
+    - name: Reject redirected directories
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.islnk | default(false)
+          - not item.stat.exists or item.stat.isdir | default(false)
+      loop: '{{ directories.results }}'
+      loop_control: {label: '{{ item.item }}'}
+    - name: Create private directories
+      ansible.builtin.file: {path: '{{ item }}', state: directory, mode: '0700', owner: root, group: root}
+      loop: ['{{ services_config_dir }}', '{{ services_backup_dir }}', '{{ services_config_dir }}/tls']
+    - name: Inspect exact component directories
+      ansible.builtin.stat:
+        path: '{{ cluster_data_root }}/{{ cluster_name }}/{{ item.node }}/static/{{ item.name }}'
+        follow: false
+      loop: '{{ selected_volumes }}'
+      register: component_dirs
+    - name: Refuse foreign existing component directories
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.islnk | default(false)
+          - not item.stat.exists or (item.stat.isdir | default(false) and item.stat.uid == item.item.uid and item.stat.gid == item.item.gid)
+      loop: '{{ component_dirs.results }}'
+      loop_control: {label: '{{ item.item.name }}'}
+    - name: Prepare each owned static volume root without recursively changing data
+      ansible.builtin.file:
+        path: '{{ cluster_data_root }}/{{ cluster_name }}/{{ item.node }}/static/{{ item.name }}'
+        state: directory
+        owner: '{{ item.uid }}'
+        group: '{{ item.gid }}'
+        mode: '0700'
+      loop: '{{ selected_volumes }}'
+      # Existing roots are owned by kubelet fsGroup handling; don't reset their mode.
+      when: not (component_dirs.results | selectattr('item.name','equalto',item.name) | first).stat.exists
+    - name: Prepare public candidate directories
+      ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, mode: '0755', owner: '{{ cluster_operator }}'}
+      loop: '{{ selected_candidate_paths }}'
+    - name: Prepare private inputs of each selected component through its own prepare.yaml
+      ansible.builtin.include_tasks: '{{ components_root }}/{{ item.file }}'
+      vars: {prepare_vars: '{{ item.vars }}'}
+      loop: '{{ selected_prepares }}'
+      loop_control: {label: '{{ item.file }}'}
+    - name: Render the public templates each selected stage declares
+      ansible.builtin.template:
+        src: '{{ components_root }}/{{ item.template }}'
+        dest: '{{ build }}/{{ item.path }}'
+        owner: '{{ cluster_operator }}'
+        mode: '0644'
+      loop: '{{ selected_templates }}'
+      loop_control: {label: '{{ item.path }}'}
+    - name: Render each selected retained volume beside its consuming stage
+      ansible.builtin.template:
+        src: '{{ components_root }}/foundations/volume.yaml.j2'
+        dest: '{{ build }}/{{ volume_stage_paths[volume.name] }}/storage.yaml'
+        owner: '{{ cluster_operator }}'
+        mode: '0644'
+      loop: '{{ selected_volumes }}'
+      loop_control: {loop_var: volume, label: '{{ volume.name }}'}
+    - name: Render each stage root from its declared resource list only
+      ansible.builtin.copy:
+        dest: '{{ build }}/{{ item.path }}/kustomization.yaml'
+        owner: '{{ cluster_operator }}'
+        mode: '0644'
+        content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":item.resources} | to_nice_yaml }}'
+      loop: '{{ selected_stages }}'
+      loop_control: {label: '{{ item.path }}'}
+    - name: Stage rendered candidates without applying them
+      when: components_action == 'stage'
+      block:
+        - name: Find only renderer candidate files
+          ansible.builtin.find:
+            paths: '{{ selected_candidate_paths | map("regex_replace", "^", build + "/") | list }}'
+            recurse: false
+            patterns: '*.yaml'
+            file_type: file
+          register: generated_files
+        - name: Refuse an incomplete staging candidate
+          ansible.builtin.assert:
+            quiet: true
+            that: generated_files.files | length > 0
+        - name: Prepare declared component directories
+          ansible.builtin.file:
+            path: '{{ components_root }}/{{ item.path | relpath(build) | dirname }}'
+            state: directory
+            owner: '{{ cluster_operator }}'
+            mode: '0755'
+          loop: '{{ generated_files.files }}'
+          loop_control: {label: '{{ item.path | relpath(build) | dirname }}'}
+        - name: Copy only rendered declarations into the source tree
+          ansible.builtin.copy:
+            src: '{{ item.path }}'
+            dest: '{{ components_root }}/{{ item.path | relpath(build) }}'
+            remote_src: true
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+          loop: '{{ generated_files.files }}'
+          loop_control: {label: '{{ item.path | relpath(build) }}'}

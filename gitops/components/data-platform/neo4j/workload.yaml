@@ -20,7 +20,7 @@ data:
     server.http.enabled=false
     server.https.enabled=true
     server.https.listen_address=:7473
-    server.https.advertised_address=neo4j.data-platform-dev.svc.cluster.local:7473
+    server.https.advertised_address=neo4j.sunmoonai.com:30443
     dbms.ssl.policy.bolt.enabled=true
     dbms.ssl.policy.bolt.base_directory=/tls
     dbms.ssl.policy.bolt.client_auth=NONE
@@ -56,7 +56,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: neo4j}
-      annotations: {sunmoonai.com/input-sha256: 'e9fab90088ecacd34b299f4212ee1359bebdc0cd5e76c07a597295c47842ffa1'}
+      annotations: {sunmoonai.com/input-sha256: '14ccce360c28d40d0bf492694b9b0d64b7783329c26cb900a14a9a552291abeb'}
     spec:
       serviceAccountName: platform-runtime
       enableServiceLinks: false

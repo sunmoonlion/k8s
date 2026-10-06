@@ -1,0 +1,34 @@
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata: {name: object-storage-console, namespace: {{ data_namespace }}}
+spec:
+  serverName: object-storage.{{ data_namespace }}.svc.cluster.local
+  rootCAsSecrets: [object-storage-upstream-ca]
+  insecureSkipVerify: false
+  forwardingTimeouts: {dialTimeout: 10s, responseHeaderTimeout: 60s}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: object-storage-ui
+  namespace: {{ data_namespace }}
+  annotations: {kubernetes.io/ingress.class: sunmoon}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: 'Host(`{{ object_storage_ui_origin | urlsplit("hostname") }}`)'
+      services: [{name: object-storage, port: console, scheme: https, serversTransport: object-storage-console}]
+  tls: {secretName: object-storage-ui-tls}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: object-storage-ui-access, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: object-storage}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: '{{ ingress_namespace }}'}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: {{ object_storage_console_port }}}]

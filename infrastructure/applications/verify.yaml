@@ -1,0 +1,555 @@
+---
+- import_playbook: ../host/deployment.yaml
+  vars: {deployment_action: select, selection_persist: false, selection_report: false}
+- import_playbook: ../host/preflight.yaml
+- name: Verify application identities and runtime through Flux
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    application_name: tpl
+    application_action: check
+    application_check_port: '{{ entry_port if application_check_public | default(false) | bool else cluster_ingress_port }}'
+    capacity_operation: 'application-deploy-{{ application_name }}'
+    application_cfg: '{{ (lookup("file", app_root + "/config.yaml") | from_yaml)[application_name + "_deployment"] }}'
+    backend_cfg: '{{ (lookup("file", component_root + "/config.yaml") | from_yaml)[application_name + "_backend_deployment"] }}'
+    web_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-web-frontend/config.yaml") | from_yaml)[application_name + "_web_deployment"] }}'
+    admin_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-admin-frontend/config.yaml") | from_yaml)[application_name + "_admin_deployment"] }}'
+    cfg: '{{ application_cfg | combine(backend_cfg) | combine({"namespace":app_namespace, "web_origin":web_cfg.origin, "admin_origin":admin_cfg.origin}) }}'
+    app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/{{ application_name }}-app'
+    component_root: '{{ app_root }}/{{ application_name }}-backend'
+    mechanism_root: '{{ playbook_dir }}/../../gitops/components/app-platform/common/backend'
+    repo: '{{ playbook_dir }}/../..'
+    build: '{{ playbook_dir }}/../.build/applications/deployment/{{ application_name }}/{{ application_name }}-backend'
+    tools: '{{ playbook_dir }}/../.tools/bin'
+    recipient: '{{ lookup("file", playbook_dir + "/../environments/kind/sops-recipient.txt") | trim }}'
+    app_images:
+      backend: '{{ lookup("file", component_root + "/image.lock.yaml") | from_yaml }}'
+      web: '{{ lookup("file", app_root + "/" + application_name + "-web-frontend/image.lock.yaml") | from_yaml }}'
+      admin: '{{ lookup("file", app_root + "/" + application_name + "-admin-frontend/image.lock.yaml") | from_yaml }}'
+    deployment_id: '{{ app_images.backend.deployment_id }}'
+    browser_clients:
+      web: {name: '{{ web_cfg.casdoor_application }}', client_id: '{{ web_cfg.casdoor_client_id }}', origin: '{{ web_cfg.origin }}'}
+      admin: {name: '{{ admin_cfg.casdoor_application }}', client_id: '{{ admin_cfg.casdoor_client_id }}', origin: '{{ admin_cfg.origin }}'}
+    source_lock: '{{ (lookup("file", playbook_dir + "/sources.yaml") | from_yaml).applications[application_name] }}'
+    images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
+    image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
+    migration_job: '{{ application_name }}-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
+    kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    core_candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml, identity/workload.yaml, identity/provision.sops.yaml, identity/runtime.sops.yaml, identity/kustomization.yaml, runtime/workload.yaml, runtime/tls.sops.yaml, runtime/kustomization.yaml, '../{{ application_name }}-web-frontend/workload.yaml', '../{{ application_name }}-web-frontend/kustomization.yaml', '../{{ application_name }}-admin-frontend/workload.yaml', '../{{ application_name }}-admin-frontend/kustomization.yaml']
+    storage_enabled: '{{ cfg.object_storage.enabled | default(false) | bool }}'
+    provider_enabled: '{{ cfg.knowledge_provider.enabled | default(false) | bool }}'
+    service_enabled: '{{ cfg.knowledge_service.enabled | default(false) | bool }}'
+    receiver_enabled: '{{ cfg.knowledge_service_receiver.enabled | default(false) | bool }}'
+    service_relation: '{{ "ingest" if application_name == "info" else "retrieve" }}'
+    service_env_prefix: '{{ "KNOWLEDGE_APP_SERVICE" if application_name == "info" else "KNOWLEDGE_RETRIEVAL_SERVICE" }}'
+    service_bindings:
+      ingest: '{{ (lookup("file", repo + "/gitops/components/app-platform/info-app/info-backend/config.yaml") | from_yaml).info_backend_deployment.knowledge_service }}'
+      retrieve: '{{ (lookup("file", repo + "/gitops/components/app-platform/investment-app/investment-backend/config.yaml") | from_yaml).investment_backend_deployment.knowledge_service }}'
+    all_candidate_files: '{{ core_candidate_files + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) + (["service-identity/workload.yaml","service-identity/provision.sops.yaml","service-identity/kustomization.yaml","runtime/service.sops.yaml"] if service_enabled else []) }}'
+    selected_application_components: '{{ selection.applications[application_name] }}'
+    selected_backend: '{{ application_name + "-backend" in selected_application_components }}'
+    selected_web: '{{ application_name + "-web-frontend" in selected_application_components }}'
+    selected_admin: '{{ application_name + "-admin-frontend" in selected_application_components }}'
+    candidate_files: '{{ (all_candidate_files | reject("match","^\.\./") | list if selected_backend else []) + (all_candidate_files | select("match","^\.\./" + application_name + "-web-frontend/") | list if selected_web else []) + (all_candidate_files | select("match","^\.\./" + application_name + "-admin-frontend/") | list if selected_admin else []) }}'
+    selected_browser_clients: '{{ browser_clients | dict2items | selectattr("key","in",(["web"] if selected_web else []) + (["admin"] if selected_admin else [])) | items2dict }}'
+  tasks:
+    - name: Validate the selected deployment and identity boundaries
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - application_name in ['tpl','info','knowledge','investment']
+          - application_action == 'check'
+          - application_action == 'plan' or cfg.enabled | bool
+          - selected_application_components | length > 0
+          - cfg.namespace == app_namespace
+          - "'namespace' not in application_cfg"
+          - "'namespace' not in backend_cfg"
+          - application_cfg.keys() | intersect(backend_cfg.keys()) | length == 0
+          - cfg.database is match('^[a-z][a-z0-9_]{1,40}$')
+          - cfg.database_runtime_user is match('^[a-z][a-z0-9_]{1,40}$')
+          - cfg.database_migrator_user is match('^[a-z][a-z0-9_]{1,40}$')
+          - cfg.database_runtime_user != cfg.database_migrator_user
+          - cfg.database_extensions | default([]) | difference(['uuid-ossp']) | length == 0
+          - cfg.database_bootstrap_revision is match('^[a-z0-9-]{1,16}$')
+          - cfg.migration_job_revision is match('^[a-z0-9-]{1,16}$')
+          - cfg.private_dir == '/etc/sunmoon/applications/' + cluster_name + '/' + application_name
+          - cfg.backup_dir == '/mnt/sunmoon-data/backups/applications/' + cluster_name + '/' + application_name
+          - app_images.backend.repository == application_name + '-backend'
+          - app_images.backend.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
+          - app_images.web.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
+          - app_images.admin.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
+          - app_images.backend.digest is match('^sha256:[a-f0-9]{64}$')
+          - app_images.backend.source_revision == source_lock.backend_revision
+          - cfg.deploy_budget_bytes | int >= 2147483648
+          - app_images.web.repository == application_name + '-web-frontend'
+          - app_images.admin.repository == application_name + '-admin-frontend'
+          - app_images.web.digest is match('^sha256:[a-f0-9]{64}$')
+          - app_images.admin.digest is match('^sha256:[a-f0-9]{64}$')
+          - app_images.web.source_revision == source_lock.web_revision
+          - app_images.admin.source_revision == source_lock.admin_revision
+          - cfg.scheduler_replicas | int == 1
+          - cfg.celery_control_queue_exclusive is sameas true
+          - cfg.celery_event_queue_exclusive is sameas true
+          - cfg.api_replicas | int >= 1
+          - cfg.worker_replicas | int >= 1
+          - cfg.worker_concurrency | int >= 1
+          - cfg.api_port | int > 1024 and cfg.api_port | int < 65536
+          - web_cfg.port | int > 1024 and web_cfg.port | int < 65536
+          - admin_cfg.port | int > 1024 and admin_cfg.port | int < 65536
+          - web_cfg.replicas | int >= 1
+          - admin_cfg.replicas | int >= 1
+          - cfg.web_origin is match('^https://[a-z0-9.-]+:30443$')
+          - cfg.admin_origin is match('^https://[a-z0-9.-]+:30443$')
+          - cfg.web_origin != cfg.admin_origin
+          - cfg.rabbitmq_user is match('^[a-z][a-z0-9_.-]{1,63}$')
+          - cfg.rabbitmq_user not in ['admin','guest']
+          - cfg.rabbitmq_vhost == application_name
+          - cfg.rabbitmq_queue == application_name + '.default'
+          - cfg.rabbitmq_identity_revision is match('^[a-z0-9-]{1,16}$')
+          - cfg.identity_organization == 'built-in'
+          - cfg.identity_revision is match('^[a-z0-9-]{1,16}$')
+          - browser_clients.web.client_id != browser_clients.admin.client_id
+          - browser_clients.web.name != browser_clients.admin.name
+          - cfg.redis_user == application_name + '_runtime'
+          - cfg.redis_key_pattern == application_name + ':*'
+          - not provider_enabled or (application_name == 'knowledge' and not storage_enabled)
+          - not service_enabled or (application_name in ['info','investment'] and service_access_enabled | bool)
+          - not receiver_enabled or (application_name == 'knowledge' and provider_enabled and service_access_enabled | bool)
+          - not receiver_enabled or (service_bindings.ingest.enabled | bool and service_bindings.retrieve.enabled | bool)
+          - not receiver_enabled or service_bindings.ingest.client_id != service_bindings.retrieve.client_id
+          - not receiver_enabled or service_bindings.ingest.organization != service_bindings.retrieve.organization
+          - cfg.domain_runtime_env | default({}) | list | difference(['STORAGE_BACKEND','SEARCH_BACKEND']) | length == 0
+    - name: Require the independent cluster ownership receipt
+      ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
+      register: identity
+    - name: Refuse another live API even if the kubeconfig path is reused
+      ansible.builtin.command:
+        argv: '{{ kube + ["get","ns","kube-system","-o","jsonpath={.metadata.uid}"] }}'
+      register: uid
+      changed_when: false
+      failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+    - name: Read the migration head from the pinned backend Git object
+      become: false
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import ast,json,subprocess,sys
+            repo,revision=sys.argv[1:]
+            files=subprocess.check_output(['git','-C',repo,'ls-tree','-r','--name-only',revision,'app/alembic/versions'],text=True).splitlines()
+            chain={}
+            for path in files:
+                if not path.endswith('.py'):continue
+                text=subprocess.check_output(['git','-C',repo,'show',revision+':'+path],text=True)
+                fields={}
+                for node in ast.parse(text).body:
+                    names=node.targets if isinstance(node,ast.Assign) else [node.target] if isinstance(node,ast.AnnAssign) else []
+                    for name in names:
+                        if isinstance(name,ast.Name) and name.id in ('revision','down_revision'):
+                            fields[name.id]=ast.literal_eval(node.value)
+                if 'revision' not in fields:continue
+                value=fields['revision'];parent=fields['down_revision']
+                assert isinstance(value,str) and (parent is None or isinstance(parent,str)) and value not in chain
+                chain[value]=parent
+            assert chain and sum(v is None for v in chain.values())==1
+            assert all(v is None or v in chain for v in chain.values())
+            heads=set(chain)-set(v for v in chain.values() if v is not None)
+            assert len(heads)==1
+            print(json.dumps({'revision':revision,'head':heads.pop(),'migration_count':len(chain)}))
+          - '{{ playbook_dir }}/../../../{{ application_name }}-app/{{ application_name }}-backend'
+          - '{{ source_lock.backend_revision }}'
+      register: pinned_schema
+      changed_when: false
+    - name: Require the configured schema to match the immutable source chain
+      ansible.builtin.assert:
+        quiet: true
+        that: cfg.expected_schema_revision == (pinned_schema.stdout | from_json).head
+        fail_msg: Expected schema differs from pinned backend source. Correct the configuration before rendering or deployment.
+    - name: Verify only the selected frontend and read its unchanged API dependency
+      when: application_action == 'check' and not selected_backend
+      block:
+        - name: Require the selected current Flux stage generations
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
+          loop: '{{ selection.selected_stages | select("match","^" + application_name + "-") | list }}'
+          register: selected_stage
+          changed_when: false
+          until:
+            - selected_stage.rc == 0
+            - (selected_stage.stdout | from_json).status.observedGeneration | default(-1) == (selected_stage.stdout | from_json).metadata.generation
+            - (selected_stage.stdout | from_json).status.conditions | default([]) | selectattr('type','equalto','Ready') | selectattr('status','equalto','True') | list | length == 1
+            - (selected_stage.stdout | from_json).status.lastAppliedRevision | default('') == (lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml).digest
+          retries: 120
+          delay: 5
+        - name: Verify only selected frontend health and exact deployment identity
+          ansible.builtin.command:
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item.value.origin | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ item.value.origin }}/healthz']
+          loop: '{{ selected_browser_clients | dict2items }}'
+          register: selected_health
+          changed_when: false
+          failed_when: selected_health.rc != 0 or (selected_health.stdout | from_json).status != 'ok' or (selected_health.stdout | from_json).surface != item.key or (selected_health.stdout | from_json).deployment_id != app_images[item.key].deployment_id
+        - name: Read the existing browser acceptance account privately
+          ansible.builtin.slurp: {src: '{{ services_config_dir }}/credentials.yaml'}
+          register: selected_browser_input
+          no_log: true
+        - name: Verify actual login and session boundaries through only selected frontend routes
+          ansible.builtin.command:
+            argv: [/usr/bin/python3, '{{ playbook_dir }}/check-browser.py']
+            stdin: '{{ {"clients":selected_browser_clients,"provider":"https://" + casdoor_hostname + ":30443","organization":cfg.identity_organization,"username":"admin","password":(selected_browser_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password,"application":application_name,"ca_file":registry_config_dir + "/tls/ca.crt","entry_port":application_check_port | int} | to_json }}'
+          register: selected_browser_result
+          changed_when: false
+          no_log: true
+        - name: Report only public assertions for selected frontend checks
+          ansible.builtin.debug: {msg: '{{ selected_browser_result.stdout | from_json }}'}
+        - name: End frontend-only verification without dispatching backend tasks
+          ansible.builtin.meta: end_play
+    - name: Require the exact application stages and jobs to succeed
+      when: application_action == 'check' and selected_backend
+      block:
+        - name: Wait for current generation Ready at the promoted digest
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
+          loop: '{{ [application_name + "-database",application_name + "-migration",application_name + "-redis",application_name + "-rabbitmq",application_name + "-identity",application_name + "-runtime",application_name + "-web",application_name + "-admin"] + ([application_name + "-storage"] if storage_enabled else []) + ([application_name + "-provider"] if provider_enabled else []) + ([application_name + "-service-identity"] if service_enabled else []) }}'
+          register: stage
+          changed_when: false
+          until:
+            - stage.rc == 0
+            - (stage.stdout | from_json).status.observedGeneration | default(-1) == (stage.stdout | from_json).metadata.generation
+            - (stage.stdout | from_json).status.conditions | default([]) | selectattr('type','equalto','Ready') | selectattr('status','equalto','True') | list | length == 1
+            - (stage.stdout | from_json).status.lastAppliedRevision | default('') == (lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml).digest
+          retries: 120
+          delay: 5
+        - name: Check the declared jobs completed and expose only acceptance results
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","job",item.name,"-n",item.namespace,"-o","jsonpath={.status.succeeded}"] }}'
+          loop:
+            - {name: '{{ application_name }}-database-{{ cfg.database_bootstrap_revision }}', namespace: '{{ data_namespace }}'}
+            - {name: '{{ migration_job }}', namespace: '{{ cfg.namespace }}'}
+            - {name: '{{ application_name }}-redis-{{ cfg.redis_identity_revision }}', namespace: '{{ data_namespace }}'}
+            - {name: '{{ application_name }}-rabbitmq-{{ cfg.rabbitmq_identity_revision }}', namespace: '{{ messaging_namespace }}'}
+            - {name: '{{ application_name }}-identity-{{ cfg.identity_revision }}', namespace: '{{ app_namespace }}'}
+          register: completion
+          changed_when: false
+          failed_when: completion.rc != 0 or completion.stdout != '1'
+        - name: Require isolated service identity initialization completed
+          when: service_enabled
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","job",application_name + "-service-identity-" + cfg.knowledge_service.job_revision,"-n",app_namespace,"-o","jsonpath={.status.succeeded}"] }}'
+          register: workload_complete
+          changed_when: false
+          failed_when: workload_complete.rc != 0 or workload_complete.stdout != "1"
+        - name: Read service identity acceptance without exposing private inputs
+          when: service_enabled
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs","job/" + application_name + "-service-identity-" + cfg.knowledge_service.job_revision,"-n",app_namespace] }}'
+          register: workload_acceptance
+          changed_when: false
+          no_log: true
+        - name: Require signature, identity, organization and credential rejection checks
+          when: service_enabled
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (workload_acceptance.stdout_lines[-1] | from_json).isolated_organization is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).no_human_accounts is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).client_credentials_only is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).token_signature_issuer_audience_subject_scope is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).built_in_users_denied is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).invalid_secret_denied is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).token_seconds == cfg.knowledge_service.token_seconds
+        - name: Require optional storage provisioning job complete
+          when: storage_enabled
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","job",application_name + "-storage-" + cfg.object_storage.job_revision,"-n",data_namespace,"-o","jsonpath={.status.succeeded}"] }}'
+          register: s3_complete
+          changed_when: false
+          failed_when: s3_complete.rc != 0 or s3_complete.stdout != "1"
+        - name: Require upstream read-only identity provisioning complete
+          when: provider_enabled
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","job","knowledge-source-" + cfg.knowledge_provider.job_revision,"-n",data_namespace,"-o","jsonpath={.status.succeeded}"] }}'
+          register: provider_complete
+          changed_when: false
+          failed_when: provider_complete.rc != 0 or provider_complete.stdout != "1"
+        - name: Read the actual schema and grant verification outcome privately
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs","job/" + migration_job,"-n",cfg.namespace] }}'
+          register: result
+          changed_when: false
+          no_log: true
+        - name: Decode the final structured acceptance record privately
+          ansible.builtin.set_fact:
+            database_acceptance: '{{ result.stdout_lines[-1] | from_json }}'
+          no_log: true
+        - name: Require the completed job acceptance record
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - database_acceptance.schema == cfg.expected_schema_revision
+              - database_acceptance.database == cfg.database
+              - database_acceptance.separate_identities is sameas true
+              - database_acceptance.runtime_crud is sameas true
+              - database_acceptance.runtime_ddl_denied is sameas true
+              - database_acceptance.migration_metadata_write_denied is sameas true
+            success_msg: 'Application schema, separate identities, runtime CRUD and denial of runtime DDL verified.'
+        - name: Read the actual Redis identity acceptance outcome privately
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs",("job/" + application_name + "-redis-") + cfg.redis_identity_revision,"-n",data_namespace] }}'
+          register: redis_result
+          changed_when: false
+          no_log: true
+        - name: Decode Redis acceptance without exposing credentials
+          ansible.builtin.set_fact:
+            redis_acceptance: '{{ redis_result.stdout_lines[-1] | from_json }}'
+          no_log: true
+        - name: Require application Redis isolation and saved ACL
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - redis_acceptance.redis_user == cfg.redis_user
+              - redis_acceptance.key_pattern == cfg.redis_key_pattern
+              - redis_acceptance.write_read is sameas true
+              - redis_acceptance.foreign_key_denied is sameas true
+              - redis_acceptance.admin_command_denied is sameas true
+              - redis_acceptance.flushall_permission_denied is sameas true
+              - redis_acceptance.acl_saved is sameas true
+        - name: Read application Redis input for current live authentication
+          ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/redis.yaml'}
+          register: live_redis_input
+          no_log: true
+        - name: Verify the persistent identity authenticates against the current Redis process
+          vars:
+            redis_auth_probe: >-
+              IFS= read -r REDISCLI_AUTH; export REDISCLI_AUTH; redis-cli --user "$1" ping
+          ansible.builtin.command:
+            argv: '{{ kube + ["exec","-i","redis-0","-n",data_namespace,"-c","redis","--","sh","-ec",redis_auth_probe,"--",cfg.redis_user] }}'
+            stdin: '{{ (live_redis_input.content | b64decode | from_yaml).password }}'
+          register: redis_live
+          changed_when: false
+          failed_when: redis_live.rc != 0 or redis_live.stdout != 'PONG'
+          no_log: true
+        - name: Require private ACL file and restrictive Redis process creation mask
+          vars:
+            redis_acl_permissions_probe: |
+              test ! -L /data/users.acl
+              test -f /data/users.acl
+              test -s /data/users.acl
+              test "$(stat -c %a /data/users.acl)" = 600
+              test "$(stat -c %u /data/users.acl)" = "$(id -u)"
+              test "$(awk '/^Umask:/ {print $2}' /proc/1/status)" = 0077
+              printf 'private-acl'
+          ansible.builtin.command:
+            argv: '{{ kube + ["exec","redis-0","-n",data_namespace,"-c","redis","--","sh","-ec",redis_acl_permissions_probe] }}'
+          register: redis_acl_permissions
+          changed_when: false
+          failed_when: redis_acl_permissions.rc != 0 or redis_acl_permissions.stdout != 'private-acl'
+        - name: Read actual RabbitMQ application identity acceptance privately
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs",("job/" + application_name + "-rabbitmq-") + cfg.rabbitmq_identity_revision,"-n",messaging_namespace] }}'
+          register: rabbitmq_result
+          changed_when: false
+          no_log: true
+        - name: Decode RabbitMQ acceptance without exposing credentials
+          ansible.builtin.set_fact:
+            rabbitmq_acceptance: '{{ rabbitmq_result.stdout_lines[-1] | from_json }}'
+          no_log: true
+        - name: Require RabbitMQ application boundary and real message roundtrip
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - rabbitmq_acceptance.user == cfg.rabbitmq_user
+              - rabbitmq_acceptance.vhost == cfg.rabbitmq_vhost
+              - rabbitmq_acceptance.queue == cfg.rabbitmq_queue
+              - rabbitmq_acceptance.durable_topology is sameas true
+              - rabbitmq_acceptance.amqp_roundtrip is sameas true
+              - rabbitmq_acceptance.default_vhost_denied is sameas true
+              - rabbitmq_acceptance.management_api_denied is sameas true
+              - rabbitmq_acceptance.single_vhost_grant is sameas true
+        - name: Read browser registration acceptance privately
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs",("job/" + application_name + "-identity-") + cfg.identity_revision,"-n",app_namespace] }}'
+          register: identity_result
+          changed_when: false
+          no_log: true
+        - name: Decode browser registration acceptance privately
+          ansible.builtin.set_fact:
+            identity_acceptance: '{{ identity_result.stdout_lines[-1] | from_json }}'
+          no_log: true
+        - name: Require distinct browser registrations and OIDC metadata
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - identity_acceptance.browser_clients == ['admin','web']
+              - identity_acceptance.distinct_identities is sameas true
+              - identity_acceptance.exact_redirects is sameas true
+              - identity_acceptance.client_secrets_match is sameas true
+              - identity_acceptance.authorization_code_only is sameas true
+              - identity_acceptance.signup_disabled is sameas true
+              - identity_acceptance.issuer == 'https://' + casdoor_hostname + ':30443'
+              - identity_acceptance.pkce_s256 is sameas true
+              - identity_acceptance.jwks_available is sameas true
+        - name: Verify the current runtime deployments and exact image identities
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","deployment",(application_name + "-") + item.role,"-n",app_namespace,"-o","json"] }}'
+          loop:
+            - {role: api, image: backend, replicas: '{{ cfg.api_replicas }}'}
+            - {role: worker, image: backend, replicas: '{{ cfg.worker_replicas }}'}
+            - {role: scheduler, image: backend, replicas: '{{ cfg.scheduler_replicas }}'}
+            - {role: web, image: web, replicas: '{{ web_cfg.replicas }}'}
+            - {role: admin, image: admin, replicas: '{{ admin_cfg.replicas }}'}
+          register: runtime
+          changed_when: false
+          failed_when: >-
+            runtime.rc != 0 or
+            (runtime.stdout | from_json).status.observedGeneration | default(-1) != (runtime.stdout | from_json).metadata.generation or
+            (runtime.stdout | from_json).status.updatedReplicas | default(0) != item.replicas | int or
+            (runtime.stdout | from_json).status.availableReplicas | default(0) != item.replicas | int or
+            (runtime.stdout | from_json).spec.template.spec.containers[0].image != registry_address + '/platform/' + app_images[item.image].repository + '@' + app_images[item.image].digest
+        - name: Require workload secrets only in caller API and Worker
+          when: service_enabled
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (application_name + '-knowledge-service') in ((runtime.results[0].stdout | from_json).spec.template.spec.containers[0].envFrom | default([]) | selectattr('secretRef','defined') | map(attribute='secretRef.name') | list)
+              - (application_name + '-knowledge-service') in ((runtime.results[1].stdout | from_json).spec.template.spec.containers[0].envFrom | default([]) | selectattr('secretRef','defined') | map(attribute='secretRef.name') | list)
+              - (application_name + '-knowledge-service') not in ((runtime.results[2].stdout | from_json).spec.template.spec | to_json)
+              - (application_name + '-knowledge-service') not in ((runtime.results[3].stdout | from_json).spec.template.spec | to_json)
+              - (application_name + '-knowledge-service') not in ((runtime.results[4].stdout | from_json).spec.template.spec | to_json)
+        - name: Require the production asynchronous session policy from the actual API image
+          ansible.builtin.command:
+            argv: '{{ kube + ["exec","deployment/" + application_name + "-api","-n",app_namespace,"--","python","-c",async_session_acceptance] }}'
+          vars:
+            async_session_acceptance: |
+              import asyncio,json
+              from app.infrastructure.storage.postgres import get_postgres
+              async def run():
+                  db=get_postgres()
+                  await db.init()
+                  assert db.session_factory.kw.get('expire_on_commit',True) is False
+                  await db.shutdown()
+                  print(json.dumps({'async_session_expire_on_commit_false':True}))
+              asyncio.run(run())
+          changed_when: false
+          register: async_session_check
+          failed_when: async_session_check.rc != 0 or (async_session_check.stdout_lines[-1] | from_json).async_session_expire_on_commit_false is not sameas true
+        - name: Verify the real worker responds with its declared queue and tasks
+          ansible.builtin.command:
+            argv: '{{ kube + ["exec",("deployment/" + application_name + "-worker"),"-n",app_namespace,"--","python","-m","app.cli.worker_readiness"] }}'
+          changed_when: false
+        - name: Verify the scheduler process has completed a recent tick
+          ansible.builtin.command:
+            argv: '{{ kube + ["exec",("deployment/" + application_name + "-scheduler"),"-n",app_namespace,"--","python","-m","app.cli.scheduler_activity","--schedule","/tmp/celerybeat-schedule","--max-age","30"] }}'
+          changed_when: false
+        - name: Verify actual API S3 writes, immutable versions and domain isolation
+          when: storage_enabled
+          block:
+            - name: Read the separate cleanup identity privately
+              ansible.builtin.slurp: {src: '{{ services_config_dir }}/object-storage.yaml'}
+              register: s3_verifier_input
+              no_log: true
+            - name: Run the application storage implementation and remove only its probe versions
+              ansible.builtin.command:
+                argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/object-storage/verify.py', --kubectl, '{{ tools }}/kubectl', --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ data_namespace }}', --mc, '{{ tools }}/mc', --ca, '{{ registry_config_dir }}/clients/ca.crt', --application, '{{ application_name }}', --app-namespace, '{{ app_namespace }}', --bucket, '{{ cfg.object_storage.bucket }}', --runtime-check, '{{ mechanism_root }}/storage/verify-runtime.py']
+                stdin: '{{ s3_verifier_input.content | b64decode | from_yaml | to_json }}'
+              register: s3_runtime_check
+              changed_when: false
+              failed_when: false
+              no_log: true
+            - name: Require the actual application object storage protocol to pass
+              ansible.builtin.assert:
+                quiet: true
+                that: s3_runtime_check.rc == 0
+                fail_msg: '{{ s3_runtime_check.stdout }}'
+            - name: Report only application object storage public assertions
+              ansible.builtin.debug: {msg: '{{ s3_runtime_check.stdout | from_json }}'}
+        - name: Verify actual knowledge source, durable worker and domain retrieval
+          when: provider_enabled
+          block:
+            - name: Read the independent verifier inputs without printing credentials
+              ansible.builtin.slurp: {src: '{{ item }}'}
+              loop: ['{{ services_config_dir }}/object-storage.yaml', '{{ services_config_dir }}/ragflow.yaml']
+              register: provider_verifier_inputs
+              no_log: true
+            - name: Exercise existing Knowledge domain services and actual asynchronous worker
+              ansible.builtin.command:
+                argv: '{{ ["python3",component_root + "/provider/verify.py","--kubectl",tools + "/kubectl","--kubeconfig",cluster_kubeconfig,"--app-namespace",app_namespace,"--data-namespace",data_namespace,"--mc",tools + "/mc","--ca",registry_config_dir + "/clients/ca.crt"] + (["--http-service-identities"] if receiver_enabled else []) }}'
+                stdin: '{{ {"storage":provider_verifier_inputs.results[0].content | b64decode | from_yaml,"ragflow":provider_verifier_inputs.results[1].content | b64decode | from_yaml,"binding_path":cfg.private_dir + "/provider-binding.json"} | to_json }}'
+              register: provider_check
+              changed_when: false
+              failed_when: false
+              no_log: true
+            - name: Preserve private integration outcome for diagnosis
+              ansible.builtin.copy:
+                dest: '{{ playbook_dir }}/../.build/models/knowledge-domain-last.json'
+                content: '{{ {"rc":provider_check.rc,"stdout":provider_check.stdout,"stderr":provider_check.stderr} | to_nice_json }}'
+                mode: '0600'
+              no_log: true
+            - name: Require actual domain integration acceptance and exact cleanup
+              ansible.builtin.assert:
+                quiet: true
+                that: provider_check.rc == 0
+                fail_msg: 'Knowledge integration failed; inspect private evidence, do not infer success from ready Pods.'
+            - name: Report structured domain assertions
+              ansible.builtin.debug: {msg: '{{ provider_check.stdout | from_json }}'}
+        - name: Verify API readiness through each new TLS route
+          ansible.builtin.command:
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ item }}/api/health']
+          loop: ['{{ cfg.web_origin }}', '{{ cfg.admin_origin }}']
+          register: api_route
+          changed_when: false
+          failed_when: api_route.rc != 0 or (api_route.stdout | from_json).status != 'ready'
+        - name: Verify the exact API deployment identity through TLS
+          ansible.builtin.command:
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ cfg.web_origin | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ cfg.web_origin }}/api/version']
+          register: api_version
+          changed_when: false
+          failed_when: api_version.rc != 0 or (api_version.stdout | from_json).deploymentId != deployment_id
+        - name: Verify both frontend surfaces through their own certificate hostnames
+          ansible.builtin.command:
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item.origin | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ item.origin }}/healthz']
+          loop:
+            - {origin: '{{ cfg.web_origin }}', surface: web}
+            - {origin: '{{ cfg.admin_origin }}', surface: admin}
+          register: browser_health
+          changed_when: false
+          failed_when: >-
+            browser_health.rc != 0 or
+            (browser_health.stdout | from_json).status != 'ok' or
+            (browser_health.stdout | from_json).surface != item.surface or
+            (browser_health.stdout | from_json).deployment_id != app_images[item.surface].deployment_id
+        - name: Dispatch one bounded diagnostic task through the API role broker identity
+          ansible.builtin.command:
+            argv: '{{ kube + ["exec",("deployment/" + application_name + "-api"),"-n",app_namespace,"--","python","-c","from app.infrastructure.messaging.celery_producer import get_celery_producer; print(get_celery_producer().dispatch_ping())"] }}'
+          register: ping_task
+          changed_when: false
+          failed_when: ping_task.rc != 0 or not (ping_task.stdout is match('^[a-f0-9-]{36}$'))
+        - name: Require that exact task to finish on a real worker
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs","-l",("app.kubernetes.io/name=" + application_name + "-worker"),"-n",app_namespace,"--since=120s","--tail=500","--prefix=true"] }}'
+          register: ping_worker
+          changed_when: false
+          until: ping_worker.rc == 0 and ('app.tasks.ping[' + ping_task.stdout + '] succeeded') in ping_worker.stdout
+          retries: 12
+          delay: 3
+          no_log: true
+        - name: Confirm actual task delivery separately from process readiness
+          ansible.builtin.debug:
+            msg: API role published the diagnostic task; worker consumed and completed the exact task identity.
+        - name: Read the existing acceptance account privately
+          ansible.builtin.slurp:
+            src: '{{ services_config_dir }}/credentials.yaml'
+          register: browser_acceptance_input
+          no_log: true
+        - name: Verify real authorization callback SSR and security boundaries through the selected entry
+          ansible.builtin.command:
+            argv: [/usr/bin/python3, '{{ playbook_dir }}/check-browser.py']
+            stdin: '{{ {"clients":browser_clients, "provider":"https://" + casdoor_hostname + ":30443", "organization":cfg.identity_organization, "username":"admin", "password":(browser_acceptance_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password, "application":application_name, "ca_file":registry_config_dir + "/tls/ca.crt", "entry_port":application_check_port | int} | to_json }}'
+          register: browser_acceptance
+          changed_when: false
+          no_log: true
+        - name: Report only structured browser assertions
+          ansible.builtin.debug:
+            msg: '{{ browser_acceptance.stdout | from_json }}'

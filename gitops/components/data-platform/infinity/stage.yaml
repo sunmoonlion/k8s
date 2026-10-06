@@ -6,3 +6,5 @@ stages:
   dependsOn: [platform-foundations]
   enabled: '{{ services_enabled and services_infinity_enabled }}'
   images: [infinity]
+  resources: [workload.yaml, storage.yaml]
+  volume: infinity

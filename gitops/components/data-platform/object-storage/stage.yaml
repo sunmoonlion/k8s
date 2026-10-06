@@ -6,3 +6,5 @@ stages:
   dependsOn: [platform-foundations]
   enabled: '{{ services_enabled and services_object_storage_enabled }}'
   images: [aistor, aistor-mc]
+  resources: [workload.yaml, auth.sops.yaml, storage.yaml]
+  volume: object-storage

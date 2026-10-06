@@ -23,7 +23,7 @@ stages:
 | [stages.py](stages.py) | `graph`扫描`stage.yaml`生成`.build/components/stages.yaml`（`component_stages`、`stage_paths`）；`select`按OBJECT求选择与依赖闭包 |
 | [topology.yaml](topology.yaml) | 用图渲染`clusters/kind/stages.yaml.j2`；`render`只出候选，`stage`写回源树并拒绝改动未选阶段，`validate`要求已提交文件等于当前图 |
 
-入口：`make -C infrastructure topology-render|topology-stage|topology-validate OBJECT=...`。`platform-stage`会在组件暂存后调用`topology-stage`；`services-validate-release`和`application-validate-release`会调用`topology-validate`。所有改动仍要提交、`flux-release`并显式晋级后才会被集群执行。
+入口：`make -C infrastructure topology-render|topology-stage|topology-validate OBJECT=...`。`platform-stage`会在组件暂存后调用`topology-stage`；`services-validate-release`（`application-validate-release`已转接过来）会调用`topology-validate`。所有改动仍要提交、`flux-release`并显式晋级后才会被集群执行。
 
 ## 增减阶段
 
@@ -31,4 +31,4 @@ stages:
 
 ## 后续
 
-本目录将吸收`services/`与`applications/`的渲染/检查实现，使每个组件只需维护同目录的配置、模板、`stage.yaml`、准备与检查程序。
+本目录已吸收应用候选渲染：四应用 `prepare.yaml` 由通用 `render.yaml` 调用；`applications/deploy.yaml` 仍负责 plan/check。检查实现尚未按组件拆出。

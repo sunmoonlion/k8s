@@ -4,7 +4,7 @@ config共享来源在[site](../../../infrastructure/environments/kind/site.yaml)
 
 ## 对象责任
 
-- runtime：业务命名空间、service account、默认token禁用、LimitRange、默认拒绝网络等；共享对象只声明一次。
+- runtime：业务命名空间（含 `ops-platform-dev`、`relay-platform-dev`、`sandbox-platform-dev`）、service account、默认token禁用、LimitRange、默认拒绝网络等；共享对象只声明一次。
 - network：DNS及PG/Redis/Rabbit/存储/检索等按namespace和客户端标签明确允许；缺标签拒绝，不为排障开放任意出站。
 - storage：静态StorageClass及组件PV/PVC；namespace来自各组件责任映射，数据卷节点由volume配置约束。
 - puller.sops：各平台独立拉取Secret；只读身份来自仓库，age私钥属于Flux。

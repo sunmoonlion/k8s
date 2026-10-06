@@ -1,0 +1,15 @@
+---
+# PostgreSQL private input: the shared operator password, encrypted beside the workload.
+- name: Read the shared core identities
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/shared-credentials.yaml'
+- name: Encrypt the PostgreSQL login
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/postgresql/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: postgresql-auth, namespace: '{{ data_namespace }}'}
+        stringData: {password: '{{ service_credentials.postgresql_password }}'}
+  no_log: true

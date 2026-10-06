@@ -82,13 +82,13 @@
               - (pulled.stderr + pulled.stdout) | regex_findall('sha256:[a-f0-9]{64}') | length == 1
         - name: Prepare chart source candidate location
           ansible.builtin.file:
-            path: '{{ playbook_dir }}/../.build/services'
+            path: '{{ playbook_dir }}/../.build/components'
             state: directory
             owner: '{{ cluster_operator }}'
             mode: '0755'
         - name: Save the verified public source candidate
           ansible.builtin.copy:
-            dest: '{{ playbook_dir }}/../.build/services/chart-source.yaml'
+            dest: '{{ playbook_dir }}/../.build/components/chart-source.yaml'
             content: |
               {{ {'url':chart_url,'digest':((pulled.stderr + pulled.stdout) | regex_findall('sha256:[a-f0-9]{64}') | first), 'chart_sha256':chart.sha256, 'version':chart.version} | to_nice_yaml }}
             owner: '{{ cluster_operator }}'

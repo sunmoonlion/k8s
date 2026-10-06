@@ -8,9 +8,9 @@
   vars_files: [layout.yaml]
   vars:
     repo: '{{ playbook_dir }}/../..'
-    build: '{{ playbook_dir }}/../.build/services'
+    build: '{{ playbook_dir }}/../.build/components'
     selected_service_stages: '{{ component_stages | selectattr("name", "in", selection.selected_stages) | list }}'
-    selected_candidate_paths: '{{ (selected_service_stages | map(attribute="path") | unique | list) + (["ingress-platform/traefik/service-access"] if "ingress-platform/traefik" in selection.services and service_access_enabled | bool else []) }}'
+    selected_candidate_paths: '{{ selected_service_stages | map(attribute="path") | unique | list }}'
     source: '{{ lookup("file", playbook_dir + "/../environments/kind/flux-source.yaml") | from_yaml }}'
   tasks:
     - name: Require a clean declaration worktree

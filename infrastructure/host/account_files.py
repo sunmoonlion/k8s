@@ -130,7 +130,7 @@ def import_table(path, accounts, replace=False):
         require(old is None or old == password or replace, 'Existing preset differs; an explicit preset replacement is required')
         require(backup is None or backup == old or backup == password or replace, 'Independent preset backup differs')
         candidates.append((account, password, old, backup))
-    require(bool(candidates), 'No approved table-import account is selected; Kibana retains its independent current password')
+    require(bool(candidates), 'No table-import account is selected')
     applied = []
     try:
         for account, password, old, backup in candidates:

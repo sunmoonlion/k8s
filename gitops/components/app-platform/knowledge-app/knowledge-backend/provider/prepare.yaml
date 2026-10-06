@@ -121,12 +121,12 @@
       ca.crt: '{{ provider_platform_input.results[2].content | b64decode }}'
   no_log: true
 - name: Prepare provider candidates
-  ansible.builtin.file: {path: '{{ build }}/provider', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+  ansible.builtin.file: {path: '{{ build }}/{{ application_object }}/provider', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
 - name: Encrypt the runtime provider identity without bootstrap privileges
-  ansible.builtin.include_tasks: '{{ playbook_dir }}/../services/tasks/encrypt.yaml'
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
   vars:
     secret_item:
-      file: runtime/provider.sops.yaml
+      file: '{{ application_object }}/runtime/provider.sops.yaml'
       manifest:
         apiVersion: v1
         kind: Secret
@@ -134,11 +134,11 @@
         stringData: '{{ provider_runtime_data }}'
   no_log: true
 - name: Encrypt the separate source-reader provisioning input
-  ansible.builtin.include_tasks: '{{ playbook_dir }}/../services/tasks/encrypt.yaml'
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
   vars:
     root_input: '{{ provider_platform_input.results[1].content | b64decode | from_yaml }}'
     secret_item:
-      file: provider/provision.sops.yaml
+      file: '{{ application_object }}/provider/provision.sops.yaml'
       manifest:
         apiVersion: v1
         kind: Secret
@@ -152,12 +152,12 @@
 - name: Render the bounded upstream read-only provisioning job
   ansible.builtin.template:
     src: '{{ component_root }}/provider/workload.yaml.j2'
-    dest: '{{ build }}/provider/workload.yaml'
+    dest: '{{ build }}/{{ application_object }}/provider/workload.yaml'
     owner: '{{ cluster_operator }}'
     mode: '0644'
 - name: Render the provider Kustomize root
   ansible.builtin.copy:
-    dest: '{{ build }}/provider/kustomization.yaml'
+    dest: '{{ build }}/{{ application_object }}/provider/kustomization.yaml'
     owner: '{{ cluster_operator }}'
     mode: '0644'
     content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":["workload.yaml","provision.sops.yaml"]} | to_nice_yaml }}'

@@ -14,8 +14,8 @@ operator_account_redis:
   id: administrator
   username: default
   account_type: platform-administrator
-  table_row: ''
-  table_import: false
+  table_row: '1'
+  table_import: true
   current_file: '{{ services_config_dir }}/credentials.yaml'
   current_field: service_credentials.redis_password
   backup_file: '{{ services_backup_dir }}/credentials.yaml'

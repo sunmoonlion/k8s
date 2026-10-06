@@ -13,7 +13,7 @@
     account_operation: ''
     account_maintenance_deadline: 0
     account_table: '{{ playbook_dir }}/../../密码修改表.md'
-    maintained_accounts: '{{ [registry_human_account,casdoor_human_account,kibana_human_account,operator_account_postgresql,operator_account_redis,operator_account_rabbitmq,operator_account_elasticsearch,operator_account_neo4j,operator_account_mongodb,operator_account_object_storage] }}'
+    maintained_accounts: '{{ [registry_human_account,casdoor_human_account,kibana_human_account,operator_account_postgresql,operator_account_redis,operator_account_rabbitmq,operator_account_elasticsearch,operator_account_neo4j,operator_account_mongodb,operator_account_object_storage,operator_account_pgadmin] }}'
     selected_accounts: '{{ maintained_accounts if selection.object == "all" else maintained_accounts | selectattr("object","match","^" + selection.object + "(/|$)") | list }}'
   tasks:
     - name: Require explicit account scope and a supported native action

@@ -1,6 +1,6 @@
 # AIStor：对象原文与版本
 
-data_namespace单实例，S3端口与console端口分别由config声明；内部S3须TLS，公共UI/HA不是本组件已交付能力。UID1000，静态Retain卷size是声明容量，不是ext4硬配额。
+data_namespace单实例，S3端口与console端口分别由config声明；内部S3须TLS。控制台浏览器入口见同目录[ui](ui/README.md)，S3 API不经公共入口。
 
 ## 许可、root与应用身份
 

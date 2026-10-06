@@ -15,6 +15,7 @@
 | 域名/公共30443切换 | [entry](../infrastructure/entry/README.md) | 原生预览/启停/配置部署 |
 | KIND建群/节点拉取 | [cluster](../infrastructure/cluster/README.md) | 拥有的集群原生引导；整体重建持久化待验 |
 | 物料/工具/版本来源 | [artifacts](../infrastructure/artifacts/README.md)、[tools](../infrastructure/tools/README.md) | 固定锁与校验 |
+| 理解摘要/声明/发布/晋级整条链 | [发布链](发布链.md) | 概念与顺序；命令以 Flux 手册为准 |
 | 发布部署声明/晋级/退回 | [Flux](../infrastructure/flux/README.md) | 不可变OCI与显式晋级 |
 | 密钥/Secret生成和恢复 | [secrets](../infrastructure/flux/secrets.md) | SOPS/私有主备；统一轮换待实现 |
 | 组件阶段/依赖（stage.yaml） | [components](../infrastructure/components/README.md) | 图由组件目录汇成 |

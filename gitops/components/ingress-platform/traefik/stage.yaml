@@ -1,8 +1,11 @@
 # 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
 # enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
 ---
+prepare: ./prepare.yaml
 stages:
 - name: traefik
   dependsOn: [platform-foundations]
   enabled: '{{ services_enabled and services_ingress_enabled }}'
   images: [traefik]
+  resources: '{{ ["workload.yaml", "puller.sops.yaml"] + (["crds.yaml"] if traefik_crd_enabled | bool else []) + (["service-access"] if service_access_enabled | bool else []) }}'
+  render: [workload.yaml]

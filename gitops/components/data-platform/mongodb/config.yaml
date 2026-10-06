@@ -18,14 +18,16 @@ operator_account_mongodb:
   id: administrator
   username: sunmoon_mongo_admin
   account_type: platform-administrator
-  table_row: ''
-  table_import: false
+  table_row: '8'
+  table_import: true
   current_file: '{{ services_config_dir }}/mongodb.yaml'
   current_field: root_password
   backup_file: '{{ services_backup_dir }}/mongodb.yaml'
   minimum_length: 8
   maximum_length: 128
   adapter: mongodb
-  initial_preset_supported: false
+  initial_preset_supported: true
+  initial_file: '{{ services_config_dir }}/presets/mongodb-admin-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/mongodb-admin-password'
   protocol_check_supported: false
   rotation_supported: false

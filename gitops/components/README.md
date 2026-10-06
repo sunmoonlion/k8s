@@ -30,6 +30,8 @@
 | 日志/图/文档库 | [ELK](data-platform/elk/README.md)、[Neo4j](data-platform/neo4j/README.md)、[MongoDB](data-platform/mongodb/README.md) |
 | 消息 | [RabbitMQ](messaging-platform/rabbitmq/README.md) |
 | 入口 | [Traefik](ingress-platform/traefik/README.md)、[内部HTTPS](ingress-platform/traefik/service-access/README.md) |
+| 运维控制台 | [pgAdmin](ops-platform/pgadmin/README.md)、[RedisInsight](ops-platform/redisinsight/README.md)、[Flower](ops-platform/flower/README.md)、[Mongo Express](ops-platform/mongo-express/README.md) |
+| 会合/沙箱 | [Relay](relay-platform/relay/README.md)、[Sandbox provisioner](sandbox-platform/provisioner/README.md) |
 | 身份/应用 | [Casdoor](app-platform/auth-app/casdoor/README.md)、[Tpl](app-platform/tpl-app/README.md)、[Info](app-platform/info-app/README.md)、[Knowledge](app-platform/knowledge-app/README.md)、[Investment](app-platform/investment-app/README.md) |
 | 共享机制 | [common](app-platform/common/README.md) |
 

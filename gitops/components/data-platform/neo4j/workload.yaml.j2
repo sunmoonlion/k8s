@@ -20,7 +20,7 @@ data:
     server.http.enabled=false
     server.https.enabled=true
     server.https.listen_address=:{{ neo4j_https_port }}
-    server.https.advertised_address=neo4j.{{ data_namespace }}.svc.cluster.local:{{ neo4j_https_port }}
+    server.https.advertised_address={{ (neo4j_ui_origin | urlsplit('hostname') ~ ':' ~ entry_port) if neo4j_ui_enabled | bool else ('neo4j.' ~ data_namespace ~ '.svc.cluster.local:' ~ neo4j_https_port) }}
     dbms.ssl.policy.bolt.enabled=true
     dbms.ssl.policy.bolt.base_directory=/tls
     dbms.ssl.policy.bolt.client_auth=NONE

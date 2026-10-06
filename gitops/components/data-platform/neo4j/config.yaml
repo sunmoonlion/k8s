@@ -18,14 +18,16 @@ operator_account_neo4j:
   id: administrator
   username: neo4j
   account_type: platform-administrator
-  table_row: ''
-  table_import: false
+  table_row: '10'
+  table_import: true
   current_file: '{{ services_config_dir }}/neo4j.yaml'
   current_field: password
   backup_file: '{{ services_backup_dir }}/neo4j.yaml'
   minimum_length: 8
   maximum_length: 128
   adapter: neo4j
-  initial_preset_supported: false
+  initial_preset_supported: true
+  initial_file: '{{ services_config_dir }}/presets/neo4j-admin-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/neo4j-admin-password'
   protocol_check_supported: false
   rotation_supported: false

@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: flower-auth
+    namespace: ops-platform-dev
+stringData:
+    FLOWER_UNAUTHENTICATED_API: ENC[AES256_GCM,data:sKP3a6Y=,iv:S2czn7LxlEFivnUzS22AtKji+S9FdiB/d/Rx0di1WHU=,tag:9ueANlcoOFqw+5Nb31KQGw==,type:str]
+    FLOWER_BASIC_AUTH: ENC[AES256_GCM,data:lIhAG0ZcbktOTnJ1MRYnVzkl6V1WCKbrl9VRCqJ5NFK5HWaU2rf8iAbd2lzVqA==,iv:pKOtRX9/aBB3xTbLRPyoqg95OyBl1bx9/Bx7HShACR4=,tag:zB1IYTIZ6MQJyBmIDa7nZw==,type:str]
+    FLOWER_BROKER_URL: ENC[AES256_GCM,data:Tk/h3PAerYAhUaMmxhwT8xz5Rab3xTRiHm+vazV743sOXKy+TRhBKn5XsM0bxQoHEgLwhJAUAbH7m60Q/VPx/07mPmb+E4s6AVF5fxOuz1JXDYI7,iv:Pqhhzdm6abRkUkr29ykGMY0DlbsbQ7b0noQJIzAP74s=,tag:epdFhtjz2r0efx1TNAUsYg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAvSG5OOStkTmFoRjFOaU1I
+            eS81RHVlM0R1QlpaQyttakRuT1o2aCtzNXk0CkFHVGpxYlJyODlhSUtFZW85aC9h
+            NTBtb3FKZWJ3VXBCTmJuQlRUSUU4QkUKLS0tIE5VQTFTQ1R4eUFadFJlaWJLVVh0
+            dG1YWDlidHl5NXVkZGxaL3ByQklqVEkKBJwT05Wt6S/fzcTHh6R2HHUaYmKYn1HK
+            EdTSUyq+DcXCrR33l08n4HNLHQlEU9OIU/+3RDAROUSDGXB3mnET5g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-05T16:23:52Z"
+    mac: ENC[AES256_GCM,data:00zqMyjyb/g4ctr/7tSygwRmuUFjSvOaDKunJriQ2etQAOdmtrvtWX2Nq0SI3w5a/CS+MNG+qndgoU+1xyARAhZgxfO7fS4NtcStxOnzox6i4j5BBg0DpVYIxQUue4niitT3jWbUCKauevYbixo9+1G7dZjfXE4lq62Ima4nPmU=,iv:nYvvV1mKQwz6yUasvQm85ASZPe544mZzHDRAoEDZkrc=,tag:195dYRPIghvq1ByFmXyx+g==,type:str]
+    version: 3.13.3

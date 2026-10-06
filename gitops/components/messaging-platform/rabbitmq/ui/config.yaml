@@ -1,0 +1,4 @@
+---
+# Browser access to the RabbitMQ management UI. Login is the existing broker administrator.
+rabbitmq_ui_enabled: true
+rabbitmq_ui_origin: 'https://rabbitmq.sunmoonai.com:{{ entry_port }}'

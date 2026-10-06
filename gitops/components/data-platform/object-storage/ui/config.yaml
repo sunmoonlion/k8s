@@ -1,0 +1,4 @@
+---
+# Browser access to the AIStor console. Login is the existing object-storage root.
+object_storage_ui_enabled: true
+object_storage_ui_origin: 'https://aistor.sunmoonai.com:{{ entry_port }}'

@@ -7,13 +7,13 @@ kibana_ui_generation: v1
 kibana_ui_session_idle_timeout: 30m
 kibana_ui_session_lifespan: 8h
 
-# Existing independent password is retained; no import from the old shared ELK account.
+# First-install reads row 15d; never import 15a/15b/15c into this reader.
 kibana_human_account:
   object: data-platform/elk/kibana/ui
   id: reader
   username: '{{ kibana_ui_viewer_user }}'
   table_row: '15d'
-  table_import: false
+  table_import: true
   current_file: '{{ services_config_dir }}/elk-kibana-ui.yaml'
   current_field: password
   backup_file: '{{ services_backup_dir }}/elk-kibana-ui.yaml'

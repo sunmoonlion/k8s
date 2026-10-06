@@ -6,3 +6,5 @@ stages:
   dependsOn: [platform-foundations]
   enabled: '{{ services_enabled and services_text_embeddings_enabled }}'
   images: [text-embeddings-inference]
+  resources: [workload.yaml, storage.yaml]
+  volume: text-embeddings

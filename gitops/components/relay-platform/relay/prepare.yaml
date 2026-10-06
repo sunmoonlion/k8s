@@ -1,0 +1,77 @@
+---
+- name: Read the pinned relay image identity
+  ansible.builtin.set_fact:
+    relay_image: '{{ lookup("file", playbook_dir + "/../../gitops/components/relay-platform/relay/image.lock.yaml") | from_yaml }}'
+- name: Validate the relay browser and agent endpoint
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_ingress_enabled | bool and traefik_crd_enabled | bool
+      - relay_origin | urlsplit('scheme') == 'https'
+      - relay_origin | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
+      - relay_origin | urlsplit('port') | int == entry_port | int
+      - relay_origin | urlsplit('username') == None
+      - relay_origin | urlsplit('path') == ''
+      - relay_origin | urlsplit('query') == '' and relay_origin | urlsplit('fragment') == ''
+      - relay_port | int == 47100
+      - relay_name is match('^[a-z][a-z0-9-]{0,62}$')
+      - relay_image.harbor_project is match('^[a-z][a-z0-9-]+$')
+      - relay_image.repository == 'relay'
+      - relay_image.digest is match('^sha256:[a-f0-9]{64}$')
+      - relay_image.deployment_id is match('^[a-z][a-z0-9-]{5,90}$')
+- name: Prepare a recoverable relay administrator token
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: relay
+    component_input_manifest: relay-platform/relay/auth.sops.yaml
+    component_initial_input:
+      admin_token: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      tokens: {}
+  no_log: true
+- name: Keep relay credential only in memory
+  ansible.builtin.set_fact: {relay_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Require relay administrator policy
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - relay_credentials.admin_token is match('^[a-zA-Z0-9]{40}$')
+      - relay_credentials.tokens is mapping
+  no_log: true
+- name: Prepare a separate relay TLS identity with non-overwritten backup
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ services_config_dir }}/relay'
+    tls_backup_dir: '{{ services_backup_dir }}/relay'
+    tls_declaration: '{{ playbook_dir }}/../../gitops/components/relay-platform/relay/tls.sops.yaml'
+    tls_hostnames: ['{{ relay_origin | urlsplit("hostname") }}']
+- name: Encrypt relay administrator token, static table and browser TLS
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  loop:
+    - file: relay-platform/relay/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: relay-auth, namespace: '{{ relay_namespace }}'}
+        stringData:
+          RELAY_ADMIN_TOKEN: '{{ relay_credentials.admin_token }}'
+          tokens.json: '{{ relay_credentials.tokens | to_json }}'
+    - file: relay-platform/relay/tls.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: relay-tls, namespace: '{{ relay_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+  loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
+  no_log: true
+- name: Derive the relay rollout identity
+  ansible.builtin.set_fact:
+    relay_input_digest: '{{ [relay_origin, relay_image.digest, relay_name] | to_json | hash("sha256") }}'
+  no_log: true
+- name: Render the relay runtime candidate
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/relay-platform/relay/workload.yaml.j2'
+    dest: '{{ build }}/relay-platform/relay/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'

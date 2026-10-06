@@ -1,0 +1,25 @@
+---
+# Redis private input: the shared operator password plus the fixed server configuration.
+- name: Read the shared core identities
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/shared-credentials.yaml'
+- name: Encrypt the Redis login and configuration
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/redis/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: redis-auth, namespace: '{{ data_namespace }}'}
+        stringData:
+          password: '{{ service_credentials.redis_password }}'
+          redis.conf: |
+            bind 0.0.0.0
+            protected-mode yes
+            aclfile /data/users.acl
+            dir /data
+            appendonly yes
+            appendfsync everysec
+            maxmemory 384mb
+            maxmemory-policy noeviction
+  no_log: true

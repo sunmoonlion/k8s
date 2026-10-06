@@ -7,3 +7,6 @@ resources:
 - data-platform-dev-puller.sops.yaml
 - messaging-platform-dev-puller.sops.yaml
 - app-platform-dev-puller.sops.yaml
+- ops-platform-dev-puller.sops.yaml
+- relay-platform-dev-puller.sops.yaml
+- sandbox-platform-dev-puller.sops.yaml

@@ -15,9 +15,9 @@ import sys
 
 import yaml
 
-STAGE_KEYS = {"name", "path", "dependsOn", "enabled", "images", "wait", "timeout", "healthChecks"}
-FILE_KEYS = {"defaults", "stages"}
-DEFAULTS = {"path": ".", "dependsOn": [], "enabled": True, "images": [], "wait": True, "timeout": "15m", "healthChecks": []}
+STAGE_KEYS = {"name", "path", "dependsOn", "enabled", "images", "wait", "timeout", "healthChecks", "resources", "render", "volume"}
+FILE_KEYS = {"defaults", "stages", "prepare"}
+DEFAULTS = {"path": ".", "dependsOn": [], "enabled": True, "images": [], "wait": True, "timeout": "15m", "healthChecks": [], "resources": [], "render": None, "volume": None}
 
 
 class PlainDumper(yaml.SafeDumper):
@@ -30,7 +30,7 @@ def fail(message):
 
 
 def load_graph(components_root):
-    stages, stage_paths = [], {}
+    stages, stage_paths, prepares = [], {}, []
     for directory, subdirs, files in os.walk(components_root):
         subdirs.sort()
         if "stage.yaml" not in files:
@@ -44,6 +44,20 @@ def load_graph(components_root):
         defaults = document.get("defaults") or {}
         if set(defaults) - (STAGE_KEYS - {"name", "path"}):
             fail(f"{obj}/stage.yaml defaults accept only {sorted(STAGE_KEYS - {'name', 'path'})}")
+        prepare = document.get("prepare")
+        if prepare is None and os.path.isfile(os.path.join(directory, "prepare.yaml")):
+            prepare = "./prepare.yaml"
+        if isinstance(prepare, str):
+            prepare = {"file": prepare, "vars": {}}
+        if prepare is not None:
+            if not isinstance(prepare, dict) or set(prepare) - {"file", "vars"} or "file" not in prepare:
+                fail(f"{obj}/stage.yaml prepare must be a file path or {{file, vars}}")
+            # "./x" or "../x" is relative to the object; anything else is relative to the components root.
+            file = os.path.normpath(os.path.join(obj, prepare["file"]) if prepare["file"].startswith(("./", "../")) else prepare["file"]).replace(os.sep, "/")
+            if not os.path.isfile(os.path.join(components_root, file)):
+                fail(f"{obj}/stage.yaml prepare file {file} does not exist")
+            prepare = {"file": file, "vars": prepare.get("vars") or {}}
+            prepares.append({"object": obj, **prepare})
         for entry in document["stages"]:
             if not isinstance(entry, dict) or "name" not in entry or set(entry) - STAGE_KEYS:
                 fail(f"{obj}/stage.yaml stage entries need a name and only {sorted(STAGE_KEYS)}")
@@ -53,8 +67,16 @@ def load_graph(components_root):
             path = os.path.normpath(os.path.join(obj, merged["path"])).replace(os.sep, "/")
             if path.startswith("../") or not os.path.isdir(os.path.join(components_root, path)):
                 fail(f"{obj}/stage.yaml stage {merged['name']} path {path} does not exist")
+            render = merged["render"]
+            if render is None:
+                # Objects with a prepare.yaml render their own templates unless they declare render explicitly.
+                render = ["workload.yaml"] if prepare is None and os.path.isfile(os.path.join(components_root, path, "workload.yaml.j2")) else []
+            for name in render:
+                if not os.path.isfile(os.path.join(components_root, path, name + ".j2")):
+                    fail(f"{obj}/stage.yaml stage {merged['name']} render target {name} has no {name}.j2 template")
             stage = {"name": merged["name"], "object": obj, "path": path, "dependencies": merged["dependsOn"], "enabled": merged["enabled"],
-                     "images": list(merged["images"]), "wait": merged["wait"], "timeout": merged["timeout"], "health_checks": list(merged["healthChecks"])}
+                     "images": list(merged["images"]), "wait": merged["wait"], "timeout": merged["timeout"], "health_checks": list(merged["healthChecks"]),
+                     "resources": merged["resources"], "render": list(render), "volume": merged["volume"]}
             stages.append(stage)
             stage_paths[stage["name"]] = path
     names = set(stage_paths)
@@ -63,7 +85,7 @@ def load_graph(components_root):
             for dependency in stage["dependencies"]:
                 if isinstance(dependency, str) and "{{" not in dependency and dependency not in names:
                     fail(f"stage {stage['name']} depends on undefined stage {dependency}")
-    return {"component_stages": stages, "stage_paths": stage_paths, "component_objects": sorted({s["object"] for s in stages})}
+    return {"component_stages": stages, "stage_paths": stage_paths, "component_objects": sorted({s["object"] for s in stages}), "component_prepares": prepares}
 
 
 def select(data):

@@ -1,6 +1,6 @@
 # Neo4j Community图实例
 
-data_namespace单实例、UID7474、worker2静态Retain卷，认证与图数据在/data。内部HTTPS与强制TLS Bolt端口取config，HTTP禁用；非root/只读根/无联网插件，当前不开放公共入口或四App业务访问。
+data_namespace单实例、UID7474、worker2静态Retain卷，认证与图数据在/data。内部HTTPS与强制TLS Bolt端口取config，HTTP禁用；非root/只读根/无联网插件。浏览器入口见同目录[ui](ui/README.md)，Bolt不接到公共入口。
 
 ## 身份和权限边界
 

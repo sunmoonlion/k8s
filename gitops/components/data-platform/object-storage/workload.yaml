@@ -3,7 +3,9 @@ kind: Service
 metadata: {name: object-storage, namespace: data-platform-dev}
 spec:
   selector: {app.kubernetes.io/name: object-storage}
-  ports: [{name: https, port: 9000, targetPort: https}]
+  ports:
+    - {name: https, port: 9000, targetPort: https}
+    - {name: console, port: 9001, targetPort: console}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -16,7 +18,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: object-storage}
-      annotations: {sunmoonai.com/input-sha256: 'b93888b2b3339bffaf83c729c773b7018c4623300439a9496122725f62fd2f8d'}
+      annotations: {sunmoonai.com/input-sha256: '8d1fa9a5e57ce89bb90375a76eb93ec6e2c9f4dbb48bd58c1787658a8e4ff62e'}
     spec:
       serviceAccountName: platform-runtime
       automountServiceAccountToken: false
@@ -34,7 +36,11 @@ spec:
             - {name: MINIO_ROOT_PASSWORD_FILE, value: /run/auth/root-password}
             - {name: MINIO_SITE_REGION, value: 'us-east-1'}
             - {name: HOME, value: /tmp}
-          ports: [{name: https, containerPort: 9000}]
+            - {name: MINIO_BROWSER_REDIRECT_URL, value: 'https://aistor.sunmoonai.com:30443'}
+            - {name: MINIO_SERVER_URL, value: 'https://object-storage.data-platform-dev.svc.cluster.local:9000'}
+          ports:
+            - {name: https, containerPort: 9000}
+            - {name: console, containerPort: 9001}
           startupProbe: {httpGet: {path: /minio/health/live, port: https, scheme: HTTPS}, periodSeconds: 5, failureThreshold: 60}
           readinessProbe: {httpGet: {path: /minio/health/ready, port: https, scheme: HTTPS}, periodSeconds: 10, timeoutSeconds: 3}
           livenessProbe: {httpGet: {path: /minio/health/live, port: https, scheme: HTTPS}, periodSeconds: 20, timeoutSeconds: 3}

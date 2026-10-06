@@ -1,0 +1,5 @@
+---
+# Browser access to Neo4j Browser over HTTPS. Login is the existing graph administrator.
+# Bolt remains cluster-internal; query from a laptop still needs a later TCP entry or port-forward.
+neo4j_ui_enabled: true
+neo4j_ui_origin: 'https://neo4j.sunmoonai.com:{{ entry_port }}'

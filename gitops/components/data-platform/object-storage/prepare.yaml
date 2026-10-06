@@ -32,6 +32,10 @@
   ansible.builtin.assert:
     quiet: true
     that: object_inputs.results[1].stat.exists or object_inputs.results[2].stat.exists or query('fileglob', playbook_dir + '/../../gitops/components/data-platform/object-storage/auth.sops.yaml') | length == 0
+- name: Read the optional object storage administrator preset without changing an existing account
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../host/tasks/account-preset.yaml'
+  vars: {human_account: '{{ operator_account_object_storage }}'}
+  no_log: true
 - name: Initialize a distinct root identity only once
   ansible.builtin.copy:
     dest: '{{ services_config_dir }}/object-storage.yaml'
@@ -39,7 +43,7 @@
     mode: '0600'
     content: |
       root_user: sunmoon_storage_root
-      root_password: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+      root_password: {{ (platform_admin_initials.get('data-platform/object-storage') or lookup('password','/dev/null',length=40,chars=['ascii_letters','digits'])) | to_json }}
   when: not object_inputs.results[1].stat.exists and not object_inputs.results[2].stat.exists
   no_log: true
 - name: Preserve a non-overwritten root identity backup
@@ -104,7 +108,7 @@
 - name: Derive root identity and rollout input digest without logging
   ansible.builtin.set_fact:
     storage_credentials: '{{ storage_private.results[0].content | b64decode | from_yaml }}'
-    object_storage_input_digest: '{{ storage_private.results | map(attribute="content") | list | to_json | hash("sha256") }}'
+    object_storage_input_digest: '{{ (storage_private.results | map(attribute="content") | list + [object_storage_ui_enabled | string, object_storage_ui_origin | default("")]) | to_json | hash("sha256") }}'
   no_log: true
 - name: Encrypt root identity license and TLS files through independent SOPS identity
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
@@ -128,3 +132,6 @@
     dest: '{{ build }}/data-platform/object-storage/workload.yaml'
     owner: '{{ cluster_operator }}'
     mode: '0644'
+- name: Prepare the object storage console route
+  ansible.builtin.include_tasks: ui/prepare.yaml
+  when: object_storage_ui_enabled | bool and 'object-storage-ui' in selection.selected_stages

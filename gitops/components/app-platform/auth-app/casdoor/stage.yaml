@@ -1,8 +1,8 @@
 # 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
 # enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
 ---
-defaults:
-  enabled: '{{ services_enabled and services_casdoor_enabled }}'
+prepare: ./prepare.yaml
+defaults: {enabled: '{{ services_enabled and services_casdoor_enabled }}', render: [workload.yaml]}
 stages:
 - name: casdoor-db
   path: database
@@ -10,14 +10,15 @@ stages:
   images: [postgresql]
   wait: false
   healthChecks:
-  - apiVersion: batch/v1
-    kind: Job
-    name: casdoor-database-v1
-    namespace: '{{ data_namespace }}'
+  - {apiVersion: batch/v1, kind: Job, name: casdoor-database-v1, namespace: '{{ data_namespace }}'}
+  resources: [workload.yaml, auth.sops.yaml, storage.yaml]
+  volume: casdoor
 - name: casdoor-init
   path: init
   dependsOn: [casdoor-db]
   images: [casdoor]
+  resources: [workload.yaml, config.sops.yaml, identity.sops.yaml]
 - name: casdoor
   dependsOn: [casdoor-init, traefik]
   images: [casdoor]
+  resources: [workload.yaml, config.sops.yaml, tls.sops.yaml]

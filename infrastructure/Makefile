@@ -61,6 +61,7 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/data-platform/postgresql/config.yaml \
 	../gitops/components/data-platform/redis/config.yaml \
 	../gitops/components/data-platform/object-storage/config.yaml \
+	../gitops/components/data-platform/object-storage/ui/config.yaml \
 	../gitops/components/data-platform/text-embeddings/config.yaml \
 	../gitops/components/data-platform/elk/config.yaml \
 	../gitops/components/data-platform/elk/elasticsearch/config.yaml \
@@ -68,20 +69,28 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/data-platform/elk/kibana/data-view/config.yaml \
 	../gitops/components/data-platform/elk/kibana/ui/config.yaml \
 	../gitops/components/data-platform/neo4j/config.yaml \
+	../gitops/components/data-platform/neo4j/ui/config.yaml \
 	../gitops/components/data-platform/mongodb/config.yaml \
 	../gitops/components/data-platform/infinity/config.yaml \
 	../gitops/components/data-platform/valkey/config.yaml \
 	../gitops/components/data-platform/ragflow/config.yaml \
 	../gitops/components/messaging-platform/rabbitmq/config.yaml \
+	../gitops/components/messaging-platform/rabbitmq/ui/config.yaml \
 	../gitops/components/ingress-platform/traefik/config.yaml \
 	../gitops/components/ingress-platform/traefik/service-access/config.yaml \
-	../gitops/components/app-platform/auth-app/casdoor/config.yaml
+	../gitops/components/app-platform/auth-app/casdoor/config.yaml \
+	../gitops/components/ops-platform/pgadmin/config.yaml \
+	../gitops/components/ops-platform/redisinsight/config.yaml \
+	../gitops/components/ops-platform/flower/config.yaml \
+	../gitops/components/ops-platform/mongo-express/config.yaml \
+	../gitops/components/relay-platform/relay/config.yaml \
+	../gitops/components/sandbox-platform/provisioner/config.yaml
 export PLATFORM_CONFIG_FILES := $(CONFIG_FILES)
 CONFIG_ARGS = $(foreach file,$(CONFIG_FILES),--extra-vars '@$(file)') --extra-vars '@$(SITE)'
 
 .PHONY: help tools images preflight check-images
 help:
-	@printf '%s\n' 'platform-plan/config/status OBJECT=<平台/应用/组件> 查看依赖、配置和运行状态' 'platform-stage OBJECT=... 生成选中对象的声明候选；不发布' 'platform-build OBJECT=<业务应用或前后端组件> 在线构建并发布固定摘要' 'platform-deploy/check OBJECT=all|... 原生整套或选中对象部署/真实检查' 'platform-start/stop 统一启停已安装的本机平台' 'platform-account-plan/view OBJECT=... 查看维护账号能力与私有位置' 'platform-account-import 导入已批准的12/18预设；不改已有账号' 'platform-account-check/stage/rotate/recover 按组件维护已支持的账号；参见host/accounts.md' 'platform-install-lifecycle/enable-boot 宿主安装与开机管理，需明确维护批准' 'material-inventory 显示组件物料与Harbor关系，MATERIAL_OWNER可过滤' 'config 查看全部配置来源；各模块底层入口见对应README'
+	@printf '%s\n' 'platform-plan/config/status OBJECT=<平台/应用/组件> 查看依赖、配置和运行状态' 'platform-stage OBJECT=... 生成选中对象的声明候选；不发布' 'platform-build OBJECT=<业务应用或前后端组件> 在线构建并发布固定摘要' 'platform-deploy/check OBJECT=all|... 原生整套或选中对象部署/真实检查' 'platform-start/stop 统一启停已安装的本机平台' 'platform-account-plan/view OBJECT=... 查看维护账号能力与私有位置' 'platform-account-import 导入已批准的管理员表预设；不改已有账号' 'platform-account-check/stage/rotate/recover 按组件维护已支持的账号；参见host/accounts.md' 'platform-install-lifecycle/enable-boot 宿主安装与开机管理，需明确维护批准' 'material-inventory 显示组件物料与Harbor关系，MATERIAL_OWNER可过滤' 'config 查看全部配置来源；各模块底层入口见对应README'
 
 tools:
 	$(UV) venv --python '$(HOST_PYTHON)' --relocatable --allow-existing .venv
@@ -253,7 +262,7 @@ services-tools:
 services-chart:
 	$(ANSIBLE) -i host/inventory.yaml services/chart.yaml $(CONFIG_ARGS)
 services-render:
-	$(ANSIBLE) -i host/inventory.yaml services/render.yaml $(CONFIG_ARGS)
+	$(ANSIBLE) -i host/inventory.yaml components/render.yaml $(CONFIG_ARGS)
 # Deploy the promoted, committed release. Rendering a changed release is a separate review step.
 services-bootstrap:
 	$(if $(filter all data-platform data-platform/postgresql data-platform/redis messaging-platform messaging-platform/rabbitmq app-platform app-platform/auth-app app-platform/auth-app/casdoor,$(OBJECT)),$(MAKE) services-credentials)
@@ -282,7 +291,7 @@ services-check-public:
 
 .PHONY: services-validate-release
 services-validate-release:
-	$(ANSIBLE) -i host/inventory.yaml services/validate-release.yaml $(CONFIG_ARGS)
+	$(ANSIBLE) -i host/inventory.yaml components/validate-release.yaml $(CONFIG_ARGS)
 
 .PHONY: config
 config:
@@ -318,19 +327,16 @@ application-rehearse-downloads:
 application-deployment-plan:
 	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=plan'
 application-render:
-	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=render'
+	$(MAKE) services-render OBJECT=app-platform/$(APP)-app
 application-stage:
-	$(MAKE) application-render APP=$(APP)
-	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=stage'
-	$(MAKE) topology-stage
+	$(MAKE) services-stage OBJECT=app-platform/$(APP)-app
 application-validate-release:
-	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=validate'
-	$(MAKE) topology-validate
+	$(MAKE) services-validate-release OBJECT=app-platform/$(APP)-app
 application-check-public:
-	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=check application_check_public=true'
+	$(ANSIBLE) -i host/inventory.yaml applications/verify.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=check application_check_public=true'
 
 application-check:
-	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=check'
+	$(ANSIBLE) -i host/inventory.yaml applications/verify.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=check'
 # Executes only the explicitly promoted Git release. Source publication precedes deployment.
 application-bootstrap:
 	$(MAKE) application-render APP=$(APP)
@@ -340,7 +346,7 @@ application-bootstrap:
 
 .PHONY: services-stage
 services-stage:
-	$(ANSIBLE) -i host/inventory.yaml services/render.yaml $(CONFIG_ARGS) --extra-vars services_action=stage
+	$(ANSIBLE) -i host/inventory.yaml components/render.yaml $(CONFIG_ARGS) --extra-vars components_action=stage
 	$(MAKE) topology-stage
 
 # Cluster stage declarations come only from gitops/components/**/stage.yaml (see components/README.md).
@@ -423,11 +429,7 @@ platform-stage: platform-selection
 	$(MAKE) platform-stage-selected
 platform-stage-selected:
 	@.venv/bin/python -c 'import json,os; d=json.load(open("$(SELECTION_PREFIX).json")); assert d["object"]==os.environ["OBJECT"] and d["action"]=="stage", "Run the public platform-stage entry to validate this object afresh"'
-	$(if $(filter true,$(PLATFORM_FOUNDATIONS) $(PLATFORM_SERVICES)),$(MAKE) services-stage)
-	$(if $(filter true,$(PLATFORM_TPL)),$(MAKE) application-stage APP=tpl)
-	$(if $(filter true,$(PLATFORM_INFO)),$(MAKE) application-stage APP=info)
-	$(if $(filter true,$(PLATFORM_KNOWLEDGE)),$(MAKE) application-stage APP=knowledge)
-	$(if $(filter true,$(PLATFORM_INVESTMENT)),$(MAKE) application-stage APP=investment)
+	$(if $(filter true,$(PLATFORM_FOUNDATIONS) $(PLATFORM_SERVICES) $(PLATFORM_TPL) $(PLATFORM_INFO) $(PLATFORM_KNOWLEDGE) $(PLATFORM_INVESTMENT)),$(MAKE) services-stage)
 platform-build: SELECTION_ACTION=build
 platform-build: platform-selection
 	$(MAKE) platform-build-selected

@@ -62,12 +62,12 @@
     s3_root: '{{ s3_bootstrap.results[0].content | b64decode | from_yaml }}'
   no_log: true
 - name: Prepare storage candidate directory
-  ansible.builtin.file: {path: '{{ build }}/storage', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+  ansible.builtin.file: {path: '{{ build }}/{{ application_object }}/storage', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
 - name: Encrypt only application credentials for API and workers
-  ansible.builtin.include_tasks: '{{ playbook_dir }}/../services/tasks/encrypt.yaml'
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
   vars:
     secret_item:
-      file: runtime/storage.sops.yaml
+      file: '{{ application_object }}/runtime/storage.sops.yaml'
       manifest:
         apiVersion: v1
         kind: Secret
@@ -78,11 +78,11 @@
           ca.crt: '{{ s3_bootstrap.results[1].content | b64decode }}'
   no_log: true
 - name: Encrypt separate root provisioning input outside the application namespace
-  ansible.builtin.include_tasks: '{{ playbook_dir }}/../services/tasks/encrypt.yaml'
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
   vars:
     s3_url: 'https://object-storage.{{ data_namespace }}.svc.cluster.local:{{ object_storage_port }}'
     secret_item:
-      file: storage/provision.sops.yaml
+      file: '{{ application_object }}/storage/provision.sops.yaml'
       manifest:
         apiVersion: v1
         kind: Secret

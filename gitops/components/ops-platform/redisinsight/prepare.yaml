@@ -1,0 +1,44 @@
+---
+- name: Validate the RedisInsight browser endpoint
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_ingress_enabled | bool and traefik_crd_enabled | bool
+      - services_redis_enabled | bool
+      - redisinsight_origin | urlsplit('scheme') == 'https'
+      - redisinsight_origin | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
+      - redisinsight_origin | urlsplit('port') | int == entry_port | int
+      - redisinsight_origin | urlsplit('username') == None
+      - redisinsight_origin | urlsplit('path') == ''
+      - redisinsight_origin | urlsplit('query') == '' and redisinsight_origin | urlsplit('fragment') == ''
+      - redisinsight_port | int == 5540
+      - redisinsight_volume.uid == 1000 and redisinsight_volume.gid == 1000
+      - image_map.redisinsight.source is search('redisinsight:')
+- name: Prepare a separate RedisInsight TLS identity with non-overwritten backup
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ services_config_dir }}/redisinsight'
+    tls_backup_dir: '{{ services_backup_dir }}/redisinsight'
+    tls_declaration: '{{ playbook_dir }}/../../gitops/components/ops-platform/redisinsight/tls.sops.yaml'
+    tls_hostnames: ['{{ redisinsight_origin | urlsplit("hostname") }}']
+- name: Encrypt RedisInsight browser TLS
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: ops-platform/redisinsight/tls.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: redisinsight-tls, namespace: '{{ ops_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+  no_log: true
+- name: Derive the RedisInsight rollout identity
+  ansible.builtin.set_fact:
+    redisinsight_input_digest: '{{ [redisinsight_origin] | to_json | hash("sha256") }}'
+- name: Render the RedisInsight runtime candidate
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/ops-platform/redisinsight/workload.yaml.j2'
+    dest: '{{ build }}/ops-platform/redisinsight/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'

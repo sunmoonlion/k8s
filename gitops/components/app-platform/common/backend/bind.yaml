@@ -1,0 +1,46 @@
+---
+# Shared by backend and frontend prepares. prepare_vars.application_name is required.
+- name: Require an explicit application bind
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - prepare_vars.application_name in ['tpl', 'info', 'knowledge', 'investment']
+- name: Bind application paths
+  ansible.builtin.set_fact:
+    application_name: '{{ prepare_vars.application_name }}'
+    app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/{{ prepare_vars.application_name }}-app'
+    component_root: '{{ playbook_dir }}/../../gitops/components/app-platform/{{ prepare_vars.application_name }}-app/{{ prepare_vars.application_name }}-backend'
+    mechanism_root: '{{ playbook_dir }}/../../gitops/components/app-platform/common/backend'
+    application_object: 'app-platform/{{ prepare_vars.application_name }}-app/{{ prepare_vars.application_name }}-backend'
+    frontend_web_object: 'app-platform/{{ prepare_vars.application_name }}-app/{{ prepare_vars.application_name }}-web-frontend'
+    frontend_admin_object: 'app-platform/{{ prepare_vars.application_name }}-app/{{ prepare_vars.application_name }}-admin-frontend'
+- name: Load application configuration and locked images
+  ansible.builtin.set_fact:
+    application_cfg: '{{ (lookup("file", app_root + "/config.yaml") | from_yaml)[application_name + "_deployment"] }}'
+    backend_cfg: '{{ (lookup("file", component_root + "/config.yaml") | from_yaml)[application_name + "_backend_deployment"] }}'
+    web_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-web-frontend/config.yaml") | from_yaml)[application_name + "_web_deployment"] }}'
+    admin_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-admin-frontend/config.yaml") | from_yaml)[application_name + "_admin_deployment"] }}'
+    app_images:
+      backend: '{{ lookup("file", component_root + "/image.lock.yaml") | from_yaml }}'
+      web: '{{ lookup("file", app_root + "/" + application_name + "-web-frontend/image.lock.yaml") | from_yaml }}'
+      admin: '{{ lookup("file", app_root + "/" + application_name + "-admin-frontend/image.lock.yaml") | from_yaml }}'
+    source_lock: '{{ (lookup("file", playbook_dir + "/../applications/sources.yaml") | from_yaml).applications[application_name] }}'
+- name: Combine public application identity
+  ansible.builtin.set_fact:
+    cfg: '{{ application_cfg | combine(backend_cfg) | combine({"namespace": app_namespace, "web_origin": web_cfg.origin, "admin_origin": admin_cfg.origin}) }}'
+    browser_clients:
+      web: {name: '{{ web_cfg.casdoor_application }}', client_id: '{{ web_cfg.casdoor_client_id }}', origin: '{{ web_cfg.origin }}'}
+      admin: {name: '{{ admin_cfg.casdoor_application }}', client_id: '{{ admin_cfg.casdoor_client_id }}', origin: '{{ admin_cfg.origin }}'}
+    storage_enabled: '{{ (backend_cfg.object_storage.enabled | default(false)) | bool }}'
+    provider_enabled: '{{ (backend_cfg.knowledge_provider.enabled | default(false)) | bool }}'
+    service_enabled: '{{ (backend_cfg.knowledge_service.enabled | default(false)) | bool }}'
+    receiver_enabled: '{{ (backend_cfg.knowledge_service_receiver.enabled | default(false)) | bool }}'
+    service_relation: '{{ "ingest" if application_name == "info" else "retrieve" }}'
+    service_env_prefix: '{{ "KNOWLEDGE_APP_SERVICE" if application_name == "info" else "KNOWLEDGE_RETRIEVAL_SERVICE" }}'
+    service_bindings:
+      ingest: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/info-app/info-backend/config.yaml") | from_yaml).info_backend_deployment.knowledge_service }}'
+      retrieve: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/investment-app/investment-backend/config.yaml") | from_yaml).investment_backend_deployment.knowledge_service }}'
+- name: Derive public rollout identity
+  ansible.builtin.set_fact:
+    deployment_id: '{{ app_images.backend.deployment_id }}'
+    migration_job: '{{ application_name }}-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'

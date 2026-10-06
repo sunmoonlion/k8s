@@ -1,0 +1,44 @@
+---
+- name: Validate the RabbitMQ browser endpoint
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_ingress_enabled | bool and traefik_crd_enabled | bool
+      - rabbitmq_ui_origin | urlsplit('scheme') == 'https'
+      - rabbitmq_ui_origin | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
+      - rabbitmq_ui_origin | urlsplit('port') | int == entry_port | int
+      - rabbitmq_ui_origin | urlsplit('username') == None
+      - rabbitmq_ui_origin | urlsplit('path') == ''
+      - rabbitmq_ui_origin | urlsplit('query') == '' and rabbitmq_ui_origin | urlsplit('fragment') == ''
+  when: rabbitmq_ui_enabled | bool
+- name: Create the RabbitMQ browser candidate directory
+  ansible.builtin.file: {path: '{{ build }}/messaging-platform/rabbitmq/ui', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+  when: rabbitmq_ui_enabled | bool
+- name: Prepare a separate RabbitMQ browser TLS identity with non-overwritten backup
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ services_config_dir }}/rabbitmq-ui'
+    tls_backup_dir: '{{ services_backup_dir }}/rabbitmq-ui'
+    tls_declaration: '{{ playbook_dir }}/../../gitops/components/messaging-platform/rabbitmq/ui/tls.sops.yaml'
+    tls_hostnames: ['{{ rabbitmq_ui_origin | urlsplit("hostname") }}']
+  when: rabbitmq_ui_enabled | bool
+- name: Encrypt the RabbitMQ browser TLS certificate
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: messaging-platform/rabbitmq/ui/tls.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: rabbitmq-ui-tls, namespace: '{{ messaging_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+  no_log: true
+  when: rabbitmq_ui_enabled | bool
+- name: Render the RabbitMQ browser route
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/messaging-platform/rabbitmq/ui/workload.yaml.j2'
+    dest: '{{ build }}/messaging-platform/rabbitmq/ui/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+  when: rabbitmq_ui_enabled | bool

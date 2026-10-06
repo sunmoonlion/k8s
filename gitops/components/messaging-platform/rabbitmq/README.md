@@ -1,6 +1,6 @@
 # RabbitMQ：身份、vhost与队列
 
-messaging_namespace单实例、内部AMQP5672/管理15672。应用各有独立用户、vhost和队列，字段在backend config；平台管理员/cookie在services_config_dir/credentials.yaml的rabbitmq_username/password/cookie，主备一致、root0600。
+messaging_namespace单实例、内部AMQP5672/管理15672。管理台浏览器入口见同目录[ui](ui/README.md)。应用各有独立用户、vhost和队列，字段在backend config；平台管理员/cookie在services_config_dir/credentials.yaml的rabbitmq_username/password/cookie，主备一致、root0600。
 
 ## 持久节点身份
 

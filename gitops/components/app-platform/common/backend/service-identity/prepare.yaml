@@ -65,23 +65,23 @@
   ansible.builtin.slurp: {src: '{{ registry_config_dir }}/tls/ca.crt'}
   register: workload_ca
 - name: Prepare service identity candidate directory
-  ansible.builtin.file: {path: '{{ build }}/service-identity', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+  ansible.builtin.file: {path: '{{ build }}/{{ application_object }}/service-identity', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
 - name: Render isolated service identity initialization Job
   ansible.builtin.template:
     src: '{{ mechanism_root }}/service-identity/workload.yaml.j2'
-    dest: '{{ build }}/service-identity/workload.yaml'
+    dest: '{{ build }}/{{ application_object }}/service-identity/workload.yaml'
     owner: '{{ cluster_operator }}'
     mode: '0644'
 - name: Encrypt service provisioning and runtime secrets separately
-  ansible.builtin.include_tasks: ../services/tasks/encrypt.yaml
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
   loop:
-    - file: service-identity/provision.sops.yaml
+    - file: '{{ application_object }}/service-identity/provision.sops.yaml'
       manifest:
         apiVersion: v1
         kind: Secret
         metadata: {name: '{{ application_name }}-service-provision', namespace: '{{ app_namespace }}'}
         stringData: {client_secret: '{{ workload_secret }}', ca.crt: '{{ workload_ca.content | b64decode }}'}
-    - file: runtime/service.sops.yaml
+    - file: '{{ application_object }}/runtime/service.sops.yaml'
       manifest:
         apiVersion: v1
         kind: Secret
@@ -91,7 +91,7 @@
   no_log: true
 - name: Render explicit service identity resource list
   ansible.builtin.copy:
-    dest: '{{ build }}/service-identity/kustomization.yaml'
+    dest: '{{ build }}/{{ application_object }}/service-identity/kustomization.yaml'
     owner: '{{ cluster_operator }}'
     mode: '0644'
     content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":["workload.yaml","provision.sops.yaml"]} | to_nice_yaml }}'

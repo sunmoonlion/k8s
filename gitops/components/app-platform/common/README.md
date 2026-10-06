@@ -1,6 +1,6 @@
 # 应用共用机制
 
-此目录由[原生应用编排](../../../../infrastructure/applications/README.md)直接渲染，四应用都使用它，不通过模板应用转接。各应用自己的config、image.lock、生成声明及SOPS仍在所属应用/前后端目录。
+此目录由通用组件渲染器通过 `common/backend/prepare.yaml` 与 `common/frontend/prepare.yaml` 渲染，四应用都使用它。各应用自己的 config、image.lock、生成声明及 SOPS 仍在所属应用/前后端目录。
 
 ## 模板归属
 

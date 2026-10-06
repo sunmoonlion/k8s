@@ -11,6 +11,10 @@
       - mongodb_wiredtiger_cache_gib | float >= 0.25
       - mongodb_oplog_mib | int >= 128
       - image_map.mongodb.source is search('noble$')
+- name: Read the optional MongoDB administrator preset without changing an existing account
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../host/tasks/account-preset.yaml'
+  vars: {human_account: '{{ operator_account_mongodb }}'}
+  no_log: true
 - name: Prepare independent recoverable MongoDB credentials
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
   vars:
@@ -18,7 +22,7 @@
     component_input_manifest: data-platform/mongodb/auth.sops.yaml
     component_initial_input:
       root_username: sunmoon_mongo_admin
-      root_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      root_password: '{{ platform_admin_initials.get("data-platform/mongodb") or lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
       replica_key: '{{ lookup("password","/dev/null",length=96,chars=["ascii_letters","digits"]) }}'
       acceptance_username: sunmoon_mongo_probe
       acceptance_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
@@ -30,9 +34,11 @@
   ansible.builtin.assert:
     quiet: true
     that:
-      - mongodb_credentials.root_username == 'sunmoon_mongo_admin'
+      - mongodb_credentials.root_username == operator_account_mongodb.username
       - mongodb_credentials.acceptance_username == 'sunmoon_mongo_probe'
-      - mongodb_credentials.root_password is match('^[a-zA-Z0-9]{40}$')
+      - mongodb_credentials.root_password | length >= operator_account_mongodb.minimum_length | int
+      - mongodb_credentials.root_password | length <= operator_account_mongodb.maximum_length | int
+      - mongodb_credentials.root_password is not search('[\r\n\x00]')
       - mongodb_credentials.acceptance_password is match('^[a-zA-Z0-9]{40}$')
       - mongodb_credentials.replica_key is match('^[a-zA-Z0-9]{96}$')
   no_log: true

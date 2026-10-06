@@ -45,13 +45,17 @@
 - name: Apply the one required kernel setting only when too low
   ansible.builtin.command: {argv: [sysctl, -w, 'vm.max_map_count={{ elk_max_map_count }}']}
   when: active_mmap.stdout | int < elk_max_map_count | int
+- name: Read the optional Elasticsearch administrator preset without changing an existing account
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../host/tasks/account-preset.yaml'
+  vars: {human_account: '{{ operator_account_elasticsearch }}'}
+  no_log: true
 - name: Prepare independent recoverable ELK identities
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
   vars:
     component_input_name: elk
     component_input_manifest: data-platform/elk/elasticsearch/auth.sops.yaml
     component_initial_input:
-      elastic_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      elastic_password: '{{ platform_admin_initials.get("data-platform/elk/elasticsearch") or lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
       kibana_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
       logstash_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
       reader_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
@@ -63,11 +67,19 @@
 - name: Keep ELK identities in memory
   ansible.builtin.set_fact: {elk_credentials: '{{ component_private_input }}'}
   no_log: true
-- name: Validate secret sizes and safe static payload characters
+- name: Validate the Elasticsearch administrator password
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - elk_credentials.elastic_password | length >= operator_account_elasticsearch.minimum_length | int
+      - elk_credentials.elastic_password | length <= operator_account_elasticsearch.maximum_length | int
+      - elk_credentials.elastic_password is not search('[\r\n\x00]')
+  no_log: true
+- name: Validate machine ELK secrets
   ansible.builtin.assert:
     quiet: true
     that: item is match('^[a-zA-Z0-9]{40,48}$')
-  loop: '{{ elk_credentials.values() | list }}'
+  loop: '{{ elk_credentials | dict2items | rejectattr("key","equalto","elastic_password") | map(attribute="value") | list }}'
   no_log: true
 - name: Prepare one internal TLS identity per ELK service
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-tls.yaml'
@@ -153,6 +165,9 @@
     kibana_input_digest: '{{ [elk_credentials.kibana_password,elk_credentials.kibana_security_key,elk_credentials.kibana_saved_objects_key,elk_credentials.kibana_reporting_key,component_tls_material.kibana,kibana_ui_enabled,kibana_ui_origin,kibana_ui_session_idle_timeout,kibana_ui_session_lifespan,lookup("file",playbook_dir + "/../../gitops/components/data-platform/elk/kibana/kibana.yml.j2")] | to_json | hash("sha256") }}'
     logstash_input_digest: '{{ [elk_credentials.logstash_password,elk_credentials.ingest_password,component_tls_material.logstash,logstash_ingest_port,elk_logstash_max_content_bytes,elk_ingest_username,elk_logstash_writer,elk_index_prefix,elasticsearch_port,data_namespace,lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/logstash/workload.yaml.j2")] | to_json | hash("sha256") }}'
   no_log: true
+- name: Prepare the four core ELK candidate directories regardless of the selected sub-object
+  ansible.builtin.file: {path: '{{ build }}/data-platform/elk/{{ item }}', state: directory, mode: '0755', owner: '{{ cluster_operator }}'}
+  loop: [elasticsearch, initialize, kibana, logstash]
 - name: Render ELK workload candidates through the native service chain
   ansible.builtin.template:
     src: '{{ playbook_dir }}/../../gitops/components/data-platform/elk/{{ item }}/workload.yaml.j2'

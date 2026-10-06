@@ -6,3 +6,5 @@ stages:
   dependsOn: [platform-foundations]
   enabled: '{{ services_enabled and services_neo4j_enabled }}'
   images: [neo4j]
+  resources: [workload.yaml, auth.sops.yaml, storage.yaml]
+  volume: neo4j

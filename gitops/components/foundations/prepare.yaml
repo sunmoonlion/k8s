@@ -1,0 +1,20 @@
+---
+# Foundations private input: one pull-only registry identity per workload namespace.
+- name: Read namespace pull-only identity
+  ansible.builtin.slurp: {src: '{{ registry_config_dir }}/private/puller-auth.json'}
+  register: puller
+  no_log: true
+- name: Encrypt one pull-only identity per workload namespace
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: 'foundations/{{ namespace_item }}-puller.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: registry-puller, namespace: '{{ namespace_item }}'}
+        type: kubernetes.io/dockerconfigjson
+        data: {'.dockerconfigjson': '{{ puller.content }}'}
+  loop: '{{ [data_namespace, messaging_namespace, app_namespace, ops_namespace, relay_namespace, sandbox_namespace] }}'
+  loop_control: {loop_var: namespace_item}
+  no_log: true

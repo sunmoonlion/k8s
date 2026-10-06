@@ -1,0 +1,50 @@
+---
+- name: Validate the Neo4j browser endpoint
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_ingress_enabled | bool and traefik_crd_enabled | bool
+      - neo4j_ui_origin | urlsplit('scheme') == 'https'
+      - neo4j_ui_origin | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
+      - neo4j_ui_origin | urlsplit('port') | int == entry_port | int
+      - neo4j_ui_origin | urlsplit('username') == None
+      - neo4j_ui_origin | urlsplit('path') == ''
+      - neo4j_ui_origin | urlsplit('query') == '' and neo4j_ui_origin | urlsplit('fragment') == ''
+  when: neo4j_ui_enabled | bool
+- name: Create the Neo4j browser candidate directory
+  ansible.builtin.file: {path: '{{ build }}/data-platform/neo4j/ui', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+  when: neo4j_ui_enabled | bool
+- name: Prepare a separate Neo4j browser TLS identity with non-overwritten backup
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ services_config_dir }}/neo4j-ui'
+    tls_backup_dir: '{{ services_backup_dir }}/neo4j-ui'
+    tls_declaration: '{{ playbook_dir }}/../../gitops/components/data-platform/neo4j/ui/tls.sops.yaml'
+    tls_hostnames: ['{{ neo4j_ui_origin | urlsplit("hostname") }}']
+  when: neo4j_ui_enabled | bool
+- name: Encrypt Neo4j browser TLS and upstream trust
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  loop:
+    - file: data-platform/neo4j/ui/tls.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: neo4j-ui-tls, namespace: '{{ data_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+    - file: data-platform/neo4j/ui/upstream-ca.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: neo4j-upstream-ca, namespace: '{{ data_namespace }}'}
+        stringData: {ca.crt: '{{ component_tls_material.neo4j.ca }}'}
+  loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
+  no_log: true
+  when: neo4j_ui_enabled | bool
+- name: Render the Neo4j browser route
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/data-platform/neo4j/ui/workload.yaml.j2'
+    dest: '{{ build }}/data-platform/neo4j/ui/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+  when: neo4j_ui_enabled | bool

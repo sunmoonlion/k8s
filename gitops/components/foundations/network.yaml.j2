@@ -1,4 +1,4 @@
-{% for name,port,clients in [('postgresql',5432,[data_namespace,app_namespace]),('redis',6379,[app_namespace]),('rabbitmq',5672,[app_namespace]),('object-storage',object_storage_port,[data_namespace,app_namespace])] %}
+{% for name,port,clients in [('postgresql',5432,[data_namespace,app_namespace,ops_namespace]),('redis',6379,[app_namespace,ops_namespace]),('rabbitmq',5672,[app_namespace,ops_namespace]),('object-storage',object_storage_port,[data_namespace,app_namespace])] %}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
