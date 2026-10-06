@@ -1,7 +1,6 @@
-# Built and published through the native chain; independent Harbor identity checked.
+# Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
 repository: tpl-backend
-digest: sha256:36c393be91ae53d3551bc3dea75a8f3a9f272ec358d0d1f2e1e078bb2512485a
-source_revision: e907b65d86bf60e27fce18ebc71b854966504f69
-# Component deployment identity; migrated from the unchanged existing workload.
-deployment_id: tpl-b70dbde1767304f3
+digest: sha256:e92a7bb62f06e8bcee69f435922b16770cb7cfc1a84054130f3987b2b73d0b25
+source_revision: 834dff5a8e0cbbc399d61f5f26c211f1283d4d1d
+deployment_id: tpl-backend-e92a7bb62f06e8bc

@@ -171,7 +171,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:36c393be91ae53d3551bc3dea75a8f3a9f272ec358d0d1f2e1e078bb2512485a
+          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:e92a7bb62f06e8bcee69f435922b16770cb7cfc1a84054130f3987b2b73d0b25
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:

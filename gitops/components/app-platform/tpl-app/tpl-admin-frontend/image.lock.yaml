@@ -1,7 +1,6 @@
-# 已构建并由Harbor只读身份核对的不可变镜像；部署不重建。
+# Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
 repository: tpl-admin-frontend
-digest: sha256:830a9e382927264850656694430b289404cfd2708ba402e3279785176e0961ec
-source_revision: 9cce66c90d0b720867a318a45b4ca0c19adc1b16
-# Component deployment identity; migrated from the unchanged existing workload.
-deployment_id: tpl-b70dbde1767304f3
+digest: sha256:0efb051259f292bd9f438c983210410f072b0885a80f6267b0d62a66ed199d28
+source_revision: 3a0c88fbe3475d2eaf38732c48f30ff53a5aa650
+deployment_id: tpl-admin-frontend-0efb051259f292bd

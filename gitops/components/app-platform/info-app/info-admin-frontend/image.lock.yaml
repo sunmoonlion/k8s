@@ -1,7 +1,6 @@
-# 已构建并由Harbor独立只读身份核对的不可变镜像；部署不重建。
+# Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
 repository: info-admin-frontend
-digest: sha256:830a02d932de934006ae48055c4ed7dfb50cc9e6c3d2a89237996c02efc50759
-source_revision: 38d5b05aaca851a268f369b36bd4d2e7468b297b
-# Component deployment identity; migrated from the unchanged existing workload.
-deployment_id: info-aacd423b74d2a837
+digest: sha256:c7c096d48d0a458e968bc98bee1ff47fb8d2cf8039991f06c7887a108b3e4194
+source_revision: 27bc4c9af7aa0563f4573571e7e8c81a31d6efce
+deployment_id: info-admin-frontend-c7c096d48d0a458e

@@ -4,19 +4,19 @@ metadata:
     name: tpl-identity-provision
     namespace: app-platform-dev
 stringData:
-    clients.json: ENC[AES256_GCM,data:0plhK7rM+1CvdxJjK4EXDWjjkQPz2cIn0d0c+FNbjOKKPiORLsq4cUjojgtGoDkbjPDeXOEk8PPEY2hbW1JZa8BJpQuJvSW453TKy1C+2xtnAG6PDMHehUKAHaiYLrZDoIgoLRgI0TElcIAaIqoK6pmx5quNvw==,iv:8ExTdt5TkoZp9k8Chl74pSRZ4nGWeN4IY+1iav42TlY=,tag:/wz1Q2D6848l2b3I2IrJaA==,type:str]
+    clients.json: ENC[AES256_GCM,data:ETks2ibNzlOqwb6oBzdFBwKlxe7f/8P/mEkRVaDaYGgyTDhGEqBcCcu4cAvhsQ4J7Wc4FZKgbD0hvU2RvZMqpx5VIZu7yDEKheYtCwuJhxnMmUPcXgRPT6wir/ubuypu0kxUp1YqzaYQLbVXlho2Tf0BhHxNiw==,iv:QoU8657u+qARtEmaAKeRpbtWFdo0YwOHPogvnWCmtaU=,tag:7LsnKUAhajbz3WkYYiZ7ZQ==,type:str]
 sops:
     age:
         - enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBLbzdUV2NQM1M3MGxhcWlr
-            azg2a0NOd1ZhcklIaDJxTWJMbHJtZEVjRXljClZ3WVJBMGJzRERFOGI5RDdxZ3gv
-            QnBwTDlPeUgvZUJLb2oyMEwydTFuS0kKLS0tIEhUVHhTMzZUcEF5SWk1Z2p5TlVT
-            WU5uU3dBR1VySkRBcUpGNS9RMXNBWnMK7pTc/PMP34q0LO9RgcK3H/1b2lsXu8TH
-            l0gYl19lkFk0sCF3oWGBQofATr9aruQ6JnFAWV0FDBDOWX9rH1LnOg==
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBBWHh4eWkreUVOcUppa2Nz
+            QVpnQTRKanNjRW81YWh1cnk3cWhMc2M3anlrCjJjQ0s4NnlWREQzN25YQUVQNnJo
+            T0xpTW52OEJWTzNqaHA2M1YzNmFnZUUKLS0tIDNpSExWcHUxUXVaNkdiT3lJVFQ3
+            K1VwZHFJN0FIbEJJTy9tOFdQNW1HN2cKGrrOLT9KOjxpmB7EtAp9gvKz1Jg/uN00
+            NzHvepzpfl0asGgtxomJp15k1D6MJ0vDeOcyYz66TY6lEDyFz9MT9Q==
             -----END AGE ENCRYPTED FILE-----
           recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
     encrypted_regex: ^(data|stringData)$
-    lastmodified: "2026-10-03T12:21:53Z"
-    mac: ENC[AES256_GCM,data:KPRluJIBsui7mo0TWA5KW/ve57DWSoiyxXUTEkvjb7mkpMGI9IXpILO3fNu6g+Z7Xua7201RdQ93CQznGT9cJLl+EN6g89ujkylLp3jHgf0znlIblTqrUvtobQ62PDJxQ60Z4i4vWt0P8H4Y3Dz7JPh2dk6aqy9WtaGGlM2WcLY=,iv:2YNMT2hyvypaoBqWU+q3ZwjOFG5DQr8BuYrI+YvvdDQ=,tag:AMO61KRGYZl8KyN0j34GNg==,type:str]
+    lastmodified: "2026-10-06T07:22:24Z"
+    mac: ENC[AES256_GCM,data:q9jJgl/MBx8/S0sirDW77ScYPhn2bi8bV1TjM11NzVKn+F8ZL4WbnMaRPeAlT3iwGeP4tueYXMON2hMLEqtLHToIFpD6XoV4NH2dMvGpWOIlt0/hDaYAwHYVcSLxV2eBbb/MhF1NaugTpKst5/af5QhpcLGcZeFp6P3YigZ8NL8=,iv:N8hz3BNPj+AqGqYn179YmJaomJFKYBeTLjsCRwgMS3A=,tag:gWgi7UeJK74u2+23Jwd0Xw==,type:str]
     version: 3.13.3

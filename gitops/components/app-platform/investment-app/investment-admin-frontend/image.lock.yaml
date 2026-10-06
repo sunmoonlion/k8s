@@ -1,7 +1,6 @@
-# 已实际构建发布并以独立 Harbor 只读身份核对。
+# Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
 repository: investment-admin-frontend
-digest: sha256:afd78c56dcef98ac61b6597900ed90613f129297d47ccc629b4155c7e44506f5
-source_revision: ac58e290acba0822eef9ba84df9cf1387ca564d5
-# Component deployment identity; migrated from the unchanged existing workload.
-deployment_id: investment-93185775a849faf4
+digest: sha256:7060113659a092b1d3d18e940e0b564127b5a41ac1fec283eb249017c9dd7aa9
+source_revision: 469cadc90ed21a075dac52c60371f1063f0b8880
+deployment_id: investment-admin-frontend-7060113659a092b1

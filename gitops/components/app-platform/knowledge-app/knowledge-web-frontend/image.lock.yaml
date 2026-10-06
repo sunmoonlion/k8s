@@ -1,7 +1,6 @@
-# 已实际构建发布并以独立 Harbor 只读身份核对。
+# Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
 repository: knowledge-web-frontend
-digest: sha256:7527cb90817f3d1727db666d2bfbaf2493182b49464460c39d4f461dab589fd8
-source_revision: b1b45963723bdc9299bf3391afc8eeabab428927
-# Component deployment identity; migrated from the unchanged existing workload.
-deployment_id: knowledge-c4b5fb051de89782
+digest: sha256:a35fd8c0c7f1d7df539fdda0bad93ab78197d6abab721c8c09245c16a3338b9a
+source_revision: e61eff3e2e7040ce8339d99771e4250fa21514e7
+deployment_id: knowledge-web-frontend-a35fd8c0c7f1d7df

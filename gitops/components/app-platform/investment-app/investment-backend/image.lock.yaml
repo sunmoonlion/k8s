@@ -1,7 +1,6 @@
-# Built and published through the native chain; independent Harbor identity checked.
+# Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
 repository: investment-backend
-digest: sha256:72c1ad4212546c67b7cc38bed040551e4b8511d11e9257915c78fae523f0c626
-source_revision: 13539aa2f5cdcb79e7c670adb82ac88747d0d5b6
-# Component deployment identity; migrated from the unchanged existing workload.
-deployment_id: investment-93185775a849faf4
+digest: sha256:86a20079c30981098d2ce28394254051d04cb3ea4a473036c8f77eee975fe8ba
+source_revision: a49577a4fb77feeee5651b2fd5b2c3cb3ddbbc95
+deployment_id: investment-backend-86a20079c3098109
