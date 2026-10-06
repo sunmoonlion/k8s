@@ -58,6 +58,12 @@ data:
 {% for key,value in (cfg.domain_runtime_env | default({})).items() %}
   {{ key }}: {{ value | to_json }}
 {% endfor %}
+{% for key,value in (cross_app_env | default({})).items() %}
+  {{ key }}: {{ value | to_json }}
+{% endfor %}
+{% for key,value in (cfg.domain_env | default({})).items() %}
+  {{ key }}: {{ value | to_json }}
+{% endfor %}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -69,14 +75,14 @@ data:
     control_queue_exclusive = {{ cfg.celery_control_queue_exclusive | bool }}
     event_queue_durable = False
     event_queue_exclusive = {{ cfg.celery_event_queue_exclusive | bool }}
-{% for role in ['api','worker','scheduler'] %}
+{% for role in ['api','worker','scheduler'] + (['runner'] if runner_enabled | default(false) else []) %}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata: {name: {{ application_name }}-{{ role }}, namespace: {{ app_namespace }}}
 spec:
   replicas: {{ cfg[role + '_replicas'] }}
-{% if role == 'scheduler' %}
+{% if role in ['scheduler','runner'] %}
   strategy: {type: Recreate}
 {% else %}
   strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
@@ -99,7 +105,7 @@ spec:
         sunmoonai.com/ragflow-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
 {% endif %}
-{% if role == 'api' %}
+{% if role in ['api','runner'] %}
         sunmoonai.com/redis-client: 'true'
 {% endif %}
       annotations:
@@ -125,6 +131,10 @@ spec:
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency={{ cfg.worker_concurrency }}', '--hostname=celery@$(POD_NAME)']
           startupProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 10, failureThreshold: 30}
           readinessProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 20}
+{% elif role == 'runner' %}
+          # 0001-workbench：runner 是每个用户沙箱里 app-server 的唯一客户端；不开端口，靠进程存活
+          command: [python]
+          args: [-m, app.bootstrap.runner]
 {% else %}
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
@@ -142,9 +152,14 @@ spec:
             - {configMapRef: {name: {{ application_name }}-browser-identity}}
             - {secretRef: {name: {{ application_name }}-database-runtime}}
             - {secretRef: {name: {{ application_name }}-rabbitmq-runtime}}
-{% if role == 'api' %}
+{% if role in ['api','runner'] %}
             - {secretRef: {name: {{ application_name }}-redis-runtime}}
+{% endif %}
+{% if role == 'api' %}
             - {secretRef: {name: {{ application_name }}-browser-secrets}}
+{% endif %}
+{% if domain_secrets_enabled | default(false) and role in (cfg.domain_secrets_roles | default(['api','worker','runner'])) %}
+            - {secretRef: {name: {{ application_name }}-domain-runtime}}
 {% endif %}
 {% if storage_enabled %}
             - {secretRef: {name: {{ application_name }}-storage-runtime}}
@@ -265,3 +280,45 @@ spec:
           podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
       ports: [{protocol: TCP, port: 8443}]
 {% endif %}
+{% for rule in cfg.domain_egress | default([]) %}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: {{ application_name }}-{{ rule.name }}-out, namespace: {{ app_namespace }}}
+spec:
+  podSelector:
+    matchExpressions:
+      - {key: app.kubernetes.io/name, operator: In, values: [{% for r in rule.roles | default(['api']) %}{{ application_name }}-{{ r }}{% if not loop.last %}, {% endif %}{% endfor %}]}
+  policyTypes: [Egress]
+  egress:
+    - to:
+{% if rule.cidrs is defined %}
+{% for cidr in rule.cidrs %}
+        - ipBlock: {cidr: {{ cidr }}}
+{% endfor %}
+{% elif rule.namespace_var is defined %}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ lookup('vars', rule.namespace_var) }}}}
+          podSelector: {matchLabels: {{ rule.pod_labels | to_json }}}
+{% else %}
+        - podSelector: {matchLabels: {{ rule.pod_labels | to_json }}}
+{% endif %}
+      ports: [{% for p in rule.ports %}{protocol: TCP, port: {{ p }}}{% if not loop.last %}, {% endif %}{% endfor %}]
+{% endfor %}
+{% for rule in cfg.domain_ingress | default([]) %}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: {{ application_name }}-{{ rule.name }}-in, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-api}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+{% if rule.namespace_var is defined %}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ lookup('vars', rule.namespace_var) }}}}
+          podSelector: {matchLabels: {{ rule.pod_labels | to_json }}}
+{% else %}
+        - podSelector: {matchLabels: {{ rule.pod_labels | to_json }}}
+{% endif %}
+      ports: [{protocol: TCP, port: {{ cfg.api_port }}}]
+{% endfor %}

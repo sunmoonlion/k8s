@@ -16,6 +16,22 @@
 
 模板不定义第二套用户名、域名、镜像版本。修改共用模板前查看四应用的生成差异；不能只检查tpl，把其它应用作为未经审阅的副作用。初始化Python模板经渲染进入所属Job的ConfigMap。
 
+## 应用自己的配置、秘密、角色与网络（0010，2026-10-06）
+
+四个字段都可不写；不写时生成的声明一个字节不变（改模板时用四个应用的旧变量各渲染一遍对比过）。
+
+| 字段 | 作用 | 规则 |
+|---|---|---|
+| `cross_app_enabled` | 从三个网页端的 `origin` 推出 `CROSS_APP_TARGETS_JSON`、`CROSS_APP_SOURCES_JSON` 进 ConfigMap | 不手配地址；谁去哪按 PRD/apps/README.md 4.1 |
+| `domain_env` | 明文配置，进 `<app>-runtime` ConfigMap | 键 `^[A-Z][A-Z0-9_]{2,63}$`，值是字符串，不许和模板已管的键重名 |
+| `domain_secrets` | 只写来源，值不进 Git；进 Secret `<app>-domain-runtime`（`runtime/domain.sops.yaml`） | 来源：`random`（首次生成 40 位，存 `private_dir/domain.yaml` 主备）、`component-input`（平台级输入 `services_config_dir/<name>.yaml` 的一个键）、`workbench-signing`（共享 ES256 密钥对，`private_key_pem` / `public_key_pem`）、`private`（所有者手工放进 `private_dir/domain.yaml`） |
+| `domain_secrets_roles` | 哪些角色拿这个 Secret | 不写是 api、worker、runner |
+| `runner_replicas` | 第四个角色 `runner`（`python -m app.bootstrap.runner`，不开端口，Recreate） | 不写是 0；写了要配 `resources.runner` |
+| `domain_egress` | 应用级出站放行，每条一个 NetworkPolicy | `name`、`roles`、`ports`，目标二选一：`namespace_var` + `pod_labels` 或 `cidrs` |
+| `domain_ingress` | 应用级入站放行，只到 api 端口 | `name`、`namespace_var`、`pod_labels` |
+
+实现：`backend/domain/prepare.yaml`（校验、读秘密、推链接），`backend/runtime/workload.yaml.j2`（渲染）。共享签名密钥对由 `infrastructure/components/tasks/workbench-signing.yaml` 准备，investment 用私钥，knowledge 与 relay 用公钥。
+
 ## 更新与不可变Job
 
 后端镜像由各应用源码提交及锁定构建产生。生产async_sessionmaker需expire_on_commit=False，实际API检查此行为，避免异步任务访问提交后回执触发MissingGreenlet；此约束属于业务源码，不由部署模板修补运行容器。

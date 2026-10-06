@@ -27,7 +27,7 @@ stages:
 - name: info-runtime
   path: runtime
   dependsOn: '{{ ["info-identity"] + (["info-service-identity"] if info_backend_deployment.knowledge_service.enabled | default(false) else []) + (["info-storage"] if info_backend_deployment.object_storage.enabled | default(false) else []) }}'
-  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["storage.sops.yaml"] if info_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if info_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if info_backend_deployment.knowledge_service.enabled | default(false) else []) }}'
+  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["storage.sops.yaml"] if info_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if info_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if info_backend_deployment.knowledge_service.enabled | default(false) else []) + (["domain.sops.yaml"] if info_backend_deployment.domain_secrets | default({}) | length > 0 else []) }}'
 - name: info-storage
   path: storage
   dependsOn: [object-storage]

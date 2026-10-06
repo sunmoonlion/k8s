@@ -1,0 +1,169 @@
+---
+# 应用自己的配置与秘密（0010）：config.yaml 里的 domain_* 字段。值永远不进 Git：
+# 随机值生成一次存 private_dir/domain.yaml（主备非覆盖、逐字节比对），其余从平台级输入或共享签名密钥对读。
+- name: Validate the domain declaration
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - cfg.domain_env | default({}) is mapping
+      - cfg.domain_env | default({}) | list | map('regex_search', '^[A-Z][A-Z0-9_]{2,63}$') | select('none') | list | length == 0
+      - cfg.domain_env | default({}) | list | intersect(domain_managed_keys) | length == 0
+      - cfg.domain_env | default({}) | dict2items | map(attribute='value') | map('type_debug') | reject('equalto', 'str') | list | length == 0
+      - cfg.domain_secrets | default({}) is mapping
+      - cfg.domain_secrets | default({}) | list | map('regex_search', '^[A-Z][A-Z0-9_]{2,63}$') | select('none') | list | length == 0
+      - cfg.domain_secrets | default({}) | list | intersect(domain_managed_keys) | length == 0
+      - cfg.domain_secrets | default({}) | list | intersect(cfg.domain_env | default({}) | list) | length == 0
+      - cfg.domain_secrets | default({}) | dict2items | map(attribute='value.source') | difference(['random','component-input','workbench-signing','private']) | length == 0
+      - cfg.domain_secrets_roles | default(['api','worker','runner']) | difference(['api','worker','scheduler','runner']) | length == 0
+      - cfg.runner_replicas | default(0) | int >= 0
+      - cfg.runner_replicas | default(0) | int == 0 or 'runner' in cfg.resources
+      - cfg.domain_egress | default([]) | map(attribute='name') | map('regex_search', '^[a-z][a-z0-9-]{1,30}$') | select('none') | list | length == 0
+      - cfg.domain_egress | default([]) | map(attribute='name') | list | unique | length == cfg.domain_egress | default([]) | length
+      - cfg.domain_ingress | default([]) | map(attribute='name') | map('regex_search', '^[a-z][a-z0-9-]{1,30}$') | select('none') | list | length == 0
+  vars:
+    domain_managed_keys: [ENV, APP_SLUG, DEPLOYMENT_ID, ALLOWED_HOSTS, REDIS_HOST, REDIS_PORT, REDIS_DB, REDIS_USER, REDIS_PASSWORD, CELERY_QUEUE, CELERY_BROKER_URL, CELERY_CONFIG_MODULE, CELERY_TASK_TOPOLOGY_PREDECLARED, CASDOOR_BACKCHANNEL_ENDPOINT, CASDOOR_VERIFY_SSL, SESSION_COOKIE_SECURE, REFERENCE_INTERACTION_ENABLED, DATABASE_URL, S3_ENDPOINT, S3_REGION, S3_BUCKET, S3_FORCE_PATH_STYLE, S3_USE_TLS, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, AWS_CA_BUNDLE, SSL_CERT_FILE, POD_NAME, SERVICE_NAME, PYTHONPATH, PYTHONDONTWRITEBYTECODE, WEB_CASDOOR_CLIENT_ID, WEB_CASDOOR_CLIENT_SECRET, ADMIN_CASDOOR_CLIENT_ID, ADMIN_CASDOOR_CLIENT_SECRET, CROSS_APP_SOURCES_JSON, CROSS_APP_TARGETS_JSON]
+- name: Validate each egress rule
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.roles | default(['api']) | difference(['api','worker','scheduler','runner']) | length == 0
+      - item.ports | default([]) | length > 0
+      - item.ports | map('int') | reject('gt', 0) | list | length == 0
+      - (item.cidrs is defined) != (item.pod_labels is defined)
+      - item.cidrs is not defined or item.cidrs | map('regex_search', '^[0-9]{1,3}(\.[0-9]{1,3}){3}/[0-9]{1,2}$') | select('none') | list | length == 0
+      - item.pod_labels is not defined or item.pod_labels is mapping
+      - item.namespace_var is not defined or item.namespace_var is match('^[a-z_]+_namespace$')
+      - item.namespace_var is not defined or lookup('vars', item.namespace_var, default='') | string | length > 0
+  loop: '{{ cfg.domain_egress | default([]) }}'
+  loop_control: {label: '{{ item.name }}'}
+- name: Validate each ingress rule (always to the api port, never by address)
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.keys() | difference(['name','namespace_var','pod_labels']) | length == 0
+      - item.pod_labels is mapping
+      - item.namespace_var is not defined or item.namespace_var is match('^[a-z_]+_namespace$')
+      - item.namespace_var is not defined or lookup('vars', item.namespace_var, default='') | string | length > 0
+  loop: '{{ cfg.domain_ingress | default([]) }}'
+  loop_control: {label: '{{ item.name }}'}
+- name: Bind domain switches
+  ansible.builtin.set_fact:
+    domain_secrets_enabled: '{{ cfg.domain_secrets | default({}) | length > 0 }}'
+    runner_enabled: '{{ cfg.runner_replicas | default(0) | int > 0 }}'
+    cross_app_enabled: '{{ cfg.cross_app_enabled | default(false) | bool }}'
+    domain_random_keys: '{{ cfg.domain_secrets | default({}) | dict2items | selectattr("value.source", "equalto", "random") | map(attribute="key") | list }}'
+    domain_private_keys: '{{ cfg.domain_secrets | default({}) | dict2items | selectattr("value.source", "equalto", "private") | map(attribute="key") | list }}'
+    domain_component_inputs: '{{ cfg.domain_secrets | default({}) | dict2items | selectattr("value.source", "equalto", "component-input") | map(attribute="value.name") | list | unique }}'
+    domain_signing_needed: '{{ cfg.domain_secrets | default({}) | dict2items | selectattr("value.source", "equalto", "workbench-signing") | list | length > 0 }}'
+# ---------------- 跨应用链接：从三个网页端的 origin 推出，不手配 ----------------
+- name: Derive cross application links from the three web origins
+  when: cross_app_enabled | bool
+  ansible.builtin.set_fact:
+    cross_app_env:
+      CROSS_APP_TARGETS_JSON: '{{ cross_app_targets }}'
+      CROSS_APP_SOURCES_JSON: '{{ cross_app_sources }}'
+  vars:
+    web_origins:
+      info: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/info-app/info-web-frontend/config.yaml") | from_yaml).info_web_deployment.origin }}'
+      knowledge: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowledge-app/knowledge-web-frontend/config.yaml") | from_yaml).knowledge_web_deployment.origin }}'
+      investment: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/investment-app/investment-web-frontend/config.yaml") | from_yaml).investment_web_deployment.origin }}'
+    # 谁带人去哪（PRD/apps/README.md 4.1）：investment 去 info、knowledge；knowledge 去 info；info 去 knowledge
+    target_names: "{{ {'investment': ['info','knowledge'], 'knowledge': ['info'], 'info': ['knowledge'], 'tpl': []}[application_name] }}"
+    cross_app_targets: >-
+      {% set out = {} %}{% for n in target_names %}{% set _ = out.update({n: {'web_base_url': web_origins[n]}}) %}{% endfor %}{{ out | to_json }}
+    # 谁会把人带到这里、各自的回跳地址：investment 的工作台回跳；别的应用不回跳；自己不在名单里
+    cross_app_sources: >-
+      {% set out = {} %}{% for n in ['investment','knowledge','info'] if n != application_name %}{% set _ = out.update({n: ({'return_url': web_origins.investment + '/zh-CN/workbench?ref={ref}'} if n == 'investment' else {})}) %}{% endfor %}{{ out | to_json }}
+- name: Use no cross application links unless enabled
+  when: not cross_app_enabled | bool
+  ansible.builtin.set_fact: {cross_app_env: {}}
+# ---------------- 秘密：随机值存私有目录；其余从平台级输入读 ----------------
+- name: Prepare the domain secret input pair
+  when: domain_secrets_enabled | bool
+  block:
+    - name: Inspect preserved domain inputs
+      ansible.builtin.stat: {path: '{{ item }}/domain.yaml', follow: false}
+      loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+      register: domain_files
+      no_log: true
+    - name: Refuse insecure or redirected domain input
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.islnk | default(false)
+          - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+      loop: '{{ domain_files.results }}'
+      no_log: true
+    - name: Restore preserved domain input without rotation
+      ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/domain.yaml', dest: '{{ cfg.private_dir }}/domain.yaml', remote_src: true, mode: '0600'}
+      when: not domain_files.results[0].stat.exists and domain_files.results[1].stat.exists
+      no_log: true
+    - name: Refuse silently regenerating declared domain secrets
+      ansible.builtin.assert:
+        quiet: true
+        that: domain_files.results[0].stat.exists or domain_files.results[1].stat.exists or query('fileglob', component_root + '/runtime/domain.sops.yaml') | length == 0
+    - name: Generate random domain secrets only on first preparation
+      ansible.builtin.copy:
+        dest: '{{ cfg.private_dir }}/domain.yaml'
+        force: false
+        mode: '0600'
+        content: |
+          {% for key in domain_random_keys %}{{ key }}: {{ lookup('password', '/dev/null', length=40, chars=['ascii_letters','digits']) }}
+          {% endfor %}
+      when: not domain_files.results[0].stat.exists and not domain_files.results[1].stat.exists and domain_random_keys | length > 0
+      no_log: true
+    - name: Preserve non-overwritten domain input backup
+      ansible.builtin.copy: {src: '{{ cfg.private_dir }}/domain.yaml', dest: '{{ cfg.backup_dir }}/domain.yaml', remote_src: true, force: false, mode: '0600'}
+      no_log: true
+    - name: Require byte identical recoverable domain input
+      ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/domain.yaml', '{{ cfg.backup_dir }}/domain.yaml']}
+      changed_when: false
+      no_log: true
+    - name: Read private domain input in memory
+      ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/domain.yaml'}
+      register: domain_input
+      no_log: true
+    - name: Decode private domain input
+      ansible.builtin.set_fact: {domain_private_values: '{{ domain_input.content | b64decode | from_yaml }}'}
+      no_log: true
+    - name: Require every random and private value to be present and well formed
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item in domain_private_values
+          - domain_private_values[item] is string and domain_private_values[item] | length >= 8
+          - item not in domain_random_keys or domain_private_values[item] is match('^[a-zA-Z0-9]{40}$')
+        fail_msg: 'private_dir/domain.yaml lacks {{ item }}: random keys are generated once; private keys are placed by the owner'
+      loop: '{{ domain_random_keys + domain_private_keys }}'
+      no_log: true
+    - name: Read referenced platform component inputs only into memory
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/{{ item }}.yaml'}
+      loop: '{{ domain_component_inputs }}'
+      register: domain_component_bytes
+      no_log: true
+    - name: Decode referenced component inputs
+      ansible.builtin.set_fact:
+        domain_component_values: '{{ dict(domain_component_inputs | zip(domain_component_bytes.results | map(attribute="content") | map("b64decode") | map("from_yaml"))) }}'
+      no_log: true
+    - name: Prepare the shared workbench signing key pair when referenced
+      ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/workbench-signing.yaml'
+      when: domain_signing_needed | bool
+    - name: Resolve every declared domain secret
+      ansible.builtin.set_fact:
+        domain_secret_values: >-
+          {{ domain_secret_values | default({}) | combine({item.key:
+               (domain_private_values[item.key] if item.value.source in ['random','private'] else
+                (domain_component_values[item.value.name][item.value.key] if item.value.source == 'component-input' else
+                 workbench_signing[item.value.key]))}) }}
+      loop: '{{ cfg.domain_secrets | dict2items }}'
+      loop_control: {label: '{{ item.key }}'}
+      no_log: true
+    - name: Require every resolved secret to be a non-empty string
+      ansible.builtin.assert:
+        quiet: true
+        that: domain_secret_values[item] is string and domain_secret_values[item] | length > 0
+      loop: '{{ cfg.domain_secrets | list }}'
+      no_log: true
+- name: Use no domain secrets unless declared
+  when: not domain_secrets_enabled | bool
+  ansible.builtin.set_fact: {domain_secret_values: {}, domain_input: {content: ''}}

@@ -358,9 +358,11 @@
 - name: Prepare an independent relation-specific service identity
   ansible.builtin.include_tasks: '{{ mechanism_root }}/service-identity/prepare.yaml'
   when: service_enabled | bool
+- name: Prepare the application's own configuration, secrets and network rules (0010)
+  ansible.builtin.include_tasks: '{{ mechanism_root }}/domain/prepare.yaml'
 - name: Bind runtime rollout to public configuration and private input changes
   ansible.builtin.set_fact:
-    runtime_config_digest: '{{ (([cfg, browser_clients, secret_input.content, redis_input.content, rabbitmq_input.content, identity_input.content] + ([s3_input.content] if storage_enabled | bool else []) + ([provider_runtime_data] if provider_enabled | bool else []) + ([workload_input.content,service_access_hosts] if service_enabled | bool else []) + ([service_bindings,service_access_hosts] if receiver_enabled | bool else [])) | to_json) | hash("sha256") }}'
+    runtime_config_digest: '{{ (([cfg, browser_clients, secret_input.content, redis_input.content, rabbitmq_input.content, identity_input.content] + ([s3_input.content] if storage_enabled | bool else []) + ([provider_runtime_data] if provider_enabled | bool else []) + ([workload_input.content,service_access_hosts] if service_enabled | bool else []) + ([service_bindings,service_access_hosts] if receiver_enabled | bool else []) + ([domain_secret_values, cross_app_env] if (domain_secrets_enabled | bool or cross_app_enabled | bool) else [])) | to_json) | hash("sha256") }}'
   no_log: true
 - name: Prepare public candidate directories
   ansible.builtin.file: {path: '{{ build }}/{{ application_object }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
@@ -456,4 +458,16 @@
         type: kubernetes.io/tls
         data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
   loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
+  no_log: true
+- name: Encrypt the application's own declared secrets for the runtime roles (0010)
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: '{{ application_object }}/runtime/domain.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-domain-runtime', namespace: '{{ app_namespace }}'}
+        stringData: '{{ domain_secret_values }}'
+  when: domain_secrets_enabled | bool
   no_log: true

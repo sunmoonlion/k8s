@@ -1,0 +1,32 @@
+---
+# 工作台的令牌签名密钥对（ES256）：一处生成、三处引用——investment 用私钥签，knowledge 与 relay 用公钥验。
+# 平台级私有输入 services_config_dir/workbench-signing.yaml（主备非覆盖），和别的组件输入一个做法。
+# 结果只放在内存变量 workbench_signing（private_key_pem / public_key_pem）。
+- name: Generate a candidate ES256 key pair only in memory
+  ansible.builtin.shell:
+    cmd: |
+      set -euo pipefail
+      key=$(openssl ecparam -name prime256v1 -genkey -noout 2>/dev/null | openssl pkcs8 -topk8 -nocrypt)
+      pub=$(printf '%s\n' "$key" | openssl ec -pubout 2>/dev/null)
+      python3 -c 'import json,sys; k,p=sys.argv[1:]; print(json.dumps({"private_key_pem":k+"\n","public_key_pem":p+"\n"}))' "$key" "$pub"
+    executable: /bin/bash
+  register: workbench_signing_candidate
+  changed_when: false
+  no_log: true
+- name: Keep the signing key pair under the shared component input rules
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: workbench-signing
+    component_input_manifest: app-platform/investment-app/investment-backend/runtime/domain.sops.yaml
+    component_initial_input: '{{ workbench_signing_candidate.stdout | from_json }}'
+  no_log: true
+- name: Bind the signing key pair in memory only
+  ansible.builtin.set_fact: {workbench_signing: '{{ component_private_input }}'}
+  no_log: true
+- name: Require a well formed ES256 key pair
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - workbench_signing.private_key_pem is match('^-----BEGIN PRIVATE KEY-----\n')
+      - workbench_signing.public_key_pem is match('^-----BEGIN PUBLIC KEY-----\n')
+  no_log: true

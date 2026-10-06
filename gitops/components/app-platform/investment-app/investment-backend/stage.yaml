@@ -27,7 +27,7 @@ stages:
 - name: investment-runtime
   path: runtime
   dependsOn: '{{ ["investment-identity"] + (["investment-service-identity"] if investment_backend_deployment.knowledge_service.enabled | default(false) else []) }}'
-  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["storage.sops.yaml"] if investment_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if investment_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if investment_backend_deployment.knowledge_service.enabled | default(false) else []) }}'
+  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["storage.sops.yaml"] if investment_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if investment_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if investment_backend_deployment.knowledge_service.enabled | default(false) else []) + (["domain.sops.yaml"] if investment_backend_deployment.domain_secrets | default({}) | length > 0 else []) }}'
 - name: investment-service-identity
   path: service-identity
   dependsOn: [casdoor, postgresql]
