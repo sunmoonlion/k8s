@@ -70,3 +70,57 @@ drwxr-xr-x 6 root root 4096 Oct  3 08:46 sunmoon-kind
 ## 五、结论
 
 不通过。数据盘本身已经挂上（`/dev/sde`，UUID 对得上）。两个 bind 起不来，是因为系统盘上的 `/data/kind-clusters` 里留着一份 `sunmoon-kind`，守卫拒绝覆盖。目录还在，没有删。
+
+## 续（所有者批准挪开、不删）
+
+时间：2026-10-06 13:23 +0800。残留只改名，没有删除。待办写明的 `storage.py check`（不进 init 挂载命名空间）退出 1，所以 `platform-start`、状态、四个数量、`platform-check`、relay 都没有做。
+
+### 1. 残留和正本
+
+`du` 退出 0：`/data/kind-clusters` 52K，`/mnt/sunmoon-data/kind-clusters` 2.5G。
+
+系统盘残留（`find -maxdepth 3`，退出 0）只有空目录：`sunmoon-kind/{bootstrap,control-plane,worker,worker2}` 以及各节点下的 `static`、`dynamic`，没有文件。
+
+数据盘正本（退出 0）有 `identity.json`、多份 bootstrap-pull、`kind.yaml`、`calico`、`evidence`，以及同样的节点目录。
+
+`find /data/kind-clusters -type f -newer .../identity.json` 退出 0，没有列出任何文件。残留里没有比正本更新的东西。
+
+### 2. 挪开
+
+三条都退出 0：
+
+```
+sudo mv /data/kind-clusters /data/kind-clusters.rootfs-stale-20261003
+sudo mkdir -m 0755 /data/kind-clusters
+drwxr-xr-x  2 root root 4096 Oct  6 13:23 kind-clusters
+drwxr-xr-x  3 root root 4096 Oct  3 08:46 kind-clusters.rootfs-stale-20261003
+```
+
+### 3. 绑盘
+
+`storage.py mount`（经 `nsenter --target 1 --mount`）退出 0：
+
+```
+{"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+```
+
+待办里的 `storage.py check`（没有 nsenter）退出 **1**，原话：
+
+```
+Storage blocked: Wrong/missing UUID or bind root: /data/kind-clusters
+```
+
+同一条 shell 里的 `findmnt` 退出 0，两个路径仍在 `/`（`/dev/sdd`）。
+
+按「check 不是 0 就停下」，第 4 步没有做。
+
+为了分清是没绑上还是当前 shell 看不见，又只读看了 init 的挂载命名空间（没有再 mount，没有启动服务）：
+
+```
+/data/kind-clusters  /dev/sde[/kind-clusters]  ext4
+/data/harbor         /dev/sde[/harbor]         ext4
+nsenter storage.py check 退出 0
+{"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+```
+
+bind 在 PID 1 的挂载命名空间里已经成立。待办那条不进这个命名空间的 `check` 和 `findmnt` 仍看到系统盘。
