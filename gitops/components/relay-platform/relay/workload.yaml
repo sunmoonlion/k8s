@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: relay}
-      annotations: {sunmoonai.com/input-sha256: '36938cdb0e50396e9b318b31fa4eb3a5fe3f2dd2730a810a00f8e79d253ef42c'}
+      annotations: {sunmoonai.com/input-sha256: '96d6d3427bade490af6292023c1218580261c96f56e07574103269bcc6eee3c0'}
     spec:
       serviceAccountName: platform-runtime
       enableServiceLinks: false
@@ -23,7 +23,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 10002, runAsGroup: 10002, fsGroup: 10002, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: relay
-          image: harbor.sunmoonai.com:30443/platform/relay@sha256:5224cf4fcaecc564da289b42b03a1b49dc654e9c10c90c15daff2660ce8d554f
+          image: harbor.sunmoonai.com:30443/platform/relay@sha256:531d417826292336c034c7378fcb7347799a6e54e0a48e9b08fdb36757c1afc2
           imagePullPolicy: IfNotPresent
           env:
             - {name: RELAY_HOST, value: 0.0.0.0}

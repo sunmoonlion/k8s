@@ -1,6 +1,6 @@
 # Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
 repository: relay
-digest: sha256:5224cf4fcaecc564da289b42b03a1b49dc654e9c10c90c15daff2660ce8d554f
-source_revision: b23ea80b24c0c3b866bb346277a870028ed58b42
-deployment_id: relay-5224cf4fcaecc564
+digest: sha256:531d417826292336c034c7378fcb7347799a6e54e0a48e9b08fdb36757c1afc2
+source_revision: a43473f162195a7be7202ec382b0b13b16985b6f
+deployment_id: relay-531d417826292336
