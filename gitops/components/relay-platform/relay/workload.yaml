@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: relay}
-      annotations: {sunmoonai.com/input-sha256: '43fe8f7d4994b0033573344d5b32ef17e6a9947434708711b8c08ff3bc455fa5'}
+      annotations: {sunmoonai.com/input-sha256: '36938cdb0e50396e9b318b31fa4eb3a5fe3f2dd2730a810a00f8e79d253ef42c'}
     spec:
       serviceAccountName: platform-runtime
       enableServiceLinks: false
@@ -23,7 +23,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 10002, runAsGroup: 10002, fsGroup: 10002, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: relay
-          image: harbor.sunmoonai.com:30443/app-images/relay@sha256:dfc4d0e08fc83f846ceb1d3024a7f944b688f1283f886a89fb0c8c5b0702b647
+          image: harbor.sunmoonai.com:30443/platform/relay@sha256:5224cf4fcaecc564da289b42b03a1b49dc654e9c10c90c15daff2660ce8d554f
           imagePullPolicy: IfNotPresent
           env:
             - {name: RELAY_HOST, value: 0.0.0.0}
@@ -33,6 +33,7 @@ spec:
             - {name: RELAY_TOKENS_STATE, value: /state/tokens.json}
             - {name: RELAY_ADMIN_TOKEN, valueFrom: {secretKeyRef: {name: relay-auth, key: RELAY_ADMIN_TOKEN}}}
             - {name: RELAY_JWT_ISSUER, value: sunmoon-workbench}
+            - {name: RELAY_JWT_PUBLIC_KEY, valueFrom: {secretKeyRef: {name: relay-auth, key: RELAY_JWT_PUBLIC_KEY}}}
           ports: [{name: ws, containerPort: 47100}]
           startupProbe: {httpGet: {path: /healthz, port: ws}, periodSeconds: 5, failureThreshold: 24}
           readinessProbe: {httpGet: {path: /healthz, port: ws}, periodSeconds: 10, timeoutSeconds: 3}

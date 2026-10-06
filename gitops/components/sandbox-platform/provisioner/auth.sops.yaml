@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: sandbox-provisioner
+    namespace: sandbox-platform-dev
+stringData:
+    token: ENC[AES256_GCM,data:4yqR6AAg0Z5pHVrBjXq4astoZ3elU9NqIe8QwXI3KTwX/hTh/OnCVg==,iv:83nrXZEZQFMonty8vPki/TGoBegi9ImHkdR3DORB+uc=,tag:y2JMwDPOjVIhOAG2SN6hww==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBwNnllYmg5MlMvc3dtVVZR
+            aG5ZWWlHcHpWOVE2aStTY25mV1V1SGgvNnlzCmN6eENCQzZBU2RKN25iV1BhQjBF
+            bWFCZjE3ZFdidm1FOGhwU1VNWGV0MlkKLS0tIHp6VGhkaVpVZVZjYmFmR0FaMTlt
+            K1NnTzN2N3FORlQ3djB3Z3ZzVnlsNmsK0uZDzQE1WXwS8ax66WCTsTYxKTmW2Cs8
+            3qJghBNKmshIE1MZQF2OWsKQaQkj1JPXP4/+Bv1e4qlZ63oobfFk7A==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-06T08:01:13Z"
+    mac: ENC[AES256_GCM,data:xr1u7ynwQ+3TLDN5Sgbl+PuRN4tYLPlRfROEEjdjrLS46weDeGRyr4zhrurRKEaKwaHwEppueqq8lEL8xEPrhWRnOFcIxkBzNBqfid61GT4YfhJIYsLIp4ZbXfJ9XORUR9YByEPeJPCJu4+QbMAhN5PgHBhG5i+RVb5PfdtrACQ=,iv:zdGbmfc1GXqpheV69ByfCA/Aqi2CUreVtp/ebZXRoYY=,tag:T4C7vE9ai12zYYV9TdwWnw==,type:str]
+    version: 3.13.3

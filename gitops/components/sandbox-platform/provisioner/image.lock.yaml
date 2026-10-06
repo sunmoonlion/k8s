@@ -1,8 +1,6 @@
-# 供给器镜像。现在钉的是旧 KIND 的 app-images/sandbox-provisioner；按 fable 源码重建后由 component-lock 改写成 platform/sandbox-provisioner。
-# 沙箱镜像另在 ../sandbox/image.lock.yaml。
+# Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
-harbor_project: app-images
 repository: sandbox-provisioner
-digest: sha256:d8aa2a3951bae9b64f67cb3845de4a84ecb09a22cac1fc197eb5df1f8fe81b0b
-source_revision: kind-sandbox-provisioner-v1-r1
-deployment_id: sandbox-provisioner-v1-r1
+digest: sha256:0a665ec737775adaf56a8c05e70f2bbb62baecadc0a932ed48ea827f5868d004
+source_revision: b23ea80b24c0c3b866bb346277a870028ed58b42
+deployment_id: sandbox-provisioner-0a665ec737775ada

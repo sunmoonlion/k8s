@@ -1,7 +1,6 @@
-# Pinned Harbor identity from KIND relay v1-r3. Rebuild through the application chain to publish into platform/relay.
+# Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
-harbor_project: app-images
 repository: relay
-digest: sha256:dfc4d0e08fc83f846ceb1d3024a7f944b688f1283f886a89fb0c8c5b0702b647
-source_revision: kind-relay-v1-r3
-deployment_id: relay-v1-r3
+digest: sha256:5224cf4fcaecc564da289b42b03a1b49dc654e9c10c90c15daff2660ce8d554f
+source_revision: b23ea80b24c0c3b866bb346277a870028ed58b42
+deployment_id: relay-5224cf4fcaecc564

@@ -1286,3 +1286,21 @@ spec:
   decryption:
     provider: sops
     secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: sandbox-provisioner, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/sandbox-platform/provisioner
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: relay}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
