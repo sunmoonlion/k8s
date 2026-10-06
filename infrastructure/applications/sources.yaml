@@ -1,35 +1,36 @@
 # Fixed parent gitlinks; reviewed local backend descendants are built through the native chain.
+# 2026-10-06 起钉 fable（各应用父仓的 fable 头，子仓就是父仓记录的那一个提交）。
 ---
 applications:
   tpl:
-    parent_revision: 3317c84d984fdd6dbeb4ab490685f9fcdff569a3
-    backend_parent_revision: 6674125cd1c14d9700c707b0b0f4b5d422d42f05
-    backend_revision: e907b65d86bf60e27fce18ebc71b854966504f69
-    web_parent_revision: 45ceed1a147cadb6dfd1b8a72b79ff5a266854bd
-    web_revision: 0be8020ca14dc28123c8e212cf7f8f660ed16e99
-    admin_parent_revision: ee1f542220386e15c8f97c6e40e317caf3c2e9e7
-    admin_revision: 9cce66c90d0b720867a318a45b4ca0c19adc1b16
+    parent_revision: 6579f303b237c4b7d63245dd4774a8bf74476fb8
+    backend_parent_revision: 834dff5a8e0cbbc399d61f5f26c211f1283d4d1d
+    backend_revision: 834dff5a8e0cbbc399d61f5f26c211f1283d4d1d
+    web_parent_revision: a398a63b52af7e46d27a7d6837e00010434d4553
+    web_revision: a398a63b52af7e46d27a7d6837e00010434d4553
+    admin_parent_revision: 3a0c88fbe3475d2eaf38732c48f30ff53a5aa650
+    admin_revision: 3a0c88fbe3475d2eaf38732c48f30ff53a5aa650
   info:
-    parent_revision: 244f724dce91d373bd6dd35362d471c565ebf7a9
-    backend_parent_revision: e5156a0bfc0d5ca9118128427dcacb69697a0737
-    backend_revision: a4b6f59b99f7ef6dc48b346803560e6b2ceeb0a7
-    web_parent_revision: a07af307c63ee16204d82afa0a0b7b2d3d22bb3c
-    web_revision: c7e19a41bb6eba03dc9a5021ee6de14f4e005922
-    admin_parent_revision: 90e4ab00fc209323d1670743d83ae1369a7b8d82
-    admin_revision: 38d5b05aaca851a268f369b36bd4d2e7468b297b
+    parent_revision: 6729dd0a25786fc0de905f354d094a86311e3185
+    backend_parent_revision: 89d6598ebdc964d0b26548713331c2fd8d92e6ef
+    backend_revision: 89d6598ebdc964d0b26548713331c2fd8d92e6ef
+    web_parent_revision: 58f01b6b1c720388656b15c8cbea296b25288d41
+    web_revision: 58f01b6b1c720388656b15c8cbea296b25288d41
+    admin_parent_revision: 27bc4c9af7aa0563f4573571e7e8c81a31d6efce
+    admin_revision: 27bc4c9af7aa0563f4573571e7e8c81a31d6efce
   knowledge:
-    parent_revision: b4e6f66624e91b2dbc720cdcc9615b0c73dbb349
-    backend_parent_revision: 4d9804c3d5f4084b83bdb00ba49cbf0f8b5cbb55
-    backend_revision: 5732eab2e6e25eb225fbad4249ae01c0178fdb89
-    web_parent_revision: 8e8d016b4cea7239ae6a13130036924132c63d75
-    web_revision: b1b45963723bdc9299bf3391afc8eeabab428927
-    admin_parent_revision: 6634a4c64e297c0dbbd2d0c8fa82c1195d068f67
-    admin_revision: 0e1edbf534048518e03bc6654447dfce6cb9ac97
+    parent_revision: 116930f171b692bef22d78c544c09cfebfe1d03c
+    backend_parent_revision: f75996bbf7853cd81fbfbd6574999c1b396f66e8
+    backend_revision: f75996bbf7853cd81fbfbd6574999c1b396f66e8
+    web_parent_revision: e61eff3e2e7040ce8339d99771e4250fa21514e7
+    web_revision: e61eff3e2e7040ce8339d99771e4250fa21514e7
+    admin_parent_revision: ee6b897f82d7520547ec22e0a7462122b674c427
+    admin_revision: ee6b897f82d7520547ec22e0a7462122b674c427
   investment:
-    parent_revision: b66223cf89092ac4056c523358763f5cf2500b1a
-    backend_parent_revision: abddf477fa44c525921ab1a7f48a87a8a7c749f9
-    backend_revision: 13539aa2f5cdcb79e7c670adb82ac88747d0d5b6
-    web_parent_revision: 32265f705dfec6324691873fac97461f80270e06
-    web_revision: 745dfe697eca3d7aee746b782024d8f454f44c78
-    admin_parent_revision: 2e1f5c67d583be02b43eb36d1052f5b4ad177f45
-    admin_revision: ac58e290acba0822eef9ba84df9cf1387ca564d5
+    parent_revision: 8bb0a428163f556a6852c682ab69d5c90409c5c6
+    backend_parent_revision: a49577a4fb77feeee5651b2fd5b2c3cb3ddbbc95
+    backend_revision: a49577a4fb77feeee5651b2fd5b2c3cb3ddbbc95
+    web_parent_revision: c7c955da77803cec838354671d90016dc32378b6
+    web_revision: c7c955da77803cec838354671d90016dc32378b6
+    admin_parent_revision: 469cadc90ed21a075dac52c60371f1063f0b8880
+    admin_revision: 469cadc90ed21a075dac52c60371f1063f0b8880

@@ -6,8 +6,8 @@ info_backend_deployment:
   database_migrator_user: info_migrator
   database_extensions: [uuid-ossp]
   database_bootstrap_revision: v1
-  migration_job_revision: v1
-  expected_schema_revision: '20260913_0009'
+  migration_job_revision: v2
+  expected_schema_revision: '20260929_0013'
   private_dir: /etc/sunmoon/applications/sunmoon-kind/info
   backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/info
   deploy_budget_bytes: 2147483648
@@ -27,11 +27,19 @@ info_backend_deployment:
   scheduler_replicas: 1
   resources:
     api: {requests: {cpu: 100m, memory: 192Mi}, limits: {cpu: '2', memory: 768Mi}}
-    worker: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: '2', memory: 1Gi}}
+    # 建库任务：一份年报最大 128 MiB 读进内存再抽取，实测常驻最高约 1.2 GB（迁移账本 14、19）
+    worker: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: '2', memory: 1536Mi}}
     scheduler: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
   # RabbitMQ 4.3不允许非持久非独占队列；Celery控制/事件队列随连接退出。
   celery_control_queue_exclusive: true
   celery_event_queue_exclusive: true
+  # 0010：采集申请与数据集登记（0008-info）。SECURITY_* 都有默认值，这里不写。
+  cross_app_enabled: true
+  domain_env:
+    KNOWLEDGE_APP_DATASET_URL: 'https://{{ service_access_hosts.knowledge }}/api/internal/v1/knowledge/datasets'
+  domain_egress:
+    # 采集走公网（巨潮、东方财富）；标准 NetworkPolicy 不认域名，先放行 80/443 到任意地址
+    - {name: public-sites, roles: [worker], cidrs: ['0.0.0.0/0'], ports: [443, 80]}
   # 原文只能进入对象存储；未接入S3前拒绝业务写入，不回退到容器本地目录。
   object_storage:
     enabled: true

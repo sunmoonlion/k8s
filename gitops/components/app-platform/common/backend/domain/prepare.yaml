@@ -16,6 +16,7 @@
       - cfg.domain_secrets | default({}) | dict2items | map(attribute='value.source') | difference(['random','component-input','workbench-signing','private']) | length == 0
       - cfg.domain_secrets_roles | default(['api','worker','runner']) | difference(['api','worker','scheduler','runner']) | length == 0
       - cfg.runner_replicas | default(0) | int >= 0
+      - cfg.tmp_size_limit | default('64Mi') is match('^[1-9][0-9]*(Mi|Gi)$')
       - cfg.runner_replicas | default(0) | int == 0 or 'runner' in cfg.resources
       - cfg.domain_egress | default([]) | map(attribute='name') | map('regex_search', '^[a-z][a-z0-9-]{1,30}$') | select('none') | list | length == 0
       - cfg.domain_egress | default([]) | map(attribute='name') | list | unique | length == cfg.domain_egress | default([]) | length
@@ -47,7 +48,10 @@
   loop: '{{ cfg.domain_ingress | default([]) }}'
   loop_control: {label: '{{ item.name }}'}
 - name: Bind domain switches
+  # domain_env 的值可以写 {{ site 变量 }}（如 sandbox_namespace）：cfg 来自 lookup('file')，里面的 Jinja 不会展开，
+  # 所以从同名的 extra var（Makefile 把各组件 config.yaml 都当 extra-vars 装了）取，那一份在取用时会展开。
   ansible.builtin.set_fact:
+    domain_env_values: "{{ (lookup('vars', application_name + '_backend_deployment', default={}).domain_env | default(cfg.domain_env | default({}))) }}"
     domain_secrets_enabled: '{{ cfg.domain_secrets | default({}) | length > 0 }}'
     runner_enabled: '{{ cfg.runner_replicas | default(0) | int > 0 }}'
     cross_app_enabled: '{{ cfg.cross_app_enabled | default(false) | bool }}'

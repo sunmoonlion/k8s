@@ -61,7 +61,7 @@ data:
 {% for key,value in (cross_app_env | default({})).items() %}
   {{ key }}: {{ value | to_json }}
 {% endfor %}
-{% for key,value in (cfg.domain_env | default({})).items() %}
+{% for key,value in (domain_env_values | default(cfg.domain_env | default({}))).items() %}
   {{ key }}: {{ value | to_json }}
 {% endfor %}
 ---
@@ -194,7 +194,7 @@ spec:
 {% if provider_enabled %}
         - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
 {% endif %}
-        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: tmp, emptyDir: {sizeLimit: {{ cfg.tmp_size_limit | default('64Mi') }}}}
         - {name: celery-config, configMap: {name: {{ application_name }}-celery-config}}
 {% endfor %}
 ---

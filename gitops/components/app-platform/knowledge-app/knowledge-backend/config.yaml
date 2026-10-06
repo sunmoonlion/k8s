@@ -7,8 +7,8 @@ knowledge_backend_deployment:
   database_extensions:
   - uuid-ossp
   database_bootstrap_revision: v1
-  migration_job_revision: v1
-  expected_schema_revision: '20260911_0006'
+  migration_job_revision: v2
+  expected_schema_revision: '20260927_0007'
   private_dir: /etc/sunmoon/applications/sunmoon-kind/knowledge
   backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/knowledge
   deploy_budget_bytes: 2147483648
@@ -51,6 +51,24 @@ knowledge_backend_deployment:
   celery_control_queue_exclusive: true
   celery_event_queue_exclusive: true
   domain_runtime_env: {}
+  # 0010：数据集目录、多数据集与语义层（0008-info 段三、0009-semantic）、工具的 JWT 验签
+  cross_app_enabled: true
+  tmp_size_limit: 2Gi
+  domain_env:
+    KNOWLEDGE_MCP_JWT_ISSUER: sunmoon-workbench
+    KNOWLEDGE_MCP_RATE_PER_MINUTE: '120'
+    KNOWLEDGE_CATALOG_RATE_PER_MINUTE: '120'
+    KNOWLEDGE_DATASET_TITLE: 零售经营库（最小实例）
+    KNOWLEDGE_DATASET_REGISTRY_ENABLED: 'true'
+    KNOWLEDGE_DATASET_ALLOWED_BUCKETS: info-originals
+    KNOWLEDGE_DATASET_CACHE_DIR: /tmp/knowledge-datasets
+    KNOWLEDGE_SEMANTIC_ENGINE_ENABLED: 'true'
+    KNOWLEDGE_SEMANTIC_CACHE_DIR: /tmp/knowledge-semantic
+  domain_secrets:
+    KNOWLEDGE_MCP_JWT_PUBLIC_KEY: {source: workbench-signing, key: public_key_pem}
+  domain_secrets_roles: [api]
+  domain_ingress:
+    - {name: sandboxes, namespace_var: sandbox_namespace, pod_labels: {sunmoonai.com/sandbox: 'true'}}
   knowledge_provider:
     enabled: true
     dataset_key: default
@@ -58,7 +76,8 @@ knowledge_backend_deployment:
     tenant_id: sunmoonai
     source_user: knowledge_source_reader
     source_bucket: info-originals
-    source_prefix: info/original/
+    # 2026-10-06 放宽到 info/：原文在 info/original/，登记的数据集文件在 info/securities/…/datasets/
+    source_prefix: info/
     job_revision: v1
 
   knowledge_service_receiver:
