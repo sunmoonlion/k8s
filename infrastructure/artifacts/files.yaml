@@ -1,0 +1,187 @@
+---
+- name: Plan, fetch or verify locked files
+  hosts: kind_hosts
+  gather_facts: false
+  become: false
+  vars:
+    artifact_action: plan
+    artifact_ids: all
+    artifact_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/files.lock.json") | from_json }}'
+    requested_ids: '{{ artifact_ids.split(",") }}'
+    selected: '{{ artifact_lock.files if artifact_ids == "all" else artifact_lock.files | selectattr("id", "in", requested_ids) | list }}'
+    cache_directories: >-
+      {% set paths = [artifact_cache_root] %}
+      {% for relative in selected | map(attribute="path") | map("dirname") | list %}
+      {% set current = namespace(path=artifact_cache_root) %}
+      {% for part in relative.split('/') %}
+      {% set current.path = current.path + '/' + part %}
+      {% set _ = paths.append(current.path) %}
+      {% endfor %}
+      {% endfor %}
+      {{ paths | unique | list | to_json }}
+    planned_bytes: '{{ (cached_files.results | rejectattr("stat.exists") | map(attribute="item.size_bytes") | sum) * 2 }}'
+  tasks:
+    - name: Validate operation and lock identity
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - ansible_version.full == '2.21.4'
+          - artifact_action in ['plan', 'fetch', 'verify']
+          - artifact_lock.schema_version == 1
+          - artifact_lock.platform == 'linux/amd64'
+          - artifact_lock.files | length > 0
+          - artifact_lock.files | map(attribute='id') | unique | length == artifact_lock.files | length
+          - artifact_lock.files | map(attribute='path') | unique | length == artifact_lock.files | length
+          - artifact_ids == 'all' or requested_ids | difference(artifact_lock.files | map(attribute='id') | list) | length == 0
+          - selected | length > 0
+          - artifact_cache_root is match('^/[a-zA-Z0-9_./-]+$')
+          - "'..' not in artifact_cache_root.split('/')"
+          - artifact_cache_root not in ['/', '/data', '/home', '/tmp']
+          - not ansible_check_mode or artifact_action != 'fetch'
+        fail_msg: Invalid artifact operation or lock. Use plan for a read-only preview.
+
+    - name: Validate each file descriptor
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.sha256 is match('^[a-f0-9]{64}$')
+          - item.url is match('^https://')
+          - item.path is match('^(cluster|host|registry|shared|components)/[a-z0-9-]+(/[a-z0-9-]+)*/(bin|packages|charts|manifests|databases|models)/[a-zA-Z0-9_.-]+$')
+          - item.size_bytes | int > 0
+          - "'..' not in item.path.split('/')"
+          - item.kind in ['binary', 'package', 'chart', 'manifest', 'database', 'model']
+      loop: '{{ selected }}'
+      loop_control:
+        label: '{{ item.id }}'
+
+    - name: Inspect existing cache paths without following symlinks
+      ansible.builtin.stat:
+        path: '{{ item }}'
+        follow: false
+        get_checksum: false
+      loop: '{{ cache_directories | from_json }}'
+      register: cache_paths
+
+    - name: Require existing cache paths to be real directories
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.exists or (item.stat.isdir | default(false) and not item.stat.islnk | default(false))
+      loop: '{{ cache_paths.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Inspect selected cached files
+      ansible.builtin.stat:
+        path: '{{ artifact_cache_root }}/{{ item.path }}'
+        follow: false
+        checksum_algorithm: sha256
+      loop: '{{ selected }}'
+      loop_control:
+        label: '{{ item.id }}'
+      register: cached_files
+
+    - name: Reject unexpected existing files
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.exists or (item.stat.isreg | default(false) and not item.stat.islnk | default(false))
+          - not item.stat.exists or item.stat.checksum | default('') == item.item.sha256
+          - not item.stat.exists or item.stat.size | default(0) == item.item.size_bytes
+        fail_msg: '{{ item.item.id }} has unexpected existing content; no overwrite performed.'
+      loop: '{{ cached_files.results }}'
+      loop_control:
+        label: '{{ item.item.id }}'
+
+    - name: Show file plan
+      ansible.builtin.debug:
+        msg: '{{ item.item.id }}: {{ "verified" if item.stat.exists else "missing" }} -> {{ artifact_cache_root }}/{{ item.item.path }} ({{ item.item.size_bytes }} bytes)'
+      loop: '{{ cached_files.results }}'
+      loop_control:
+        label: '{{ item.item.id }}'
+
+    - name: Require complete selected files for offline verification
+      ansible.builtin.assert:
+        quiet: true
+        that: item.stat.exists
+        fail_msg: '{{ item.item.id }} missing from cache.'
+      loop: '{{ cached_files.results }}'
+      loop_control:
+        label: '{{ item.item.id }}'
+      when: artifact_action == 'verify'
+
+    - name: Fetch files within capacity budget
+      when: artifact_action == 'fetch'
+      block:
+        - name: Check shared Windows growth budget
+          ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+          vars:
+            capacity_planned_bytes: '{{ planned_bytes }}'
+
+        - name: Read free bytes on the cache parent filesystem
+          ansible.builtin.command:
+            argv: [df, -B1, '--output=avail', '{{ artifact_cache_root | dirname }}']
+          register: cache_capacity
+          changed_when: false
+
+        - name: Require space for downloads and atomic temporary files
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - cache_capacity.stdout_lines[-1] | trim | int >= planned_bytes | int
+            fail_msg: Insufficient space on the artifact cache filesystem.
+
+        - name: Create typed cache directories
+          ansible.builtin.file:
+            path: '{{ artifact_cache_root }}/{{ item.path | dirname }}'
+            state: directory
+            mode: '0755'
+          loop: '{{ selected }}'
+          loop_control:
+            label: '{{ item.id }}'
+
+        - name: Fetch large databases and models with resumable HTTPS
+          ansible.builtin.include_tasks: tasks/resumable-file.yaml
+          loop: '{{ cached_files.results }}'
+          loop_control:
+            loop_var: resumable
+            label: '{{ resumable.item.id }}'
+          when: not resumable.stat.exists and resumable.item.kind in ['database', 'model']
+
+        - name: Download exact upstream files with checksum verification
+          ansible.builtin.get_url:
+            url: '{{ item.item.url }}'
+            dest: '{{ artifact_cache_root }}/{{ item.item.path }}'
+            checksum: 'sha256:{{ item.item.sha256 }}'
+            mode: '0644'
+            timeout: 60
+            validate_certs: true
+          loop: '{{ cached_files.results }}'
+          loop_control:
+            label: '{{ item.item.id }}'
+          when: not item.stat.exists and item.item.kind not in ['database', 'model']
+          register: fetched
+          retries: 2
+          delay: 3
+          until: fetched is succeeded
+
+        - name: Verify downloaded bytes
+          ansible.builtin.stat:
+            path: '{{ artifact_cache_root }}/{{ item.path }}'
+            follow: false
+            checksum_algorithm: sha256
+          loop: '{{ selected }}'
+          loop_control:
+            label: '{{ item.id }}'
+          register: fetched_files
+
+        - name: Require exact size and SHA256 after transfer
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - item.stat.isreg | default(false)
+              - item.stat.checksum | default('') == item.item.sha256
+              - item.stat.size | default(0) == item.item.size_bytes
+          loop: '{{ fetched_files.results }}'
+          loop_control:
+            label: '{{ item.item.id }}'

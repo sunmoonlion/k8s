@@ -1,0 +1,390 @@
+---
+- name: Plan or control the independently owned local platform
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    host_action: plan
+    candidate: '{{ (playbook_dir + "/../.build/host/lifecycle") | realpath }}'
+    node_names: ['{{ cluster_name }}-control-plane', '{{ cluster_name }}-worker', '{{ cluster_name }}-worker2']
+    files: '{{ lookup("file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    kubectl_package: '{{ files.files | selectattr("id", "equalto", "kubectl") | first }}'
+    storage_config: {uuid: '{{ storage_uuid }}', mounts: '{{ storage_mounts }}', maximum_gib: '{{ data_vhd_maximum_gib | int }}'}
+    capacity_operation: platform-lifecycle
+  tasks:
+    - name: Require the exact current site and explicit action
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - host_action in ['plan','install','enable-boot','start','stop','status']
+          - not ansible_check_mode
+          - cluster_name == 'sunmoon-kind'
+          - host_runtime_dir == '/opt/sunmoon/host/' + cluster_name
+          - windows_script_directory == '/mnt/c/wsl-disks/scripts/platform-kind-v1'
+          - wsl_distribution == 'Ubuntu'
+          - host_action not in ['install','enable-boot','start'] or (cluster_enabled | bool and registry_enabled | bool and entry_enabled | bool)
+    - name: Read installed service states without starting anything
+      ansible.builtin.command:
+        argv: [systemctl, show, sunmoon-platform.target, sunmoon-platform-boot.service, sunmoon-cluster.service, sunmoon-registry.service, sunmoon-entry.service, '--property=Id,ActiveState,UnitFileState']
+      changed_when: false
+      register: states
+    - name: Report lifecycle state
+      ansible.builtin.debug:
+        var: states.stdout_lines
+    - name: Stop the complete new platform in reverse order
+      when: host_action == 'stop'
+      block:
+        - name: Require the installed controller before shutdown
+          ansible.builtin.stat:
+            path: '{{ host_runtime_dir }}/check-nodes.sh'
+          register: installed_guard
+        - name: Refuse unowned shutdown
+          ansible.builtin.assert:
+            quiet: true
+            that: installed_guard.stat.isreg | default(false)
+        - name: Verify immutable node ownership before stopping, including an already stopped cluster
+          ansible.builtin.command:
+            argv: [bash, '{{ host_runtime_dir }}/check-nodes.sh', stop]
+          changed_when: false
+        - name: Stop pending boot recovery and target without deleting containers
+          ansible.builtin.systemd_service:
+            name: '{{ item }}'
+            state: stopped
+          loop: [sunmoon-platform-boot.service, sunmoon-platform.target, sunmoon-entry.service, sunmoon-cluster.service, sunmoon-registry.service]
+    - name: Ensure stopped services cannot leave unmanaged owned nodes running
+      when: host_action == 'stop'
+      block:
+        - name: Read remaining owned node running states after systemd stop
+          ansible.builtin.command:
+            argv: [docker, inspect, '{{ item }}', --format, '{{ "{{.State.Running}}" }}']
+          loop: '{{ node_names }}'
+          register: nodes_after_stop
+          changed_when: false
+        - name: Stop only the already verified owned nodes if not yet managed by systemd
+          ansible.builtin.command:
+            argv: '{{ ["docker", "stop", "--time", "60"] + node_names }}'
+          when: '"true" in nodes_after_stop.results | map(attribute="stdout") | list'
+          timeout: 210
+          changed_when: true
+    - name: Plan or install one boot implementation
+      when: host_action in ['plan','install']
+      block:
+        - name: Read authoritative cluster identity
+          ansible.builtin.slurp:
+            src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'
+          register: receipt
+        - name: Decode owned identity and derive immutable Windows publication
+          ansible.builtin.set_fact:
+            owned_identity: '{{ receipt.content | b64decode | from_json }}'
+            host_storage_sha256: '{{ lookup("file", playbook_dir + "/storage.py", rstrip=False) | hash("sha256") }}'
+            host_storage_config_sha256: '{{ (storage_config | to_nice_json) | hash("sha256") }}'
+        - name: Require matching three node IDs before publishing lifecycle files
+          ansible.builtin.command:
+            argv: [docker, inspect, '{{ item }}', --format, '{{ "{{.Id}}" }}']
+          loop: '{{ node_names }}'
+          register: actual_ids
+          changed_when: false
+        - name: Refuse stale or foreign receipt
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - owned_identity.name == cluster_name
+              - actual_ids.results | map(attribute='stdout') | list == owned_identity.node_ids
+        - name: Resolve immutable Windows candidate path
+          ansible.builtin.command:
+            argv: [wslpath, -w, '{{ windows_admin_directory }}/boot-{{ (host_storage_sha256 + host_storage_config_sha256 + (lookup("file", playbook_dir + "/templates/attach-storage.ps1.j2") | hash("sha256")) + (lookup("file", playbook_dir + "/templates/request-storage.ps1.j2") | hash("sha256")) + (lookup("file", playbook_dir + "/templates/run-storage-hidden.vbs.j2") | hash("sha256")) + wsl_distribution + data_vhd_windows_path) | hash("sha256") | truncate(16, true, "") }}']
+          changed_when: false
+          register: win_path
+        - name: Resolve actual Windows UNC path to the reviewed capacity helper
+          ansible.builtin.command:
+            argv: [wslpath, -w, '{{ windows_script_directory }}/windows-capacity.ps1']
+          changed_when: false
+          register: capacity_windows_path
+        - name: Set actual Windows paths without escaped path duplication
+          ansible.builtin.set_fact:
+            host_capacity_windows_path: '{{ capacity_windows_path.stdout }}'
+            windows_script_directory_windows: '{{ win_path.stdout }}'
+            windows_request_script: '{{ win_path.stdout }}\request-storage.ps1'
+            windows_launcher_script: '{{ win_path.stdout }}\run-storage-hidden.vbs'
+        - name: Prepare private lifecycle candidate directory
+          ansible.builtin.file:
+            path: '{{ candidate }}'
+            state: directory
+            mode: '0700'
+        - name: Render guard configuration
+          ansible.builtin.copy:
+            dest: '{{ candidate }}/storage.json'
+            content: '{{ storage_config | to_nice_json }}'
+            mode: '0644'
+        - name: Copy reviewed storage guard
+          ansible.builtin.copy:
+            src: storage.py
+            dest: '{{ candidate }}/storage.py'
+            mode: '0755'
+        - name: Render native runtime scripts and service definitions
+          ansible.builtin.template:
+            src: '{{ item.src }}'
+            dest: '{{ candidate }}/{{ item.dest }}'
+            mode: '0644'
+          loop:
+            - {src: '../cluster/check-nodes.sh.j2', dest: check-nodes.sh}
+            - {src: '../cluster/sunmoon-cluster.service.j2', dest: sunmoon-cluster.service}
+            - {src: 'templates/boot.sh.j2', dest: boot.sh}
+            - {src: 'templates/sunmoon-platform.target.j2', dest: sunmoon-platform.target}
+            - {src: 'templates/sunmoon-platform-boot.service.j2', dest: sunmoon-platform-boot.service}
+            - {src: 'templates/attach-storage.ps1.j2', dest: attach-storage.ps1}
+            - {src: 'templates/request-storage.ps1.j2', dest: request-storage.ps1}
+            - {src: 'templates/run-storage-hidden.vbs.j2', dest: run-storage-hidden.vbs}
+        - name: Validate native shell syntax without execution
+          ansible.builtin.command:
+            argv: [bash, -n, '{{ candidate }}/{{ item }}']
+          loop: [check-nodes.sh, boot.sh]
+          changed_when: false
+        - name: Check real storage in both service mount namespaces
+          ansible.builtin.command:
+            argv: [/usr/bin/python3, '{{ candidate }}/storage.py', check, '{{ candidate }}/storage.json']
+          changed_when: false
+        - name: Hash Windows administrator publication candidates
+          ansible.builtin.stat:
+            path: '{{ candidate }}/{{ item }}'
+            checksum_algorithm: sha256
+          loop: [attach-storage.ps1, request-storage.ps1, run-storage-hidden.vbs]
+          register: windows_candidates
+        - name: Create nonsecret Windows review directory
+          become: false
+          ansible.builtin.file:
+            path: '{{ windows_script_directory }}/candidate'
+            state: directory
+            mode: '0755'
+        - name: Publish the read-only capacity helper locally for RemoteSigned compatibility
+          become: false
+          ansible.builtin.copy:
+            src: windows-capacity.ps1
+            dest: '{{ windows_script_directory }}/windows-capacity.ps1'
+            mode: '0644'
+        - name: Read nonsecret Windows review candidates across the filesystem boundary
+          ansible.builtin.slurp:
+            src: '{{ item.stat.path }}'
+          loop: '{{ windows_candidates.results }}'
+          register: review_bytes
+          loop_control: {label: '{{ item.item }}'}
+        - name: Publish review copies as the Windows owner, not as an elevated task
+          become: false
+          ansible.builtin.copy:
+            content: '{{ item.content | b64decode }}'
+            dest: '{{ windows_script_directory }}/candidate/{{ item.item.item }}'
+            mode: '0644'
+          loop: '{{ review_bytes.results }}'
+          loop_control: {label: '{{ item.item.item }}'}
+        - name: Publish task installer for explicit administrator use
+          become: false
+          ansible.builtin.copy:
+            src: install-task.ps1
+            dest: '{{ windows_script_directory }}/candidate/install-task.ps1'
+            mode: '0644'
+        - name: Write review manifest with immutable target and exact digests
+          become: false
+          ansible.builtin.copy:
+            dest: '{{ windows_script_directory }}/candidate/windows-files.json'
+            mode: '0644'
+            content: >-
+              {{ {"destination": windows_script_directory_windows,
+                  "files": [{"name": "attach-storage.ps1", "sha256": windows_candidates.results[0].stat.checksum},
+                            {"name": "request-storage.ps1", "sha256": windows_candidates.results[1].stat.checksum},
+                            {"name": "run-storage-hidden.vbs", "sha256": windows_candidates.results[2].stat.checksum}]} | to_nice_json }}
+        - name: Report exact lifecycle scope
+          ansible.builtin.debug:
+            msg:
+              - 'New Harbor -> entry -> three owned nodes; original kind remains protected.'
+              - 'Plan prepared candidates only. Installation and stop/start need maintenance authorization.'
+              - 'Windows one-time administrator installer: {{ windows_script_directory }}/candidate/install-task.ps1'
+              - 'Daily start never registers tasks or requests UAC.'
+        - name: Install reviewed files without activating boot
+          when: host_action == 'install'
+          block:
+            - name: Create private lifecycle rollback directory
+              ansible.builtin.file:
+                path: /mnt/sunmoon-data/backups/host
+                state: directory
+                mode: '0700'
+            - name: Allocate one distinct maintenance rollback receipt
+              ansible.builtin.tempfile:
+                path: /mnt/sunmoon-data/backups/host
+                state: directory
+                prefix: lifecycle-
+              register: rollback
+            - name: Read full restart policies and identities before modification
+              ansible.builtin.command:
+                argv: [docker, inspect, '{{ item }}', --format, '{{ "{{json .}}" }}']
+              loop: '{{ node_names + ["kind-control-plane", "kind-worker", "kind-worker2"] }}'
+              changed_when: false
+              register: node_rollback
+              no_log: true
+            - name: Save bounded identities and reversible restart policies
+              ansible.builtin.copy:
+                dest: '{{ rollback.path }}/nodes.json'
+                mode: '0600'
+                content: |
+                  {% set nodes = [] %}
+                  {% for item in node_rollback.results %}
+                  {% set node = item.stdout | from_json %}
+                  {% set _ = nodes.append({"id":node.Id,"name":node.Name,"running":node.State.Running,"policy":node.HostConfig.RestartPolicy}) %}
+                  {% endfor %}
+                  {{ nodes | to_nice_json }}
+            - name: Back up the actual existing service definitions
+              ansible.builtin.command:
+                argv: [cp, --preserve=mode, '--parents', '{{ item }}', '{{ rollback.path }}']
+              loop: [/etc/systemd/system/sunmoon-registry.service, /etc/systemd/system/sunmoon-entry.service, /etc/systemd/system/sunmoon-data-boot.service]
+              changed_when: true
+            - name: Show the bounded rollback directory
+              ansible.builtin.debug:
+                msg: 'Rollback receipt: {{ rollback.path }}; no containers or volumes are deleted.'
+            - name: Check physical growth reserve
+              ansible.builtin.include_tasks:
+                file: tasks/capacity.yaml
+                apply: {become: false}
+              vars:
+                capacity_planned_bytes: 16777216
+            - name: Create root owned worktree independent runtime
+              ansible.builtin.file:
+                path: '{{ host_runtime_dir }}'
+                state: directory
+                mode: '0755'
+            - name: Install native runtime inputs
+              ansible.builtin.copy:
+                src: '{{ candidate }}/{{ item }}'
+                dest: '{{ host_runtime_dir }}/{{ item }}'
+                remote_src: true
+                mode: '0755'
+              loop: [storage.py, check-nodes.sh, boot.sh]
+            - name: Install the read-only capacity helper independent of the worktree
+              ansible.builtin.copy:
+                src: windows-capacity.ps1
+                dest: '{{ host_runtime_dir }}/windows-capacity.ps1'
+                mode: '0644'
+            - name: Save exact restart-policy baseline for later boot activation
+              ansible.builtin.copy:
+                src: '{{ rollback.path }}/nodes.json'
+                dest: '{{ host_runtime_dir }}/node-policy-baseline.json'
+                remote_src: true
+                mode: '0600'
+            - name: Install immutable request path independently of the worktree
+              ansible.builtin.copy:
+                dest: '{{ host_runtime_dir }}/windows-request-path.txt'
+                content: '{{ windows_request_script }}'
+                mode: '0644'
+            - name: Install nonsecret storage identity
+              ansible.builtin.copy:
+                src: '{{ candidate }}/storage.json'
+                dest: '{{ host_runtime_dir }}/storage.json'
+                remote_src: true
+                mode: '0644'
+            - name: Read locked kubectl bytes
+              ansible.builtin.stat:
+                path: '{{ playbook_dir }}/../.tools/bin/kubectl'
+                checksum_algorithm: sha256
+              register: cli
+            - name: Require verified runtime tool
+              ansible.builtin.assert:
+                quiet: true
+                that: cli.stat.checksum == kubectl_package.sha256
+            - name: Install kubectl independent of worktree
+              ansible.builtin.copy:
+                src: '{{ playbook_dir }}/../.tools/bin/kubectl'
+                dest: '{{ host_runtime_dir }}/kubectl'
+                mode: '0755'
+            - name: Install native systemd lifecycle definitions
+              ansible.builtin.copy:
+                src: '{{ candidate }}/{{ item }}'
+                dest: '/etc/systemd/system/{{ item }}'
+                remote_src: true
+                mode: '0644'
+              loop: [sunmoon-cluster.service, sunmoon-platform.target, sunmoon-platform-boot.service]
+            - name: Create dedicated target dependency drop-in directories
+              ansible.builtin.file:
+                path: '/etc/systemd/system/{{ item }}.d'
+                state: directory
+                mode: '0755'
+              loop: [sunmoon-registry.service, sunmoon-entry.service]
+            - name: Attach existing native services to the unified target
+              ansible.builtin.copy:
+                dest: '/etc/systemd/system/{{ item }}.d/sunmoon-platform.conf'
+                mode: '0644'
+                content: |
+                  # Managed by infrastructure/host/lifecycle.yaml
+                  [Unit]
+                  PartOf=sunmoon-platform.target
+              loop: [sunmoon-registry.service, sunmoon-entry.service]
+            - name: Validate installed native unit definitions before reloading
+              ansible.builtin.command:
+                argv: [systemd-analyze, verify, /etc/systemd/system/sunmoon-cluster.service, /etc/systemd/system/sunmoon-platform-boot.service, /etc/systemd/system/sunmoon-platform.target]
+              changed_when: false
+            - name: Reload definitions without starting services
+              ansible.builtin.systemd_service:
+                daemon_reload: true
+    - name: Restore configured existing services without builds or source publication
+      when: host_action == 'start'
+      block:
+        - name: Read actual managed unit states before starting
+          ansible.builtin.command:
+            argv: [systemctl, is-active, sunmoon-registry.service, sunmoon-entry.service, sunmoon-cluster.service]
+          register: start_before
+          changed_when: false
+          failed_when: start_before.rc not in [0,3,4]
+        - name: Start the reviewed worktree independent sequence
+          ansible.builtin.command:
+            argv: [bash, '{{ host_runtime_dir }}/boot.sh', manual]
+          timeout: 900
+          changed_when: start_before.stdout_lines | unique | list != ["active"]
+
+    - name: Enable recovery only after the new administrator task has succeeded
+      when: host_action == 'enable-boot'
+      block:
+        - name: Read immutable Windows request path from installed runtime
+          ansible.builtin.slurp:
+            src: '{{ host_runtime_dir }}/windows-request-path.txt'
+          register: request_path
+        - name: Verify the task identity and complete a real attachment check
+          become: false
+          ansible.builtin.command:
+            argv: ['{{ windows_powershell }}', -NoProfile, -NonInteractive, -File, '{{ request_path.content | b64decode | trim }}']
+          timeout: 150
+          changed_when: false
+        - name: Recheck actual storage visibility before changing recovery policy
+          ansible.builtin.command:
+            argv: [/usr/bin/python3, '{{ host_runtime_dir }}/storage.py', check, '{{ host_runtime_dir }}/storage.json']
+          changed_when: false
+        - name: Require exact owned cluster nodes and mount identities
+          ansible.builtin.command:
+            argv: [bash, '{{ host_runtime_dir }}/check-nodes.sh', after]
+          changed_when: false
+        - name: Load approved container identities from installation rollback
+          ansible.builtin.slurp:
+            src: '{{ host_runtime_dir }}/node-policy-baseline.json'
+          register: policy_baseline
+        - name: Inspect exact container IDs before recovery policy changes
+          ansible.builtin.command:
+            argv: [docker, inspect, '{{ item.name }}', --format, '{{ "{{.Id}}" }}']
+          loop: '{{ policy_baseline.content | b64decode | from_json }}'
+          register: policy_ids
+          changed_when: false
+          loop_control: {label: '{{ item.name }}'}
+        - name: Refuse changing policy on replaced container names
+          ansible.builtin.assert:
+            quiet: true
+            that: item.stdout == item.item.id
+          loop: '{{ policy_ids.results }}'
+          loop_control: {label: '{{ item.item.name }}'}
+        - name: Give systemd exclusive restart ownership of new nodes and disable legacy auto-start
+          ansible.builtin.command:
+            argv: [docker, update, --restart=no, '{{ item }}']
+          loop: '{{ node_names + ["kind-control-plane", "kind-worker", "kind-worker2"] }}'
+          changed_when: true
+        - name: Disable the superseded one-shot data checker without removing its rollback files
+          ansible.builtin.systemd_service:
+            name: sunmoon-data-boot.service
+            enabled: false
+        - name: Enable the one bounded WSL recovery sequence without starting it now
+          ansible.builtin.systemd_service:
+            name: sunmoon-platform-boot.service
+            enabled: '{{ host_boot_enabled | bool }}'

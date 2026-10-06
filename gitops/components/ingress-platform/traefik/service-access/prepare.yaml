@@ -1,0 +1,41 @@
+---
+- name: Require bounded internal TLS hostnames
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - service_access_hosts.casdoor == 'casdoor-tls.' + app_namespace + '.svc.cluster.local'
+      - service_access_hosts.knowledge == 'knowledge-tls.' + app_namespace + '.svc.cluster.local'
+      - services_ingress_enabled | bool and services_casdoor_enabled | bool
+- name: Create service transport candidate directory
+  ansible.builtin.file: {path: '{{ build }}/ingress-platform/traefik/service-access', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+- name: Prepare an independent recoverable internal TLS certificate
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ services_config_dir }}/service-access'
+    tls_backup_dir: '{{ services_backup_dir }}/service-access'
+    tls_declaration: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/tls.sops.yaml'
+    tls_hostnames: '{{ service_access_hosts.values() | list }}'
+- name: Render the cluster-local HTTPS routing objects
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/workload.yaml.j2'
+    dest: '{{ build }}/ingress-platform/traefik/service-access/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+- name: Encrypt the internal TLS identity for Traefik only
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: ingress-platform/traefik/service-access/tls.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: service-access-tls, namespace: '{{ app_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+  no_log: true
+- name: Render explicit service access resource list
+  ansible.builtin.copy:
+    dest: '{{ build }}/ingress-platform/traefik/service-access/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":["workload.yaml","tls.sops.yaml"]} | to_nice_yaml }}'

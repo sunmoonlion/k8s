@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: '{{ application_name }}-service-provision-{{ cfg.knowledge_service.job_revision }}', namespace: {{ app_namespace }}}
+data:
+  provision.py: |
+{{ lookup('template', mechanism_root + '/service-identity/provision.py.j2') | regex_replace('\n+$', '') | indent(4, true) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: {{ application_name }}-service-provision-out, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-service-provision}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ ingress_namespace }}}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: 8443}]
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: '{{ application_name }}-service-identity-{{ cfg.knowledge_service.job_revision }}', namespace: {{ app_namespace }}}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: {{ application_name }}-service-provision, app.kubernetes.io/part-of: {{ application_name }}}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: {{ registry_address }}/platform/{{ app_images.backend.repository }}@{{ app_images.backend.digest }}
+          imagePullPolicy: IfNotPresent
+          command: [python, /script/provision.py]
+          env:
+            - {name: CASDOOR_INTERNAL_ENDPOINT, value: 'https://{{ service_access_hosts.casdoor }}'}
+            - {name: CASDOOR_ORIGIN, value: 'https://{{ casdoor_hostname }}:30443'}
+            - {name: CASDOOR_ORGANIZATION, value: '{{ cfg.knowledge_service.organization }}'}
+            - name: SERVICE_DEFINITION
+              value: {{ cfg.knowledge_service | to_json | to_json }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          volumeMounts:
+            - {name: script, mountPath: /script, readOnly: true}
+            - {name: admin, mountPath: /run/admin, readOnly: true}
+            - {name: app, mountPath: /run/app, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: script, configMap: {name: '{{ application_name }}-service-provision-{{ cfg.knowledge_service.job_revision }}'}}
+        - {name: admin, secret: {secretName: casdoor-initial-identity, items: [{key: init_data.json, path: init_data.json}], defaultMode: 0440}}
+        - {name: app, secret: {secretName: {{ application_name }}-service-provision, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

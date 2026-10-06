@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "platform": "linux/amd64",
+  "scope": "HAProxy and official skopeo stable runtime archives",
+  "files": [
+    {
+      "id": "haproxy",
+      "path": "host/entry/images/haproxy-5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272.tar",
+      "size_bytes": 47199232,
+      "sha256": "01503c17ebc0f15f2bcbcc48de5c324a89fdc29889287c8bd01bd457c21450d2",
+      "source": "docker.io/library/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272",
+      "config_digest": "sha256:c6f9accb39104d084a2e8012cdfc52f2a69db18790bf04e981cd6bbc8ea7c624",
+      "layers": 6,
+      "manifest_digest": "sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272"
+    },
+    {
+      "id": "skopeo",
+      "path": "shared/tools/images/skopeo-9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99.tar",
+      "size_bytes": 88901120,
+      "sha256": "78c4d7c6a7360b06879de50448094d246153feea6055828cd87a3636d22255ab",
+      "source": "quay.io/skopeo/stable@sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99",
+      "config_digest": "sha256:5ef1074715887af7ae6fc9c61dd266b1dbcc574a102afe0f3293efa0e1cd579a",
+      "layers": 6,
+      "manifest_digest": "sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99"
+    }
+  ],
+  "material_layout": "component-owned-v1"
+}

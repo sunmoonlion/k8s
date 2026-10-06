@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: ragflow-storage-policy-v6, namespace: data-platform-dev}
+data:
+  policy.json: |
+    {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": ["s3:GetBucketLocation", "s3:ListBucket", "s3:ListBucketMultipartUploads", "s3:ListBucketVersions"], "Resource": ["arn:aws:s3:::ragflow-derived"]}, {"Effect": "Allow", "Action": ["s3:GetObject", "s3:GetObjectVersion", "s3:PutObject", "s3:DeleteObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts", "s3:DeleteObjectVersion"], "Resource": ["arn:aws:s3:::ragflow-derived/*"]}]}
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: 'ragflow-storage-v6', namespace: data-platform-dev}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: 'ragflow-storage-provision', sunmoonai.com/object-storage-client: 'true'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: harbor.sunmoonai.com:30443/platform/aistor-mc@sha256:d108717a4a6d684586f392406caca8d57f94d9e5acb515db61bca2da72d6f2ba
+          imagePullPolicy: IfNotPresent
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              umask 0077
+              mkdir -p /work/client/certs/CAs
+              cp /run/auth/config.json /work/client/config.json
+              cp /run/auth/ca.crt /work/client/certs/CAs/platform.crt
+              mc() {
+                /usr/bin/mc --config-dir /work/client --json "$@" >/work/result.json 2>/work/error.log || return 1
+                # AIStor mc can emit JSON status=error with process exit 0.
+                # Official minimal client image has no grep/jq; use POSIX shell.
+                case "$(cat /work/result.json)" in
+                  *'"status": "error"'*|*'"status":"error"'*) return 1 ;;
+                esac
+              }
+              if ! mc admin user info owned 'ragflow_storage'; then
+                # The supported piped-input form avoids putting credentials in argv.
+                { cat /run/auth/user; printf '\n'; cat /run/auth/password; printf '\n'; } | mc admin user add owned
+              fi
+              mc admin policy create owned 'ragflow-derived' /run/policy/policy.json
+              mc admin policy attach owned 'ragflow-derived' --user 'ragflow_storage'
+              mc mb --ignore-existing 'owned/ragflow-derived'
+              mc version enable 'owned/ragflow-derived'
+              mc ls 'application/ragflow-derived'
+              if mc admin info application; then
+                printf 'Unexpected management permission\n' >&2; exit 1
+              fi
+              case "$(cat /work/result.json /work/error.log)" in
+                *AccessDenied*|*'Access Denied'*) : ;;
+                *) printf 'Management rejection was not AccessDenied\\n' >&2; exit 1 ;;
+              esac
+              printf '{"bucket":"ragflow-derived","user":"ragflow_storage","versioning_enabled":true,"management_denied":true}\n'
+          env: [{name: HOME, value: /work}, {name: NO_PROXY, value: '*'}]
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 20m, memory: 64Mi}, limits: {cpu: 500m, memory: 256Mi}}
+          volumeMounts:
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: policy, mountPath: /run/policy, readOnly: true}
+            - {name: work, mountPath: /work}
+      volumes:
+        - {name: auth, secret: {secretName: 'ragflow-storage-provision', defaultMode: 0440}}
+        - {name: policy, configMap: {name: 'ragflow-storage-policy-v6'}}
+        - {name: work, emptyDir: {sizeLimit: 16Mi}}

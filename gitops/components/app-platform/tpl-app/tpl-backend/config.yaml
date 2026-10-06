@@ -1,0 +1,33 @@
+# 后端数据库、迁移任务、私有路径和容量预算；秘密不入此文件。
+---
+tpl_backend_deployment:
+  database: tpl
+  database_runtime_user: tpl_runtime
+  database_migrator_user: tpl_migrator
+  database_bootstrap_revision: v2
+  migration_job_revision: v1
+  expected_schema_revision: '20260911_0003'
+  private_dir: /etc/sunmoon/applications/sunmoon-kind/tpl
+  backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/tpl
+  deploy_budget_bytes: 2147483648
+  redis_user: tpl_runtime
+  redis_key_pattern: 'tpl:*'
+  redis_identity_revision: v3
+  rabbitmq_user: tpl_runtime
+  rabbitmq_vhost: tpl
+  rabbitmq_queue: tpl.default
+  rabbitmq_identity_revision: v2
+  identity_organization: built-in
+  identity_revision: v2
+  api_port: 8000
+  api_replicas: 1
+  worker_replicas: 1
+  worker_concurrency: 2
+  scheduler_replicas: 1
+  resources:
+    api: {requests: {cpu: 100m, memory: 192Mi}, limits: {cpu: '2', memory: 768Mi}}
+    worker: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: '2', memory: 1Gi}}
+    scheduler: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
+  # RabbitMQ 4.3不允许非持久非独占队列；Celery控制/事件队列随连接退出。
+  celery_control_queue_exclusive: true
+  celery_event_queue_exclusive: true

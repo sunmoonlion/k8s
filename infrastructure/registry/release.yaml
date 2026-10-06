@@ -1,0 +1,23 @@
+---
+# Release choices; site values cannot override images or resource policy.
+certificate_days: 1825
+ca_days: 3650
+services:
+  log: {image_id: harbor-log, memory: 128m, cpus: 0.5}
+  registry: {image_id: registry-photon, memory: 512m, cpus: 1}
+  registryctl: {image_id: harbor-registryctl, memory: 256m, cpus: 0.5}
+  postgresql: {image_id: harbor-db, memory: 2g, cpus: 2}
+  core: {image_id: harbor-core, memory: 512m, cpus: 1}
+  portal: {image_id: harbor-portal, memory: 128m, cpus: 0.5}
+  jobservice: {image_id: harbor-jobservice, memory: 512m, cpus: 1}
+  redis: {image_id: valkey-photon, memory: 256m, cpus: 0.5}
+  proxy: {image_id: nginx-photon, memory: 128m, cpus: 0.5}
+  trivy-adapter: {image_id: trivy-adapter-photon, memory: 1g, cpus: 1}
+
+# Use the health checks already provided by the pinned official images.
+readiness_dependencies:
+  registry: [redis]
+  core: [postgresql, redis, registry]
+  jobservice: [core]
+  proxy: [core, portal, registry]
+  trivy-adapter: [redis]

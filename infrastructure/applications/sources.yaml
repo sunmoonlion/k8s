@@ -1,0 +1,35 @@
+# Fixed parent gitlinks; reviewed local backend descendants are built through the native chain.
+---
+applications:
+  tpl:
+    parent_revision: 3317c84d984fdd6dbeb4ab490685f9fcdff569a3
+    backend_parent_revision: 6674125cd1c14d9700c707b0b0f4b5d422d42f05
+    backend_revision: e907b65d86bf60e27fce18ebc71b854966504f69
+    web_parent_revision: 45ceed1a147cadb6dfd1b8a72b79ff5a266854bd
+    web_revision: 0be8020ca14dc28123c8e212cf7f8f660ed16e99
+    admin_parent_revision: ee1f542220386e15c8f97c6e40e317caf3c2e9e7
+    admin_revision: 9cce66c90d0b720867a318a45b4ca0c19adc1b16
+  info:
+    parent_revision: 244f724dce91d373bd6dd35362d471c565ebf7a9
+    backend_parent_revision: e5156a0bfc0d5ca9118128427dcacb69697a0737
+    backend_revision: a4b6f59b99f7ef6dc48b346803560e6b2ceeb0a7
+    web_parent_revision: a07af307c63ee16204d82afa0a0b7b2d3d22bb3c
+    web_revision: c7e19a41bb6eba03dc9a5021ee6de14f4e005922
+    admin_parent_revision: 90e4ab00fc209323d1670743d83ae1369a7b8d82
+    admin_revision: 38d5b05aaca851a268f369b36bd4d2e7468b297b
+  knowledge:
+    parent_revision: b4e6f66624e91b2dbc720cdcc9615b0c73dbb349
+    backend_parent_revision: 4d9804c3d5f4084b83bdb00ba49cbf0f8b5cbb55
+    backend_revision: 5732eab2e6e25eb225fbad4249ae01c0178fdb89
+    web_parent_revision: 8e8d016b4cea7239ae6a13130036924132c63d75
+    web_revision: b1b45963723bdc9299bf3391afc8eeabab428927
+    admin_parent_revision: 6634a4c64e297c0dbbd2d0c8fa82c1195d068f67
+    admin_revision: 0e1edbf534048518e03bc6654447dfce6cb9ac97
+  investment:
+    parent_revision: b66223cf89092ac4056c523358763f5cf2500b1a
+    backend_parent_revision: abddf477fa44c525921ab1a7f48a87a8a7c749f9
+    backend_revision: 13539aa2f5cdcb79e7c670adb82ac88747d0d5b6
+    web_parent_revision: 32265f705dfec6324691873fac97461f80270e06
+    web_revision: 745dfe697eca3d7aee746b782024d8f454f44c78
+    admin_parent_revision: 2e1f5c67d583be02b43eb36d1052f5b4ad177f45
+    admin_revision: ac58e290acba0822eef9ba84df9cf1387ca564d5

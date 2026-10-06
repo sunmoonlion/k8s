@@ -1,0 +1,16 @@
+appname = casdoor
+httpport = 8000
+runmode = prod
+copyrequestbody = true
+driverName = postgres
+dataSourceName = "user={{ casdoor_database_user }} password={{ service_credentials.casdoor_db_password }} host=postgresql.{{ data_namespace }}.svc.cluster.local port=5432 sslmode=disable dbname={{ casdoor_database }}"
+dbName = {{ casdoor_database }}
+showSql = false
+origin = https://{{ casdoor_hostname }}:30443
+originFrontend = https://{{ casdoor_hostname }}:30443
+staticBaseUrl = ""
+socks5Proxy = ""
+frontendBaseDir = "/web/build"
+logConfig = {"filename":"/dev/stdout","rotate":false}
+initDataFile = "{{ '/bootstrap/init_data.json' if initializing else '' }}"
+initDataNewOnly = false

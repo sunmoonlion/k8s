@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service
+metadata: {name: flower, namespace: ops-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: flower}
+  ports: [{name: http, port: 5555, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: flower, namespace: ops-platform-dev}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector: {matchLabels: {app.kubernetes.io/name: flower}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: flower, sunmoonai.com/rabbitmq-client: 'true'}
+      annotations: {sunmoonai.com/input-sha256: 'ade1589f989146896ea2bd2c946ef28db326dee3a4329451229a77d283d58189'}
+    spec:
+      serviceAccountName: platform-runtime
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: flower
+          image: harbor.sunmoonai.com:30443/platform/flower@sha256:fd1e564ea8b8f02ec7224f3600216940ced5cf329d07c8c91511d0497d12d33c
+          imagePullPolicy: IfNotPresent
+          args: ['--port=5555', '--address=0.0.0.0']
+          envFrom: [{secretRef: {name: flower-auth}}]
+          ports: [{name: http, containerPort: 5555}]
+          startupProbe: {tcpSocket: {port: http}, periodSeconds: 5, failureThreshold: 60}
+          readinessProbe: {tcpSocket: {port: http}, periodSeconds: 10, timeoutSeconds: 3}
+          livenessProbe: {tcpSocket: {port: http}, periodSeconds: 20, timeoutSeconds: 3}
+          resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {sizeLimit: 32Mi}}]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: flower
+  namespace: ops-platform-dev
+  annotations: {kubernetes.io/ingress.class: sunmoon}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: 'Host(`flower.sunmoonai.com`)'
+      services: [{name: flower, port: http, scheme: http}]
+  tls: {secretName: flower-tls}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: flower-ingress, namespace: ops-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: flower}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: 'ingress-platform-dev'}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: 5555}]

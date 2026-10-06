@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: info-redis-runtime
+    namespace: app-platform-dev
+stringData:
+    REDIS_USER: ENC[AES256_GCM,data:nyfxwbYJa5NEXwde,iv:4sAQASRlk7bg2uMSsLlhRNYVEDWGQTer0yPTWuEkNk4=,tag:Z6FNstKOXDSDvLhk5djDJA==,type:str]
+    REDIS_PASSWORD: ENC[AES256_GCM,data:3Gyqd22VHNIkfnnIREtwULmn1sIV5Ughw8yBgeNFn2sC6OR6IeWOfw==,iv:H+FWdKIjJLlaI4Bnb+TJ9qKB58J1jbQec40082K4QTg=,tag:22iWDMSLx5jSfTCo5FMn9g==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBYUUtzeWUzNDdGUUt6bmtp
+            NE9RVXFORmNwZkxMMk5nNjBtNDlIVzB2S0hZCmVUR21vUmhuOE91ekJBdzFLcVJ3
+            NW82Q0ZiZzVteHNIRm1qc0FSc2J2ZlEKLS0tIDdSN0szdVF4OEwvV0F1TDRJWWFB
+            K2dYZlRFTG5QY1ROVFA4cExnbmdoVmMK57AjTnKOcwaAGLO+OR8afCLDAeBx6buM
+            lhEAL8cTi09fH1uEnIf+fzUvBO4kgqjVfDYY/aVVqC/7GooWPOudXA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T13:45:43Z"
+    mac: ENC[AES256_GCM,data:5PkXseKaMoV38cH2ui8/SvYgFefga7luJh/kQjA5pXHJEcvBUEAfpCEtgqECW8L606blc9kmSSwtrX18oZ1SXDpsf2H4TAeZ0e70z8GKAjt5xdoImomlHy1bd5F5oYq9CFtz6sBN+orLhcpqDSAJK0qvkLRF4hx0HpyBdm0W5G0=,iv:DhMERAKQ76io/hB2gp75eFeyZsXXSgTZnxzTW+mD/r0=,tag:0JxH8xwAb5DFdJlgDcrzYA==,type:str]
+    version: 3.13.3

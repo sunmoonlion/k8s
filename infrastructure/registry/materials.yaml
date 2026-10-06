@@ -1,0 +1,209 @@
+---
+- name: Prepare official Harbor installer and offline images without starting services
+  hosts: kind_hosts
+  gather_facts: false
+  become: false
+  vars:
+    capacity_operation: harbor-materials
+    file_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    package_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/harbor-package-files.lock.json") | from_json }}'
+    harbor_images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/harbor-offline-images.lock.json") | from_json }}'
+    installer: '{{ file_lock.files | selectattr("id", "equalto", "harbor-installer") | first }}'
+    tool_directory: '{{ playbook_dir }}/../.tools/harbor/{{ installer.version }}'
+  tasks:
+    - name: Require verified input lock agreement
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - ansible_version.full == '2.21.4'
+          - installer.sha256 == harbor_images.installer_sha256
+          - installer.sha256 == package_lock.installer_sha256
+          - package_lock.files | length == 6
+          - harbor_images.images | length == 12
+          - installer.version is match('^v[0-9.]+$')
+
+    - name: Check the full installer package
+      ansible.builtin.stat:
+        path: '{{ artifact_cache_root }}/{{ installer.path }}'
+        follow: false
+        checksum_algorithm: sha256
+      register: package
+
+    - name: Require original package bytes
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - package.stat.isreg | default(false)
+          - package.stat.checksum | default('') == installer.sha256
+          - package.stat.size | default(0) == installer.size_bytes
+
+    - name: Inspect installation directories without following symlinks
+      ansible.builtin.stat:
+        path: '{{ item }}'
+        follow: false
+      loop:
+        - '{{ playbook_dir }}/../.tools'
+        - '{{ playbook_dir }}/../.tools/harbor'
+        - '{{ tool_directory }}'
+        - '{{ tool_directory }}/harbor'
+      register: directories
+
+    - name: Reject unsafe installation directories
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.exists or item.stat.isdir | default(false)
+          - not item.stat.islnk | default(false)
+      loop: '{{ directories.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Inspect existing official package members
+      ansible.builtin.stat:
+        path: '{{ tool_directory }}/{{ item.path }}'
+        follow: false
+        checksum_algorithm: sha256
+      loop: '{{ package_lock.files }}'
+      register: members
+      loop_control:
+        label: '{{ item.path }}'
+
+    - name: Refuse to overwrite modified official files
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.exists or item.stat.isreg | default(false)
+          - not item.stat.islnk | default(false)
+          - not item.stat.exists or item.stat.checksum | default('') == item.item.sha256
+      loop: '{{ members.results }}'
+      loop_control:
+        label: '{{ item.item.path }}'
+
+    - name: Inspect existing official image tags
+      ansible.builtin.command:
+        argv: [docker, image, ls, --quiet, --no-trunc, '--filter', 'reference={{ item.archive_reference.split("@")[0] | regex_replace("^docker.io/", "") }}:{{ installer.version }}']
+      changed_when: false
+      loop: '{{ harbor_images.images }}'
+      register: image_tags
+      loop_control:
+        label: '{{ item.id }}'
+
+    - name: Refuse to replace different images at the official tags
+      ansible.builtin.assert:
+        quiet: true
+        that: item.stdout | trim in ['', item.item.archive_manifest_digest]
+        fail_msg: Existing Harbor tag has a different identity; do not overwrite it automatically.
+      loop: '{{ image_tags.results }}'
+      loop_control:
+        label: '{{ item.item.id }}'
+
+    - name: Set this invocation capacity budget
+      ansible.builtin.set_fact:
+        preparation_bytes: '{{ 6442450944 if ((members.results | rejectattr("stat.exists") | list | length > 0) or (image_tags.results | selectattr("stdout", "equalto", "") | list | length > 0)) else 0 }}'
+
+    - name: Budget installation and image loading only when needed
+      ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+      vars:
+        capacity_planned_bytes: '{{ preparation_bytes }}'
+
+    - name: Locate Docker storage
+      ansible.builtin.command:
+        argv: [docker, info, '--format', '{{ "{{.DockerRootDir}}" }}']
+      changed_when: false
+      register: docker_root
+
+    - name: Read workspace and Docker filesystem capacity
+      ansible.builtin.command:
+        argv: [df, -B1, '--output=avail', '{{ item }}']
+      changed_when: false
+      loop: ['{{ playbook_dir }}/..', '{{ docker_root.stdout | trim }}']
+      register: local_capacity
+
+    - name: Require capacity on both filesystems
+      ansible.builtin.assert:
+        quiet: true
+        that: item.stdout_lines[-1] | trim | int >= preparation_bytes | int
+      loop: '{{ local_capacity.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Create a versioned official installation directory
+      ansible.builtin.file:
+        path: '{{ tool_directory }}'
+        state: directory
+        mode: '0755'
+
+    - name: Extract the checksum-verified official installer without executing it
+      ansible.builtin.unarchive:
+        src: '{{ artifact_cache_root }}/{{ installer.path }}'
+        dest: '{{ tool_directory }}'
+        remote_src: true
+      when: members.results | rejectattr('stat.exists') | list | length > 0
+
+    - name: Verify installed official files
+      ansible.builtin.stat:
+        path: '{{ tool_directory }}/{{ item.path }}'
+        follow: false
+        checksum_algorithm: sha256
+      loop: '{{ package_lock.files }}'
+      register: extracted
+      loop_control:
+        label: '{{ item.path }}'
+
+    - name: Require exact extracted bytes
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.stat.isreg | default(false)
+          - item.stat.checksum | default('') == item.item.sha256
+          - item.stat.size | default(0) == item.item.size_bytes
+      loop: '{{ extracted.results }}'
+      loop_control:
+        label: '{{ item.item.path }}'
+
+    - name: Verify all archive manifests, configs and image layers before loading
+      ansible.builtin.command:
+        argv: [/usr/bin/python3, '{{ playbook_dir }}/../artifacts/verify-oci-archive.py', '{{ tool_directory }}/{{ harbor_images.inner_archive }}', --harbor-lock, '{{ playbook_dir }}/../artifacts/harbor-offline-images.lock.json']
+      changed_when: false
+      register: archive_check
+
+    - name: Load official offline images without launching containers
+      ansible.builtin.command:
+        argv: [docker, image, load, --input, '{{ tool_directory }}/{{ harbor_images.inner_archive }}']
+      changed_when: true
+      when: image_tags.results | selectattr('stdout', 'equalto', '') | list | length > 0
+
+    - name: Inspect the loaded image identities
+      ansible.builtin.command:
+        argv: [docker, image, inspect, '{{ item.archive_reference.split("@")[0] }}:{{ installer.version }}']
+      changed_when: false
+      loop: '{{ harbor_images.images }}'
+      register: loaded
+      loop_control:
+        label: '{{ item.id }}'
+
+    - name: Require the official archive identities after import
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - (item.stdout | from_json)[0].Descriptor.digest == item.item.archive_manifest_digest
+          - (item.stdout | from_json)[0].Os == 'linux'
+          - (item.stdout | from_json)[0].Architecture == 'amd64'
+      loop: '{{ loaded.results }}'
+      loop_control:
+        label: '{{ item.item.id }}'
+
+    - name: Recheck physical growth reserve
+      ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+      vars:
+        capacity_planned_bytes: 0
+
+    - name: Report material readiness without claiming service installation
+      ansible.builtin.debug:
+        msg:
+          official_directory: '{{ tool_directory }}/harbor'
+          verified_images: '{{ loaded.results | length }}'
+          services_started: false
+          entrypoint_changed: false
+          warning: Do not invoke install.sh; it contains compose down -v. Service configuration and lifecycle must use the official prepare tool and explicit compose actions.

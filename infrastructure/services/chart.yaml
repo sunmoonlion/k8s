@@ -1,0 +1,98 @@
+---
+- name: Publish and verify the locked official ingress chart
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    capacity_operation: services-materials
+    files: '{{ lookup("file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    chart: '{{ files.files | selectattr("id", "equalto", "traefik-chart") | first }}'
+    helm_package: '{{ files.files | selectattr("id", "equalto", "helm") | first }}'
+    helm: '{{ playbook_dir }}/../.tools/bin/helm'
+    chart_url: 'oci://{{ registry_address }}/platform/charts/traefik'
+  environment:
+    HTTP_PROXY: ''
+    HTTPS_PROXY: ''
+    ALL_PROXY: ''
+    NO_PROXY: '{{ registry_hostname }},127.0.0.1,localhost'
+  tasks:
+    - name: Verify local chart and Helm identities
+      ansible.builtin.stat:
+        path: '{{ item.path }}'
+        follow: false
+        checksum_algorithm: sha256
+      loop:
+        - {path: '{{ artifact_cache_root }}/{{ chart.path }}', sha256: '{{ chart.sha256 }}'}
+        - {path: '{{ helm }}', sha256: '{{ helm_package.archive_members[0].sha256 }}'}
+      register: bytes
+    - name: Require original regular files
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.stat.isreg | default(false)
+          - not item.stat.islnk | default(false)
+          - item.stat.checksum == item.item.sha256
+      loop: '{{ bytes.results }}'
+      loop_control: {label: '{{ item.item.path }}'}
+    - name: Budget chart publication
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      vars: {capacity_planned_bytes: 8388608}
+    - name: Allocate private chart inspection directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: sunmoon-chart-
+      register: staging
+    - block:
+        - name: Inspect existing chart using pull-only identity
+          ansible.builtin.command:
+            argv: ['{{ helm }}', pull, '{{ chart_url }}', --version, '{{ chart.version }}', --destination, '{{ staging.path }}', --registry-config, '{{ registry_config_dir }}/private/puller-auth.json', --ca-file, '{{ registry_config_dir }}/clients/ca.crt']
+          changed_when: false
+          failed_when: false
+          register: prior
+          no_log: true
+        - name: Refuse authentication or transport errors as evidence of absence
+          ansible.builtin.assert:
+            quiet: true
+            that: prior.rc == 0 or 'not found' in prior.stderr or '404' in prior.stderr
+          no_log: true
+        - name: Publish only an absent locked chart version
+          ansible.builtin.command:
+            argv: ['{{ helm }}', push, '{{ artifact_cache_root }}/{{ chart.path }}', 'oci://{{ registry_address }}/platform/charts', --registry-config, '{{ registry_config_dir }}/private/publisher-auth.json', --ca-file, '{{ registry_config_dir }}/clients/ca.crt']
+          when: prior.rc != 0
+          changed_when: true
+          no_log: true
+        - name: Pull back the published chart through the read-only identity
+          ansible.builtin.command:
+            argv: ['{{ helm }}', pull, '{{ chart_url }}', --version, '{{ chart.version }}', --destination, '{{ staging.path }}', --registry-config, '{{ registry_config_dir }}/private/puller-auth.json', --ca-file, '{{ registry_config_dir }}/clients/ca.crt']
+          changed_when: false
+          register: pulled
+          no_log: true
+        - name: Hash the complete returned chart
+          ansible.builtin.stat:
+            path: '{{ staging.path }}/traefik-{{ chart.version }}.tgz'
+            checksum_algorithm: sha256
+          register: returned
+        - name: Require the original chart and immutable manifest identity
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - returned.stat.checksum == chart.sha256
+              - (pulled.stderr + pulled.stdout) | regex_findall('sha256:[a-f0-9]{64}') | length == 1
+        - name: Prepare chart source candidate location
+          ansible.builtin.file:
+            path: '{{ playbook_dir }}/../.build/components'
+            state: directory
+            owner: '{{ cluster_operator }}'
+            mode: '0755'
+        - name: Save the verified public source candidate
+          ansible.builtin.copy:
+            dest: '{{ playbook_dir }}/../.build/components/chart-source.yaml'
+            content: |
+              {{ {'url':chart_url,'digest':((pulled.stderr + pulled.stdout) | regex_findall('sha256:[a-f0-9]{64}') | first), 'chart_sha256':chart.sha256, 'version':chart.version} | to_nice_yaml }}
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+      always:
+        - name: Remove this invocation chart staging
+          ansible.builtin.file: {path: '{{ staging.path }}', state: absent}

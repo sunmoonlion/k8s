@@ -1,0 +1,76 @@
+---
+- name: Validate the pgAdmin browser endpoint
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_ingress_enabled | bool and traefik_crd_enabled | bool
+      - services_postgresql_enabled | bool
+      - pgadmin_origin | urlsplit('scheme') == 'https'
+      - pgadmin_origin | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
+      - pgadmin_origin | urlsplit('port') | int == entry_port | int
+      - pgadmin_origin | urlsplit('username') == None
+      - pgadmin_origin | urlsplit('path') == ''
+      - pgadmin_origin | urlsplit('query') == '' and pgadmin_origin | urlsplit('fragment') == ''
+      - pgadmin_port | int == 5050
+      - pgadmin_volume.uid == 5050 and pgadmin_volume.gid == 5050
+      - image_map.pgadmin.source is search('pgadmin4:')
+- name: Read the optional pgAdmin administrator preset without changing an existing account
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../host/tasks/account-preset.yaml'
+  vars: {human_account: '{{ operator_account_pgadmin }}'}
+  no_log: true
+- name: Prepare a recoverable pgAdmin login
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: pgadmin
+    component_input_manifest: ops-platform/pgadmin/auth.sops.yaml
+    component_initial_input:
+      username: '{{ operator_account_pgadmin.username }}'
+      password: '{{ platform_admin_initials.get("ops-platform/pgadmin") or lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+  no_log: true
+- name: Keep pgAdmin credential only in memory
+  ansible.builtin.set_fact: {pgadmin_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Require the mapped email and policy-compliant password
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - pgadmin_credentials.username == operator_account_pgadmin.username
+      - pgadmin_credentials.password | length >= operator_account_pgadmin.minimum_length | int
+      - pgadmin_credentials.password | length <= operator_account_pgadmin.maximum_length | int
+      - pgadmin_credentials.password is not search('[\r\n\x00]')
+  no_log: true
+- name: Prepare a separate pgAdmin TLS identity with non-overwritten backup
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ services_config_dir }}/pgadmin'
+    tls_backup_dir: '{{ services_backup_dir }}/pgadmin'
+    tls_declaration: '{{ playbook_dir }}/../../gitops/components/ops-platform/pgadmin/tls.sops.yaml'
+    tls_hostnames: ['{{ pgadmin_origin | urlsplit("hostname") }}']
+- name: Encrypt pgAdmin login and browser TLS
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  loop:
+    - file: ops-platform/pgadmin/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: pgadmin-auth, namespace: '{{ ops_namespace }}'}
+        stringData: {PGADMIN_DEFAULT_EMAIL: '{{ pgadmin_credentials.username }}', PGADMIN_DEFAULT_PASSWORD: '{{ pgadmin_credentials.password }}'}
+    - file: ops-platform/pgadmin/tls.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: pgadmin-tls, namespace: '{{ ops_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+  loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
+  no_log: true
+- name: Derive the pgAdmin rollout identity
+  ansible.builtin.set_fact:
+    pgadmin_input_digest: '{{ [pgadmin_credentials.username, pgadmin_origin] | to_json | hash("sha256") }}'
+  no_log: true
+- name: Render the pgAdmin runtime candidate
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/ops-platform/pgadmin/workload.yaml.j2'
+    dest: '{{ build }}/ops-platform/pgadmin/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'

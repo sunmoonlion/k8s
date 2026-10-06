@@ -1,0 +1,70 @@
+---
+# Large public database/model blobs use bounded, resumable HTTPS transfers.
+- name: Inspect this locked file partial download
+  ansible.builtin.stat:
+    path: '{{ artifact_cache_root }}/{{ resumable.item.path }}.part'
+    follow: false
+    get_checksum: false
+  register: partial_file
+
+- name: Reject linked or oversized partial files
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not partial_file.stat.exists or (partial_file.stat.isreg | default(false) and not partial_file.stat.islnk | default(false))
+      - not partial_file.stat.exists or partial_file.stat.size <= resumable.item.size_bytes
+
+- name: Resume the exact public blob with a bounded connection lifetime
+  ansible.builtin.command:
+    argv:
+      - curl
+      - --fail
+      - --silent
+      - --show-error
+      - --location
+      - --proto
+      - '=https'
+      - --proto-redir
+      - '=https'
+      - --connect-timeout
+      - '15'
+      - --max-time
+      - '{{ 900 if resumable.item.kind == "model" else 180 }}'
+      - --continue-at
+      - '-'
+      - --output
+      - '{{ artifact_cache_root }}/{{ resumable.item.path }}.part'
+      - '{{ resumable.item.url }}'
+  register: resumed_transfer
+  changed_when: true
+  retries: 2
+  delay: 3
+  until: resumed_transfer.rc == 0
+  when: not partial_file.stat.exists or partial_file.stat.size < resumable.item.size_bytes
+
+- name: Verify complete partial file before publishing it
+  ansible.builtin.stat:
+    path: '{{ artifact_cache_root }}/{{ resumable.item.path }}.part'
+    follow: false
+    checksum_algorithm: sha256
+  register: completed_partial
+
+- name: Require exact locked content
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - completed_partial.stat.isreg | default(false)
+      - not completed_partial.stat.islnk | default(false)
+      - completed_partial.stat.size == resumable.item.size_bytes
+      - completed_partial.stat.checksum == resumable.item.sha256
+    fail_msg: Completed file differs from the lock; retained .part for inspection, not installed.
+
+- name: Set public material file permissions
+  ansible.builtin.file:
+    path: '{{ artifact_cache_root }}/{{ resumable.item.path }}.part'
+    mode: '0644'
+
+- name: Publish verified material without replacing an existing file
+  ansible.builtin.command:
+    argv: [mv, --no-clobber, --no-target-directory, '{{ artifact_cache_root }}/{{ resumable.item.path }}.part', '{{ artifact_cache_root }}/{{ resumable.item.path }}']
+  changed_when: true

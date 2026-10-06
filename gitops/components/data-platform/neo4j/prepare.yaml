@@ -1,0 +1,74 @@
+---
+- name: Validate the owned Neo4j profile
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - neo4j_volume.uid == 7474 and neo4j_volume.gid == 7474
+      - neo4j_https_port == 7473 and neo4j_bolt_port == 7687
+      - image_map.neo4j.source is search('community-trixie$')
+- name: Read the optional Neo4j administrator preset without changing an existing account
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../host/tasks/account-preset.yaml'
+  vars: {human_account: '{{ operator_account_neo4j }}'}
+  no_log: true
+- name: Prepare a distinct recoverable graph administrator
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: neo4j
+    component_input_manifest: data-platform/neo4j/auth.sops.yaml
+    component_initial_input:
+      username: neo4j
+      password: '{{ platform_admin_initials.get("data-platform/neo4j") or lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+  no_log: true
+- name: Keep graph credential only in memory
+  ansible.builtin.set_fact: {neo4j_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Require the fixed administrator name and policy-compliant password
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - neo4j_credentials.username == operator_account_neo4j.username
+      - neo4j_credentials.password | length >= operator_account_neo4j.minimum_length | int
+      - neo4j_credentials.password | length <= operator_account_neo4j.maximum_length | int
+      - neo4j_credentials.password is not search('[\r\n\x00]')
+  no_log: true
+- name: Prepare the independent internal graph TLS identity
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-tls.yaml'
+  vars:
+    tls_component: neo4j
+    tls_component_namespace: '{{ data_namespace }}'
+    tls_guard_manifest: data-platform/neo4j/auth.sops.yaml
+- name: Encrypt graph auth file and TLS without putting secrets in process arguments
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/neo4j/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: neo4j-auth, namespace: '{{ data_namespace }}'}
+        stringData:
+          neo4j-auth: '{{ neo4j_credentials.username }}/{{ neo4j_credentials.password }}'
+          private.key: '{{ component_tls_material.neo4j.key }}'
+          public.crt: '{{ component_tls_material.neo4j.cert }}'
+          ca.crt: '{{ component_tls_material.neo4j.ca }}'
+  no_log: true
+- name: Derive the graph rollout identity
+  ansible.builtin.set_fact:
+    neo4j_input_digest: '{{ [neo4j_credentials,component_tls_material.neo4j,neo4j_ui_enabled | default(false),neo4j_ui_origin | default("")] | to_json | hash("sha256") }}'
+  no_log: true
+- name: Render the graph runtime candidate
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/data-platform/neo4j/workload.yaml.j2'
+    dest: '{{ build }}/data-platform/neo4j/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+- name: Prepare the Neo4j browser route
+  ansible.builtin.include_tasks: ui/prepare.yaml
+  when: neo4j_ui_enabled | bool and 'neo4j-ui' in selection.selected_stages
+- name: Render the explicit graph component root
+  ansible.builtin.copy:
+    dest: '{{ build }}/data-platform/neo4j/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: |
+      {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':['workload.yaml','auth.sops.yaml']} | to_nice_yaml }}

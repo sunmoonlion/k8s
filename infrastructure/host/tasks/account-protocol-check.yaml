@@ -1,0 +1,27 @@
+---
+- name: Verify the existing real account identity without changing its password
+  ansible.builtin.command:
+    argv:
+      - '{{ inventory_dir }}/../.venv/bin/python'
+      - -c
+      - |
+        import contextlib,importlib.util,json,sys
+        sys.path.insert(0,sys.argv[1])
+        from account_files import read_private,extract,require
+        data=json.load(sys.stdin)
+        spec=importlib.util.spec_from_file_location('component_password',data['protocol'])
+        protocol=importlib.util.module_from_spec(spec);spec.loader.exec_module(protocol)
+        password=extract(read_private(data['account']['current_file']),data['account']['current_field'])
+        require(password is not None,'Current account credential is missing')
+        context=protocol.session(data['settings']) if hasattr(protocol,'session') else contextlib.nullcontext(data['settings'])
+        with context as settings:
+            identity=protocol.inspect(settings,password)
+            require(identity is not None,'Current account credential is rejected')
+        print(json.dumps({'object':data['account']['object'],'verified_login':True,'identity':identity,'password_changed':False}))
+      - '{{ inventory_dir }}'
+    stdin: '{{ {"account":human_account,"protocol":account_protocol_path,"settings":account_protocol_settings} | to_json }}'
+  register: account_protocol_check
+  changed_when: false
+  no_log: true
+- name: Report only verified account identity and scope
+  ansible.builtin.debug: {msg: '{{ account_protocol_check.stdout | from_json }}'}

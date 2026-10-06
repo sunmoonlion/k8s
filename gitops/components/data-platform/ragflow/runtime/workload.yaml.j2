@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: ragflow-scripts, namespace: {{ data_namespace }}}
+data:
+  health.py: |
+    {{ lookup('file', playbook_dir + '/../../gitops/components/data-platform/ragflow/health.py') | indent(4) }}
+  runtime.py: |
+    {{ lookup('file', playbook_dir + '/../../gitops/components/data-platform/ragflow/runtime.py') | indent(4) }}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ragflow, namespace: {{ data_namespace }}}
+spec:
+  selector: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: api}
+  ports: [{name: https, port: {{ ragflow_port }}, targetPort: {{ ragflow_port }}}]
+{% for role in ['api','worker'] %}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: 'ragflow-{{ role }}', namespace: {{ data_namespace }}}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: '{{ role }}'}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: '{{ role }}', sunmoonai.com/postgresql-client: 'true', sunmoonai.com/object-storage-client: 'true'}
+      annotations:
+        sunmoonai.com/input-digest: '{{ ragflow_input_digest }}'
+        sunmoonai.com/script-digest: '{{ lookup("file",playbook_dir + "/../../gitops/components/data-platform/ragflow/runtime.py") | hash("sha256") }}'
+    spec:
+      enableServiceLinks: false
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      nodeSelector: {kubernetes.io/hostname: '{{ cluster_name }}-{{ ragflow_node }}'}
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: '{{ role }}'
+          image: {{ registry_address }}/platform/ragflow-runtime@{{ ragflow_runtime_image.manifest_digest }}
+          imagePullPolicy: IfNotPresent
+          command: [/ragflow/.venv/bin/python3, /sunmoon/runtime.py, '{{ role }}']
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {{ (ragflow_api_resources if role == 'api' else ragflow_worker_resources) | to_json }}
+          env:
+            - {name: DEVICE, value: cpu}
+            - {name: DB_TYPE, value: postgres}
+            - {name: DOC_ENGINE, value: infinity}
+            - {name: STORAGE_IMPL, value: AWS_S3}
+            - {name: REGISTER_ENABLED, value: '0'}
+            - {name: ENABLE_CHAT_CHANNEL, value: '0'}
+            - {name: HF_HUB_OFFLINE, value: '1'}
+            - {name: TRANSFORMERS_OFFLINE, value: '1'}
+            - {name: PIP_NO_INDEX, value: '1'}
+            - {name: UV_OFFLINE, value: 'true'}
+            - {name: HOME, value: /tmp/home}
+            - {name: OMP_NUM_THREADS, value: '1'}
+            - {name: OPENBLAS_NUM_THREADS, value: '1'}
+            - {name: MKL_NUM_THREADS, value: '1'}
+            - {name: MAX_CONCURRENT_TASKS, value: '1'}
+            - {name: AWS_EC2_METADATA_DISABLED, value: 'true'}
+            - {name: LITELLM_LOCAL_MODEL_COST_MAP, value: 'True'}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: AWS_CA_BUNDLE, value: /run/tls/ca.crt}
+{% if role == 'api' %}
+          ports: [{name: https, containerPort: {{ ragflow_port }}}]
+{% endif %}
+          startupProbe:
+            exec:
+              command: [/ragflow/.venv/bin/python3, /sunmoon/health.py, '{{ role }}']
+            periodSeconds: 5
+            timeoutSeconds: 10
+            failureThreshold: 120
+          readinessProbe:
+            exec:
+              command: [/ragflow/.venv/bin/python3, /sunmoon/health.py, '{{ role }}']
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+{% if role == 'api' %}
+            tcpSocket: {port: https}
+{% else %}
+            exec: {command: [/ragflow/.venv/bin/python3, -c, "import pathlib,time; assert time.time()-pathlib.Path('/tmp/worker-ready').stat().st_mtime < 90"]}
+{% endif %}
+            periodSeconds: 30
+            failureThreshold: 5
+          volumeMounts:
+            - {name: scripts, mountPath: /sunmoon, readOnly: true}
+            - {name: auth, mountPath: /ragflow/conf/service_conf.yaml, subPath: service_conf.yaml, readOnly: true}
+            - {name: auth, mountPath: /run/tls, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+            - {name: logs, mountPath: /ragflow/logs}
+      volumes:
+        - {name: scripts, configMap: {name: ragflow-scripts}}
+        - {name: auth, secret: {secretName: ragflow-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 512Mi}}
+        - {name: logs, emptyDir: {sizeLimit: 256Mi}}
+{% endfor %}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ragflow-clients, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: api}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: ragflow}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: '{{ app_namespace }}'}}
+          podSelector: {matchLabels: {sunmoonai.com/ragflow-client: 'true'}}
+      ports: [{protocol: TCP, port: {{ ragflow_port }}}]
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ragflow-api-egress, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: ragflow}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: api}}
+      ports: [{protocol: TCP, port: {{ ragflow_port }}}]

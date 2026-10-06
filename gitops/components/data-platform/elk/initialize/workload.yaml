@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata: {name: elk-initialize-v1, namespace: data-platform-dev}
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: elk-initialize, sunmoonai.com/elasticsearch-client: 'true'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: initialize
+          image: harbor.sunmoonai.com:30443/platform/elasticsearch@sha256:33178ff49e06da93e3c51c5d87401b26e7a6dea0ef9bb26539cfddc46478b420
+          command: [sh, -ec]
+          args:
+            - |
+              base='https://elasticsearch.data-platform-dev.svc.cluster.local:9200'
+              put() {
+                curl --silent --show-error --fail --max-time 30 --config /run/auth/admin.curl -H 'Content-Type: application/json' -X PUT "$base/$1" --data-binary "@/run/auth/$2" > /tmp/result.json
+                test "$(cat /tmp/result.json)" != ''
+              }
+              put '_security/user/kibana_system/_password' kibana-password.json
+              put '_security/role/sunmoon_log_writer' writer-role.json
+              put '_security/role/sunmoon_log_reader' reader-role.json
+              put '_security/user/sunmoon_log_writer' writer-user.json
+              put '_security/user/sunmoon_log_reader' reader-user.json
+              echo 'Independent ELK identities initialized.'
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: auth, secret: {secretName: elk-initialize-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 16Mi}}

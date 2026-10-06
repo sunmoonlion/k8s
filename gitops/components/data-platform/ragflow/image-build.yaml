@@ -1,0 +1,167 @@
+---
+- name: Build or verify the bounded non-root RAGFlow image
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    infra: '{{ playbook_dir }}/../../../../infrastructure'
+    capacity_operation: ragflow-nonroot-image
+    image_build_action: build
+    upstream: '{{ (lookup("file",infra + "/artifacts/upstream-images.lock.json") | from_json).images | selectattr("id","equalto","ragflow") | first }}'
+    skopeo: '{{ (lookup("file",infra + "/artifacts/upstream-images.lock.json") | from_json).images | selectattr("id","equalto","skopeo") | first }}'
+    image_directory: '{{ artifact_cache_root }}/{{ upstream.material_owner }}/images'
+    lock_path: '{{ playbook_dir }}/image.lock.json'
+    base: '{{ registry_address }}/platform/ragflow@{{ upstream.manifest_digest }}'
+  tasks:
+    - name: End when the component is disabled
+      ansible.builtin.meta: end_play
+      when: not services_ragflow_enabled | bool
+    - name: Require the exact upstream and supported action
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - services_ragflow_enabled | bool
+          - image_build_action in ['build','verify']
+          - upstream.source == 'docker.io/infiniflow/ragflow:v0.27.2'
+          - upstream.manifest_digest == 'sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab'
+    - name: Hash the exact Dockerfile
+      ansible.builtin.stat: {path: '{{ playbook_dir }}/Dockerfile', checksum_algorithm: sha256, follow: false}
+      register: dockerfile
+    - name: Observe existing reviewable lock
+      ansible.builtin.stat: {path: '{{ lock_path }}', follow: false}
+      register: existing_lock
+    - name: Reject redirected build inputs and reviewed lock
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - dockerfile.stat.isreg | default(false)
+          - not dockerfile.stat.islnk | default(false)
+          - not existing_lock.stat.islnk | default(false)
+          - not existing_lock.stat.exists or existing_lock.stat.isreg | default(false)
+    - name: Inspect formal image directory without following links
+      ansible.builtin.stat: {path: '{{ image_directory }}', follow: false, get_checksum: false}
+      register: formal_directory
+    - name: Require a real formal material directory
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - formal_directory.stat.isdir | default(false)
+          - not formal_directory.stat.islnk | default(false)
+    - name: Require the lock when only verifying
+      ansible.builtin.assert:
+        quiet: true
+        that: existing_lock.stat.exists or image_build_action == 'build'
+    - name: Build only an absent lock; never silently replace a reviewed digest
+      when: not existing_lock.stat.exists
+      block:
+        - name: Inspect whether the exact host base is already present
+          ansible.builtin.command:
+            argv: [docker, image, inspect, '{{ base }}']
+          register: cached_base
+          changed_when: false
+          failed_when: false
+        - name: Derive only a verified exact existing base
+          ansible.builtin.set_fact:
+            base_cached: '{{ cached_base.rc == 0 and (cached_base.stdout | from_json)[0].Descriptor.digest == upstream.manifest_digest and (cached_base.stdout | from_json)[0].Architecture == "amd64" }}'
+        - name: Measure exact base layer sizes without allocating extracted files
+          ansible.builtin.command:
+            argv: '{{ ["python3",playbook_dir + "/image-budget.py",image_directory + "/ragflow-" + upstream.manifest_digest[7:] + ".tar",upstream.manifest_digest] + (["--base-cached"] if base_cached else []) }}'
+          register: image_peak
+          changed_when: false
+        - name: Budget first host unpack and bounded export workspace
+          ansible.builtin.include_tasks:
+            file: '{{ infra }}/host/tasks/capacity.yaml'
+            apply: {become: false}
+          vars: {capacity_planned_bytes: '{{ (image_peak.stdout | from_json).planned_bytes }}'}
+        - name: Allocate owned temporary build workspace
+          ansible.builtin.tempfile: {state: directory, prefix: sunmoon-ragflow-image-}
+          register: image_workspace
+        - name: Build and record a reviewable immutable result
+          block:
+            - name: Prepare bounded build workspace
+              ansible.builtin.file: {path: '{{ image_workspace.path }}/{{ item }}', state: directory, mode: '0700'}
+              loop: [auth, scratch, export]
+            - name: Stage only the bounded private puller authentication
+              ansible.builtin.copy: {src: '{{ registry_config_dir }}/private/puller-auth.json', dest: '{{ image_workspace.path }}/auth/config.json', remote_src: true, mode: '0600'}
+              no_log: true
+            - name: Pull the exact base through the trusted private registry
+              ansible.builtin.command:
+                argv: [docker, '--config={{ image_workspace.path }}/auth', pull, --platform=linux/amd64, '{{ base }}']
+              environment: {HTTP_PROXY: '', HTTPS_PROXY: '', ALL_PROXY: '', NO_PROXY: '{{ registry_hostname }},127.0.0.1,localhost'}
+              no_log: true
+            - name: Build only the bounded compatibility adaptation without network or package installation
+              ansible.builtin.command:
+                argv: [docker, build, --network=none, --pull=false, --progress=plain, '--file={{ playbook_dir }}/Dockerfile', '--build-arg=BASE_IMAGE={{ base }}', '--tag=sunmoon-ragflow-nonroot:{{ dockerfile.stat.checksum[:16] }}', '{{ playbook_dir }}']
+              environment: {DOCKER_CONFIG: '{{ image_workspace.path }}/auth', HTTP_PROXY: '', HTTPS_PROXY: '', ALL_PROXY: ''}
+            - name: Verify non-root access to shipped Python and mandatory dependencies
+              ansible.builtin.command:
+                argv: [docker, run, --rm, --network=none, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --entrypoint=/ragflow/.venv/bin/python3, 'sunmoon-ragflow-nonroot:{{ dockerfile.stat.checksum[:16] }}', -c, 'import os,sys,ruamel.yaml,peewee,quart,nltk,hypercorn,psycopg2,boto3; from nltk.corpus import wordnet; wordnet.ensure_loaded(); assert os.getuid()==1000 and sys.version_info[:2]==(3,13); print("non-root-shipped-python-verified")']
+              changed_when: false
+            - name: Export through the fixed publisher without a duplicate docker-save tar
+              ansible.builtin.command:
+                argv: [docker, run, --rm, --pull=never, --network=none, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --mount, 'type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock,readonly', --mount, 'type=bind,source={{ image_workspace.path }}/scratch,target=/var/tmp', --mount, 'type=bind,source={{ image_workspace.path }}/export,target=/output', '{{ skopeo.manifest_digest }}', copy, --format=oci, 'docker-daemon:sunmoon-ragflow-nonroot:{{ dockerfile.stat.checksum[:16] }}', oci-archive:/output/image.tar]
+            - name: Read the derived OCI manifest
+              ansible.builtin.command:
+                argv: [docker, run, --rm, --pull=never, --network=none, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --mount, 'type=bind,source={{ image_workspace.path }}/scratch,target=/var/tmp', --mount, 'type=bind,source={{ image_workspace.path }}/export/image.tar,target=/input.tar,readonly', '{{ skopeo.manifest_digest }}', inspect, --raw, oci-archive:/input.tar]
+              register: derived_manifest
+              changed_when: false
+            - name: Verify complete derived manifest config and layers
+              ansible.builtin.command:
+                argv: [python3, '{{ infra }}/artifacts/verify-oci-archive.py', '{{ image_workspace.path }}/export/image.tar', --expected-manifest, 'sha256:{{ derived_manifest.stdout | hash("sha256") }}']
+              changed_when: false
+              register: derived_verified
+            - name: Persist exact formal archive without overwriting
+              ansible.builtin.command:
+                argv: [ln, --no-target-directory, '{{ image_workspace.path }}/export/image.tar', '{{ image_directory }}/ragflow-runtime-{{ derived_manifest.stdout | hash("sha256") }}.tar']
+            - name: Hash the formal archive
+              ansible.builtin.stat: {path: '{{ image_directory }}/ragflow-runtime-{{ derived_manifest.stdout | hash("sha256") }}.tar', checksum_algorithm: sha256}
+              register: derived_archive
+            - name: Set readable public material
+              ansible.builtin.file: {path: '{{ derived_archive.stat.path }}', mode: '0644'}
+            - name: Save formal material inventory beside the archive
+              ansible.builtin.copy:
+                dest: '{{ derived_archive.stat.path }}.json'
+                mode: '0644'
+                content: '{{ {"id":"ragflow-runtime","source":base,"sha256":derived_archive.stat.checksum,"size_bytes":derived_archive.stat.size,"verification":derived_verified.stdout | from_json,"base_manifest":upstream.manifest_digest,"dockerfile_sha256":dockerfile.stat.checksum} | to_nice_json }}'
+            - name: Save the reviewable derived lock beside its implementation
+              ansible.builtin.copy:
+                dest: '{{ lock_path }}'
+                owner: '{{ cluster_operator }}'
+                mode: '0644'
+                content: '{{ {"schema_version":1,"platform":"linux/amd64","base_manifest":upstream.manifest_digest,"dockerfile_sha256":dockerfile.stat.checksum,"archive_sha256":derived_archive.stat.checksum,"images":[{"id":"ragflow-runtime","material_owner":upstream.material_owner,"status":"resolved","source":"ragflow-runtime:0.27.2-nonroot-" + dockerfile.stat.checksum[:16],"reference":registry_address + "/platform/ragflow-runtime@sha256:" + (derived_manifest.stdout | hash("sha256")),"manifest_digest":"sha256:" + (derived_manifest.stdout | hash("sha256")),"compressed_layer_bytes":(derived_manifest.stdout | from_json).layers | map(attribute="size") | sum,"config_digest":(derived_manifest.stdout | from_json).config.digest}]} | to_nice_json }}'
+          always:
+            - name: Remove only this owned temporary build workspace
+              ansible.builtin.file: {path: '{{ image_workspace.path }}', state: absent}
+    - name: Read the immutable derived lock
+      ansible.builtin.set_fact: {derived_lock: '{{ lookup("file",lock_path) | from_json }}'}
+    - name: Require source and build bytes to match the reviewed lock
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - derived_lock.base_manifest == upstream.manifest_digest
+          - derived_lock.dockerfile_sha256 == dockerfile.stat.checksum
+          - derived_lock.images | length == 1
+          - derived_lock.images[0].id == 'ragflow-runtime'
+          - derived_lock.images[0].material_owner == upstream.material_owner
+          - derived_lock.images[0].manifest_digest is match('^sha256:[a-f0-9]{64}$')
+    - name: Verify the complete retained derived archive
+      ansible.builtin.command:
+        argv: [python3, '{{ infra }}/artifacts/verify-oci-archive.py', '{{ image_directory }}/ragflow-runtime-{{ derived_lock.images[0].manifest_digest[7:] }}.tar', --expected-manifest, '{{ derived_lock.images[0].manifest_digest }}']
+      changed_when: false
+      register: retained_verification
+    - name: Verify archive envelope against the reviewed lock
+      ansible.builtin.stat: {path: '{{ image_directory }}/ragflow-runtime-{{ derived_lock.images[0].manifest_digest[7:] }}.tar', follow: false, checksum_algorithm: sha256}
+      register: retained
+    - name: Reject missing redirected or changed archive
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - retained.stat.isreg | default(false)
+          - not retained.stat.islnk | default(false)
+          - retained.stat.checksum == derived_lock.archive_sha256
+    - name: Preserve public formal inventory on builds and repeat verification
+      ansible.builtin.copy:
+        dest: '{{ retained.stat.path }}.json'
+        mode: '0644'
+        content: '{{ {"id":"ragflow-runtime","source":derived_lock.images[0].reference,"sha256":retained.stat.checksum,"size_bytes":retained.stat.size,"verification":retained_verification.stdout | from_json,"base_manifest":derived_lock.base_manifest,"dockerfile_sha256":derived_lock.dockerfile_sha256} | to_nice_json }}'

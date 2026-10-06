@@ -1,0 +1,267 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: {{ application_name }}-runtime, namespace: {{ app_namespace }}}
+data:
+  ENV: production
+  APP_SLUG: {{ application_name }}
+  DEPLOYMENT_ID: {{ deployment_id | to_json }}
+  ALLOWED_HOSTS: {{ (['localhost','127.0.0.1',(application_name + '-api'),(application_name + '-api.') + app_namespace + '.svc.cluster.local', cfg.web_origin | urlsplit('hostname'), cfg.admin_origin | urlsplit('hostname')] + ([service_access_hosts.knowledge] if receiver_enabled else [])) | join(',') | to_json }}
+  REDIS_HOST: redis.{{ data_namespace }}.svc.cluster.local
+  REDIS_PORT: '6379'
+  REDIS_DB: '0'
+  CELERY_QUEUE: {{ cfg.rabbitmq_queue }}
+  CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
+  CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor.{{ app_namespace }}.svc.cluster.local:8000
+  CASDOOR_VERIFY_SSL: 'true'
+  SESSION_COOKIE_SECURE: 'true'
+  REFERENCE_INTERACTION_ENABLED: 'false'
+{% if storage_enabled %}
+  S3_ENDPOINT: https://object-storage.{{ data_namespace }}.svc.cluster.local:{{ object_storage_port }}
+  S3_REGION: {{ object_storage_region }}
+  S3_BUCKET: {{ cfg.object_storage.bucket }}
+  S3_FORCE_PATH_STYLE: 'true'
+  S3_USE_TLS: 'true'
+  AWS_CA_BUNDLE: /etc/sunmoon/object-storage/ca.crt
+{% endif %}
+{% if provider_enabled %}
+  RAGFLOW_API_BASE: https://ragflow.{{ data_namespace }}.svc.cluster.local:{{ ragflow_port }}
+  RAGFLOW_PARSE_TIMEOUT_SECONDS: '{{ ragflow_ingestion_timeout_seconds }}'
+  INGESTION_DATASET_BINDINGS: {{ {cfg.knowledge_provider.dataset_key:provider_binding} | to_json | to_json }}
+  RETRIEVAL_DATASET_ALLOWLIST: {{ cfg.knowledge_provider.dataset_key | to_json }}
+  RETRIEVAL_DEFAULT_TENANT_ID: {{ cfg.knowledge_provider.tenant_id | to_json }}
+  S3_ENDPOINT: https://object-storage.{{ data_namespace }}.svc.cluster.local:{{ object_storage_port }}
+  S3_REGION: {{ object_storage_region }}
+  S3_FORCE_PATH_STYLE: 'true'
+  ARTIFACT_S3_ALLOWED_BUCKETS: {{ cfg.knowledge_provider.source_bucket | to_json }}
+  ARTIFACT_S3_ALLOWED_PREFIXES: {{ cfg.knowledge_provider.source_prefix | to_json }}
+  SSL_CERT_FILE: /etc/sunmoon/provider/ca.crt
+{% endif %}
+{% if service_enabled %}
+  {{ 'KNOWLEDGE_APP_INGEST_URL' if application_name == 'info' else 'KNOWLEDGE_RETRIEVAL_URL' }}: https://{{ service_access_hosts.knowledge }}/api/internal/v1/knowledge/{{ 'ingestions' if service_relation == 'ingest' else 'retrievals' }}
+  {{ service_env_prefix }}_APPLICATION: {{ cfg.knowledge_service.application | to_json }}
+  {{ service_env_prefix }}_CLIENT_ID: {{ cfg.knowledge_service.client_id | to_json }}
+  {{ service_env_prefix }}_SCOPE: {{ cfg.knowledge_service.scope | to_json }}
+  {{ service_env_prefix }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
+  {{ service_env_prefix }}_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
+  SSL_CERT_FILE: /etc/sunmoon/service/ca.crt
+{% endif %}
+{% if receiver_enabled %}
+{% for relation,prefix in [('ingest','INTERNAL_AUTH'),('retrieve','RETRIEVAL_AUTH')] %}
+  {{ prefix }}_CASDOOR_APPLICATION: {{ service_bindings[relation].application | to_json }}
+  {{ prefix }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
+  {{ prefix }}_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
+  {{ prefix }}_AUDIENCE: {{ service_bindings[relation].client_id | to_json }}
+  {{ prefix }}_SUBJECT_ALLOWLIST: {{ ('admin/' + service_bindings[relation].application) | to_json }}
+  {{ prefix }}_REQUIRED_SCOPE: {{ service_bindings[relation].scope | to_json }}
+{% endfor %}
+{% endif %}
+{% for key,value in (cfg.domain_runtime_env | default({})).items() %}
+  {{ key }}: {{ value | to_json }}
+{% endfor %}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: {{ application_name }}-celery-config, namespace: {{ app_namespace }}}
+data:
+  celeryconfig.py: |
+    # Native Celery 5.6 configuration; transient per-connection queues only.
+    control_queue_durable = False
+    control_queue_exclusive = {{ cfg.celery_control_queue_exclusive | bool }}
+    event_queue_durable = False
+    event_queue_exclusive = {{ cfg.celery_event_queue_exclusive | bool }}
+{% for role in ['api','worker','scheduler'] %}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: {{ application_name }}-{{ role }}, namespace: {{ app_namespace }}}
+spec:
+  replicas: {{ cfg[role + '_replicas'] }}
+{% if role == 'scheduler' %}
+  strategy: {type: Recreate}
+{% else %}
+  strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
+{% endif %}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: {{ application_name }}-{{ role }}}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ application_name }}-{{ role }}
+        app.kubernetes.io/part-of: {{ application_name }}
+        sunmoonai.com/postgresql-client: 'true'
+        sunmoonai.com/rabbitmq-client: 'true'
+{% if storage_enabled %}
+        sunmoonai.com/object-storage-client: 'true'
+{% endif %}
+{% if provider_enabled and role in ['api','worker'] %}
+        sunmoonai.com/ragflow-client: 'true'
+        sunmoonai.com/object-storage-client: 'true'
+{% endif %}
+{% if role == 'api' %}
+        sunmoonai.com/redis-client: 'true'
+{% endif %}
+      annotations:
+        sunmoonai.com/config-sha256: {{ runtime_config_digest }}
+    spec:
+      serviceAccountName: {{ application_name }}-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: {{ role }}
+          image: {{ registry_address }}/platform/{{ app_images.backend.repository }}@{{ app_images.backend.digest }}
+          imagePullPolicy: IfNotPresent
+{% if role == 'api' %}
+          command: [uvicorn]
+          args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '{{ cfg.api_port }}', --proxy-headers, --forwarded-allow-ips, '{{ cluster_pod_subnet }}']
+          ports: [{name: http, containerPort: {{ cfg.api_port }}}]
+          startupProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, periodSeconds: 3, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /health/ready, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 5, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 3, periodSeconds: 20}
+{% elif role == 'worker' %}
+          command: [celery]
+          args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency={{ cfg.worker_concurrency }}', '--hostname=celery@$(POD_NAME)']
+          startupProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 10, failureThreshold: 30}
+          readinessProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 20}
+{% else %}
+          command: [celery]
+          args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
+          startupProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 5, failureThreshold: 30}
+          readinessProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 10}
+{% endif %}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: SERVICE_NAME, value: {{ application_name }}-{{ role }}}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
+          envFrom:
+            - {configMapRef: {name: {{ application_name }}-runtime}}
+            - {configMapRef: {name: {{ application_name }}-browser-identity}}
+            - {secretRef: {name: {{ application_name }}-database-runtime}}
+            - {secretRef: {name: {{ application_name }}-rabbitmq-runtime}}
+{% if role == 'api' %}
+            - {secretRef: {name: {{ application_name }}-redis-runtime}}
+            - {secretRef: {name: {{ application_name }}-browser-secrets}}
+{% endif %}
+{% if storage_enabled %}
+            - {secretRef: {name: {{ application_name }}-storage-runtime}}
+{% endif %}
+{% if provider_enabled and role in ['api','worker'] %}
+            - {secretRef: {name: knowledge-provider-runtime}}
+{% endif %}
+{% if service_enabled and role in ['api','worker'] %}
+            - {secretRef: {name: {{ application_name }}-knowledge-service}}
+{% endif %}
+          resources: {{ cfg.resources[role] | to_json }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+{% if service_enabled %}
+            - {name: service-ca, mountPath: /etc/sunmoon/service, readOnly: true}
+{% endif %}
+{% if storage_enabled %}
+            - {name: storage-ca, mountPath: /etc/sunmoon/object-storage, readOnly: true}
+{% endif %}
+{% if provider_enabled %}
+            - {name: provider-ca, mountPath: /etc/sunmoon/provider, readOnly: true}
+{% endif %}
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+{% if service_enabled %}
+        - {name: service-ca, configMap: {name: {{ application_name }}-service-ca}}
+{% endif %}
+{% if storage_enabled %}
+        - {name: storage-ca, secret: {secretName: {{ application_name }}-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+{% endif %}
+{% if provider_enabled %}
+        - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+{% endif %}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: {{ application_name }}-celery-config}}
+{% endfor %}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: {{ application_name }}-api, namespace: {{ app_namespace }}}
+spec:
+  selector: {app.kubernetes.io/name: {{ application_name }}-api}
+  ports: [{name: http, port: {{ cfg.api_port }}, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: {{ application_name }}-api-ingress, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-api}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ ingress_namespace }}}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-web}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-admin}}
+      ports: [{protocol: TCP, port: {{ cfg.api_port }}}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: {{ application_name }}-api-casdoor-out, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-api}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: {{ application_name }}-api-casdoor-in, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-api}}
+      ports: [{protocol: TCP, port: 8000}]
+{% if provider_enabled %}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowledge-ragflow-egress, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/part-of: knowledge, sunmoonai.com/ragflow-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ data_namespace }}}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: api}}
+      ports: [{protocol: TCP, port: {{ ragflow_port }}}]
+---
+{% endif %}
+{% if service_enabled %}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: {{ application_name }}-service-ca, namespace: {{ app_namespace }}}
+data:
+  ca.crt: |
+{{ workload_ca.content | b64decode | regex_replace('\n+$','') | indent(4,true) }}
+{% endif %}
+{% if service_enabled or receiver_enabled %}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: {{ application_name }}-service-https-out, namespace: {{ app_namespace }}}
+spec:
+  podSelector:
+    matchExpressions:
+      - {key: app.kubernetes.io/name, operator: In, values: [{{ application_name }}-api{% if service_enabled %}, {{ application_name }}-worker{% endif %}]}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ ingress_namespace }}}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: 8443}]
+{% endif %}

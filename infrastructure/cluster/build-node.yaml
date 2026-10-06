@@ -1,0 +1,247 @@
+---
+- name: Build the selected Kubernetes node with the official KIND builder
+  hosts: kind_hosts
+  gather_facts: false
+  become: false
+  vars:
+    node_action: plan
+    build_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/kind-build.lock.json") | from_json }}'
+    file_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    image_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
+    kind_file: '{{ file_lock.files | selectattr("id", "equalto", build_lock.kind_file_id) | first }}'
+    server_file: '{{ file_lock.files | selectattr("id", "equalto", build_lock.server_file_id) | first }}'
+    base_image: '{{ image_lock.images | selectattr("id", "equalto", build_lock.base_image_id) | first }}'
+    node_images: '{{ image_lock.images | selectattr("id", "in", build_lock.node_image_ids) | list }}'
+    kind_binary: '{{ playbook_dir }}/../.tools/bin/kind'
+    build_argv:
+      - '{{ kind_binary }}'
+      - build
+      - node-image
+      - --type
+      - file
+      - --base-image
+      - '{{ base_image.reference }}'
+      - --arch
+      - amd64
+      - --image
+      - '{{ build_lock.output_image }}'
+      - '{{ artifact_cache_root }}/{{ server_file.path }}'
+  tasks:
+    - name: Validate selected build inputs
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - ansible_version.full == '2.21.4'
+          - not ansible_check_mode
+          - node_action in ['plan', 'build', 'verify']
+          - build_lock.schema_version == 1
+          - build_lock.platform == 'linux/amd64'
+          - build_lock.build_type == 'file'
+          - build_lock.peak_estimate_bytes | int >= build_lock.server_expanded_bytes | int * 4
+          - build_lock.output_image is match('^sunmoon-kind-node:v[0-9.]+-kind[0-9.]+$')
+          - base_image.reference is match('^docker.io/kindest/base@sha256:[a-f0-9]{64}$')
+          - node_images | length == build_lock.node_image_ids | length
+
+    - name: Require resolved embedded image identities
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.status == 'resolved'
+          - item.config_digest is match('^sha256:[a-f0-9]{64}$')
+      loop: '{{ node_images }}'
+      loop_control:
+        label: '{{ item.id }}'
+
+    - name: Verify installed KIND and downloaded server tarball
+      ansible.builtin.stat:
+        path: '{{ item.path }}'
+        follow: false
+        checksum_algorithm: sha256
+      loop:
+        - path: '{{ kind_binary }}'
+          expected: '{{ kind_file }}'
+        - path: '{{ artifact_cache_root }}/{{ server_file.path }}'
+          expected: '{{ server_file }}'
+      register: build_inputs
+      loop_control:
+        label: '{{ item.expected.id }}'
+
+    - name: Require exact input bytes
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.stat.isreg | default(false)
+          - item.stat.checksum | default('') == item.item.expected.sha256
+          - item.stat.size | default(0) == item.item.expected.size_bytes
+      loop: '{{ build_inputs.results }}'
+      loop_control:
+        label: '{{ item.item.expected.id }}'
+
+    - name: Show the official command and its boundaries
+      ansible.builtin.debug:
+        msg:
+          command: '{{ build_argv }}'
+          peak_estimate_bytes: '{{ build_lock.peak_estimate_bytes }}'
+          network_required: '{{ build_lock.network_required_during_build }}'
+          note: Does not create a cluster. Native KIND may pull auxiliary tags; embedded config identities must match the lock after build. Image export requires a separate budget.
+
+    - name: Build and verify a new local node image
+      when: node_action == 'build'
+      block:
+        - name: Inspect any existing output tag
+          ansible.builtin.command:
+            argv: [docker, image, ls, --no-trunc, --quiet, '{{ build_lock.output_image }}']
+          changed_when: false
+          register: existing_output
+
+        - name: Refuse to overwrite an existing image
+          ansible.builtin.assert:
+            quiet: true
+            that: existing_output.stdout | trim == ''
+            fail_msg: Output tag already exists. Review its build receipt before reusing or explicitly removing this build artifact.
+
+        - name: Check Windows capacity for the complete build estimate
+          ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+          vars:
+            capacity_planned_bytes: '{{ build_lock.peak_estimate_bytes }}'
+
+        - name: Read Docker data location
+          ansible.builtin.command:
+            argv: [docker, info, '--format', '{{ "{{.DockerRootDir}}" }}']
+          changed_when: false
+          register: docker_root
+
+        - name: Check build and Docker filesystem free bytes
+          ansible.builtin.command:
+            argv: [df, -B1, '--output=avail', '{{ item }}']
+          loop: ['{{ playbook_dir }}/..', '{{ docker_root.stdout | trim }}']
+          changed_when: false
+          register: build_capacity
+
+        - name: Require filesystem capacity for build copies
+          ansible.builtin.assert:
+            quiet: true
+            that: item.stdout_lines[-1] | trim | int >= build_lock.peak_estimate_bytes | int
+          loop: '{{ build_capacity.results }}'
+          loop_control:
+            label: '{{ item.item }}'
+
+        - name: Allocate a private temporary directory
+          ansible.builtin.tempfile:
+            state: directory
+            path: '{{ playbook_dir }}/..'
+            prefix: .node-build-
+          register: build_tmp
+
+        - name: Run the official builder and inspect its output
+          block:
+            - name: Build with fixed base digest and verified local Kubernetes package
+              ansible.builtin.command:
+                argv: '{{ build_argv }}'
+              environment:
+                TMPDIR: '{{ build_tmp.path }}'
+              register: node_build
+              changed_when: true
+
+          always:
+            - name: Remove only this invocation's temporary extraction directory
+              ansible.builtin.file:
+                path: '{{ build_tmp.path }}'
+                state: absent
+
+            - name: Recheck physical growth reserve after the build
+              ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+              vars:
+                capacity_planned_bytes: 0
+
+    - name: Verify the selected local output
+      when: node_action in ['build', 'verify']
+      block:
+        - name: Read actual output identity
+          ansible.builtin.command:
+            argv: [docker, image, inspect, '{{ build_lock.output_image }}']
+          changed_when: false
+          register: built_image
+
+        - name: Require native amd64 output
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (built_image.stdout | from_json)[0].Architecture == 'amd64'
+              - (built_image.stdout | from_json)[0].Os == 'linux'
+
+        - name: Read the locked base image filesystem identity
+          ansible.builtin.command:
+            argv: [docker, image, inspect, '{{ base_image.reference }}']
+          changed_when: false
+          register: inspected_base
+
+        - name: Require the output to extend the locked base filesystem
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (inspected_base.stdout | from_json)[0].Descriptor.digest == base_image.manifest_digest
+              - (built_image.stdout | from_json)[0].RootFS.Layers[:((inspected_base.stdout | from_json)[0].RootFS.Layers | length)] == (inspected_base.stdout | from_json)[0].RootFS.Layers
+
+        - name: Read node binaries without starting a cluster
+          ansible.builtin.command:
+            argv:
+              - docker
+              - run
+              - --rm
+              - --network=none
+              - --entrypoint=/bin/sh
+              - '{{ (built_image.stdout | from_json)[0].Id }}'
+              - -ec
+              - 'cat /kind/version; printf "\n"; kubelet --version; kubeadm version -o short; containerd --version; runc --version'
+          changed_when: false
+          register: node_versions
+
+        - name: Require the requested Kubernetes version
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - node_versions.stdout_lines[0] == server_file.version
+              - node_versions.stdout_lines[1] == 'Kubernetes ' + server_file.version
+              - node_versions.stdout_lines[2] == server_file.version
+
+        - name: Hash embedded image configurations without starting containerd
+          ansible.builtin.command:
+            argv: '{{ ["docker", "run", "--rm", "--network=none", "--entrypoint=sha256sum", (built_image.stdout | from_json)[0].Id] + (node_images | map(attribute="config_digest") | map("regex_replace", "^sha256:", "/var/lib/containerd/io.containerd.content.v1.content/blobs/sha256/") | list) }}'
+          changed_when: false
+          register: embedded_configs
+
+        - name: Require the locked embedded configs in exact order
+          ansible.builtin.assert:
+            quiet: true
+            that: embedded_configs.stdout_lines | map('regex_replace', ' .*$', '') | list == node_images | map(attribute='config_digest') | map('regex_replace', '^sha256:', '') | list
+
+        - name: Verify every embedded containerd content blob
+          ansible.builtin.command:
+            argv:
+              - docker
+              - run
+              - --rm
+              - --network=none
+              - --entrypoint=/bin/sh
+              - '{{ (built_image.stdout | from_json)[0].Id }}'
+              - -ec
+              - 'n=0; for f in /var/lib/containerd/io.containerd.content.v1.content/blobs/sha256/*; do [ -f "$f" ]; h=$(sha256sum "$f"); [ "${h%% *}" = "${f##*/}" ] || exit 1; n=$((n+1)); done; printf "verified_content_blobs=%s\n" "$n"'
+          changed_when: false
+          register: content_verification
+
+        - name: Create the local receipt directory
+          ansible.builtin.file:
+            path: '{{ playbook_dir }}/../.build'
+            state: directory
+            mode: '0755'
+
+        - name: Record local build evidence separately from release artifacts
+          ansible.builtin.copy:
+            dest: '{{ playbook_dir }}/../.build/node-image.json'
+            mode: '0644'
+            content: '{{ {"inputs": build_lock, "kind_sha256": kind_file.sha256, "server_sha256": server_file.sha256, "base": base_image.reference, "image_id": (built_image.stdout | from_json)[0].Id, "image_size_bytes": (built_image.stdout | from_json)[0].Size, "versions": node_versions.stdout_lines, "embedded_configs": embedded_configs.stdout_lines, "content_verification": content_verification.stdout} | to_nice_json }}'
+
+        - name: Report actual node binaries
+          ansible.builtin.debug:
+            var: node_versions.stdout_lines

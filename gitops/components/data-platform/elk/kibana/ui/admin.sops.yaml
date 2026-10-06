@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: kibana-ui-admin
+    namespace: data-platform-dev
+stringData:
+    username: ENC[AES256_GCM,data:WDukf8vlRg==,iv:LiLKYuHocYNoI/6rGPJJXrNgoUcdDixBS1PJaSk+TnY=,tag:me7WIbt0zs56byMy7/rreQ==,type:str]
+    password: ENC[AES256_GCM,data:nM0SnScCF/7cfI0mwCoiKmtevMaTOE9xmj9e0DUnozixQaiI/0cfkg==,iv:IAOIWnYhXnUpSfxKmi31M13Xls77ZJauFag7sQ4pr2E=,tag:o5HfQ0xxfPYKsMmRuLxshA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAyc3p1empWeWduc3pIMjBs
+            MnpNenArb1dLM3FNL1lJTm9TbWJuUDB4M1VvCkI2VlRwVzMrT0RWbHI0RllpMGJB
+            aHphUFhZOExjTlpSeTF4eVV0K0JjYmcKLS0tIEN3T3Y3VkIva21Va3M2cXIzWmly
+            cGN4cWYzbWdOZ2luWExRVWUxSVAva1EKgOBRxTiz+iamS88wcKeRd18mpSLq9aKu
+            BCmDsufgBBESywbBB4QHd/Ve5NrraXKjiL6Z62YJqOb+65Fs4YW7kA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-05T02:38:05Z"
+    mac: ENC[AES256_GCM,data:l5X2wKRwzPQS9L0TlGMMuyFK3MNvGyrUtlhsh6S24xZ8i/8Gf8AlKdMV9fRMhy5fvhB7YtNv8LpXeyeut4IcGqCl4AxC4b/I/x1ZNaBGEqfi4cUDqpTmWnYMeu38vECE9ChwfJsJcpYJA44kTtTQ/yHVodrPh+j1YP4b9ZNK6dk=,iv:Rn9qvQOh4YnPAxR2cy9449ZvnDEEjNrVoleS3iJI3rc=,tag:PdqfPlO45+EprO8NYXyI8w==,type:str]
+    version: 3.13.3

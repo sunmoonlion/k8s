@@ -1,0 +1,46 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: platform
+  namespace: flux-system
+  annotations:
+    sunmoonai.com/bootstrap-owner: {{ cluster_name }}
+spec:
+  interval: 1m
+  timeout: 60s
+  url: {{ source_lock.repository }}
+  ref:
+    digest: {{ source_lock.digest }}
+  secretRef:
+    name: registry-puller
+  certSecretRef:
+    name: harbor-ca
+  layerSelector:
+    mediaType: application/vnd.cncf.flux.content.v1.tar+gzip
+    operation: extract
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: platform
+  namespace: flux-system
+  annotations:
+    sunmoonai.com/bootstrap-owner: {{ cluster_name }}
+spec:
+  interval: 1m
+  retryInterval: 30s
+  timeout: 10m
+  sourceRef:
+    kind: OCIRepository
+    name: platform
+  path: {{ source_lock.path }}
+  # Automatic resource deletion is not approved in this bootstrap unit.
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+{% if sops_enabled | default(false) | bool %}
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+{% endif %}

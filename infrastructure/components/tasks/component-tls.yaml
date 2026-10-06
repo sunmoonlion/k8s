@@ -1,0 +1,96 @@
+---
+# One internal server identity per service. Uses the owned platform CA.
+- name: Validate exact service TLS names
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - tls_component is match('^[a-z][a-z0-9-]+$')
+      - tls_component_namespace == data_namespace
+- name: Inspect independent TLS directory roots
+  ansible.builtin.stat: {path: '{{ item }}', follow: false}
+  loop: ['{{ services_config_dir }}/{{ tls_component }}-tls', '{{ services_backup_dir }}/{{ tls_component }}-tls']
+  register: tls_dirs
+- name: Refuse redirected or foreign TLS roots
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isdir | default(false) and item.stat.uid == 0 and item.stat.mode == '0700')
+  loop: '{{ tls_dirs.results }}'
+- name: Create independent private TLS roots
+  ansible.builtin.file: {path: '{{ item }}', state: directory, owner: root, group: root, mode: '0700'}
+  loop: ['{{ services_config_dir }}/{{ tls_component }}-tls', '{{ services_backup_dir }}/{{ tls_component }}-tls']
+- name: Inspect only the identity files
+  ansible.builtin.stat: {path: '{{ item }}', follow: false}
+  loop:
+    - '{{ services_config_dir }}/{{ tls_component }}-tls/private.key'
+    - '{{ services_config_dir }}/{{ tls_component }}-tls/public.crt'
+    - '{{ services_backup_dir }}/{{ tls_component }}-tls/private.key'
+    - '{{ services_backup_dir }}/{{ tls_component }}-tls/public.crt'
+  register: tls_files
+  no_log: true
+- name: Reject insecure or redirected TLS identity files
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ tls_files.results }}'
+  no_log: true
+- name: Restore missing key and certificate from independent backup
+  ansible.builtin.copy: {src: '{{ services_backup_dir }}/{{ tls_component }}-tls/{{ item.file }}', dest: '{{ services_config_dir }}/{{ tls_component }}-tls/{{ item.file }}', remote_src: true, mode: '0600'}
+  loop: [{file: private.key, index: 0}, {file: public.crt, index: 1}]
+  when: not tls_files.results[item.index].stat.exists and tls_files.results[item.index + 2].stat.exists
+  no_log: true
+- name: Refuse replacement of a previously declared lost TLS identity
+  ansible.builtin.assert:
+    quiet: true
+    that: (tls_files.results[0].stat.exists or tls_files.results[2].stat.exists) or query('fileglob', playbook_dir + '/../../gitops/components/' + tls_guard_manifest) | length == 0
+- name: Generate internal service key only once
+  ansible.builtin.command:
+    argv: [openssl, genpkey, -algorithm, RSA, -pkeyopt, 'rsa_keygen_bits:3072', -out, '{{ services_config_dir }}/{{ tls_component }}-tls/private.key']
+    creates: '{{ services_config_dir }}/{{ tls_component }}-tls/private.key'
+  no_log: true
+- name: Protect generated TLS key
+  ansible.builtin.file: {path: '{{ services_config_dir }}/{{ tls_component }}-tls/private.key', mode: '0600'}
+- name: Define exact internal TLS service names
+  ansible.builtin.copy:
+    dest: '{{ services_config_dir }}/{{ tls_component }}-tls/extensions.cnf'
+    mode: '0600'
+    content: |
+      basicConstraints=critical,CA:FALSE
+      keyUsage=critical,digitalSignature,keyEncipherment
+      extendedKeyUsage=serverAuth,clientAuth
+      subjectAltName=DNS:{{ tls_component }},DNS:{{ tls_component }}.{{ tls_component_namespace }}.svc.cluster.local
+- name: Create internal certificate request
+  ansible.builtin.command:
+    argv: [openssl, req, -new, -key, '{{ services_config_dir }}/{{ tls_component }}-tls/private.key', -out, '{{ services_config_dir }}/{{ tls_component }}-tls/server.csr', -subj, '/CN={{ tls_component }}']
+    creates: '{{ services_config_dir }}/{{ tls_component }}-tls/server.csr'
+- name: Issue five year internal certificate
+  ansible.builtin.command:
+    argv: [openssl, x509, -req, -in, '{{ services_config_dir }}/{{ tls_component }}-tls/server.csr', -CA, '{{ registry_config_dir }}/tls/ca.crt', -CAkey, '{{ registry_config_dir }}/tls/ca.key', -set_serial, '0x{{ lookup("pipe", "openssl rand -hex 16") }}', -days, '1825', -sha256, -extfile, '{{ services_config_dir }}/{{ tls_component }}-tls/extensions.cnf', -out, '{{ services_config_dir }}/{{ tls_component }}-tls/public.crt']
+    creates: '{{ services_config_dir }}/{{ tls_component }}-tls/public.crt'
+- name: Protect certificate and verify name, chain and validity
+  ansible.builtin.file: {path: '{{ services_config_dir }}/{{ tls_component }}-tls/public.crt', mode: '0600'}
+- name: Require trusted current internal certificate
+  ansible.builtin.command:
+    argv: [openssl, verify, -CAfile, '{{ registry_config_dir }}/tls/ca.crt', -verify_hostname, '{{ tls_component }}.{{ tls_component_namespace }}.svc.cluster.local', '{{ services_config_dir }}/{{ tls_component }}-tls/public.crt']
+  changed_when: false
+- name: Preserve independent TLS files without overwriting
+  ansible.builtin.copy: {src: '{{ services_config_dir }}/{{ tls_component }}-tls/{{ item }}', dest: '{{ services_backup_dir }}/{{ tls_component }}-tls/{{ item }}', remote_src: true, force: false, mode: '0600'}
+  loop: [private.key, public.crt]
+  no_log: true
+- name: Require exact recoverable TLS bytes
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ services_config_dir }}/{{ tls_component }}-tls/{{ item }}', '{{ services_backup_dir }}/{{ tls_component }}-tls/{{ item }}']}
+  loop: [private.key, public.crt]
+  changed_when: false
+  no_log: true
+- name: Read TLS identity without printing secrets
+  ansible.builtin.slurp: {src: '{{ item }}'}
+  loop: ['{{ services_config_dir }}/{{ tls_component }}-tls/private.key', '{{ services_config_dir }}/{{ tls_component }}-tls/public.crt', '{{ registry_config_dir }}/tls/ca.crt']
+  register: component_tls_bytes
+  no_log: true
+- name: Collect internal TLS material in memory
+  ansible.builtin.set_fact:
+    component_tls_material: '{{ component_tls_material | default({}) | combine({tls_component: {"key":component_tls_bytes.results[0].content | b64decode,"cert":component_tls_bytes.results[1].content | b64decode,"ca":component_tls_bytes.results[2].content | b64decode}}) }}'
+  no_log: true

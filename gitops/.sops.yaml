@@ -1,0 +1,4 @@
+creation_rules:
+  - path_regex: clusters/kind/.*\.sops\.yaml$
+    encrypted_regex: ^(data|stringData)$
+    age: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge

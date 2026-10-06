@@ -1,0 +1,377 @@
+---
+- import_playbook: ../host/preflight.yaml
+  when: registry_action | default('plan') not in ['stop', 'status']
+
+- name: Configure and control standalone Harbor using official Compose
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    registry_action: plan
+    registry_release: '{{ lookup("ansible.builtin.file", playbook_dir + "/release.yaml") | from_yaml }}'
+    harbor_images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/harbor-offline-images.lock.json") | from_json }}'
+    package_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/harbor-package-files.lock.json") | from_json }}'
+    file_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    installer: '{{ file_lock.files | selectattr("id", "equalto", "harbor-installer") | first }}'
+    compose_file: '{{ file_lock.files | selectattr("id", "equalto", "compose") | first }}'
+    prepare_image: '{{ harbor_images.images | selectattr("id", "equalto", "prepare") | first }}'
+    official_template: '{{ playbook_dir }}/../.tools/harbor/{{ installer.version }}/harbor/harbor.yml.tmpl'
+    compose_argv: ['{{ registry_runtime_dir }}/docker-compose', --project-name, '{{ registry_project }}', -f, '{{ registry_runtime_dir }}/docker-compose.yml', -f, '{{ registry_runtime_dir }}/compose.override.yaml']
+  tasks:
+    - name: Validate site and operation
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - registry_action in ['plan', 'deploy', 'start', 'stop', 'status']
+          - registry_action in ['plan', 'stop', 'status'] or registry_enabled | bool
+          - registry_project is match('^[a-z][a-z0-9-]+$')
+          - registry_hostname is match('^[a-z0-9.-]+$')
+          - registry_https_port | int > 1024 and registry_https_port | int < 65536
+          - registry_https_port | int != 30443
+          - registry_instance_dir.startswith(registry_data_root + '/')
+          - registry_data_root in (storage_mounts | map(attribute='target') | list)
+          - registry_log_rotation_approved | bool
+
+    - name: Require simple absolute paths
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item is match('^/[a-zA-Z0-9_/-]+$')
+          - "'..' not in item.split('/')"
+          - item not in ['/', '/data', '/etc', '/opt', '/data/kind-local-storage']
+      loop: ['{{ registry_config_dir }}', '{{ registry_runtime_dir }}', '{{ registry_instance_dir }}']
+
+    - name: Show intended configuration without secrets
+      ansible.builtin.debug:
+        msg:
+          action: '{{ registry_action }}'
+          public_address: '{{ registry_address }}'
+          backend: '127.0.0.1:{{ registry_https_port }}'
+          data: '{{ registry_instance_dir }}/data'
+          config: '{{ registry_config_dir }}'
+          runtime: '{{ registry_runtime_dir }}'
+          note: Existing SNI ingress is not changed. New service autostart remains disabled pending boot acceptance.
+
+    - name: Inspect current service state
+      ansible.builtin.command:
+        argv: [systemctl, is-active, sunmoon-registry.service]
+      register: current_service
+      changed_when: false
+      failed_when: current_service.rc not in [0, 3, 4]
+      when: registry_action != 'plan'
+
+    - name: Configure a new standalone registry
+      when: registry_action == 'deploy'
+      block:
+        - name: Check capacity for initial database and generated configuration
+          ansible.builtin.include_tasks:
+            file: ../host/tasks/capacity.yaml
+            apply:
+              become: false
+          vars:
+            capacity_planned_bytes: 2147483648
+
+        - name: Inspect installed Compose and official template
+          ansible.builtin.stat:
+            path: '{{ item.path }}'
+            checksum_algorithm: sha256
+            follow: false
+          loop:
+            - path: '{{ playbook_dir }}/../.tools/bin/docker-compose'
+              sha256: '{{ compose_file.sha256 }}'
+            - path: '{{ official_template }}'
+              sha256: '{{ (package_lock.files | selectattr("path", "equalto", "harbor/harbor.yml.tmpl") | first).sha256 }}'
+          register: tool_inputs
+
+        - name: Require verified tools before configuring services
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - item.stat.isreg | default(false)
+              - item.stat.checksum | default('') == item.item.sha256
+          loop: '{{ tool_inputs.results }}'
+          loop_control:
+            label: '{{ item.item.path }}'
+
+        - name: Inspect managed root directories
+          ansible.builtin.stat:
+            path: '{{ item }}'
+            follow: false
+          loop: ['{{ registry_config_dir }}', '{{ registry_runtime_dir }}', '{{ registry_instance_dir }}']
+          register: roots
+
+        - name: Refuse symlink or non-directory roots
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - not item.stat.exists or item.stat.isdir | default(false)
+              - not item.stat.islnk | default(false)
+          loop: '{{ roots.results }}'
+          loop_control:
+            label: '{{ item.item }}'
+
+        - name: Create private configuration and runtime directories
+          ansible.builtin.file:
+            path: '{{ item }}'
+            state: directory
+            mode: '0700'
+            owner: root
+            group: root
+          loop:
+            - '{{ registry_config_dir }}'
+            - '{{ registry_config_dir }}/private'
+            - '{{ registry_config_dir }}/tls'
+            - '{{ registry_runtime_dir }}'
+
+        - name: Install standalone mount guard
+          ansible.builtin.copy:
+            src: check-storage.py
+            dest: '{{ registry_runtime_dir }}/check-storage.py'
+            mode: '0755'
+
+        - name: Set startup storage policy
+          ansible.builtin.copy:
+            dest: '{{ registry_runtime_dir }}/storage.json'
+            mode: '0600'
+            content: '{{ {"uuid": storage_uuid, "mounts": storage_mounts | selectattr("target", "in", [storage_mounts[0].target, registry_data_root]) | list, "data_root": registry_data_root, "probe_image": prepare_image.archive_manifest_digest, "directories": [registry_instance_dir, registry_instance_dir + "/data", registry_instance_dir + "/logs"]} | to_nice_json }}'
+
+        - name: Require Docker to see the actual data disk before creating data
+          ansible.builtin.command:
+            argv: [/usr/bin/python3, '{{ registry_runtime_dir }}/check-storage.py', '{{ registry_runtime_dir }}/storage.json', --mounts-only]
+          changed_when: false
+
+        - name: Create this instance data and generated-config directories
+          ansible.builtin.file:
+            path: '{{ item }}'
+            state: directory
+            mode: '0700'
+          loop:
+            - '{{ registry_instance_dir }}'
+            - '{{ registry_instance_dir }}/data'
+            - '{{ registry_instance_dir }}/logs'
+            - '{{ registry_runtime_dir }}/common'
+            - '{{ registry_runtime_dir }}/common/config'
+
+        - name: Create and validate private credentials and certificates
+          ansible.builtin.include_tasks: tasks/secrets.yaml
+
+        - name: Compose official Harbor settings in memory
+          ansible.builtin.set_fact:
+            harbor_configuration: >-
+              {{ (lookup('ansible.builtin.file', official_template) | from_yaml) | combine({
+                'hostname': registry_hostname,
+                'external_url': 'https://' + registry_address,
+                'https': {'port': registry_https_port, 'certificate': registry_config_dir + '/tls/server.crt', 'private_key': registry_config_dir + '/tls/server.key', 'strong_ssl_ciphers': true},
+                'harbor_admin_password': credentials.results[0].content | b64decode,
+                'database': {'password': credentials.results[1].content | b64decode, 'max_idle_conns': 20, 'max_open_conns': 100},
+                'data_volume': registry_instance_dir + '/data',
+                'log': {'local': {'location': registry_instance_dir + '/logs', 'rotate_count': 3, 'rotate_size': '20M'}},
+                'jobservice': {'job_loggers': ['STD_OUTPUT']},
+                'upload_purging': {'enabled': false},
+                'proxy': {'http_proxy': '', 'https_proxy': '', 'no_proxy': '127.0.0.1,localhost,' + registry_hostname, 'components': []},
+                'trivy': {'skip_update': true, 'skip_java_db_update': true, 'offline_scan': true}
+              }, recursive=true) }}
+          no_log: true
+
+        - name: Preview whether official input would change
+          ansible.builtin.copy:
+            dest: '{{ registry_runtime_dir }}/harbor.yml'
+            content: '{{ harbor_configuration | to_nice_yaml }}'
+            mode: '0600'
+          check_mode: true
+          register: desired_input
+          no_log: true
+          diff: false
+
+        - name: Require stopping this service before changing its input
+          ansible.builtin.assert:
+            quiet: true
+            that: current_service.stdout != 'active' or not desired_input.changed
+            fail_msg: Use registry-stop before applying changed service configuration.
+
+        - name: Preview runtime configuration changes
+          ansible.builtin.template:
+            src: '{{ item.src }}'
+            dest: '{{ item.dest }}'
+            mode: '{{ item.mode }}'
+          loop:
+            - {src: compose.override.yaml.j2, dest: '{{ registry_runtime_dir }}/compose.override.yaml', mode: '0600'}
+            - {src: sunmoon-registry.service.j2, dest: /etc/systemd/system/sunmoon-registry.service, mode: '0644'}
+          check_mode: true
+          register: runtime_preview
+          no_log: true
+          diff: false
+
+        - name: Require stopping this service before changing runtime policy
+          ansible.builtin.assert:
+            quiet: true
+            that: current_service.stdout != 'active' or not runtime_preview.changed
+            fail_msg: Use registry-stop before applying changed runtime configuration.
+
+        - name: Write the protected official input
+          ansible.builtin.copy:
+            dest: '{{ registry_runtime_dir }}/harbor.yml'
+            content: '{{ harbor_configuration | to_nice_yaml }}'
+            mode: '0600'
+          no_log: true
+          diff: false
+
+        - name: Inspect generated official Compose
+          ansible.builtin.stat:
+            path: '{{ registry_runtime_dir }}/docker-compose.yml'
+          register: generated_compose
+
+        - name: Generate configuration with the official pinned prepare image
+          ansible.builtin.command:
+            argv:
+              - docker
+              - run
+              - --rm
+              - --pull=never
+              - --network=none
+              - --mount
+              - 'type=bind,source={{ registry_runtime_dir }}/harbor.yml,target=/input/harbor.yml,readonly'
+              - --mount
+              - 'type=bind,source={{ registry_instance_dir }}/data,target=/data'
+              - --mount
+              - 'type=bind,source={{ registry_runtime_dir }},target=/compose_location'
+              - --mount
+              - 'type=bind,source={{ registry_runtime_dir }}/common/config,target=/config'
+              - --mount
+              - 'type=bind,source={{ registry_config_dir }}/tls/server.crt,target=/hostfs{{ registry_config_dir }}/tls/server.crt,readonly'
+              - --mount
+              - 'type=bind,source={{ registry_config_dir }}/tls/server.key,target=/hostfs{{ registry_config_dir }}/tls/server.key,readonly'
+              - '{{ prepare_image.archive_reference }}'
+              - prepare
+              - --with-trivy
+          when: current_service.stdout != 'active' or desired_input.changed or not generated_compose.stat.exists
+          changed_when: true
+          no_log: true
+
+        - name: Install verified Compose independent of the worktree
+          ansible.builtin.copy:
+            src: '{{ playbook_dir }}/../.tools/bin/docker-compose'
+            dest: '{{ registry_runtime_dir }}/docker-compose'
+            mode: '0755'
+
+        - name: Render the limited deployment override
+          ansible.builtin.template:
+            src: compose.override.yaml.j2
+            dest: '{{ registry_runtime_dir }}/compose.override.yaml'
+            mode: '0600'
+
+        - name: Resolve official Compose plus override without showing credentials
+          ansible.builtin.command:
+            argv: '{{ compose_argv + ["config", "--format", "json"] }}'
+          register: composed
+          changed_when: false
+          no_log: true
+
+        - name: Require fixed images, restart ownership and approved logs
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (composed.stdout | from_json).services.keys() | list | sort == registry_release.services.keys() | list | sort
+              - item.value.image is match('^[^@]+@sha256:[a-f0-9]{64}$')
+              - item.value.restart == 'no'
+              - item.value.pull_policy == 'never'
+              - item.value.logging.driver == 'local'
+              - item.value.logging.options['max-file'] == '3'
+              - item.value.logging.options['max-size'] == '20m'
+              - item.value.container_name is not defined
+          loop: '{{ (composed.stdout | from_json).services | dict2items }}'
+          no_log: true
+
+        - name: Require only the loopback HTTPS host port
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (composed.stdout | from_json).services.proxy.ports | length == 1
+              - (composed.stdout | from_json).services.proxy.ports[0].host_ip == '127.0.0.1'
+              - (composed.stdout | from_json).services.proxy.ports[0].published | int == registry_https_port | int
+              - (composed.stdout | from_json).services.log.ports | default([]) | length == 0
+          no_log: true
+
+        - name: Install the guarded systemd lifecycle
+          ansible.builtin.template:
+            src: sunmoon-registry.service.j2
+            dest: /etc/systemd/system/sunmoon-registry.service
+            mode: '0644'
+
+        - name: Reload unit definitions without enabling boot autostart
+          ansible.builtin.systemd_service:
+            daemon_reload: true
+
+    - name: Stop only the new registry
+      ansible.builtin.systemd_service:
+        name: sunmoon-registry.service
+        state: stopped
+      when: registry_action == 'stop'
+
+    - name: Start only the guarded new registry
+      ansible.builtin.systemd_service:
+        name: sunmoon-registry.service
+        state: started
+      when: registry_action in ['deploy', 'start']
+
+    - name: Wait for certificate-verified Harbor health through its local backend
+      ansible.builtin.uri:
+        url: 'https://127.0.0.1:{{ registry_https_port }}/api/v2.0/health'
+        ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+        validate_certs: true
+        use_proxy: false
+        headers:
+          Host: '{{ registry_address }}'
+        return_content: true
+        timeout: 10
+      register: health
+      until: health.status == 200 and health.json.status | default('') == 'healthy'
+      retries: 36
+      delay: 5
+      when: registry_action in ['deploy', 'start']
+
+    - name: Verify registry authentication through the TLS backend
+      when: registry_action in ['deploy', 'start']
+      block:
+        - name: Read the local administrator credential without displaying it
+          ansible.builtin.slurp:
+            src: '{{ registry_config_dir }}/private/admin-password'
+          register: admin_credential
+          no_log: true
+
+        - name: Require the administrator identity to authenticate
+          ansible.builtin.uri:
+            url: 'https://127.0.0.1:{{ registry_https_port }}/api/v2.0/users/current'
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+            url_username: admin
+            url_password: '{{ admin_credential.content | b64decode }}'
+            force_basic_auth: true
+            return_content: true
+          register: authenticated_user
+          failed_when: authenticated_user.status != 200 or authenticated_user.json.username | default('') != 'admin'
+          no_log: true
+
+        - name: Require anonymous registry access to request authentication
+          ansible.builtin.uri:
+            url: 'https://127.0.0.1:{{ registry_https_port }}/v2/'
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+            headers:
+              Host: '{{ registry_address }}'
+            status_code: 401
+
+    - name: Report actual new registry service state
+      ansible.builtin.command:
+        argv: [systemctl, show, sunmoon-registry.service, --property=ActiveState, --property=SubState, --property=UnitFileState]
+      changed_when: false
+      register: registry_state
+      when: registry_action != 'plan'
+
+    - name: Display only non-secret state
+      ansible.builtin.debug:
+        var: registry_state.stdout_lines
+      when: registry_action != 'plan'

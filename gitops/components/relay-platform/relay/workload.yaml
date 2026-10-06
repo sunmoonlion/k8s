@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata: {name: relay, namespace: relay-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: relay}
+  ports: [{name: ws, port: 47100, targetPort: ws}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: relay, namespace: relay-platform-dev}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector: {matchLabels: {app.kubernetes.io/name: relay}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: relay}
+      annotations: {sunmoonai.com/input-sha256: '43fe8f7d4994b0033573344d5b32ef17e6a9947434708711b8c08ff3bc455fa5'}
+    spec:
+      serviceAccountName: platform-runtime
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 10002, runAsGroup: 10002, fsGroup: 10002, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: relay
+          image: harbor.sunmoonai.com:30443/app-images/relay@sha256:dfc4d0e08fc83f846ceb1d3024a7f944b688f1283f886a89fb0c8c5b0702b647
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: RELAY_HOST, value: 0.0.0.0}
+            - {name: RELAY_PORT, value: '47100'}
+            - {name: RELAY_NAME, value: 'edge-1'}
+            - {name: RELAY_TOKENS_FILE, value: /secrets/tokens.json}
+            - {name: RELAY_TOKENS_STATE, value: /state/tokens.json}
+            - {name: RELAY_ADMIN_TOKEN, valueFrom: {secretKeyRef: {name: relay-auth, key: RELAY_ADMIN_TOKEN}}}
+            - {name: RELAY_JWT_ISSUER, value: sunmoon-workbench}
+          ports: [{name: ws, containerPort: 47100}]
+          startupProbe: {httpGet: {path: /healthz, port: ws}, periodSeconds: 5, failureThreshold: 24}
+          readinessProbe: {httpGet: {path: /healthz, port: ws}, periodSeconds: 10, timeoutSeconds: 3}
+          livenessProbe: {httpGet: {path: /healthz, port: ws}, periodSeconds: 20, timeoutSeconds: 3}
+          resources: {"requests": {"cpu": "50m", "memory": "64Mi"}, "limits": {"cpu": "500m", "memory": "256Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: tokens, mountPath: /secrets, readOnly: true}
+            - {name: state, mountPath: /state}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tokens, secret: {secretName: relay-auth, items: [{key: tokens.json, path: tokens.json}], defaultMode: 0440}}
+        - {name: state, emptyDir: {sizeLimit: 8Mi}}
+        - {name: tmp, emptyDir: {sizeLimit: 16Mi}}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: relay
+  namespace: relay-platform-dev
+  annotations: {kubernetes.io/ingress.class: sunmoon}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: 'Host(`relay.sunmoonai.com`)'
+      services: [{name: relay, port: ws, scheme: http}]
+  tls: {secretName: relay-tls}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: relay-ingress, namespace: relay-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: relay}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: 'ingress-platform-dev'}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: 'app-platform-dev'}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: 'sandbox-platform-dev'}}
+      ports: [{protocol: TCP, port: 47100}]

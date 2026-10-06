@@ -1,0 +1,9 @@
+---
+# RAGFlow-only derived index; image identity is in artifacts/upstream-images.lock.json.
+services_infinity_enabled: true
+infinity_volume: {name: infinity, node: worker, size: 30Gi, uid: 1000, gid: 1000}
+infinity_buffer_size: 1GB
+infinity_memindex_quota: 256MB
+infinity_resources:
+  requests: {cpu: 250m, memory: 1Gi}
+  limits: {cpu: '2', memory: 3Gi}

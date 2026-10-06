@@ -1,0 +1,24 @@
+---
+- name: Validate bounded Infinity profile
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - infinity_volume.uid == 1000
+      - infinity_buffer_size == '1GB'
+      - infinity_memindex_quota == '256MB'
+      - image_map.infinity.source == 'docker.io/infiniflow/infinity:v0.7.3-x64-v3'
+- name: Render the official-config Infinity workload
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/data-platform/infinity/workload.yaml.j2'
+    dest: '{{ build }}/data-platform/infinity/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+- name: Declare explicit Infinity root
+  ansible.builtin.copy:
+    dest: '{{ build }}/data-platform/infinity/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: |
+      apiVersion: kustomize.config.k8s.io/v1beta1
+      kind: Kustomization
+      resources: [workload.yaml]

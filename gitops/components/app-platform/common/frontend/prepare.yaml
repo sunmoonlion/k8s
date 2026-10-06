@@ -1,0 +1,22 @@
+---
+# Shared web/admin prepare. Templates live in common/; the generic renderer does not
+# find j2 beside each frontend stage path.
+- name: Bind application identity
+  ansible.builtin.include_tasks:
+    file: '{{ components_root }}/app-platform/common/backend/bind.yaml'
+- name: Require an explicit frontend role
+  ansible.builtin.assert:
+    quiet: true
+    that: prepare_vars.frontend in ['web', 'admin']
+- name: Bind the frontend object path
+  ansible.builtin.set_fact:
+    frontend_object: '{{ frontend_web_object if prepare_vars.frontend == "web" else frontend_admin_object }}'
+    frontend_source: '{{ playbook_dir }}/../../gitops/components/app-platform/common/{{ prepare_vars.frontend }}/workload.yaml.j2'
+- name: Prepare the frontend candidate directory
+  ansible.builtin.file: {path: '{{ build }}/{{ frontend_object }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+- name: Render the shared frontend workload
+  ansible.builtin.template:
+    src: '{{ frontend_source }}'
+    dest: '{{ build }}/{{ frontend_object }}/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'

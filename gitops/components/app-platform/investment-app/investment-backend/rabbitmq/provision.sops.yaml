@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: investment-rabbitmq-provision
+    namespace: messaging-platform-dev
+stringData:
+    password: ENC[AES256_GCM,data:0kuAvsdWUPeAQu9JD7lYIuSlbmjp7u06wGWwWND+NJOQCikcsHi5kg==,iv:9UGGNoB9+boHaxfIxLlVcAxpKbkeLXEHNEs8zBEAIEY=,tag:jIhb7MMZB+RgYNWQdCV/iw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSByb3p5STB0MldNdy94STFY
+            Ny8yMVZwcmw2bXBZWUY4ay8vbmhrelR4a3dBCkZoN1J6b215OGx6ZXJLRE1zS0JH
+            ZmtNSXBlL2RUWGV2WlEyR2NNUzN0enMKLS0tIERqNHpIa25naHNRQWxoM2pIVWw2
+            YVJmRkxYL0JYcHBrODNZN3d5YmF3U00KAh3ZAfL6MaxtE1bSjlrtwLhPYxESSw9M
+            qVkFcJrqwws0RW7vveYgq5VCEcyy8GwVsTEWb0yVnZ1pxJgsGPSm5g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:32:22Z"
+    mac: ENC[AES256_GCM,data:UsCNxfk5a0jrnhI4ZXaqBNZK3HA8mqKdszVK/+K5pjQj1gdHiKkrcizOYon0lvjPpbf8F+YShT/Cye8CzQGmrkrx6Meh3SIrK0c1b2HtFQOQkli2G9mcPjf50XshDZhW8/9OaXF43TTxvDgUnx5iZMkfGk3lKVDFC5ELM6ZSWog=,iv:UK7tVROxZmpnl6J1JnuGn8tzEaEG4K6juClvMKUDcT0=,tag:Fw4hwLjxu60Kio/mlIBYUw==,type:str]
+    version: 3.13.3

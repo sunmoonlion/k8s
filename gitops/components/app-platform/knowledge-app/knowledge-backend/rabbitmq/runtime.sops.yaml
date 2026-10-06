@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowledge-rabbitmq-runtime
+    namespace: app-platform-dev
+stringData:
+    CELERY_BROKER_URL: ENC[AES256_GCM,data:VMy3ZaxLzJX/iU9M3LaHecdXhzPq3H5FKy4ZR8yn3JeN9NoC5yzWyuNICw1UqzqASR6nDx+r3BQ4pVt7CLjUXBrOQrfo2CxDH/dQ5IXZraRf2rFmNin9ebO0T7l7vcKJ0y3tT9M54Pvb1kqVCCYln8f3kOW0NhNx+BMpGL1HCHGIHw==,iv:KX+JW0DX67DOQxxO49RZ2NLlWSTMFCtJijJpBksDmH4=,tag:ul70n6+V7TU4PL4016eOSQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBNNjJITUU4N2FDNTFoVS9T
+            ZW8wNXdyaDhNbnB0WjJ5YlZ4K1NLVzAzSVUwCnhWbFdJQWRqMUZFOVRlU3BWMUts
+            VUxGd0FYaWZVZi9ZejllZ0dGb1AyU2cKLS0tIEV6anFjSHFQSXNsRkRyM1RjRThs
+            dUh0bDkyaHBDNXFVa1ZZMnB3Skg1b28KF1LPCSEedbHG/6Jf9ak3gZdpbeHhEtvA
+            PzjdlyS3lmok5J0tjpvEp+1cFg4WplxP5thI14sILvW6vBuJ36gChA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:19:46Z"
+    mac: ENC[AES256_GCM,data:WvV7yYqehmDsK0dguheRem72gRGvK2kvFpL8OkbLlKU3GaihJlk2HhWEHTQmbwAJw2+E/UkkcFP8fLwpUcodRDzxWgNWtmXhKTFdNifZO0qacBJ32YQT0G5kjLy4Q6P4hIh1lfoHVB2BBgqJSbNJ7gdnbPhlSuPMTb7JA4VFg+M=,iv:I6j9LR8sgaxJ4qfl2ivMTp0vbNDIQtnofOJa5Ep+HBg=,tag:+CpJFJSVkBKJxx5/84bnQQ==,type:str]
+    version: 3.13.3

@@ -1,0 +1,26 @@
+[Unit]
+Description=SunMoon TLS passthrough entry
+Requires=docker.service
+After=docker.service
+PartOf=docker.service
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
+[Service]
+Type=exec
+WorkingDirectory={{ entry_runtime_dir }}
+ExecStartPre={{ entry_runtime_dir }}/docker-compose --project-name sunmoon-entry -f compose.yaml run --rm --no-deps proxy haproxy -c -f /usr/local/etc/haproxy/haproxy.cfg
+ExecStart={{ entry_runtime_dir }}/docker-compose --project-name sunmoon-entry -f compose.yaml up --no-build --pull never --abort-on-container-exit --exit-code-from proxy --no-attach proxy
+ExecStop={{ entry_runtime_dir }}/docker-compose --project-name sunmoon-entry -f compose.yaml stop --timeout 30
+ExecStopPost=-{{ entry_runtime_dir }}/docker-compose --project-name sunmoon-entry -f compose.yaml stop --timeout 30
+# Compose 5.5.1 returns 130 when interrupted by the explicit stop operation.
+SuccessExitStatus=130
+Restart=always
+RestartSec=10
+TimeoutStartSec=60
+TimeoutStopSec=90
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target

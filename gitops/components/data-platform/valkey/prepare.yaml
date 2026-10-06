@@ -1,0 +1,65 @@
+---
+- name: Validate separate Valkey identities and bounded profile
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - valkey_volume.uid == 999
+      - valkey_runtime_username == 'ragflow_queue'
+      - valkey_probe_username == 'sunmoon_queue_probe'
+      - valkey_maxmemory == '384mb'
+- name: Prepare independently recoverable Valkey credentials
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: valkey
+    component_input_manifest: data-platform/valkey/auth.sops.yaml
+    component_initial_input:
+      runtime_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      probe_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+  no_log: true
+- name: Retain Valkey credentials only in memory
+  ansible.builtin.set_fact: {valkey_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Encrypt mounted ACL hashes and bounded probe identity
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/valkey/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: valkey-auth, namespace: '{{ data_namespace }}'}
+        stringData:
+          probe-password: '{{ valkey_credentials.probe_password }}'
+          users.acl: |
+            user default off
+            user {{ valkey_runtime_username }} on #{{ valkey_credentials.runtime_password | hash('sha256') }} ~* &* +@read +@write +@connection +@scripting -@admin -@dangerous -flushall -flushdb +info
+            user {{ valkey_probe_username }} on #{{ valkey_credentials.probe_password | hash('sha256') }} ~sunmoon:acceptance:* +ping +get +set +del
+          valkey.conf: |
+            bind 0.0.0.0
+            protected-mode yes
+            aclfile /run/auth/users.acl
+            dir /data
+            appendonly yes
+            appendfsync everysec
+            maxmemory {{ valkey_maxmemory }}
+            maxmemory-policy noeviction
+            logfile ""
+  no_log: true
+- name: Derive only Valkey rollout identity
+  ansible.builtin.set_fact: {valkey_input_digest: '{{ valkey_credentials | to_json | hash("sha256") }}'}
+  no_log: true
+- name: Render dedicated Valkey workload
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/data-platform/valkey/workload.yaml.j2'
+    dest: '{{ build }}/data-platform/valkey/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+- name: Declare explicit Valkey root
+  ansible.builtin.copy:
+    dest: '{{ build }}/data-platform/valkey/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: |
+      apiVersion: kustomize.config.k8s.io/v1beta1
+      kind: Kustomization
+      resources: [workload.yaml, auth.sops.yaml]

@@ -1,0 +1,260 @@
+---
+- import_playbook: ../host/preflight.yaml
+
+- name: Rehearse a cold Harbor restore without touching the live registry
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    recovery_action: plan
+    recovery_port: 12443
+    image_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
+    skopeo: '{{ image_lock.images | selectattr("id", "equalto", "skopeo") | first }}'
+    published: '{{ image_lock.images | selectattr("id", "equalto", "haproxy") | first }}'
+    recovery_address: '{{ registry_hostname }}:{{ recovery_port }}'
+  tasks:
+    - name: Require explicit backup identity and isolated operation
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - recovery_action in ['plan', 'check']
+          - recovery_backup is match('^/[a-zA-Z0-9_./-]+\.tar$')
+          - recovery_backup_sha256 is match('^[a-f0-9]{64}$')
+          - recovery_port | int != registry_https_port | int
+          - recovery_port | int not in [80, 443, 30443]
+
+    - name: Verify service-visible disk before restoring anything
+      ansible.builtin.command:
+        argv: [python3, '{{ registry_runtime_dir }}/check-storage.py', '{{ registry_runtime_dir }}/storage.json']
+      changed_when: false
+
+    - name: Verify immutable source backup
+      ansible.builtin.stat:
+        path: '{{ recovery_backup }}'
+        follow: false
+        checksum_algorithm: sha256
+      register: cold_backup
+
+    - name: Require exact source bytes
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - cold_backup.stat.isreg | default(false)
+          - not cold_backup.stat.islnk | default(false)
+          - cold_backup.stat.checksum == recovery_backup_sha256
+
+    - name: Show isolated recovery plan
+      ansible.builtin.debug:
+        msg:
+          backup: '{{ recovery_backup }}'
+          backup_sha256: '{{ recovery_backup_sha256 }}'
+          destination_parent: '{{ registry_instance_dir }}/recovery'
+          endpoint: '127.0.0.1:{{ recovery_port }}'
+          checks: Whole backup file hashes, metadata, registry directory hashes, admin identity, private artifact, isolated token realm, full authenticated pull, every OCI blob.
+          lifecycle: Start isolated Compose project; always stop it; retain stopped rehearsal and evidence for final cleanup. No live service changes.
+
+    - name: Execute the isolated recovery acceptance
+      when: recovery_action == 'check'
+      block:
+        - name: Budget extraction, database runtime and independent pullback
+          ansible.builtin.include_tasks:
+            file: ../host/tasks/capacity.yaml
+            apply:
+              become: false
+          vars:
+            capacity_planned_bytes: '{{ cold_backup.stat.size * 2 + 536870912 }}'
+
+        - name: Require an unused loopback recovery port
+          ansible.builtin.wait_for:
+            host: 127.0.0.1
+            port: '{{ recovery_port }}'
+            state: stopped
+            timeout: 1
+
+        - name: Create recovery parent on the verified data disk
+          ansible.builtin.file:
+            path: '{{ registry_instance_dir }}/recovery'
+            state: directory
+            mode: '0700'
+            owner: root
+            group: root
+
+        - name: Allocate a unique invocation identity
+          ansible.builtin.command:
+            argv: [date, -u, '+%Y%m%d%H%M%S%N']
+          register: recovery_stamp
+          changed_when: false
+
+        - name: Set this invocation isolated paths
+          ansible.builtin.set_fact:
+            recovery_dir: '{{ registry_instance_dir }}/recovery/rehearsal-{{ recovery_stamp.stdout }}'
+            recovery_project: 'sunmoon-recovery-{{ recovery_stamp.stdout }}'
+
+        - name: Verify and render the copied official deployment
+          ansible.builtin.command:
+            argv:
+              - python3
+              - '{{ playbook_dir }}/prepare-recovery.py'
+              - --backup
+              - '{{ recovery_backup }}'
+              - --sha256
+              - '{{ recovery_backup_sha256 }}'
+              - --destination
+              - '{{ recovery_dir }}'
+              - --site
+              - '{{ {"registry_instance_dir": registry_instance_dir, "registry_config_dir": registry_config_dir, "registry_runtime_dir": registry_runtime_dir, "registry_hostname": registry_hostname, "registry_address": registry_address, "registry_https_port": registry_https_port} | to_json }}'
+              - --images-lock
+              - '{{ playbook_dir }}/../artifacts/harbor-offline-images.lock.json'
+              - --files-lock
+              - '{{ playbook_dir }}/../artifacts/files.lock.json'
+              - --project
+              - '{{ recovery_project }}'
+              - --port
+              - '{{ recovery_port | string }}'
+          changed_when: true
+          register: prepared_recovery
+
+        - name: Define isolated Compose and pull client arguments
+          ansible.builtin.set_fact:
+            recovery_compose: ['{{ recovery_dir }}{{ "/tree" + registry_runtime_dir }}/docker-compose', -p, '{{ recovery_project }}', -f, '{{ recovery_dir }}/compose.json']
+            recovery_client: [docker, run, --rm, --pull=never, --network=host, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --tmpfs, '/var/tmp:rw,noexec,nosuid,size=64m', --add-host, '{{ registry_hostname }}:127.0.0.1', --env, HTTP_PROXY=, --env, HTTPS_PROXY=, --env, ALL_PROXY=, --env, 'NO_PROXY={{ registry_hostname }},127.0.0.1,localhost', --mount, 'type=bind,source={{ recovery_dir }}/tree{{ registry_config_dir }}/clients,target=/certs,readonly', --mount, 'type=bind,source={{ recovery_dir }}/puller-auth.json,target=/auth.json,readonly']
+
+        - name: Start, inspect and fully pull from only the restored project
+          block:
+            - name: Start copied services using only already verified images
+              ansible.builtin.command:
+                argv: '{{ recovery_compose + ["up", "-d", "--wait", "--wait-timeout", "180", "--pull", "never", "--no-build"] }}'
+              changed_when: true
+
+            - name: Require the isolated port to be actually published
+              ansible.builtin.command:
+                argv: [docker, port, '{{ recovery_project }}-proxy-1', '8443/tcp']
+              register: recovery_port_binding
+              changed_when: false
+              failed_when: recovery_port_binding.rc != 0 or recovery_port_binding.stdout | trim != '127.0.0.1:' + recovery_port | string
+
+            - name: Verify recovered component health over trusted TLS
+              ansible.builtin.uri:
+                url: 'https://127.0.0.1:{{ recovery_port }}/api/v2.0/health'
+                ca_path: '{{ recovery_dir }}/tree{{ registry_config_dir }}/tls/ca.crt'
+                validate_certs: true
+                use_proxy: false
+                timeout: 5
+              register: recovery_health
+              until: recovery_health.status == 200 and recovery_health.json.status | default('') == 'healthy'
+              retries: 24
+              delay: 5
+
+            - name: Require the recovered endpoint to issue its own token challenge
+              ansible.builtin.uri:
+                url: 'https://127.0.0.1:{{ recovery_port }}/v2/'
+                ca_path: '{{ recovery_dir }}/tree{{ registry_config_dir }}/tls/ca.crt'
+                validate_certs: true
+                use_proxy: false
+                status_code: 401
+                headers:
+                  Host: '{{ recovery_address }}'
+              register: recovery_challenge
+              no_log: true
+              failed_when: recovery_challenge.status != 401 or ('realm="https://' + recovery_address + '/service/token"') not in recovery_challenge.www_authenticate | default('')
+
+            - name: Read only the restored administrator credential
+              ansible.builtin.slurp:
+                src: '{{ recovery_dir }}/tree{{ registry_config_dir }}/private/admin-password'
+              register: recovery_admin
+              no_log: true
+
+            - name: Verify restored account and exact artifact
+              ansible.builtin.uri:
+                url: 'https://127.0.0.1:{{ recovery_port }}/api/v2.0/{{ item }}'
+                ca_path: '{{ recovery_dir }}/tree{{ registry_config_dir }}/tls/ca.crt'
+                validate_certs: true
+                use_proxy: false
+                url_username: admin
+                url_password: '{{ recovery_admin.content | b64decode }}'
+                force_basic_auth: true
+              loop: ['users/current', 'projects/platform/repositories/haproxy/artifacts/{{ published.manifest_digest }}']
+              register: recovered_api
+              no_log: true
+
+            - name: Require the restored account and artifact identities
+              ansible.builtin.assert:
+                quiet: true
+                that:
+                  - recovered_api.results[0].json.username == 'admin'
+                  - recovered_api.results[1].json.digest == published.manifest_digest
+
+            - name: Create this rehearsal private pullback directory
+              ansible.builtin.file:
+                path: '{{ recovery_dir }}/pullback'
+                state: directory
+                mode: '0700'
+
+            - name: Pull all image content using the restored read-only identity
+              ansible.builtin.command:
+                argv: '{{ recovery_client + ["--mount", "type=bind,source=" + recovery_dir + "/pullback,target=/output", skopeo.manifest_digest, "copy", "--preserve-digests", "--src-authfile", "/auth.json", "--src-cert-dir", "/certs", "docker://" + recovery_address + "/platform/haproxy@" + published.manifest_digest, "oci-archive:/output/image.tar"] }}'
+              changed_when: false
+
+            - name: Verify every recovered image blob independently
+              ansible.builtin.command:
+                argv: [python3, '{{ playbook_dir }}/../artifacts/verify-oci-archive.py', '{{ recovery_dir }}/pullback/image.tar', --expected-manifest, '{{ published.manifest_digest }}']
+              changed_when: false
+              register: recovery_pull
+
+            - name: Require exact recovered image configuration
+              ansible.builtin.assert:
+                quiet: true
+                that: (recovery_pull.stdout | from_json).image.config_digest == published.config_digest
+
+            - name: Compare the complete restored registry file set after pulling
+              ansible.builtin.command:
+                argv:
+                  - python3
+                  - -c
+                  - |
+                    import hashlib,json,pathlib,sys
+                    root=pathlib.Path(sys.argv[1]); base=pathlib.Path(sys.argv[2])
+                    before=json.loads((root/'registry-before.json').read_text())
+                    after={}
+                    for p in (root/'tree'/str(base).lstrip('/')).rglob('*'):
+                        if p.is_file():
+                            with p.open('rb') as f: after[str(p.relative_to(root/'tree'))]=hashlib.file_digest(f,'sha256').hexdigest()
+                    if before != after: raise SystemExit('Restored registry directory differs from the cold backup')
+                    print(json.dumps({'registry_files':len(after),'all_file_hashes_match':True}))
+                  - '{{ recovery_dir }}'
+                  - '{{ registry_instance_dir }}/data/registry'
+              changed_when: false
+              register: registry_comparison
+
+            - name: Save successful recovery evidence without credentials
+              ansible.builtin.copy:
+                content: '{{ {"prepared": prepared_recovery.stdout | from_json, "registry_comparison": registry_comparison.stdout | from_json, "pull": recovery_pull.stdout | from_json, "token_realm": "https://" + recovery_address + "/service/token", "health": recovery_health.json.status} | to_nice_json }}'
+                dest: '{{ recovery_dir }}/verified.json'
+                mode: '0600'
+
+          always:
+            - name: Stop only this isolated recovery project without removing containers or volumes
+              ansible.builtin.command:
+                argv: '{{ recovery_compose + ["stop", "--timeout", "60"] }}'
+              changed_when: true
+
+            - name: Verify recovery containers are all stopped
+              ansible.builtin.command:
+                argv: [docker, ps, --filter, 'label=com.docker.compose.project={{ recovery_project }}', --format, '{{ "{{.ID}}" }}']
+              register: recovery_running
+              changed_when: false
+              failed_when: recovery_running.stdout | trim != ''
+
+        - name: Verify the original live Harbor remains healthy
+          ansible.builtin.uri:
+            url: 'https://127.0.0.1:{{ registry_https_port }}/api/v2.0/health'
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+          register: original_health
+          failed_when: original_health.status != 200 or original_health.json.status != 'healthy'
+
+        - name: Report isolated acceptance and retained evidence
+          ansible.builtin.debug:
+            msg: '{{ recovery_dir }}/verified.json; isolated project stopped; live registry healthy. Rehearsal copies are retained for the approved final cleanup.'

@@ -1,0 +1,22 @@
+# User-facing maintainer identity; component runtime fields remain in the ELK config.
+---
+
+# Maintainer identity; permissions and current credential storage, never password values.
+operator_account_elasticsearch:
+  object: data-platform/elk/elasticsearch
+  id: administrator
+  username: elastic
+  account_type: platform-administrator
+  table_row: '15a'
+  table_import: true
+  current_file: '{{ services_config_dir }}/elk.yaml'
+  current_field: elastic_password
+  backup_file: '{{ services_backup_dir }}/elk.yaml'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: elasticsearch-admin
+  initial_preset_supported: true
+  initial_file: '{{ services_config_dir }}/presets/elasticsearch-admin-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/elasticsearch-admin-password'
+  protocol_check_supported: false
+  rotation_supported: false

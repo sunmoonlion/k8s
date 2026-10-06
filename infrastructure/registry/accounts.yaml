@@ -1,0 +1,114 @@
+---
+- name: Provision private registry project and separate publishing identities
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    registry_api: 'https://127.0.0.1:{{ registry_https_port }}/api/v2.0'
+    project_name: platform
+    robot_roles:
+      - name: publisher
+        actions: [pull, push]
+      - name: puller
+        actions: [pull]
+  module_defaults:
+    ansible.builtin.uri:
+      ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+      validate_certs: true
+      use_proxy: false
+      url_username: admin
+      url_password: '{{ admin_password.content | b64decode }}'
+      force_basic_auth: true
+      timeout: 20
+  tasks:
+    - name: Require explicit registry enablement
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - registry_enabled | bool
+          - not ansible_check_mode
+
+    - name: Read local admin credential for account provisioning only
+      ansible.builtin.slurp:
+        src: '{{ registry_config_dir }}/private/admin-password'
+      register: admin_password
+      no_log: true
+
+    - name: Inspect private platform project
+      ansible.builtin.uri:
+        url: '{{ registry_api }}/projects/{{ project_name }}'
+        status_code: [200, 404]
+      register: existing_project
+      no_log: true
+
+    - name: Create private project without automatic deletion or scanning
+      ansible.builtin.uri:
+        url: '{{ registry_api }}/projects'
+        method: POST
+        body_format: json
+        body:
+          project_name: '{{ project_name }}'
+          metadata: {public: 'false', auto_scan: 'false'}
+        status_code: 201
+      when: existing_project.status == 404
+      changed_when: true
+      no_log: true
+
+    - name: Confirm project remains private
+      ansible.builtin.uri:
+        url: '{{ registry_api }}/projects/{{ project_name }}'
+      register: platform_project
+      failed_when: platform_project.status != 200 or platform_project.json.metadata.public != 'false'
+      no_log: true
+
+    - name: Read current time for credential expiry admission
+      ansible.builtin.command:
+        argv: [date, '+%s']
+      register: current_epoch
+      changed_when: false
+
+    - name: Provision the two bounded identities
+      ansible.builtin.include_tasks: tasks/robot.yaml
+      loop: '{{ robot_roles }}'
+      loop_control:
+        loop_var: robot_role
+        label: '{{ robot_role.name }}'
+
+    - name: Create client trust directory
+      ansible.builtin.file:
+        path: '{{ registry_config_dir }}/clients'
+        state: directory
+        mode: '0700'
+
+    - name: Install public CA for scoped registry clients
+      ansible.builtin.copy:
+        src: '{{ registry_config_dir }}/tls/ca.crt'
+        remote_src: true
+        dest: '{{ registry_config_dir }}/clients/ca.crt'
+        mode: '0644'
+
+    - name: Validate the Docker registry trust directory name
+      ansible.builtin.assert:
+        quiet: true
+        that: registry_address is match('^[a-z0-9.-]+:[0-9]{2,5}$')
+
+    - name: Create registry-scoped Docker CA directory
+      ansible.builtin.file:
+        path: '/etc/docker/certs.d/{{ registry_address }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Add the new public CA without replacing other registry trust
+      ansible.builtin.copy:
+        src: '{{ registry_config_dir }}/tls/ca.crt'
+        remote_src: true
+        dest: '/etc/docker/certs.d/{{ registry_address }}/platform-kind-v1-ca.crt'
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Report account scope without credentials
+      ansible.builtin.debug:
+        msg: Private platform project; independent publisher (pull/push) and puller (pull only), 90-day expiry. No delete permissions. Secrets remain outside Git.

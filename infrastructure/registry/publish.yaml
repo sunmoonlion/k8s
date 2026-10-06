@@ -1,0 +1,173 @@
+---
+- name: Publish and verify the first locked image through the formal registry endpoint
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
+    archives: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/host-archives.lock.json") | from_json }}'
+    skopeo: '{{ images.images | selectattr("id", "equalto", "skopeo") | first }}'
+    published: '{{ images.images | selectattr("id", "equalto", "haproxy") | first }}'
+    source_archive: '{{ archives.files | selectattr("id", "equalto", "haproxy") | first }}'
+    target_repository: '{{ registry_address }}/platform/haproxy'
+    client: [docker, run, --rm, --pull=never, --network=host, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --tmpfs, '/var/tmp:rw,noexec,nosuid,size=64m', --add-host, '{{ registry_hostname }}:127.0.0.1', --env, HTTP_PROXY=, --env, HTTPS_PROXY=, --env, ALL_PROXY=, --env, 'NO_PROXY={{ registry_hostname }},127.0.0.1,localhost', --mount, 'type=bind,source={{ registry_config_dir }}/clients,target=/certs,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/publisher-auth.json,target=/publisher.json,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/puller-auth.json,target=/puller.json,readonly']
+  tasks:
+    - name: Inspect Docker version before any endpoint or image changes
+      ansible.builtin.command:
+        argv: [docker, version, --format, '{{ "{{.Server.Version}}" }}']
+      changed_when: false
+      register: docker_version
+
+    - name: Reject the observed Docker registry token CA regression
+      ansible.builtin.assert:
+        quiet: true
+        that: docker_version.stdout is version('29.5.0', '>=')
+        fail_msg: Docker 29.4.x ignores per-registry CA in token requests (moby 52600); prepare a separately approved host upgrade before cutover.
+
+    - name: Require the formal entry and registry to be enabled
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - registry_enabled | bool and entry_enabled | bool
+          - entry_port | int == 30443
+          - entry_listen_address == '0.0.0.0'
+
+    - name: Verify formal endpoint routes to the new trusted Harbor before any writes
+      ansible.builtin.command:
+        argv: [curl, --silent, --show-error, --fail, --noproxy, '*', --connect-timeout, '5', --max-time, '15', --cacert, '{{ registry_config_dir }}/clients/ca.crt', --resolve, '{{ registry_address }}:127.0.0.1', 'https://{{ registry_address }}/api/v2.0/health']
+      register: target_health
+      changed_when: false
+      failed_when: target_health.rc != 0 or (target_health.stdout | from_json).status != 'healthy'
+
+    - name: Verify source archive file identity
+      ansible.builtin.stat:
+        path: '{{ artifact_cache_root }}/{{ source_archive.path }}'
+        follow: false
+        checksum_algorithm: sha256
+      register: archive_file
+
+    - name: Require locked source bytes
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - archive_file.stat.isreg | default(false)
+          - not archive_file.stat.islnk | default(false)
+          - archive_file.stat.checksum == source_archive.sha256
+          - archive_file.stat.size == source_archive.size_bytes
+          - archive_file.stat.mode == '0644'
+
+    - name: Verify source access using the restricted publishing container
+      ansible.builtin.command:
+        argv: '{{ client + ["--mount", "type=bind,source=" + artifact_cache_root + "/" + source_archive.path + ",target=/source.tar,readonly", skopeo.manifest_digest, "inspect", "--raw", "oci-archive:/source.tar"] }}'
+      changed_when: false
+
+    - name: Check whether the exact manifest has already been published
+      ansible.builtin.command:
+        argv: '{{ client + [skopeo.manifest_digest, "inspect", "--raw", "--authfile", "/publisher.json", "--cert-dir", "/certs", "docker://" + target_repository + "@" + published.manifest_digest] }}'
+      changed_when: false
+      failed_when: false
+      register: before_publish
+
+    - name: Reject network or authentication failures as missing-image evidence
+      ansible.builtin.assert:
+        quiet: true
+        that: >-
+          before_publish.rc == 0 or
+          'manifest unknown' in before_publish.stderr | lower or
+          'name unknown' in before_publish.stderr | lower or
+          ('unknown: artifact platform/haproxy@' + published.manifest_digest + ' not found') in before_publish.stderr | lower
+        fail_msg: '{{ before_publish.stderr }}'
+
+    - name: Budget registry storage and the independent pullback
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply:
+          become: false
+      vars:
+        capacity_planned_bytes: 536870912
+
+    - name: Publish using only the bounded publisher identity
+      ansible.builtin.command:
+        argv: '{{ client + ["--mount", "type=bind,source=" + artifact_cache_root + "/" + source_archive.path + ",target=/source.tar,readonly", skopeo.manifest_digest, "copy", "--preserve-digests", "--dest-authfile", "/publisher.json", "--dest-cert-dir", "/certs", "oci-archive:/source.tar", "docker://" + target_repository + ":" + published.source.rsplit(":", 1)[1]] }}'
+      when: before_publish.rc != 0
+      changed_when: true
+
+    - name: Inspect exact published manifest with the read-only identity
+      ansible.builtin.command:
+        strip_empty_ends: false
+        argv: '{{ client + [skopeo.manifest_digest, "inspect", "--raw", "--authfile", "/puller.json", "--cert-dir", "/certs", "docker://" + target_repository + "@" + published.manifest_digest] }}'
+      register: remote_manifest
+      changed_when: false
+
+    - name: Require byte-identical manifest digest
+      ansible.builtin.assert:
+        quiet: true
+        that: '"sha256:" + (remote_manifest.stdout | hash("sha256")) == published.manifest_digest'
+
+    - name: Allocate a private independent pullback directory
+      ansible.builtin.tempfile:
+        state: directory
+        path: '{{ artifact_cache_root }}'
+        prefix: .registry-pullback-
+      register: pullback
+
+    - name: Verify authenticated full image pull and permission denial
+      block:
+        - name: Pull all content from the registry with the read-only identity
+          ansible.builtin.command:
+            argv: '{{ client + ["--mount", "type=bind,source=" + pullback.path + ",target=/output", skopeo.manifest_digest, "copy", "--preserve-digests", "--src-authfile", "/puller.json", "--src-cert-dir", "/certs", "docker://" + target_repository + "@" + published.manifest_digest, "oci-archive:/output/image.tar"] }}'
+          changed_when: false
+
+        - name: Verify every pulled OCI blob and the expected manifest
+          ansible.builtin.command:
+            argv: [/usr/bin/python3, '{{ playbook_dir }}/../artifacts/verify-oci-archive.py', '{{ pullback.path }}/image.tar', --expected-manifest, '{{ published.manifest_digest }}']
+          register: verified_pull
+          changed_when: false
+
+        - name: Require matching image configuration
+          ansible.builtin.assert:
+            quiet: true
+            that: (verified_pull.stdout | from_json).image.config_digest == published.config_digest
+
+        - name: Supply a private temporary Docker pull credential
+          ansible.builtin.copy:
+            src: '{{ registry_config_dir }}/private/puller-auth.json'
+            remote_src: true
+            dest: '{{ pullback.path }}/config.json'
+            owner: root
+            group: root
+            mode: '0600'
+          no_log: true
+          diff: false
+
+        - name: Require the host Docker daemon to pull through the same CA and identity
+          ansible.builtin.command:
+            argv: [docker, --config, '{{ pullback.path }}', pull, '{{ target_repository }}@{{ published.manifest_digest }}']
+          changed_when: false
+
+        - name: Attempt the same push using the read-only identity
+          ansible.builtin.command:
+            argv: '{{ client + ["--mount", "type=bind,source=" + artifact_cache_root + "/" + source_archive.path + ",target=/source.tar,readonly", skopeo.manifest_digest, "copy", "--preserve-digests", "--dest-authfile", "/puller.json", "--dest-cert-dir", "/certs", "oci-archive:/source.tar", "docker://" + target_repository + ":permission-denial-probe"] }}'
+          register: denied_push
+          changed_when: false
+          failed_when: false
+
+        - name: Require permission denial after the successful pull
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - denied_push.rc != 0
+              - "'denied' in denied_push.stderr | lower or 'unauthorized' in denied_push.stderr | lower"
+
+        - name: Report only verified reference and content metadata
+          ansible.builtin.debug:
+            msg:
+              reference: '{{ target_repository }}@{{ published.manifest_digest }}'
+              verification: '{{ verified_pull.stdout | from_json }}'
+              puller_push: denied
+      always:
+        - name: Remove only this invocation verification download
+          ansible.builtin.file:
+            path: '{{ pullback.path }}'
+            state: absent

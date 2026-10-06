@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "platform": "linux/amd64",
+  "kind_source_commit": "407a9675e6d9af1200b5f57f9ca52ec6cdacce74",
+  "kind_file_id": "kind",
+  "server_file_id": "kubernetes-server",
+  "base_image_id": "kind-base",
+  "output_image": "sunmoon-kind-node:v1.36.5-kind0.33.0",
+  "build_type": "file",
+  "server_expanded_bytes": 1069089184,
+  "peak_estimate_bytes": 6442450944,
+  "estimate_note": "6 GiB additional local budget: 1 GiB server extraction, base/content unpack, build container and committed image plus headroom. Estimate, not a hard storage quota; export is separately budgeted. Recheck after build.",
+  "kubeadm_image_ids": [
+    "kube-apiserver",
+    "kube-controller-manager",
+    "kube-scheduler",
+    "kube-proxy",
+    "coredns",
+    "kubeadm-pause",
+    "etcd"
+  ],
+  "node_image_ids": [
+    "kube-apiserver",
+    "kube-controller-manager",
+    "kube-scheduler",
+    "kube-proxy",
+    "coredns",
+    "kind-pause",
+    "etcd",
+    "kindnet",
+    "kind-storage",
+    "kind-storage-helper"
+  ],
+  "network_required_during_build": true,
+  "source": "https://github.com/kubernetes-sigs/kind/tree/v0.33.0/pkg/build/nodeimage"
+}

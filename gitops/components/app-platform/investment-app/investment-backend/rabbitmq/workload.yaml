@@ -1,0 +1,193 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: 'investment-rabbitmq-provision-v2', namespace: messaging-platform-dev}
+data:
+  provision.py: |
+    """Provision one application's RabbitMQ boundary; emit no credentials or hashes."""
+    import base64
+    import hashlib
+    import hmac
+    import json
+    import os
+    from pathlib import Path
+    import re
+    import uuid
+    from urllib.parse import quote
+
+    import httpx
+    from amqp.exceptions import AccessRefused, NotAllowed
+    from kombu import Connection, Exchange, Producer, Queue
+
+
+    def require(condition, message):
+        if not condition:
+            raise RuntimeError(message)
+
+
+    def run():
+        username = os.environ['APP_RABBITMQ_USER']
+        vhost = os.environ['APP_RABBITMQ_VHOST']
+        queue_name = os.environ['APP_RABBITMQ_QUEUE']
+        for value in (username, vhost, queue_name):
+            require(re.fullmatch(r'[a-z][a-z0-9_.-]{1,63}', value), 'Invalid application identity')
+        require(username not in ('guest', 'admin') and vhost != '/', 'Reserved identity')
+        host = os.environ['RABBITMQ_HOST']
+        password = Path('/run/app/password').read_text()
+        marker = 'sunmoon:investment:managed-by-gitops'
+        permissions = {'configure': '.*', 'write': '.*', 'read': '.*'}
+        with httpx.Client(base_url=f'http://{host}:15672/api/',
+                          auth=(Path('/run/admin/username').read_text(), Path('/run/admin/password').read_text()),
+                          trust_env=False, timeout=10) as api:
+            def request(method, path, payload=None, missing=False):
+                response = api.request(method, path, json=payload)
+                if missing and response.status_code == 404:
+                    return None
+                require(200 <= response.status_code < 300, 'Management API request rejected')
+                return response.json() if response.content else None
+
+            user_path = 'users/' + quote(username, safe='')
+            vhost_path = 'vhosts/' + quote(vhost, safe='')
+            user = request('GET', user_path, missing=True)
+            existing_vhost = request('GET', vhost_path, missing=True)
+            if existing_vhost:
+                require(existing_vhost.get('description') == marker, 'Foreign vhost; refusing adoption')
+            if user:
+                require(user.get('tags') in ([], ''), 'Existing identity has management privileges')
+                require(user.get('hashing_algorithm') == 'rabbit_password_hashing_sha256', 'Unexpected credential algorithm')
+                hashed = base64.b64decode(user['password_hash'], validate=True)
+                require(len(hashed) == 36 and hmac.compare_digest(hashed[4:], hashlib.sha256(hashed[:4] + password.encode()).digest()),
+                        'Existing identity has different credentials')
+                granted = request('GET', user_path + '/permissions')
+                require(all(p['vhost'] == vhost for p in granted), 'Identity has foreign vhost permissions')
+            if existing_vhost is None:
+                request('PUT', vhost_path, {'description': marker, 'tags': 'sunmoon,investment', 'default_queue_type': 'classic'})
+            if user is None:
+                salt = os.urandom(4)
+                encoded = base64.b64encode(salt + hashlib.sha256(salt + password.encode()).digest()).decode()
+                request('PUT', user_path, {'password_hash': encoded, 'hashing_algorithm': 'rabbit_password_hashing_sha256', 'tags': ''})
+            path = 'permissions/' + quote(vhost, safe='') + '/' + quote(username, safe='')
+            current = request('GET', path, missing=True)
+            if current is not None:
+                require(all(current.get(k) == value for k, value in permissions.items()), 'Permission drift; explicit change required')
+            else:
+                request('PUT', path, permissions)
+            # Durable task topology matches configure_celery(no_declare=True).
+            exchange_path = 'exchanges/' + quote(vhost, safe='') + '/' + quote(queue_name, safe='')
+            queue_path = 'queues/' + quote(vhost, safe='') + '/' + quote(queue_name, safe='')
+            exchange_def = {'type': 'direct', 'durable': True, 'auto_delete': False, 'internal': False, 'arguments': {}}
+            queue_def = {'durable': True, 'auto_delete': False, 'arguments': {'x-queue-type': 'classic'}}
+            for path, definition in [(exchange_path, exchange_def), (queue_path, queue_def)]:
+                existing = request('GET', path, missing=True)
+                if existing is not None:
+                    require(all(existing.get(k) == value for k, value in definition.items()), 'Existing topology differs; refusing overwrite')
+                else:
+                    request('PUT', path, definition)
+            bindings = request('GET', queue_path + '/bindings')
+            if not any(b['source'] == queue_name and b['routing_key'] == queue_name and b.get('arguments') == {} for b in bindings):
+                request('POST', 'bindings/' + quote(vhost, safe='') + '/e/' + quote(queue_name, safe='') + '/q/' + quote(queue_name, safe=''),
+                        {'routing_key': queue_name, 'arguments': {}})
+            granted = request('GET', user_path + '/permissions')
+            require(len(granted) == 1 and granted[0]['vhost'] == vhost, 'Unexpected vhost grant')
+
+        def connection(target):
+            return Connection(hostname=host, userid=username, password=password, virtual_host=target,
+                              port=5672, connect_timeout=5, transport_options={'confirm_publish': True})
+
+        with connection(vhost) as conn:
+            conn.connect()
+            channel = conn.channel()
+            # Passive declarations never recreate or consume the application's task queue.
+            channel.exchange_declare(exchange=queue_name, type='direct', durable=True, passive=True)
+            channel.queue_declare(queue=queue_name, durable=True, passive=True)
+            probe_name = 'investment.acceptance.' + uuid.uuid4().hex
+            probe = Queue(probe_name, exchange=Exchange('', type='direct'), routing_key=probe_name,
+                          exclusive=True, auto_delete=True, durable=False, channel=channel)
+            try:
+                probe.declare()
+                Producer(channel).publish({'checked': True}, exchange='', routing_key=probe_name,
+                                          serializer='json', mandatory=True, retry=False)
+                message = probe.get(no_ack=False, accept=['json'])
+                require(message is not None and message.payload == {'checked': True}, 'AMQP roundtrip failed')
+                message.ack()
+            finally:
+                probe.delete(if_unused=False, if_empty=False)
+                channel.close()
+        try:
+            with connection('/') as forbidden:
+                forbidden.connect()
+        except (AccessRefused, NotAllowed) as error:
+            require(error.reply_code in (403, 530), 'Unexpected AMQP failure')
+        else:
+            raise RuntimeError('Application can access default vhost')
+        with httpx.Client(auth=(username, password), trust_env=False, timeout=10) as client:
+            response = client.get(f'http://{host}:15672/api/users')
+            require(response.status_code in (401, 403), 'Application can use administration API')
+        print(json.dumps({'user': username, 'vhost': vhost, 'queue': queue_name, 'durable_topology': True,
+                          'amqp_roundtrip': True, 'default_vhost_denied': True, 'management_api_denied': True,
+                          'single_vhost_grant': True}))
+
+
+    if __name__ == '__main__':
+        try:
+            run()
+        except Exception as error:
+            raise SystemExit('RabbitMQ identity failed: ' + type(error).__name__)
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: investment-rabbitmq-provision-in, namespace: messaging-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: rabbitmq}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: investment-rabbitmq-provision}}
+      ports: [{protocol: TCP, port: 5672}, {protocol: TCP, port: 15672}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: investment-rabbitmq-provision-out, namespace: messaging-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: investment-rabbitmq-provision}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: rabbitmq}}
+      ports: [{protocol: TCP, port: 5672}, {protocol: TCP, port: 15672}]
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: 'investment-rabbitmq-v2', namespace: messaging-platform-dev}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: investment-rabbitmq-provision, app.kubernetes.io/part-of: investment}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:72c1ad4212546c67b7cc38bed040551e4b8511d11e9257915c78fae523f0c626
+          imagePullPolicy: IfNotPresent
+          command: [python, /script/provision.py]
+          env:
+            - {name: RABBITMQ_HOST, value: 'rabbitmq.messaging-platform-dev.svc.cluster.local'}
+            - {name: APP_RABBITMQ_USER, value: 'investment_runtime'}
+            - {name: APP_RABBITMQ_VHOST, value: 'investment'}
+            - {name: APP_RABBITMQ_QUEUE, value: 'investment.default'}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          volumeMounts:
+            - {name: script, mountPath: /script, readOnly: true}
+            - {name: admin, mountPath: /run/admin, readOnly: true}
+            - {name: app, mountPath: /run/app, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: script, configMap: {name: 'investment-rabbitmq-provision-v2'}}
+        - {name: admin, secret: {secretName: rabbitmq-auth, items: [{key: username, path: username}, {key: password, path: password}], defaultMode: 0440}}
+        - {name: app, secret: {secretName: investment-rabbitmq-provision, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

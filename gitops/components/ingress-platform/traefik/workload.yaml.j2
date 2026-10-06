@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ ingress_namespace }}
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: v1.36
+{% if services_ingress_enabled %}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata: {name: traefik-chart, namespace: flux-system}
+spec:
+  interval: 10m
+  url: {{ chart_source.url }}
+  ref: {digest: {{ chart_source.digest }}}
+  secretRef: {name: registry-puller}
+  certSecretRef: {name: harbor-ca}
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: traefik, namespace: flux-system}
+spec:
+  interval: 10m
+  timeout: 5m
+  releaseName: traefik
+  targetNamespace: {{ ingress_namespace }}
+  chartRef: {kind: OCIRepository, name: traefik-chart}
+  install:
+    crds: Skip
+    remediation: {retries: 2}
+  upgrade:
+    crds: Skip
+    remediation: {retries: 2}
+  driftDetection: {mode: enabled}
+  values:
+    versionOverride: v3.7.13
+    image:
+      registry: {{ registry_address }}
+      repository: platform/traefik
+      tag: v3.7.13
+      digest: {{ image_map.traefik.manifest_digest }}
+    deployment:
+      replicas: 1
+      imagePullSecrets: [{name: registry-puller}]
+    providers:
+      kubernetesCRD:
+        enabled: {{ traefik_crd_enabled | bool | lower }}
+        ingressClass: sunmoon
+        namespaces: {{ traefik_crd_namespaces | to_json }}
+        allowCrossNamespace: false
+        allowExternalNameServices: false
+      kubernetesIngress:
+        enabled: true
+        publishedService: {enabled: false}
+    ingressClass: {enabled: true, isDefaultClass: false, name: sunmoon}
+    service:
+      type: NodePort
+      spec: {externalTrafficPolicy: Cluster}
+    ports:
+      web: {expose: {default: false}}
+      websecure: {nodePort: 30443}
+    resources:
+      requests: {cpu: 100m, memory: 128Mi}
+      limits: {cpu: '1', memory: 512Mi}
+    log: {level: INFO, format: json}
+    accessLog: {enabled: false}
+{% endif %}

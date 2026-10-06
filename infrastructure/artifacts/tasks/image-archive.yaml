@@ -1,0 +1,189 @@
+---
+- name: Set deterministic archive paths
+  ansible.builtin.set_fact:
+    locked_archive: '{{ archive_lock.files | selectattr("id", "equalto", selected_image.id) | first }}'
+    image_directory: '{{ artifact_cache_root }}/{{ selected_image.material_owner }}/images'
+    archive_path: '{{ artifact_cache_root }}/{{ selected_image.material_owner }}/images/{{ selected_image.id }}-{{ selected_image.manifest_digest[7:] }}.tar'
+
+- name: Inspect existing archive and receipt
+  ansible.builtin.stat:
+    path: '{{ item }}'
+    follow: false
+    checksum_algorithm: sha256
+  loop: ['{{ archive_path }}', '{{ archive_path }}.json']
+  register: cached
+
+- name: Refuse incomplete or unsafe existing output
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - cached.results[0].stat.exists == cached.results[1].stat.exists
+      - not item.stat.exists or item.stat.isreg | default(false)
+      - not item.stat.islnk | default(false)
+  loop: '{{ cached.results }}'
+  loop_control:
+    label: '{{ item.item }}'
+
+- name: Show archive plan
+  ansible.builtin.debug:
+    msg:
+      id: '{{ selected_image.id }}'
+      source: '{{ selected_image.reference }}'
+      origin: '{{ selected_image.origin | default("registry") }}'
+      destination: '{{ archive_path }}'
+      present: '{{ cached.results[0].stat.exists }}'
+
+- name: Require archive for offline verification
+  ansible.builtin.assert:
+    quiet: true
+    that: cached.results[0].stat.exists
+  when: image_action == 'verify'
+
+- name: Fetch a missing immutable archive
+  when: image_action == 'fetch' and not cached.results[0].stat.exists
+  block:
+    - name: Budget pull, unpack, export and temporary files
+      ansible.builtin.include_tasks: ../../host/tasks/capacity.yaml
+      vars:
+        capacity_planned_bytes: '{{ (selected_image.compressed_layer_bytes | int) * 8 + 536870912 }}'
+
+    - name: Locate Docker storage before pulling or exporting
+      ansible.builtin.command:
+        argv: [docker, info, '--format', '{{ "{{.DockerRootDir}}" }}']
+      changed_when: false
+      register: docker_root
+
+    - name: Read cache and Docker filesystem space
+      ansible.builtin.command:
+        argv: [df, -B1, '--output=avail', '{{ item }}']
+      changed_when: false
+      loop: ['{{ artifact_cache_root }}', '{{ docker_root.stdout | trim }}']
+      register: local_free
+
+    - name: Require capacity on both filesystems
+      ansible.builtin.assert:
+        quiet: true
+        that: item.stdout_lines[-1] | trim | int >= (selected_image.compressed_layer_bytes | int) * 8 + 536870912
+      loop: '{{ local_free.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Pull upstream by locked manifest digest
+      ansible.builtin.command:
+        argv: [docker, pull, --platform=linux/amd64, '{{ selected_image.reference }}']
+      when: selected_image.origin | default('registry') == 'registry'
+      changed_when: true
+
+    - name: Inspect exact local image identity
+      ansible.builtin.command:
+        argv: [docker, image, inspect, '{{ selected_image.manifest_digest }}']
+      changed_when: false
+      register: local_image
+
+    - name: Require the requested amd64 manifest
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - (local_image.stdout | from_json)[0].Descriptor.digest == selected_image.manifest_digest
+          - (local_image.stdout | from_json)[0].Architecture == 'amd64'
+          - (local_image.stdout | from_json)[0].Os == 'linux'
+
+    - name: Create typed archive directory
+      ansible.builtin.file:
+        path: '{{ image_directory }}'
+        state: directory
+        mode: '0755'
+
+    - name: Allocate a private export file
+      ansible.builtin.tempfile:
+        state: file
+        path: '{{ image_directory }}'
+        prefix: .image-export-
+      register: export_tmp
+
+    - name: Export and validate before publishing
+      block:
+        - name: Save the immutable local image ID with native Docker
+          ansible.builtin.command:
+            argv: [docker, image, save, --output, '{{ export_tmp.path }}', '{{ (local_image.stdout | from_json)[0].Id }}']
+          changed_when: true
+
+        - name: Verify OCI blob hashes and descriptor closure
+          ansible.builtin.command:
+            argv: [/usr/bin/python3, '{{ archive_verifier }}', '{{ export_tmp.path }}', --expected-manifest, '{{ selected_image.manifest_digest }}']
+          changed_when: false
+          register: archive_report
+
+        - name: Compute archive file identity
+          ansible.builtin.stat:
+            path: '{{ export_tmp.path }}'
+            checksum_algorithm: sha256
+          register: export_identity
+
+        - name: Require the frozen archive identity before publication
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - export_identity.stat.checksum == locked_archive.sha256
+              - export_identity.stat.size == locked_archive.size_bytes
+            fail_msg: Export differs from the frozen artifact; review instead of overwriting the release lock.
+
+        - name: Publish verified archive atomically within its filesystem
+          ansible.builtin.command:
+            argv: [ln, --no-target-directory, '--', '{{ export_tmp.path }}', '{{ archive_path }}']
+          changed_when: true
+
+        - name: Record file and manifest identities separately
+          ansible.builtin.copy:
+            dest: '{{ archive_path }}.json'
+            mode: '0644'
+            content: '{{ {"schema_version": 1, "id": selected_image.id, "source": selected_image.reference, "file": archive_path | basename, "size_bytes": export_identity.stat.size, "sha256": export_identity.stat.checksum, "verification": archive_report.stdout | from_json} | to_nice_json }}'
+      always:
+        - name: Remove only this invocation temporary export file
+          ansible.builtin.file:
+            path: '{{ export_tmp.path }}'
+            state: absent
+
+- name: Verify existing or newly prepared archives offline
+  when: image_action != 'plan'
+  block:
+    - name: Read receipt
+      ansible.builtin.slurp:
+        src: '{{ archive_path }}.json'
+      register: receipt_bytes
+
+    - name: Read complete archive SHA256
+      ansible.builtin.stat:
+        path: '{{ archive_path }}'
+        checksum_algorithm: sha256
+        follow: false
+      register: archive_identity
+
+    - name: Require original file identity and requested source
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - archive_identity.stat.isreg
+          - archive_identity.stat.checksum == locked_archive.sha256
+          - archive_identity.stat.size == locked_archive.size_bytes
+          - locked_archive.source == selected_image.reference
+          - locked_archive.path == selected_image.material_owner + '/images/' + (archive_path | basename)
+          - archive_identity.stat.checksum == (receipt_bytes.content | b64decode | from_json).sha256
+          - archive_identity.stat.size == (receipt_bytes.content | b64decode | from_json).size_bytes
+          - (receipt_bytes.content | b64decode | from_json).source == selected_image.reference
+
+    - name: Independently verify every blob without Docker or a registry
+      ansible.builtin.command:
+        argv: [/usr/bin/python3, '{{ archive_verifier }}', '{{ archive_path }}', --expected-manifest, '{{ selected_image.manifest_digest }}']
+      changed_when: false
+      register: offline_report
+
+    - name: Make verified public upstream archives readable by restricted tool containers
+      ansible.builtin.file:
+        path: '{{ archive_path }}'
+        mode: '0644'
+      when: image_action == 'fetch'
+
+    - name: Report verified archive
+      ansible.builtin.debug:
+        msg: '{{ offline_report.stdout | from_json }}'

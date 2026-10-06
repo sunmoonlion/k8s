@@ -1,0 +1,20 @@
+{
+    "archive_sha256": "10bd67db6e043c29d520839d5e229655a776f41ea144eb675df168b7a74369aa",
+    "base_manifest": "sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab",
+    "dockerfile_sha256": "5a59a6994157fa0f998d3a0ff2593ae121dbef0bcce9a167bdbd27c1d5f3a38d",
+    "images": [
+        {
+            "compressed_layer_bytes": 4048962097,
+            "config_digest": "sha256:2d302816a908fb579488f0f5e6ae6222321e3957e13bd3999c1ff283ac30742d",
+            "id": "ragflow-runtime",
+            "manifest_digest": "sha256:35f8c3a9c0669c1a0b4fe7caf3b810435de415f9c994d28634be443a4c8807c9",
+            "reference": "harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:35f8c3a9c0669c1a0b4fe7caf3b810435de415f9c994d28634be443a4c8807c9",
+            "source": "ragflow-runtime:0.27.2-nonroot-5a59a6994157fa0f",
+            "status": "resolved",
+            "material_owner": "components/data-platform/ragflow"
+        }
+    ],
+    "platform": "linux/amd64",
+    "schema_version": 1,
+    "material_layout": "component-owned-v1"
+}

@@ -1,0 +1,232 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: tpl-runtime, namespace: app-platform-dev}
+data:
+  ENV: production
+  APP_SLUG: tpl
+  DEPLOYMENT_ID: "tpl-b70dbde1767304f3"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,tpl-api,tpl-api.app-platform-dev.svc.cluster.local,tpl.sunmoonai.com,tpl-admin.sunmoonai.com"
+  REDIS_HOST: redis.data-platform-dev.svc.cluster.local
+  REDIS_PORT: '6379'
+  REDIS_DB: '0'
+  CELERY_QUEUE: tpl.default
+  CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
+  CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor.app-platform-dev.svc.cluster.local:8000
+  CASDOOR_VERIFY_SSL: 'true'
+  SESSION_COOKIE_SECURE: 'true'
+  REFERENCE_INTERACTION_ENABLED: 'false'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: tpl-celery-config, namespace: app-platform-dev}
+data:
+  celeryconfig.py: |
+    # Native Celery 5.6 configuration; transient per-connection queues only.
+    control_queue_durable = False
+    control_queue_exclusive = True
+    event_queue_durable = False
+    event_queue_exclusive = True
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: tpl-api, namespace: app-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: tpl-api}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tpl-api
+        app.kubernetes.io/part-of: tpl
+        sunmoonai.com/postgresql-client: 'true'
+        sunmoonai.com/rabbitmq-client: 'true'
+        sunmoonai.com/redis-client: 'true'
+      annotations:
+        sunmoonai.com/config-sha256: 8e9595a2fdb5b81997b7ac28676045286cc71a874143922314acd503c5688bdc
+    spec:
+      serviceAccountName: tpl-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: api
+          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:36c393be91ae53d3551bc3dea75a8f3a9f272ec358d0d1f2e1e078bb2512485a
+          imagePullPolicy: IfNotPresent
+          command: [uvicorn]
+          args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
+          ports: [{name: http, containerPort: 8000}]
+          startupProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, periodSeconds: 3, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /health/ready, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 5, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 3, periodSeconds: 20}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: SERVICE_NAME, value: tpl-api}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
+          envFrom:
+            - {configMapRef: {name: tpl-runtime}}
+            - {configMapRef: {name: tpl-browser-identity}}
+            - {secretRef: {name: tpl-database-runtime}}
+            - {secretRef: {name: tpl-rabbitmq-runtime}}
+            - {secretRef: {name: tpl-redis-runtime}}
+            - {secretRef: {name: tpl-browser-secrets}}
+          resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "2", "memory": "768Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: tpl-celery-config}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: tpl-worker, namespace: app-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: tpl-worker}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tpl-worker
+        app.kubernetes.io/part-of: tpl
+        sunmoonai.com/postgresql-client: 'true'
+        sunmoonai.com/rabbitmq-client: 'true'
+      annotations:
+        sunmoonai.com/config-sha256: 8e9595a2fdb5b81997b7ac28676045286cc71a874143922314acd503c5688bdc
+    spec:
+      serviceAccountName: tpl-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: worker
+          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:36c393be91ae53d3551bc3dea75a8f3a9f272ec358d0d1f2e1e078bb2512485a
+          imagePullPolicy: IfNotPresent
+          command: [celery]
+          args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
+          startupProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 10, failureThreshold: 30}
+          readinessProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 20}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: SERVICE_NAME, value: tpl-worker}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
+          envFrom:
+            - {configMapRef: {name: tpl-runtime}}
+            - {configMapRef: {name: tpl-browser-identity}}
+            - {secretRef: {name: tpl-database-runtime}}
+            - {secretRef: {name: tpl-rabbitmq-runtime}}
+          resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "2", "memory": "1Gi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: tpl-celery-config}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: tpl-scheduler, namespace: app-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: tpl-scheduler}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tpl-scheduler
+        app.kubernetes.io/part-of: tpl
+        sunmoonai.com/postgresql-client: 'true'
+        sunmoonai.com/rabbitmq-client: 'true'
+      annotations:
+        sunmoonai.com/config-sha256: 8e9595a2fdb5b81997b7ac28676045286cc71a874143922314acd503c5688bdc
+    spec:
+      serviceAccountName: tpl-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: scheduler
+          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:36c393be91ae53d3551bc3dea75a8f3a9f272ec358d0d1f2e1e078bb2512485a
+          imagePullPolicy: IfNotPresent
+          command: [celery]
+          args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
+          startupProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 5, failureThreshold: 30}
+          readinessProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 10}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: SERVICE_NAME, value: tpl-scheduler}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
+          envFrom:
+            - {configMapRef: {name: tpl-runtime}}
+            - {configMapRef: {name: tpl-browser-identity}}
+            - {secretRef: {name: tpl-database-runtime}}
+            - {secretRef: {name: tpl-rabbitmq-runtime}}
+          resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: tpl-celery-config}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: tpl-api, namespace: app-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: tpl-api}
+  ports: [{name: http, port: 8000, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: tpl-api-ingress, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: tpl-api}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-web}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-admin}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: tpl-api-casdoor-out, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: tpl-api}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: tpl-api-casdoor-in, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-api}}
+      ports: [{protocol: TCP, port: 8000}]

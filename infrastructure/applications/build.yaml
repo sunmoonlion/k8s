@@ -1,0 +1,246 @@
+---
+- name: Build one pinned application component from a clean Git object
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    capacity_operation: 'application-build-{{ application_name }}-{{ build_component }}'
+    application_name: tpl
+    build_action: build
+    build_component: backend
+    application_directory: '{{ playbook_dir }}'
+    download_modes: '{{ lookup("file", playbook_dir + "/download-modes.json") | from_json }}'
+    download_profile: '{{ download_modes[effective_download_mode] }}'
+    component: '{{ components[build_component] }}'
+    component_revision: '{{ source_lock[build_component + "_revision"] }}'
+    parent_gitlink_revision: '{{ source_lock[build_component + "_parent_revision"] | default(component_revision) }}'
+    components:
+      backend:
+        repository: '{{ application_name }}-backend'
+        context: app
+        dockerfile: Dockerfile
+        target: runtime
+        user: appuser
+        executable: python
+        version: Python 3.13.15
+        budget: '{{ application_build_budget_bytes }}'
+        args: ['--build-arg=PYTHON_IMAGE={{ registry_address }}/platform/python@{{ image_map.python.manifest_digest }}']
+      web:
+        repository: '{{ application_name }}-web-frontend'
+        context: ''
+        dockerfile: mybuild/Dockerfile
+        target: run-minimal
+        user: nextjs
+        executable: node
+        version: v24.21.0
+        budget: '{{ application_frontend_build_budget_bytes }}'
+        args: ['--build-arg=NODE_IMAGE={{ registry_address }}/platform/node-build@{{ image_map["node-build"].manifest_digest }}', '--build-arg=NODE_RUNTIME_IMAGE={{ registry_address }}/platform/node-runtime@{{ image_map["node-runtime"].manifest_digest }}']
+      admin:
+        repository: '{{ application_name }}-admin-frontend'
+        context: ''
+        dockerfile: mybuild/Dockerfile
+        target: run-minimal
+        user: nextjs
+        executable: node
+        version: v24.21.0
+        budget: '{{ application_frontend_build_budget_bytes }}'
+        args: ['--build-arg=NODE_IMAGE={{ registry_address }}/platform/node-build@{{ image_map["node-build"].manifest_digest }}', '--build-arg=NODE_RUNTIME_IMAGE={{ registry_address }}/platform/node-runtime@{{ image_map["node-runtime"].manifest_digest }}']
+    source_checkout: '{{ (playbook_dir + "/../../../" + application_name + "-app/" + component.repository) | realpath }}'
+    source_locks: '{{ (lookup("file", playbook_dir + "/sources.yaml") | from_yaml).applications }}'
+    source_lock: '{{ source_locks[application_name] }}'
+    images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
+    image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
+    skopeo: '{{ images | selectattr("id","equalto","skopeo") | first }}'
+    build_root: '{{ playbook_dir }}/../.build/applications'
+    image_directory: '{{ build_root }}/transfer'
+  tasks:
+    - name: Require the reviewed source and build budget
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - application_name in source_locks
+          - build_action in ["plan", "build"]
+          - application_download_mode in ['domestic', 'official-proxy']
+          - application_network_mode is not defined and application_npm_registry is not defined and application_pypi_index_url is not defined
+          - component_revision is match('^[a-f0-9]{40}$')
+          - build_component in ['backend', 'web', 'admin']
+          - source_lock.parent_revision is match('^[a-f0-9]{40}$')
+          - parent_gitlink_revision is match('^[a-f0-9]{40}$')
+          - component.budget | int > 0
+          - build_component != 'backend' or image_map.python.source == 'docker.io/library/python:3.13.15-slim-trixie'
+          - build_component == 'backend' or image_map['node-build'].source == 'docker.io/library/node:24.21.0-trixie'
+          - build_component == 'backend' or image_map['node-runtime'].source == 'docker.io/library/node:24.21.0-trixie-slim'
+    - name: Start each invocation with the configured download mode
+      ansible.builtin.set_fact:
+        effective_download_mode: '{{ application_download_mode }}'
+    - name: Inspect source revision and local modifications
+      become: false
+      ansible.builtin.command:
+        argv: '{{ item }}'
+      loop:
+        - [git, -C, '{{ source_checkout }}', rev-parse, HEAD]
+        - [git, -C, '{{ source_checkout }}', status, --porcelain, --untracked-files=all]
+      register: source_state
+      changed_when: false
+    - name: Read the pinned parent Git object and its component gitlink
+      become: false
+      ansible.builtin.command:
+        argv: [git, -C, '{{ source_checkout }}/..', ls-tree, '{{ source_lock.parent_revision }}', '{{ component.repository }}']
+      register: parent_link
+      changed_when: false
+    - name: Refuse unreviewed source revisions or dirty checkout
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - source_state.results[0].stdout == component_revision
+          - source_state.results[1].stdout == ''
+          - parent_link.stdout.split() == ['160000', 'commit', parent_gitlink_revision, component.repository]
+    - name: Require a source override to descend from the pinned parent gitlink
+      become: false
+      ansible.builtin.command:
+        argv: [git, -C, '{{ source_checkout }}', merge-base, --is-ancestor, '{{ parent_gitlink_revision }}', '{{ component_revision }}']
+      changed_when: false
+    - name: Read the exact committed Docker recipe
+      become: false
+      ansible.builtin.command:
+        argv: [git, -C, '{{ source_checkout }}', show, '{{ component_revision }}:{{ (component.context + "/") if component.context else "" }}{{ component.dockerfile }}']
+        strip_empty_ends: false
+      changed_when: false
+      register: recipe
+    - name: Show selected immutable sources and paired download policy
+      ansible.builtin.debug:
+        msg:
+          application: '{{ application_name }}'
+          component: '{{ build_component }}'
+          source: '{{ source_checkout }}'
+          revision: '{{ component_revision }}'
+          parent_revision: '{{ source_lock.parent_revision }}'
+          recipe_sha256: '{{ recipe.stdout | hash("sha256") }}'
+          mode: '{{ application_download_mode }}'
+          budget_bytes: '{{ component.budget }}'
+      when: build_action == 'plan'
+    - name: Finish the read-only source plan without creating build files
+      ansible.builtin.meta: end_host
+      when: build_action == 'plan'
+    - name: Budget temporary context, package cache, layers and export before building
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      vars: {capacity_planned_bytes: '{{ component.budget }}'}
+    - name: Prepare private build result directory
+      ansible.builtin.file: {path: '{{ build_root }}', state: directory, owner: '{{ cluster_operator }}', mode: '0700'}
+    - name: Allocate a private invocation workspace
+      become: false
+      ansible.builtin.tempfile: {state: directory, prefix: sunmoon-tpl-build-}
+      register: staging
+    - name: Build and prepare a verified upload transport
+      block:
+        - name: Create context and authentication subdirectories
+          ansible.builtin.file: {path: '{{ staging.path }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0700'}
+          loop: [context, auth]
+        - name: Give the capability-restricted converter its own root-owned output directory
+          ansible.builtin.file: {path: '{{ staging.path }}/{{ item }}', state: directory, owner: root, group: root, mode: '0700'}
+          loop: [export, scratch]
+        - name: Export only the committed application subtree
+          become: false
+          ansible.builtin.command:
+            argv: [git, -C, '{{ source_checkout }}', archive, --format=tar, '--output={{ staging.path }}/context.tar', '{{ component_revision }}{{ ":" + component.context if component.context else "" }}']
+          changed_when: true
+        - name: Extract the committed build context
+          ansible.builtin.unarchive: {src: '{{ staging.path }}/context.tar', dest: '{{ staging.path }}/context', remote_src: true}
+        - name: Supply read-only registry authentication privately
+          ansible.builtin.copy: {src: '{{ registry_config_dir }}/private/puller-auth.json', dest: '{{ staging.path }}/auth/config.json', remote_src: true, mode: '0600'}
+          no_log: true
+        - name: Build through the shared bounded network flow
+          ansible.builtin.include_tasks: build-network.yaml
+        - name: Read the built image identity and runtime user
+          ansible.builtin.command:
+            argv: [docker, image, inspect, '{{ local_tag }}']
+          register: inspected
+          changed_when: false
+        - name: Require the expected architecture, unprivileged user and source identity
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - image.Architecture == 'amd64' and image.Os == 'linux'
+              - image.Config.User == component.user
+              - image.Config.Labels['org.opencontainers.image.revision'] == component_revision
+          vars: {image: '{{ (inspected.stdout | from_json)[0] }}'}
+        - name: Read the actual runtime interpreter version without starting the app
+          ansible.builtin.command:
+            argv: [docker, run, --rm, --network=none, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', '--entrypoint={{ component.executable }}', '{{ local_tag }}', --version]
+          changed_when: false
+          register: runtime_version
+          failed_when: runtime_version.rc != 0 or runtime_version.stdout != component.version
+        - name: Export the built image for transport without sharing the Docker socket
+          ansible.builtin.command:
+            argv: [docker, image, save, '--output={{ staging.path }}/docker.tar', '{{ local_tag }}']
+          changed_when: true
+        - name: Convert the local Docker archive to an OCI archive
+          ansible.builtin.command:
+            argv: [docker, run, --rm, --pull=never, --network=none, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --mount, 'type=bind,source={{ staging.path }}/scratch,target=/var/tmp', --mount, 'type=bind,source={{ staging.path }}/docker.tar,target=/input.tar,readonly', --mount, 'type=bind,source={{ staging.path }}/export,target=/output', '{{ skopeo.manifest_digest }}', copy, --format=oci, 'docker-archive:/input.tar', 'oci-archive:/output/image.tar']
+          changed_when: true
+        - name: Read the new artifact manifest for content addressing
+          ansible.builtin.command:
+            argv: [docker, run, --rm, --pull=never, --network=none, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --mount, 'type=bind,source={{ staging.path }}/scratch,target=/var/tmp', --mount, 'type=bind,source={{ staging.path }}/export/image.tar,target=/input.tar,readonly', '{{ skopeo.manifest_digest }}', inspect, --raw, 'oci-archive:/input.tar']
+          register: manifest
+          changed_when: false
+        - name: Verify all OCI blobs before accepting the built artifact
+          ansible.builtin.command:
+            argv: [python3, '{{ playbook_dir }}/../artifacts/verify-oci-archive.py', '{{ staging.path }}/export/image.tar', --expected-manifest, 'sha256:{{ manifest.stdout | hash("sha256") }}']
+          register: verified
+          changed_when: false
+        - name: Create the disposable application upload directory
+          ansible.builtin.file: {path: '{{ image_directory }}', state: directory, owner: root, group: root, mode: '0755'}
+        - name: Prepare verified transport for online Harbor publication
+          ansible.builtin.copy:
+            src: '{{ staging.path }}/export/image.tar'
+            dest: '{{ image_directory }}/{{ component.repository }}-{{ manifest.stdout | hash("sha256") }}.tar'
+            remote_src: true
+            force: false
+            mode: '0644'
+        - name: Verify the final stored archive including an existing content-addressed copy
+          ansible.builtin.command:
+            argv: [python3, '{{ playbook_dir }}/../artifacts/verify-oci-archive.py', '{{ image_directory }}/{{ component.repository }}-{{ manifest.stdout | hash("sha256") }}.tar', --expected-manifest, 'sha256:{{ manifest.stdout | hash("sha256") }}']
+          changed_when: false
+        - name: Read archive envelope identity
+          ansible.builtin.stat:
+            path: '{{ image_directory }}/{{ component.repository }}-{{ manifest.stdout | hash("sha256") }}.tar'
+            checksum_algorithm: sha256
+          register: archive
+        - name: Keep source and transport identity until publication
+          ansible.builtin.copy:
+            dest: '{{ archive.stat.path }}.json'
+            mode: '0644'
+            content: '{{ {"id":component.repository,"input":build_input,"sha256":archive.stat.checksum,"size_bytes":archive.stat.size,"verification":verified.stdout | from_json} | to_nice_json }}'
+        - name: Record immutable application image input for the shared publisher
+          ansible.builtin.copy:
+            dest: '{{ build_root }}/{{ component.repository }}-images.lock.json'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+            content: |
+              {{ {'schema_version':1,'platform':'linux/amd64','images':[{'id':component.repository,'status':'resolved','source':component.repository + ':' + component_revision[:12] + '-' + (manifest.stdout | hash('sha256'))[:12],'reference':registry_address + '/platform/' + component.repository + '@sha256:' + (manifest.stdout | hash('sha256')),'manifest_digest':'sha256:' + (manifest.stdout | hash('sha256')),'compressed_layer_bytes':archive.stat.size,'source_revision':component_revision,'deployment_id':component.repository + '-' + (manifest.stdout | hash('sha256'))[:16]}]} | to_nice_json }}
+        - name: Save only this component's reviewable deployment image lock
+          ansible.builtin.copy:
+            dest: '{{ build_root }}/{{ component.repository }}-deployment-image.yaml'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+            content: '{{ {"repository":component.repository,"digest":"sha256:" + (manifest.stdout | hash("sha256")),"source_revision":component_revision,"deployment_id":component.repository + "-" + (manifest.stdout | hash("sha256"))[:16]} | to_nice_yaml }}'
+        - name: Save the reviewable build receipt, without automatically publishing or deploying
+          ansible.builtin.copy:
+            dest: '{{ build_root }}/{{ component.repository }}.yaml'
+            owner: '{{ cluster_operator }}'
+            mode: '0600'
+            content: |
+              {{ {'input':build_input,'local_tag':local_tag,'image_id':(inspected.stdout | from_json)[0].Id,'runtime_version':runtime_version.stdout,'archive':{'path':archive.stat.path,'sha256':archive.stat.checksum,'bytes':archive.stat.size},'verification':verified.stdout | from_json} | to_nice_yaml }}
+      always:
+        - name: Save private build diagnostics before removing the invocation context
+          ansible.builtin.copy:
+            dest: '{{ build_root }}/{{ component.repository }}-build.log'
+            mode: '0600'
+            content: '{{ image_build.stdout | default("") }}{{ image_build.stderr | default("") }}'
+          when: image_build is defined and (image_build.stderr is defined or image_build.stdout is defined)
+          no_log: true
+        - name: Remove only this invocation context and temporary authentication
+          ansible.builtin.file: {path: '{{ staging.path }}', state: absent}

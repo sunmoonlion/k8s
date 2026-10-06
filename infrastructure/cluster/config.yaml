@@ -1,0 +1,20 @@
+# KIND 当前配置；与本目录实现同源维护。秘密与版本摘要不在这里。
+---
+# 建群/配置动作准入；修改边界见同目录 README 的字段表。
+cluster_enabled: true
+# API宿主端口映射；修改边界见同目录 README 的字段表。
+cluster_api_port: 27443
+# 入口宿主端口映射；修改边界见同目录 README 的字段表。
+cluster_ingress_port: 29443
+# Pod网段；修改边界见同目录 README 的字段表。
+cluster_pod_subnet: 10.247.0.0/16
+# Service网段；修改边界见同目录 README 的字段表。
+cluster_service_subnet: 10.99.0.0/16
+# 三个节点独立持久目录的根；修改边界见同目录 README 的字段表。
+cluster_data_root: /data/kind-clusters
+# 本集群独立访问文件；修改边界见同目录 README 的字段表。
+cluster_kubeconfig: /home/zymun/.kube/sunmoon-kind.config
+# 宿主操作用户/文件属主；修改边界见同目录 README 的字段表。
+cluster_operator: zymun
+# 建群新增预算；修改边界见同目录 README 的字段表。
+cluster_create_budget_bytes: 5368709120

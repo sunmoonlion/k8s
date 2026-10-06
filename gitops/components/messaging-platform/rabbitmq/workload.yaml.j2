@@ -1,0 +1,107 @@
+{% set name = 'rabbitmq' %}
+{% set port = 5672 %}
+{% if services_rabbitmq_enabled %}
+{% set image = image_map[name] %}
+{% set volume = services_volumes | selectattr('name','equalto',name) | first %}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ name }}-headless
+  namespace: {{ component_namespaces[name] }}
+spec:
+  clusterIP: None
+  selector: {app.kubernetes.io/name: {{ name }}}
+  ports: [{name: service, port: {{ port }}, targetPort: {{ port }}}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ name }}
+  namespace: {{ component_namespaces[name] }}
+spec:
+  selector: {app.kubernetes.io/name: {{ name }}}
+  ports:
+    - {name: service, port: {{ port }}, targetPort: {{ port }}}
+    - {name: management, port: 15672, targetPort: 15672}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ name }}
+  namespace: {{ component_namespaces[name] }}
+spec:
+  serviceName: {{ name }}-headless
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: {{ name }}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: {{ name }}, app.kubernetes.io/part-of: sunmoon-platform}
+    spec:
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      # Single-node persistent identity, independent of the namespace Service DNS.
+      hostAliases:
+        - ip: '127.0.0.1'
+          hostnames: ['{{ rabbitmq_node_hostname }}']
+      nodeSelector:
+        kubernetes.io/hostname: {{ cluster_name }}-{{ volume.node }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ volume.uid }}
+        runAsGroup: {{ volume.gid }}
+        fsGroup: {{ volume.gid }}
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        - name: cookie
+          image: {{ registry_address }}/platform/{{ name }}@{{ image.manifest_digest }}
+          command: [/bin/sh, -ec]
+          args:
+            - 'if [ ! -e /var/lib/rabbitmq/.erlang.cookie ]; then cp /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie; fi; chmod 600 /var/lib/rabbitmq/.erlang.cookie; cmp --silent /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie'
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 100m, memory: 64Mi}}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/rabbitmq}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+      containers:
+        - name: {{ name }}
+          image: {{ registry_address }}/platform/{{ name }}@{{ image.manifest_digest }}
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources:
+            requests: {cpu: 100m, memory: {{ '256Mi' if name != 'redis' else '128Mi' }}}
+            limits: {cpu: '2', memory: {{ '1Gi' if name != 'redis' else '512Mi' }}}
+          ports:
+            - {name: service, containerPort: {{ port }}}
+            - {name: management, containerPort: 15672}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: RABBITMQ_USE_LONGNAME, value: 'true'}
+            - {name: RABBITMQ_NODENAME, value: 'rabbit@{{ rabbitmq_node_hostname }}'}
+            - {name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS, value: '+S 2:2'}
+          startupProbe:
+            exec: {command: [rabbitmq-diagnostics, -q, ping]}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec: {command: [rabbitmq-diagnostics, -q, check_running]}
+            periodSeconds: 20
+            timeoutSeconds: 10
+          livenessProbe:
+            exec: {command: [rabbitmq-diagnostics, -q, ping]}
+            periodSeconds: 30
+            timeoutSeconds: 10
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/rabbitmq}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: auth, mountPath: /etc/rabbitmq/conf.d/20-sunmoon.conf, subPath: rabbitmq.conf, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: {{ name }}-data}}
+        - {name: auth, secret: {secretName: {{ name }}-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+{% endif %}

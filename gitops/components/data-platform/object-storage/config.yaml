@@ -1,0 +1,36 @@
+# AIStor 单节点 KIND 配置。版本与摘要仅取 artifacts 上游锁。
+---
+services_object_storage_enabled: true
+object_storage_volume:
+  name: object-storage
+  node: worker2
+  size: 20Gi
+  uid: 1000
+  gid: 1000
+object_storage_port: 9000
+object_storage_console_port: 9001
+object_storage_region: us-east-1
+object_storage_license_file: /home/zymun/.config/sunmoonai/licenses/minio.license
+object_storage_resources:
+  requests: {cpu: 100m, memory: 512Mi}
+  limits: {cpu: '2', memory: 2Gi}
+
+# Maintainer identity; permissions and current credential storage, never password values.
+operator_account_object_storage:
+  object: data-platform/object-storage
+  id: administrator
+  username: sunmoon_storage_root
+  account_type: platform-administrator
+  table_row: '19'
+  table_import: true
+  current_file: '{{ services_config_dir }}/object-storage.yaml'
+  current_field: root_password
+  backup_file: '{{ services_backup_dir }}/object-storage.yaml'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: object-storage
+  initial_preset_supported: true
+  initial_file: '{{ services_config_dir }}/presets/object-storage-admin-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/object-storage-admin-password'
+  protocol_check_supported: false
+  rotation_supported: false

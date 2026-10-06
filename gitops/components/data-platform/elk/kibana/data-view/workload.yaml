@@ -1,0 +1,161 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: elk-data-view-initialize, namespace: data-platform-dev}
+data:
+  initialize.js: |
+    'use strict';
+    const {request:call,readAuth}=require('./tls-client');
+    const name="sunmoon-application-logs";
+    const title="sunmoon-logs-*";
+    const auth=readAuth('/run/auth');
+    const request=(method,path,data)=>call('kibana',method,path,auth,data);
+    (async () => {
+      const path = '/api/data_views/data_view/' + encodeURIComponent(name);
+      let result = await request('GET', path);
+      let created = false;
+      if (result.status === 404) {
+        result = await request('POST', '/api/data_views/data_view', {
+          data_view:{id:name,title,name:'SunMoon application logs',timeFieldName:'@timestamp',allowNoIndex:true},override:false});
+        created = true;
+      }
+      if (result.status !== 200) throw new Error('Kibana view operation returned HTTP '+result.status);
+      result = await request('GET', path);
+      const view = result.data.data_view;
+      if (result.status !== 200 || !view || view.id !== name || view.title !== title || view.timeFieldName !== '@timestamp') {
+        throw new Error('Refuse changing foreign Kibana view identity');
+      }
+      console.log(JSON.stringify({passed:true,id:name,created,existing_view_preserved:!created}));
+    })().catch(error => { console.error(error.message); process.exitCode=1; });
+
+  initialize-identity.js: |
+    'use strict';
+    const {request,readAuth}=require('./tls-client');
+    const user="sunmoon_view_provisioner";
+    const owner='sunmoon-kind/elk-data-view';
+    const index="sunmoon-logs-*";
+    const admin=readAuth('/run/admin');
+    const service=readAuth('/run/auth');
+    const password=require('node:fs').readFileSync('/run/auth/password','utf8').trim();
+    const desired={metadata:{sunmoon_owner:owner},elasticsearch:{cluster:[],indices:[{names:[index],privileges:['view_index_metadata']}]},kibana:[{base:[],feature:{indexPatterns:['all']},spaces:['default']} ]};
+    function requireStatus(r,status,scope){if(r.status!==status)throw new Error(scope+' HTTP '+r.status);}
+    function roleMatches(r){
+      const es=r.elasticsearch, kb=r.kibana;
+      return r.metadata?.sunmoon_owner===owner && es?.cluster?.length===0 && (es.run_as||[]).length===0 &&
+        es.indices?.length===1 && JSON.stringify(es.indices[0].names)===JSON.stringify([index]) &&
+        JSON.stringify(es.indices[0].privileges)===JSON.stringify(['view_index_metadata']) &&
+        kb?.length===1 && (kb[0].base||[]).length===0 && JSON.stringify(Object.keys(kb[0].feature||{}))===JSON.stringify(['indexPatterns']) && JSON.stringify(kb[0].feature.indexPatterns)===JSON.stringify(['all']) && JSON.stringify(kb[0].spaces)===JSON.stringify(['default']);
+    }
+    (async()=>{
+      const rolePath='/api/security/role/'+encodeURIComponent(user);
+      let role=await request('kibana','GET',rolePath,admin);
+      if(role.status===404){role=await request('kibana','PUT',rolePath+'?createOnly=true',admin,desired);requireStatus(role,204,'Create bounded Kibana role');}
+      else {requireStatus(role,200,'Read bounded Kibana role');if(!roleMatches(role.data))throw new Error('Refuse changing foreign or broadened Kibana role');}
+      let existing=await request('elasticsearch','GET','/_security/user/'+encodeURIComponent(user),admin);
+      if(existing.status===404 || (existing.status===200 && Object.keys(existing.data).length===0)){
+        const created=await request('elasticsearch','PUT','/_security/user/'+encodeURIComponent(user),admin,{password,roles:[user],metadata:{sunmoon_owner:owner}});requireStatus(created,200,'Create independent service identity');
+      }else{
+        requireStatus(existing,200,'Read independent identity');const u=existing.data[user];
+        if(!u||u.metadata?.sunmoon_owner!==owner||JSON.stringify(u.roles)!==JSON.stringify([user]))throw new Error('Refuse changing foreign service identity');
+      }
+      const current=await request('elasticsearch','GET','/_security/_authenticate',service);requireStatus(current,200,'Service authentication');
+      if(current.data.username!==user||JSON.stringify(current.data.roles)!==JSON.stringify([user]))throw new Error('Service subject/roles differ');
+      requireStatus(await request('elasticsearch','POST','/'+index+'/_search',service,{size:0}),403,'Service log read must be denied');
+      requireStatus(await request('elasticsearch','GET','/_security/user',service),403,'Service user administration must be denied');
+      role=await request('kibana','GET',rolePath,admin);requireStatus(role,200,'Read actual saved-object role');if(!roleMatches(role.data))throw new Error('Actual bounded role differs');
+      console.log(JSON.stringify({passed:true,service_identity_independent:true,default_space_only:true,log_read_denied:true,admin_denied:true}));
+    })().catch(error=>{console.error(error.message);process.exitCode=1;});
+
+  tls-client.js: |
+    'use strict';
+    const fs = require('node:fs');
+    const https = require('node:https');
+    const ca = fs.readFileSync('/run/auth/ca.crt');
+    const urls = {
+      kibana:'https://kibana.data-platform-dev.svc.cluster.local:5601',
+      elasticsearch:'https://elasticsearch.data-platform-dev.svc.cluster.local:9200'
+    };
+    function readAuth(path) {return fs.readFileSync(path+'/username','utf8').trim()+':'+fs.readFileSync(path+'/password','utf8').trim();}
+    function request(service, method, path, auth, data) {
+      return new Promise((resolve, reject) => {
+        if (!urls[service] || !path.startsWith('/') || path.startsWith('//')) return reject(new Error('Unowned metadata endpoint'));
+        const body = data === undefined ? undefined : JSON.stringify(data);
+        const req = https.request(new URL(path, urls[service]), {method, ca, auth, rejectUnauthorized:true,
+          headers:{'Content-Type':'application/json','kbn-xsrf':'sunmoon-data-view'}}, res => {
+          let text='';
+          res.on('data', chunk => {text+=chunk;if(text.length>4194304)req.destroy(new Error('Metadata exceeds limit'));});
+          res.on('error', reject);
+          res.on('end', () => {
+            try {resolve({status:res.statusCode,data:text?JSON.parse(text):{}});}
+            catch {reject(new Error('Invalid metadata response'));}
+          });
+        });
+        req.setTimeout(30000,()=>req.destroy(new Error('Metadata request timed out; not replayed')));
+        req.on('error',reject);req.end(body);
+      });
+    }
+    module.exports={request,readAuth};
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: elk-data-view-v1, namespace: data-platform-dev}
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 180
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: elk-data-view, sunmoonai.com/elasticsearch-client: 'true'}
+      annotations: {sunmoonai.com/input-sha256: '943a0af15c57efa95225cef7d9d1e64d292f4bcb30620434693679007a29f287'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      initContainers:
+        - name: identity
+          image: harbor.sunmoonai.com:30443/platform/kibana@sha256:d84abcfe9c715adc4f507eb0e28b3d9d3ee153b20645fbcbb7838a0dc4f98dac
+          command: [/usr/share/kibana/node/default/bin/node, /scripts/initialize-identity.js]
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: 500m, memory: 256Mi}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: script, mountPath: /scripts, readOnly: true}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: admin, mountPath: /run/admin, readOnly: true}
+      containers:
+        - name: initialize
+          image: harbor.sunmoonai.com:30443/platform/kibana@sha256:d84abcfe9c715adc4f507eb0e28b3d9d3ee153b20645fbcbb7838a0dc4f98dac
+          command: [/usr/share/kibana/node/default/bin/node, /scripts/initialize.js]
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: 500m, memory: 256Mi}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: script, mountPath: /scripts, readOnly: true}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+      volumes:
+        - {name: admin, secret: {secretName: elk-data-view-admin, defaultMode: 0440}}
+        - {name: script, configMap: {name: elk-data-view-initialize}}
+        - {name: auth, secret: {secretName: elk-data-view-auth, defaultMode: 0440}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: elk-data-view-egress, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: elk-data-view}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: kibana}}
+      ports: [{protocol: TCP, port: 5601}]
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: elasticsearch}}
+      ports: [{protocol: TCP, port: 9200}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: elk-data-view-kibana, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: kibana}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: elk-data-view}}
+      ports: [{protocol: TCP, port: 5601}]

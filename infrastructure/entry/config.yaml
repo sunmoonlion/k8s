@@ -1,0 +1,56 @@
+# KIND 当前配置；与本目录实现同源维护。秘密与版本摘要不在这里。
+---
+# 部署/启动准入；修改边界见同目录 README 的字段表。
+entry_enabled: true
+# 监听地址；修改边界见同目录 README 的字段表。
+entry_listen_address: 0.0.0.0
+# 宿主共享TLS端口；修改边界见同目录 README 的字段表。
+entry_port: 30443
+# 非Harbor域名的目标；修改边界见同目录 README 的字段表。
+entry_cluster_backend: 172.18.0.5:30443
+# HAProxy配置目录；修改边界见同目录 README 的字段表。
+entry_config_dir: /etc/sunmoon/entry
+# Compose和工具运行目录；修改边界见同目录 README 的字段表。
+entry_runtime_dir: /opt/sunmoon/entry
+# 已部署应用按域名逐批切换，默认后端在全部应用就绪后再变更。
+# 域名和新集群端口引用各模块真源；本文件不复制域名常量。
+entry_cluster_routes:
+  - name: template
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ casdoor_hostname }}'
+      - '{{ tpl_web_deployment.origin | urlsplit("hostname") }}'
+      - '{{ tpl_admin_deployment.origin | urlsplit("hostname") }}'
+  - name: information
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ info_web_deployment.origin | urlsplit("hostname") }}'
+      - '{{ info_admin_deployment.origin | urlsplit("hostname") }}'
+  - name: knowledge
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ knowledge_web_deployment.origin | urlsplit("hostname") }}'
+      - '{{ knowledge_admin_deployment.origin | urlsplit("hostname") }}'
+  - name: investment
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ investment_web_deployment.origin | urlsplit("hostname") }}'
+      - '{{ investment_admin_deployment.origin | urlsplit("hostname") }}'
+  - name: kibana
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ kibana_ui_origin | urlsplit("hostname") }}'
+  - name: operator-consoles
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ rabbitmq_ui_origin | urlsplit("hostname") }}'
+      - '{{ neo4j_ui_origin | urlsplit("hostname") }}'
+      - '{{ object_storage_ui_origin | urlsplit("hostname") }}'
+      - '{{ pgadmin_origin | urlsplit("hostname") }}'
+      - '{{ redisinsight_origin | urlsplit("hostname") }}'
+      - '{{ flower_origin | urlsplit("hostname") }}'
+      - '{{ mongo_express_origin | urlsplit("hostname") }}'
+  - name: relay
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ relay_origin | urlsplit("hostname") }}'

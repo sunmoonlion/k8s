@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: tpl-web, namespace: app-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: tpl-web}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: tpl-web, app.kubernetes.io/part-of: tpl}
+    spec:
+      serviceAccountName: tpl-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: frontend
+          image: harbor.sunmoonai.com:30443/platform/tpl-web-frontend@sha256:7747a9fa70b49c2b1c6936c5a9e1e45afda48acd4b4e6bd6a241ef76e96f7293
+          imagePullPolicy: IfNotPresent
+          ports: [{name: http, containerPort: 3000}]
+          env:
+            - {name: NODE_ENV, value: production}
+            - {name: DEPLOYMENT_ENV, value: production}
+            - {name: AUTH_APP, value: tpl}
+            - {name: APP_ORIGIN, value: "https://tpl.sunmoonai.com:30443"}
+            - {name: BACKEND_INTERNAL_URL, value: 'http://tpl-api.app-platform-dev.svc.cluster.local:8000'}
+            - {name: DEPLOYMENT_ID, value: "tpl-b70dbde1767304f3"}
+            - {name: HOSTNAME, value: 0.0.0.0}
+            - {name: PORT, value: '3000'}
+            - {name: REFERENCE_UI_ENABLED, value: 'false'}
+          startupProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 3, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 10, timeoutSeconds: 3}
+          livenessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 20, timeoutSeconds: 3}
+          resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts: [{name: tmp, mountPath: /tmp}, {name: cache, mountPath: /app/.next/cache}]
+      volumes: [{name: tmp, emptyDir: {sizeLimit: 32Mi}}, {name: cache, emptyDir: {sizeLimit: 128Mi}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: tpl-web, namespace: app-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: tpl-web}
+  ports: [{name: http, port: 3000, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: tpl-web, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: tpl-web}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: 3000}]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-api}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tpl-web
+  namespace: app-platform-dev
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+spec:
+  ingressClassName: sunmoon
+  tls: [{hosts: [tpl.sunmoonai.com], secretName: tpl-tls}]
+  rules:
+    - host: tpl.sunmoonai.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend: {service: {name: tpl-api, port: {number: 8000}}}
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: tpl-web, port: {number: 3000}}}

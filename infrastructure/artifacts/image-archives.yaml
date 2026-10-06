@@ -1,0 +1,119 @@
+---
+- name: Prepare or verify locked offline image archives
+  hosts: kind_hosts
+  gather_facts: false
+  become: false
+  vars:
+    image_action: plan
+    capacity_operation: '{{ "host-materials" if image_group == "host" else "bootstrap-materials" }}'
+    image_group: bootstrap
+    upstream: '{{ lookup("ansible.builtin.file", playbook_dir + "/upstream-images.lock.json") | from_json }}'
+    node_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/node-image.lock.json") | from_json }}'
+    selected: '{{ (node_lock.images + (upstream.images | selectattr("id", "in", ["calico-node", "calico-cni", "calico-kube-controllers"]) | list)) if image_group == "bootstrap" else (upstream.images | selectattr("id", "in", ["haproxy", "skopeo"]) | list) }}'
+    archive_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/" + image_group + "-archives.lock.json") | from_json }}'
+    cache_directories: >-
+      {% set paths = [artifact_cache_root] %}
+      {% for relative in selected | map(attribute='material_owner') | map('regex_replace', '$', '/images') | list %}
+      {% set current = namespace(path=artifact_cache_root) %}
+      {% for part in relative.split('/') %}
+      {% set current.path = current.path + '/' + part %}
+      {% set _ = paths.append(current.path) %}
+      {% endfor %}
+      {% endfor %}
+      {{ paths | unique | list | to_json }}
+    archive_verifier: '{{ playbook_dir }}/verify-oci-archive.py'
+  tasks:
+    - name: Validate image preparation mode and complete selection
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - ansible_version.full == '2.21.4'
+          - not ansible_check_mode
+          - image_action in ['plan', 'fetch', 'verify']
+          - image_group in ['bootstrap', 'host']
+          - node_lock.schema_version == 1
+          - selected | length == (4 if image_group == "bootstrap" else 2)
+          - selected | map(attribute='id') | unique | length == selected | length
+          - artifact_cache_root is match('^/[a-zA-Z0-9_./-]+$')
+          - "'..' not in artifact_cache_root.split('/')"
+
+    - name: Validate immutable image descriptors
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.material_owner is match('^(cluster|host|registry|shared|components)/[a-z0-9-]+(/[a-z0-9-]+)*$')
+          - item.id is match('^[a-z][a-z0-9-]*$')
+          - item.manifest_digest is match('^sha256:[a-f0-9]{64}$')
+          - item.reference.endswith('@' + item.manifest_digest)
+          - item.compressed_layer_bytes | int > 0
+      loop: '{{ selected }}'
+      loop_control:
+        label: '{{ item.id }}'
+
+    - name: Inspect the cache and image directory
+      ansible.builtin.stat:
+        path: '{{ item }}'
+        follow: false
+      loop: '{{ cache_directories | from_json }}'
+      register: directories
+
+    - name: Reject symlink or non-directory archive paths
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.exists or item.stat.isdir | default(false)
+          - not item.stat.islnk | default(false)
+      loop: '{{ directories.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Prepare each archive through the same native path
+      ansible.builtin.include_tasks: tasks/image-archive.yaml
+      loop: '{{ selected }}'
+      loop_control:
+        loop_var: selected_image
+        label: '{{ selected_image.id }}'
+
+
+    - name: Inspect local host tool images after archive verification
+      ansible.builtin.command:
+        argv: [docker, image, inspect, '{{ item.manifest_digest }}']
+      loop: '{{ selected }}'
+      loop_control: {label: '{{ item.id }}'}
+      register: host_local_images
+      changed_when: false
+      failed_when: false
+      when: image_group == 'host' and image_action == 'fetch'
+
+    - name: Budget loading missing host images from cached archives
+      ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+      vars:
+        capacity_planned_bytes: '{{ (selected | map(attribute="compressed_layer_bytes") | sum | int) * 8 + 536870912 }}'
+      when: image_group == 'host' and image_action == 'fetch' and host_local_images.results | rejectattr('rc', 'equalto', 0) | list | length > 0
+
+    - name: Load missing host tool images from verified archives
+      ansible.builtin.command:
+        argv: [docker, load, --input, '{{ artifact_cache_root }}/{{ item.item.material_owner }}/images/{{ item.item.id }}-{{ item.item.manifest_digest[7:] }}.tar']
+      loop: '{{ host_local_images.results }}'
+      loop_control: {label: '{{ item.item.id }}'}
+      when: image_group == 'host' and image_action == 'fetch' and item.rc | default(0) != 0
+      changed_when: true
+
+    - name: Confirm host tools are present by the pinned manifest
+      ansible.builtin.command:
+        argv: [docker, image, inspect, '{{ item.manifest_digest }}']
+      loop: '{{ selected }}'
+      loop_control: {label: '{{ item.id }}'}
+      register: verified_host_images
+      changed_when: false
+      when: image_group == 'host' and image_action == 'fetch'
+
+    - name: Require each loaded host tool identity
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - (item.stdout | from_json)[0].Descriptor.digest == item.item.manifest_digest
+          - (item.stdout | from_json)[0].Architecture == 'amd64'
+      loop: '{{ verified_host_images.results }}'
+      loop_control: {label: '{{ item.item.id }}'}
+      when: image_group == 'host' and image_action == 'fetch'

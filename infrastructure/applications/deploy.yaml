@@ -1,0 +1,217 @@
+---
+- import_playbook: ../host/deployment.yaml
+  vars: {deployment_action: select, selection_persist: false, selection_report: false}
+- import_playbook: ../host/preflight.yaml
+- name: Plan or validate application identities
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    application_name: tpl
+    application_action: plan
+    # check lives in applications/verify.yaml
+    application_check_port: '{{ entry_port if application_check_public | default(false) | bool else cluster_ingress_port }}'
+    capacity_operation: 'application-deploy-{{ application_name }}'
+    application_cfg: '{{ (lookup("file", app_root + "/config.yaml") | from_yaml)[application_name + "_deployment"] }}'
+    backend_cfg: '{{ (lookup("file", component_root + "/config.yaml") | from_yaml)[application_name + "_backend_deployment"] }}'
+    web_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-web-frontend/config.yaml") | from_yaml)[application_name + "_web_deployment"] }}'
+    admin_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-admin-frontend/config.yaml") | from_yaml)[application_name + "_admin_deployment"] }}'
+    cfg: '{{ application_cfg | combine(backend_cfg) | combine({"namespace":app_namespace, "web_origin":web_cfg.origin, "admin_origin":admin_cfg.origin}) }}'
+    app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/{{ application_name }}-app'
+    component_root: '{{ app_root }}/{{ application_name }}-backend'
+    mechanism_root: '{{ playbook_dir }}/../../gitops/components/app-platform/common/backend'
+    repo: '{{ playbook_dir }}/../..'
+    build: '{{ playbook_dir }}/../.build/applications/deployment/{{ application_name }}/{{ application_name }}-backend'
+    tools: '{{ playbook_dir }}/../.tools/bin'
+    recipient: '{{ lookup("file", playbook_dir + "/../environments/kind/sops-recipient.txt") | trim }}'
+    app_images:
+      backend: '{{ lookup("file", component_root + "/image.lock.yaml") | from_yaml }}'
+      web: '{{ lookup("file", app_root + "/" + application_name + "-web-frontend/image.lock.yaml") | from_yaml }}'
+      admin: '{{ lookup("file", app_root + "/" + application_name + "-admin-frontend/image.lock.yaml") | from_yaml }}'
+    deployment_id: '{{ app_images.backend.deployment_id }}'
+    browser_clients:
+      web: {name: '{{ web_cfg.casdoor_application }}', client_id: '{{ web_cfg.casdoor_client_id }}', origin: '{{ web_cfg.origin }}'}
+      admin: {name: '{{ admin_cfg.casdoor_application }}', client_id: '{{ admin_cfg.casdoor_client_id }}', origin: '{{ admin_cfg.origin }}'}
+    source_lock: '{{ (lookup("file", playbook_dir + "/sources.yaml") | from_yaml).applications[application_name] }}'
+    images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
+    image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
+    migration_job: '{{ application_name }}-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
+    kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    core_candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml, identity/workload.yaml, identity/provision.sops.yaml, identity/runtime.sops.yaml, identity/kustomization.yaml, runtime/workload.yaml, runtime/tls.sops.yaml, runtime/kustomization.yaml, '../{{ application_name }}-web-frontend/workload.yaml', '../{{ application_name }}-web-frontend/kustomization.yaml', '../{{ application_name }}-admin-frontend/workload.yaml', '../{{ application_name }}-admin-frontend/kustomization.yaml']
+    storage_enabled: '{{ cfg.object_storage.enabled | default(false) | bool }}'
+    provider_enabled: '{{ cfg.knowledge_provider.enabled | default(false) | bool }}'
+    service_enabled: '{{ cfg.knowledge_service.enabled | default(false) | bool }}'
+    receiver_enabled: '{{ cfg.knowledge_service_receiver.enabled | default(false) | bool }}'
+    service_relation: '{{ "ingest" if application_name == "info" else "retrieve" }}'
+    service_env_prefix: '{{ "KNOWLEDGE_APP_SERVICE" if application_name == "info" else "KNOWLEDGE_RETRIEVAL_SERVICE" }}'
+    service_bindings:
+      ingest: '{{ (lookup("file", repo + "/gitops/components/app-platform/info-app/info-backend/config.yaml") | from_yaml).info_backend_deployment.knowledge_service }}'
+      retrieve: '{{ (lookup("file", repo + "/gitops/components/app-platform/investment-app/investment-backend/config.yaml") | from_yaml).investment_backend_deployment.knowledge_service }}'
+    all_candidate_files: '{{ core_candidate_files + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) + (["service-identity/workload.yaml","service-identity/provision.sops.yaml","service-identity/kustomization.yaml","runtime/service.sops.yaml"] if service_enabled else []) }}'
+    selected_application_components: '{{ selection.applications[application_name] }}'
+    selected_backend: '{{ application_name + "-backend" in selected_application_components }}'
+    selected_web: '{{ application_name + "-web-frontend" in selected_application_components }}'
+    selected_admin: '{{ application_name + "-admin-frontend" in selected_application_components }}'
+    candidate_files: '{{ (all_candidate_files | reject("match","^\.\./") | list if selected_backend else []) + (all_candidate_files | select("match","^\.\./" + application_name + "-web-frontend/") | list if selected_web else []) + (all_candidate_files | select("match","^\.\./" + application_name + "-admin-frontend/") | list if selected_admin else []) }}'
+    selected_browser_clients: '{{ browser_clients | dict2items | selectattr("key","in",(["web"] if selected_web else []) + (["admin"] if selected_admin else [])) | items2dict }}'
+
+  tasks:
+    - name: Validate the selected deployment and identity boundaries
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - application_name in ['tpl','info','knowledge','investment']
+          - application_action in ['plan','validate']
+          - application_action == 'plan' or cfg.enabled | bool
+          - selected_application_components | length > 0
+          - cfg.namespace == app_namespace
+          - "'namespace' not in application_cfg"
+          - "'namespace' not in backend_cfg"
+          - application_cfg.keys() | intersect(backend_cfg.keys()) | length == 0
+          - cfg.database is match('^[a-z][a-z0-9_]{1,40}$')
+          - cfg.database_runtime_user is match('^[a-z][a-z0-9_]{1,40}$')
+          - cfg.database_migrator_user is match('^[a-z][a-z0-9_]{1,40}$')
+          - cfg.database_runtime_user != cfg.database_migrator_user
+          - cfg.database_extensions | default([]) | difference(['uuid-ossp']) | length == 0
+          - cfg.database_bootstrap_revision is match('^[a-z0-9-]{1,16}$')
+          - cfg.migration_job_revision is match('^[a-z0-9-]{1,16}$')
+          - cfg.private_dir == '/etc/sunmoon/applications/' + cluster_name + '/' + application_name
+          - cfg.backup_dir == '/mnt/sunmoon-data/backups/applications/' + cluster_name + '/' + application_name
+          - app_images.backend.repository == application_name + '-backend'
+          - app_images.backend.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
+          - app_images.web.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
+          - app_images.admin.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
+          - app_images.backend.digest is match('^sha256:[a-f0-9]{64}$')
+          - app_images.backend.source_revision == source_lock.backend_revision
+          - cfg.deploy_budget_bytes | int >= 2147483648
+          - app_images.web.repository == application_name + '-web-frontend'
+          - app_images.admin.repository == application_name + '-admin-frontend'
+          - app_images.web.digest is match('^sha256:[a-f0-9]{64}$')
+          - app_images.admin.digest is match('^sha256:[a-f0-9]{64}$')
+          - app_images.web.source_revision == source_lock.web_revision
+          - app_images.admin.source_revision == source_lock.admin_revision
+          - cfg.scheduler_replicas | int == 1
+          - cfg.celery_control_queue_exclusive is sameas true
+          - cfg.celery_event_queue_exclusive is sameas true
+          - cfg.api_replicas | int >= 1
+          - cfg.worker_replicas | int >= 1
+          - cfg.worker_concurrency | int >= 1
+          - cfg.api_port | int > 1024 and cfg.api_port | int < 65536
+          - web_cfg.port | int > 1024 and web_cfg.port | int < 65536
+          - admin_cfg.port | int > 1024 and admin_cfg.port | int < 65536
+          - web_cfg.replicas | int >= 1
+          - admin_cfg.replicas | int >= 1
+          - cfg.web_origin is match('^https://[a-z0-9.-]+:30443$')
+          - cfg.admin_origin is match('^https://[a-z0-9.-]+:30443$')
+          - cfg.web_origin != cfg.admin_origin
+          - cfg.rabbitmq_user is match('^[a-z][a-z0-9_.-]{1,63}$')
+          - cfg.rabbitmq_user not in ['admin','guest']
+          - cfg.rabbitmq_vhost == application_name
+          - cfg.rabbitmq_queue == application_name + '.default'
+          - cfg.rabbitmq_identity_revision is match('^[a-z0-9-]{1,16}$')
+          - cfg.identity_organization == 'built-in'
+          - cfg.identity_revision is match('^[a-z0-9-]{1,16}$')
+          - browser_clients.web.client_id != browser_clients.admin.client_id
+          - browser_clients.web.name != browser_clients.admin.name
+          - cfg.redis_user == application_name + '_runtime'
+          - cfg.redis_key_pattern == application_name + ':*'
+          - not provider_enabled or (application_name == 'knowledge' and not storage_enabled)
+          - not service_enabled or (application_name in ['info','investment'] and service_access_enabled | bool)
+          - not receiver_enabled or (application_name == 'knowledge' and provider_enabled and service_access_enabled | bool)
+          - not receiver_enabled or (service_bindings.ingest.enabled | bool and service_bindings.retrieve.enabled | bool)
+          - not receiver_enabled or service_bindings.ingest.client_id != service_bindings.retrieve.client_id
+          - not receiver_enabled or service_bindings.ingest.organization != service_bindings.retrieve.organization
+          - cfg.domain_runtime_env | default({}) | list | difference(['STORAGE_BACKEND','SEARCH_BACKEND']) | length == 0
+    - name: Require the independent cluster ownership receipt
+      ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
+      register: identity
+    - name: Refuse another live API even if the kubeconfig path is reused
+      ansible.builtin.command:
+        argv: '{{ kube + ["get","ns","kube-system","-o","jsonpath={.metadata.uid}"] }}'
+      register: uid
+      changed_when: false
+      failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+    - name: Read the migration head from the pinned backend Git object
+      become: false
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import ast,json,subprocess,sys
+            repo,revision=sys.argv[1:]
+            files=subprocess.check_output(['git','-C',repo,'ls-tree','-r','--name-only',revision,'app/alembic/versions'],text=True).splitlines()
+            chain={}
+            for path in files:
+                if not path.endswith('.py'):continue
+                text=subprocess.check_output(['git','-C',repo,'show',revision+':'+path],text=True)
+                fields={}
+                for node in ast.parse(text).body:
+                    names=node.targets if isinstance(node,ast.Assign) else [node.target] if isinstance(node,ast.AnnAssign) else []
+                    for name in names:
+                        if isinstance(name,ast.Name) and name.id in ('revision','down_revision'):
+                            fields[name.id]=ast.literal_eval(node.value)
+                if 'revision' not in fields:continue
+                value=fields['revision'];parent=fields['down_revision']
+                assert isinstance(value,str) and (parent is None or isinstance(parent,str)) and value not in chain
+                chain[value]=parent
+            assert chain and sum(v is None for v in chain.values())==1
+            assert all(v is None or v in chain for v in chain.values())
+            heads=set(chain)-set(v for v in chain.values() if v is not None)
+            assert len(heads)==1
+            print(json.dumps({'revision':revision,'head':heads.pop(),'migration_count':len(chain)}))
+          - '{{ playbook_dir }}/../../../{{ application_name }}-app/{{ application_name }}-backend'
+          - '{{ source_lock.backend_revision }}'
+      register: pinned_schema
+      changed_when: false
+    - name: Require the configured schema to match the immutable source chain
+      ansible.builtin.assert:
+        quiet: true
+        that: cfg.expected_schema_revision == (pinned_schema.stdout | from_json).head
+        fail_msg: Expected schema differs from pinned backend source. Correct the configuration before rendering or deployment.
+    - name: Show the deployment plan without credentials
+      ansible.builtin.debug:
+        msg:
+          enabled: '{{ cfg.enabled }}'
+          namespace: '{{ cfg.namespace }}'
+          database: '{{ cfg.database }}'
+          runtime_user: '{{ cfg.database_runtime_user }}'
+          migrator_user: '{{ cfg.database_migrator_user }}'
+          backend: '{{ app_images.backend.digest }}'
+          schema: '{{ cfg.expected_schema_revision }}'
+          stages: '{{ component_stages | selectattr("object", "match", "^app-platform/" + application_name + "-app/") | map(attribute="name") | list }}'
+          image_and_data_budget: '{{ cfg.deploy_budget_bytes }}'
+          excluded: 'Public entry cutover is separate; verify new entry before redirecting existing domains.'
+      when: application_action == 'plan'
+    - name: End the read-only plan
+      ansible.builtin.meta: end_host
+      when: application_action == 'plan'
+    - name: Render and stage moved to the component renderer
+      ansible.builtin.assert:
+        quiet: true
+        that: application_action not in ['render', 'stage']
+        fail_msg: Use make application-render/stage APP=<app> or services-render/stage OBJECT=app-platform/<app>-app
+    - name: Validate rendered inputs against the promoted immutable source
+      when: application_action == 'validate'
+      block:
+        - name: Require clean GitOps declarations
+          become: false
+          ansible.builtin.command: {argv: [git, -C, '{{ repo }}', status, --porcelain, --untracked-files=all, '--', gitops]}
+          register: dirty
+          changed_when: false
+          failed_when: dirty.rc != 0 or dirty.stdout != ''
+        - name: Require declarations to match the promoted Git object
+          become: false
+          ansible.builtin.command:
+            argv: [git, -C, '{{ repo }}', diff, --exit-code, '{{ (lookup("file", playbook_dir + "/../environments/kind/flux-source.yaml") | from_yaml).revision }}', '--', gitops, ':(glob,exclude)gitops/**/README.md']
+          changed_when: false
+          no_log: true
+        - name: Compare candidate public objects and decrypted secrets
+          ansible.builtin.include_tasks: ../components/tasks/check-declaration.yaml
+          vars:
+            item: {path: '{{ build }}/{{ candidate }}'}
+            relative_path: '{{ candidate }}'
+            committed_path: '{{ component_root }}/{{ candidate }}'
+          loop: '{{ candidate_files }}'
+          loop_control: {loop_var: candidate}

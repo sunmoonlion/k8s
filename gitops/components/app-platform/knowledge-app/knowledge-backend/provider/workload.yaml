@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: knowledge-source-policy-v1, namespace: data-platform-dev}
+data:
+  policy.json: |
+    {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": ["s3:GetObject", "s3:GetObjectVersion"], "Resource": ["arn:aws:s3:::info-originals/info/original/*"]}]}
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: knowledge-source-v1, namespace: data-platform-dev}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: knowledge-source-provision, sunmoonai.com/object-storage-client: 'true'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: harbor.sunmoonai.com:30443/platform/aistor-mc@sha256:d108717a4a6d684586f392406caca8d57f94d9e5acb515db61bca2da72d6f2ba
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              umask 0077
+              mkdir -p /work/client/certs/CAs
+              cp /run/auth/config.json /work/client/config.json
+              cp /run/auth/ca.crt /work/client/certs/CAs/platform.crt
+              mc() {
+                /usr/bin/mc --config-dir /work/client --json "$@" >/work/result.json 2>/work/error.log || return 1
+                case "$(cat /work/result.json)" in
+                  *'"status": "error"'*|*'"status":"error"'*) return 1 ;;
+                esac
+              }
+              if ! mc admin user info owned 'knowledge_source_reader'; then
+                { cat /run/auth/user; printf '\n'; cat /run/auth/password; printf '\n'; } | mc admin user add owned
+              fi
+              mc stat 'owned/info-originals'
+              mc admin policy create owned knowledge-source-read /run/policy/policy.json
+              mc admin policy attach owned knowledge-source-read --user 'knowledge_source_reader'
+              if mc admin info reader; then exit 1; fi
+              case "$(cat /work/result.json /work/error.log)" in
+                *AccessDenied*|*'Access Denied'*) : ;;
+                *) printf 'Reader rejection was not AccessDenied\n' >&2; exit 1 ;;
+              esac
+              printf '{"reader":"knowledge_source_reader","source":"info-originals/info/original/","read_only_policy":true,"management_denied":true}\n'
+          env: [{name: HOME, value: /work}, {name: NO_PROXY, value: '*'}]
+          resources: {requests: {cpu: 20m, memory: 64Mi}, limits: {cpu: 500m, memory: 256Mi}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: policy, mountPath: /run/policy, readOnly: true}
+            - {name: work, mountPath: /work}
+      volumes:
+        - {name: auth, secret: {secretName: knowledge-source-provision, defaultMode: 0440}}
+        - {name: policy, configMap: {name: knowledge-source-policy-v1}}
+        - {name: work, emptyDir: {sizeLimit: 16Mi}}

@@ -1,0 +1,11 @@
+# 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
+# enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
+---
+prepare: ./prepare.yaml
+stages:
+- name: redisinsight
+  dependsOn: [redis, traefik]
+  enabled: '{{ services_enabled and services_redisinsight_enabled }}'
+  images: [redisinsight]
+  resources: [workload.yaml, tls.sops.yaml, storage.yaml]
+  volume: redisinsight

@@ -1,0 +1,168 @@
+---
+- name: Verify Flux-decrypted identity and actual foundation enforcement
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    capacity_operation: sops-bootstrap
+    tools: '{{ playbook_dir }}/../.tools/bin'
+    kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
+    probe_image: '{{ images.images | selectattr("id", "equalto", "haproxy") | first }}'
+    evidence: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/evidence/foundations'
+  environment:
+    HTTP_PROXY: ''
+    HTTPS_PROXY: ''
+    ALL_PROXY: ''
+    http_proxy: ''
+    https_proxy: ''
+    all_proxy: ''
+  tasks:
+    - name: Require the exact enabled new environment
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - cluster_name == 'sunmoon-kind'
+          - sops_enabled | bool
+    - name: Read independent cluster receipt
+      ansible.builtin.slurp:
+        src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'
+      register: identity
+    - name: Check the live cluster UID
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "namespace", "kube-system", "-o", "jsonpath={.metadata.uid}"] }}'
+      register: uid
+      changed_when: false
+      failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+    - name: Budget bounded transient acceptance (no new service images)
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      vars:
+        capacity_planned_bytes: 16777216
+    - name: Read the encrypted source with only the independent backup key
+      ansible.builtin.command:
+        argv: ['{{ tools }}/sops', decrypt, --output-type, json, '{{ playbook_dir }}/../../gitops/clusters/kind/registry-puller.sops.yaml']
+      environment:
+        SOPS_AGE_KEY_FILE: '{{ sops_backup_dir }}/age.agekey'
+        XDG_CONFIG_HOME: /nonexistent
+        HOME: /nonexistent
+      register: decrypted
+      changed_when: false
+      no_log: true
+    - name: Compare actual Flux-managed credential with recovered ciphertext
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", "platform-system", "get", "secret", "registry-puller", "--show-managed-fields=true", "-o", "json"] }}'
+      register: deployed_secret
+      changed_when: false
+      failed_when: >-
+        deployed_secret.rc != 0 or
+        (deployed_secret.stdout | from_json).data != (decrypted.stdout | from_json).data or
+        (deployed_secret.stdout | from_json).type != 'kubernetes.io/dockerconfigjson' or
+        ((deployed_secret.stdout | from_json).metadata.managedFields | selectattr('manager', 'equalto', 'kustomize-controller') | list | length) == 0
+      no_log: true
+    - name: Check the scoped security declarations exist
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", "platform-system", "get", "serviceaccount/platform-runtime", "limitrange/container-defaults", "networkpolicy/default-deny", "networkpolicy/allow-cluster-dns", "-o", "name"] }}'
+      changed_when: false
+    - name: Create a restricted temporary Job using the decrypted ServiceAccount pull identity
+      ansible.builtin.command:
+        argv: '{{ kube + ["create", "-f", "-", "-o", "json"] }}'
+        stdin: |
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            generateName: sops-acceptance-
+            namespace: platform-system
+          spec:
+            backoffLimit: 0
+            activeDeadlineSeconds: 90
+            template:
+              spec:
+                nodeSelector:
+                  kubernetes.io/hostname: {{ cluster_name }}-worker
+                serviceAccountName: platform-runtime
+                restartPolicy: Never
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 65532
+                  seccompProfile: {type: RuntimeDefault}
+                containers:
+                  - name: acceptance
+                    image: {{ registry_address }}/platform/haproxy@{{ probe_image.manifest_digest }}
+                    imagePullPolicy: Always
+                    command: [/bin/sh, -ec]
+                    args:
+                      - |
+                        haproxy -v
+                        test ! -e /var/run/secrets/kubernetes.io/serviceaccount/token
+                        getent ahostsv4 kubernetes.default.svc.cluster.local
+                        getent ahostsv4 source-controller.flux-system.svc.cluster.local
+                        rc=0
+                        timeout 4 bash -c 'exec 3<>/dev/tcp/source-controller.flux-system.svc.cluster.local/80' || rc=$?
+                        test "$rc" -eq 124
+                        echo 'PASS: encrypted pull identity, DNS, absent API token, denied cross-namespace TCP'
+                    securityContext:
+                      allowPrivilegeEscalation: false
+                      readOnlyRootFilesystem: true
+                      capabilities: {drop: [ALL]}
+                    resources:
+                      requests: {cpu: 10m, memory: 16Mi}
+                      limits: {cpu: 100m, memory: 64Mi}
+      register: created
+      changed_when: true
+    - name: Run acceptance and preserve nonsecret evidence
+      vars:
+        job_name: '{{ (created.stdout | from_json).metadata.name }}'
+      block:
+        - name: Require Job completion
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", "platform-system", "wait", "--for=condition=Complete", "job/" + job_name, "--timeout=100s"] }}'
+          changed_when: false
+          timeout: 110
+        - name: Inspect actual pod security and pulled image identity
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", "platform-system", "get", "pods", "-l", "job-name=" + job_name, "-o", "json"] }}'
+          register: pods
+          changed_when: false
+        - name: Require the exact authenticated image and absent API-token mount
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - result.status.phase == 'Succeeded'
+              - result.status.containerStatuses[0].imageID.endswith(probe_image.manifest_digest)
+              - not result.spec.automountServiceAccountToken | default(false) | bool
+              - result.spec.imagePullSecrets == [{'name':'registry-puller'}]
+              - result.spec.securityContext.runAsNonRoot | bool
+          vars:
+            result: '{{ (pods.stdout | from_json)["items"][0] }}'
+      always:
+        - name: Capture nonsecret Job logs
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", "platform-system", "logs", "job/" + job_name] }}'
+          register: job_logs
+          changed_when: false
+          failed_when: false
+        - name: Capture actual attempt status
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", "platform-system", "get", "pods", "-l", "job-name=" + job_name, "-o", "json"] }}'
+          register: final_pods
+          changed_when: false
+          failed_when: false
+        - name: Create restricted evidence directory
+          ansible.builtin.file:
+            path: '{{ evidence }}'
+            state: directory
+            mode: '0700'
+        - name: Save attempt receipt with no Secret contents
+          ansible.builtin.copy:
+            dest: '{{ evidence }}/{{ job_name }}.json'
+            mode: '0600'
+            content: '{{ {"cluster_uid":uid.stdout, "image":probe_image.manifest_digest, "job_uid":(created.stdout | from_json).metadata.uid, "pods_json":final_pods.stdout, "logs":job_logs.stdout, "error":job_logs.stderr} | to_nice_json }}'
+        - name: Remove exactly the temporary Job and its owned pods
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", "platform-system", "delete", "job", job_name, "--wait=true", "--timeout=45s"] }}'
+          when: job_name is match('^sops-acceptance-[a-z0-9]+$')
+          changed_when: true
+          timeout: 55

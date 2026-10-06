@@ -1,0 +1,12 @@
+# 跨模块共用环境参数。模块专属配置见各模块 config.yaml；每个字段只有一个来源。
+---
+cluster_name: sunmoon-kind
+registry_address: harbor.sunmoonai.com:30443
+artifact_cache_root: /home/zymun/k8s-packages
+data_namespace: data-platform-dev
+messaging_namespace: messaging-platform-dev
+app_namespace: app-platform-dev
+ingress_namespace: ingress-platform-dev
+ops_namespace: ops-platform-dev
+relay_namespace: relay-platform-dev
+sandbox_namespace: sandbox-platform-dev

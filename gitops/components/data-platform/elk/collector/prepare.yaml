@@ -1,0 +1,79 @@
+---
+- name: Validate the collector's bounded responsibility
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - elk_collector_namespace == 'sunmoon-log-collector'
+      - elk_collector_state_directory == '/data/kind-local-storage/log-collector'
+      - elk_collector_applications | sort == ['casdoor','info','investment','knowledge','tpl']
+      - elk_collector_initial_budget_bytes | int >= 1073741824
+      - elk_collector_memory_chunks | int >= 8 and elk_collector_memory_chunks | int <= 64
+      - image_map['fluent-bit'].status == 'resolved'
+- name: Inspect each node's collector state directory without following links
+  ansible.builtin.stat:
+    path: '{{ cluster_data_root }}/{{ cluster_name }}/{{ item }}/static/log-collector'
+    follow: false
+  loop: [control-plane, worker, worker2]
+  register: collector_directories
+- name: Reject redirected or foreign collector state
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isdir | default(false) and item.stat.uid == 1000 and item.stat.gid == 1000)
+  loop: '{{ collector_directories.results }}'
+  loop_control: {label: '{{ item.item }}'}
+- name: Create persistent collector state on all three independent node mounts
+  ansible.builtin.file:
+    path: '{{ cluster_data_root }}/{{ cluster_name }}/{{ item }}/static/log-collector'
+    state: directory
+    owner: '1000'
+    group: '1000'
+    mode: '0700'
+  loop: [control-plane, worker, worker2]
+- name: Read only the registry pull identity for the isolated collector
+  ansible.builtin.slurp: {src: '{{ registry_config_dir }}/private/puller-auth.json'}
+  register: collector_puller
+  no_log: true
+- name: Encrypt only receiver password, public CA and pull identity
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/elk/collector/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: log-collector-auth, namespace: '{{ elk_collector_namespace }}'}
+        stringData:
+          password: '{{ elk_credentials.ingest_password }}'
+          ca.crt: '{{ component_tls_material.logstash.ca }}'
+  no_log: true
+- name: Encrypt bounded pull authentication separately
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/elk/collector/puller.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: registry-puller, namespace: '{{ elk_collector_namespace }}'}
+        type: kubernetes.io/dockerconfigjson
+        data: {'.dockerconfigjson': '{{ collector_puller.content }}'}
+  no_log: true
+- name: Calculate collector input identity without rotating credentials
+  ansible.builtin.set_fact:
+    elk_collector_input_digest: '{{ [elk_credentials.ingest_password,component_tls_material.logstash.ca] | to_json | hash("sha256") }}'
+  no_log: true
+- name: Render the native collector candidate
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/data-platform/elk/collector/workload.yaml.j2'
+    dest: '{{ build }}/data-platform/elk/collector/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+- name: Render explicit collector root
+  ansible.builtin.copy:
+    dest: '{{ build }}/data-platform/elk/collector/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: |
+      {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':['workload.yaml','auth.sops.yaml','puller.sops.yaml']} | to_nice_yaml }}

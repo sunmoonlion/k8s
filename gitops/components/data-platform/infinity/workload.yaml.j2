@@ -1,0 +1,93 @@
+{% set volume = infinity_volume %}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: infinity-settings, namespace: {{ data_namespace }}}
+data:
+  infinity_conf.toml: |
+    {{ lookup('template', playbook_dir + '/../../gitops/components/data-platform/infinity/infinity_conf.toml.j2') | indent(4) }}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: infinity-headless, namespace: {{ data_namespace }}}
+spec:
+  clusterIP: None
+  selector: {app.kubernetes.io/name: infinity}
+  ports: [{name: service, port: 23817, targetPort: 23817}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: infinity, namespace: {{ data_namespace }}}
+spec:
+  selector: {app.kubernetes.io/name: infinity}
+  ports: [{name: service, port: 23817, targetPort: 23817}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: infinity, namespace: {{ data_namespace }}}
+spec:
+  serviceName: infinity-headless
+  replicas: 1
+  selector: {matchLabels: {app.kubernetes.io/name: infinity}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: infinity, app.kubernetes.io/part-of: ragflow}
+
+    spec:
+      enableServiceLinks: false
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 90
+      nodeSelector: {kubernetes.io/hostname: '{{ cluster_name }}-{{ volume.node }}'}
+      securityContext: {runAsNonRoot: true, runAsUser: {{ volume.uid }}, runAsGroup: {{ volume.gid }}, fsGroup: {{ volume.gid }}, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: infinity
+          image: {{ registry_address }}/platform/infinity@{{ image_map.infinity.manifest_digest }}
+          imagePullPolicy: IfNotPresent
+          command: [/usr/bin/infinity]
+          args: [-f, /settings/infinity_conf.toml]
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          ports: [{name: service, containerPort: 23817}, {name: health, containerPort: 23820}]
+          resources: {{ infinity_resources | to_json }}
+          startupProbe:
+            httpGet: {path: /admin/node/current, port: health}
+            periodSeconds: 5
+            failureThreshold: 120
+          readinessProbe:
+            httpGet: {path: /admin/node/current, port: health}
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: service}
+            periodSeconds: 30
+            failureThreshold: 5
+          volumeMounts:
+            - {name: data, mountPath: /var/infinity}
+            - {name: settings, mountPath: /settings, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: infinity-data}}
+
+        - {name: settings, configMap: {name: infinity-settings}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: infinity-clients, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: infinity}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: ragflow}}
+      ports: [{protocol: TCP, port: 23817}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ragflow-infinity-egress, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: ragflow}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: infinity}}
+      ports: [{protocol: TCP, port: 23817}]

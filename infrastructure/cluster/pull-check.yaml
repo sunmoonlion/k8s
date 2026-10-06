@@ -1,0 +1,204 @@
+---
+- name: Verify private image pulls and DNS on all three owned nodes
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
+    published: '{{ images.images | selectattr("id", "equalto", "haproxy") | first }}'
+    pull_image: '{{ registry_address }}/platform/haproxy@{{ published.manifest_digest }}'
+    runtime: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap'
+    expected_nodes: ['{{ cluster_name }}-control-plane', '{{ cluster_name }}-worker', '{{ cluster_name }}-worker2']
+    kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+  tasks:
+    - name: Load independently recorded cluster identity
+      ansible.builtin.slurp:
+        src: '{{ runtime }}/identity.json'
+      register: identity
+
+    - name: Require the exact owned API identity
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "namespace", "kube-system", "-o", "jsonpath={.metadata.uid}"] }}'
+      register: uid
+      changed_when: false
+      failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+
+    - name: Record cache presence before pulling (Always still contacts registry)
+      ansible.builtin.command:
+        argv: [docker, exec, '{{ item }}', crictl, inspecti, '{{ pull_image }}']
+      loop: '{{ expected_nodes }}'
+      register: prior_images
+      changed_when: false
+      failed_when: false
+
+    - name: Reserve space for missing image content and writable snapshots
+      ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+      vars:
+        capacity_planned_bytes: '{{ (prior_images.results | rejectattr("rc", "equalto", 0) | list | length) * (published.compressed_layer_bytes | int) * 6 + 67108864 }}'
+
+    - name: Read registry gateway for Pod DNS verification
+      ansible.builtin.command:
+        argv: [docker, inspect, '{{ expected_nodes[0] }}', --format, '{{ "{{.NetworkSettings.Networks.kind.Gateway}}" }}']
+      register: gateway
+      changed_when: false
+
+    - name: Allocate a unique acceptance namespace
+      ansible.builtin.command:
+        argv: '{{ kube + ["create", "-f", "-", "-o", "jsonpath={.metadata.name}"] }}'
+        stdin: '{{ {"apiVersion": "v1", "kind": "Namespace", "metadata": {"generateName": "bootstrap-pull-", "labels": {"app.kubernetes.io/managed-by": "sunmoon-bootstrap", "pod-security.kubernetes.io/enforce": "restricted"}}} | to_json }}'
+      register: check_namespace
+      changed_when: true
+
+    - name: Run pull acceptance and always remove only its temporary namespace
+      block:
+        - name: Read only the puller's Docker authentication file
+          ansible.builtin.slurp:
+            src: '{{ registry_config_dir }}/private/puller-auth.json'
+          register: puller_auth
+          no_log: true
+
+        - name: Create a namespace-scoped pull-only Secret
+          ansible.builtin.command:
+            argv: '{{ kube + ["create", "-f", "-"] }}'
+            stdin: '{{ {"apiVersion": "v1", "kind": "Secret", "metadata": {"name": "registry-puller", "namespace": check_namespace.stdout}, "type": "kubernetes.io/dockerconfigjson", "data": {".dockerconfigjson": puller_auth.content}} | to_json }}'
+          no_log: true
+          changed_when: true
+
+        - name: Run an unprivileged image pull and DNS Job on every node
+          ansible.builtin.command:
+            argv: '{{ kube + ["create", "-f", "-"] }}'
+            stdin: |
+              apiVersion: batch/v1
+              kind: Job
+              metadata:
+                name: {{ item }}
+                namespace: {{ check_namespace.stdout }}
+              spec:
+                backoffLimit: 0
+                activeDeadlineSeconds: 180
+                template:
+                  spec:
+                    nodeName: {{ item }}
+                    restartPolicy: Never
+                    automountServiceAccountToken: false
+                    imagePullSecrets: [{name: registry-puller}]
+                    securityContext:
+                      runAsNonRoot: true
+                      runAsUser: 65532
+                      seccompProfile: {type: RuntimeDefault}
+                    containers:
+                      - name: pull-check
+                        image: {{ pull_image }}
+                        imagePullPolicy: Always
+                        command: [/bin/sh, -ec]
+                        args:
+                          - 'for i in 1 2 3 4 5 6 7 8 9 10 11 12; do if getent ahostsv4 "$1" | grep -F "$2 "; then getent ahostsv4 kubernetes.default.svc.cluster.local; exec haproxy -v; fi; sleep 5; done; echo Registry DNS did not converge; exit 1'
+                          - sh
+                          - '{{ registry_hostname }}'
+                          - '{{ gateway.stdout }}'
+                        securityContext:
+                          allowPrivilegeEscalation: false
+                          readOnlyRootFilesystem: true
+                          capabilities: {drop: [ALL]}
+                        resources:
+                          requests: {cpu: 10m, memory: 16Mi}
+                          limits: {cpu: 100m, memory: 64Mi}
+          loop: '{{ expected_nodes }}'
+          changed_when: true
+
+        - name: Require successful execution and stop early on a failed Job
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", check_namespace.stdout, "get", "jobs", "-o", "json"] }}'
+          register: check_jobs
+          changed_when: false
+          until: >-
+            check_jobs.rc == 0 and
+            (((check_jobs.stdout | from_json)["items"] | selectattr('status.succeeded', 'defined') | selectattr('status.succeeded', 'equalto', 1) | list | length == 3) or
+             ((check_jobs.stdout | from_json)["items"] | selectattr('status.failed', 'defined') | selectattr('status.failed', 'gt', 0) | list | length > 0))
+          failed_when: >-
+            check_jobs.rc != 0 or
+            (check_jobs.stdout | from_json)["items"] | selectattr('status.failed', 'defined') | selectattr('status.failed', 'gt', 0) | list | length > 0
+          retries: 42
+          delay: 5
+
+        - name: Inspect actual runtime image identities
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", check_namespace.stdout, "get", "pods", "-o", "json"] }}'
+          register: checked_pods
+          changed_when: false
+
+        - name: Require three successful pods with the exact manifest
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (checked_pods.stdout | from_json)['items'] | length == 3
+              - (checked_pods.stdout | from_json)['items'] | map(attribute='spec.nodeName') | sort == expected_nodes | sort
+              - item.status.phase == 'Succeeded'
+              - item.status.containerStatuses[0].imageID.endswith(published.manifest_digest)
+          loop: '{{ (checked_pods.stdout | from_json)["items"] }}'
+          loop_control:
+            label: '{{ item.spec.nodeName }}'
+
+        - name: Read application and DNS command results
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", check_namespace.stdout, "logs", "job/" + item] }}'
+          loop: '{{ expected_nodes }}'
+          register: check_logs
+          changed_when: false
+
+        - name: Save credential-free acceptance evidence
+          ansible.builtin.copy:
+            dest: '{{ runtime }}/{{ check_namespace.stdout }}.json'
+            mode: '0644'
+            content: '{{ {"kube_system_uid": uid.stdout, "image": pull_image, "pods": (checked_pods.stdout | from_json)["items"], "initial_cache_present": prior_images.results | map(attribute="rc") | list, "logs": check_logs.results | map(attribute="stdout") | list} | to_nice_json }}'
+
+      always:
+        - name: Report temporary workload status (no Secret reads)
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", check_namespace.stdout, "get", "pods", "-o", "wide"] }}'
+          register: final_check_pods
+          changed_when: false
+          failed_when: false
+
+        - name: Show pull result
+          ansible.builtin.debug:
+            var: final_check_pods.stdout_lines
+
+        - name: Capture bounded namespace events before deadline cleanup removes failed Pods
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", check_namespace.stdout, "get", "events", "-o", "json"] }}'
+          register: final_event_evidence
+          changed_when: false
+          failed_when: false
+
+        - name: Preserve exact Job failure conditions
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", check_namespace.stdout, "get", "jobs", "-o", "json"] }}'
+          register: final_job_evidence
+          changed_when: false
+          failed_when: false
+
+        - name: Capture final pod identities even when acceptance fails
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", check_namespace.stdout, "get", "pods", "-o", "json"] }}'
+          register: final_pod_evidence
+          changed_when: false
+          failed_when: false
+
+        - name: Save the final attempt status without credentials
+          ansible.builtin.copy:
+            dest: '{{ runtime }}/{{ check_namespace.stdout }}-final.json'
+            mode: '0644'
+            content: '{{ {"kube_system_uid": uid.stdout, "image": pull_image, "initial_cache_present": prior_images.results | map(attribute="rc") | list, "pods_json": final_pod_evidence.stdout, "jobs_json": final_job_evidence.stdout, "events_json": final_event_evidence.stdout} | to_nice_json }}'
+
+        - name: Delete exactly this invocation's namespace and pull Secret
+          ansible.builtin.command:
+            argv: '{{ kube + ["delete", "namespace", check_namespace.stdout, "--wait=true", "--timeout=60s"] }}'
+          when: check_namespace.stdout is match('^bootstrap-pull-[a-z0-9]+$')
+          changed_when: true
+          timeout: 90
+
+    - name: Verify remaining reserve after pull acceptance
+      ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+      vars:
+        capacity_planned_bytes: 0

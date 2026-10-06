@@ -1,0 +1,126 @@
+apiVersion: v1
+kind: Service
+metadata: {name: elasticsearch, namespace: {{ data_namespace }}}
+spec:
+  selector: {app.kubernetes.io/name: elasticsearch}
+  ports: [{name: https, port: {{ elasticsearch_port }}, targetPort: https}]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: elasticsearch-settings, namespace: {{ data_namespace }}}
+data:
+  elasticsearch.yml: |
+    cluster.name: sunmoon-search
+    node.name: elasticsearch-0
+    network.host: 0.0.0.0
+    discovery.type: single-node
+    xpack.ml.enabled: false
+    xpack.security.enabled: true
+    xpack.security.autoconfiguration.enabled: false
+    xpack.security.http.ssl.enabled: true
+    xpack.security.http.ssl.key: tls/private.key
+    xpack.security.http.ssl.certificate: tls/public.crt
+    xpack.security.http.ssl.certificate_authorities: [tls/ca.crt]
+    xpack.security.transport.ssl.enabled: true
+    xpack.security.transport.ssl.key: tls/private.key
+    xpack.security.transport.ssl.certificate: tls/public.crt
+    xpack.security.transport.ssl.certificate_authorities: [tls/ca.crt]
+    xpack.security.transport.ssl.verification_mode: certificate
+    xpack.license.self_generated.type: basic
+  log4j2.properties: |
+    status = error
+    appender.console.type = Console
+    appender.console.name = console
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = %d{ISO8601} [%p] %c - %m%n
+    rootLogger.level = info
+    rootLogger.appenderRef.console.ref = console
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: elasticsearch, namespace: {{ data_namespace }}}
+spec:
+  serviceName: elasticsearch
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector: {matchLabels: {app.kubernetes.io/name: elasticsearch}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: elasticsearch}
+      annotations: {sunmoonai.com/input-sha256: '{{ elasticsearch_input_digest }}'}
+    spec:
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: '{{ cluster_name }}-{{ elasticsearch_volume.node }}'}
+      terminationGracePeriodSeconds: 120
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      initContainers:
+        - name: prepare-config
+          image: {{ registry_address }}/platform/elasticsearch@{{ image_map.elasticsearch.manifest_digest }}
+          command: [sh, -ec]
+          args:
+            - |
+              cp -R /usr/share/elasticsearch/config/. /work-config/
+              cp /settings/elasticsearch.yml /settings/log4j2.properties /work-config/
+              mkdir -p /work-config/tls
+              # emptyDir survives a node restart; replace our readonly copies on each init.
+              cp --remove-destination /run/auth/private.key /run/auth/public.crt /run/auth/ca.crt /work-config/tls/
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          volumeMounts:
+            - {name: config, mountPath: /work-config}
+            - {name: settings, mountPath: /settings, readOnly: true}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+      containers:
+        - name: elasticsearch
+          image: {{ registry_address }}/platform/elasticsearch@{{ image_map.elasticsearch.manifest_digest }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: ELASTIC_PASSWORD_FILE, value: /run/auth/password}
+            - {name: ES_JAVA_OPTS, value: '-Xms{{ elasticsearch_heap }} -Xmx{{ elasticsearch_heap }}'}
+          ports: [{name: https, containerPort: {{ elasticsearch_port }}}]
+          startupProbe:
+            exec: {command: [sh, -ec, {{ 'health=$(curl --silent --fail --max-time 5 --config /run/auth/health.curl "https://elasticsearch.data-platform-dev.svc.cluster.local:9200/_cluster/health?wait_for_status=yellow&timeout=2s&filter_path=status"); case "$health" in *\'"status":"green"\'*|*\'"status":"yellow"\'*) exit 0;; *) exit 1;; esac' | to_json }}]}
+            periodSeconds: 5
+            timeoutSeconds: 6
+            failureThreshold: 120
+          readinessProbe:
+            exec: {command: [sh, -ec, {{ 'health=$(curl --silent --fail --max-time 5 --config /run/auth/health.curl "https://elasticsearch.data-platform-dev.svc.cluster.local:9200/_cluster/health?wait_for_status=yellow&timeout=2s&filter_path=status"); case "$health" in *\'"status":"green"\'*|*\'"status":"yellow"\'*) exit 0;; *) exit 1;; esac' | to_json }}]}
+            periodSeconds: 10
+            timeoutSeconds: 6
+          livenessProbe: {tcpSocket: {port: https}, periodSeconds: 30, timeoutSeconds: 3, failureThreshold: 5}
+          resources: {{ elasticsearch_resources | to_json }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: data, mountPath: /usr/share/elasticsearch/data}
+            - {name: config, mountPath: /usr/share/elasticsearch/config}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: logs, mountPath: /usr/share/elasticsearch/logs}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: elasticsearch-data}}
+        - {name: config, emptyDir: {sizeLimit: 32Mi}}
+        - {name: settings, configMap: {name: elasticsearch-settings}}
+        - {name: auth, secret: {secretName: elasticsearch-auth, defaultMode: 0440}}
+        - {name: logs, emptyDir: {sizeLimit: 128Mi}}
+        - {name: tmp, emptyDir: {sizeLimit: 256Mi}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: elasticsearch-clients, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: elasticsearch}}
+  policyTypes: [Ingress]
+  ingress:
+    - from: [{podSelector: {matchLabels: {sunmoonai.com/elasticsearch-client: 'true'}}}]
+      ports: [{protocol: TCP, port: {{ elasticsearch_port }}}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: elasticsearch-client-egress, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {sunmoonai.com/elasticsearch-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to: [{podSelector: {matchLabels: {app.kubernetes.io/name: elasticsearch}}}]
+      ports: [{protocol: TCP, port: {{ elasticsearch_port }}}]

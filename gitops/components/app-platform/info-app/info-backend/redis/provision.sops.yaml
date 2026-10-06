@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: info-redis-provision
+    namespace: data-platform-dev
+stringData:
+    password: ENC[AES256_GCM,data:4/5CAJ0LqMDut2Ya7zsHqtnUP12a/VQioxqmC3qNIj2OrpPQDAkMTA==,iv:B7TFZFO33+i++egBuGDIq8PXkLnUhpjeDI0UNhBNurQ=,tag:JGfLfv/RGLU+YhfqmkAndQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBITk5UWXJkUFJmRUUzdkt6
+            YzhtUkRBL0NPN3h0ZnNNNEw3ZEIrZHNPM3hFClZGTkpwUHNGTTNXTU52dHI3RUNn
+            YWpVelZkWHozMVo5bHNzVERJRWtwOUkKLS0tIFhjamREWlhGREZOTTk1Z09lSVE1
+            S3R1Tkk2S0NmR2tveW9yME4yKzU4cjAKXxnf83jZjp9u5lLFuLZvc9IaOEN5Iblk
+            8Hq6gPoWa8cp7jbI1e9eDtlWznt684lbV1a8FoxgF7hMWw9unIdKYA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T13:45:41Z"
+    mac: ENC[AES256_GCM,data:CWEqL14frsFidVBL7F96pfiYmzuR/KI/khpALK612vPAe+2SrwXG4+PFqUaEjtBd5dYxQS2b6L0jklXcRDUtWd1uTWzwYOijUVSmL7Sy8jJCmRSp6P3UqwrNdt9rshkgNKm0U2MlxP2LO4ivXt/L4Vp4ITB2YaP6nGrc4/ElZLs=,iv:OvWMsvRtAY+BfM9BJxZKGywSean2jPck27dxTcnuzxk=,tag:c84f8j/2dhku1uHUymsEbQ==,type:str]
+    version: 3.13.3

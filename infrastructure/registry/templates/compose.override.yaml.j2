@@ -1,0 +1,28 @@
+services:
+{% for name, spec in registry_release.services.items() %}
+  {{ name }}:
+    image: {{ (harbor_images.images | selectattr('id', 'equalto', spec.image_id) | first).archive_reference }}
+{% if name in registry_release.readiness_dependencies %}
+    depends_on:
+{% for dependency in registry_release.readiness_dependencies[name] %}
+      {{ dependency }}:
+        condition: service_healthy
+{% endfor %}
+{% endif %}
+    pull_policy: never
+    container_name: !reset null
+    restart: "no"
+    mem_limit: {{ spec.memory }}
+    cpus: {{ spec.cpus }}
+    logging: !override
+      driver: local
+      options:
+        max-size: "20m"
+        max-file: "3"
+{% if name == 'proxy' %}
+    ports: !override
+      - "127.0.0.1:{{ registry_https_port }}:8443"
+{% elif name == 'log' %}
+    ports: !reset []
+{% endif %}
+{% endfor %}

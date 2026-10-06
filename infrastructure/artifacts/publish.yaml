@@ -1,0 +1,95 @@
+---
+- name: Prepare and publish selected immutable images
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    material_action: '{{ publication_action }}'
+    publication_action: plan
+    capacity_operation: '{{ publication_capacity_operation }}'
+    images: '{{ lookup("ansible.builtin.file", publication_lockfile | default(playbook_dir + "/upstream-images.lock.json")) | from_json }}'
+    selected_service_image_ids: '{{ service_image_ids if service_material_ids | default("all") == "all" else service_material_ids.split(",") }}'
+    selected_images: '{{ images.images | selectattr("id", "in", publication_image_ids) | list }}'
+    skopeo: '{{ (lookup("file", playbook_dir + "/upstream-images.lock.json") | from_json).images | selectattr("id", "equalto", "skopeo") | first }}'
+    cache_directories: >-
+      {% set paths = [artifact_cache_root] %}
+      {% for relative in selected_images | map(attribute='material_owner') | map('regex_replace', '$', '/images') | list %}
+      {% set current = namespace(path=artifact_cache_root) %}
+      {% for part in relative.split('/') %}
+      {% set current.path = current.path + '/' + part %}
+      {% set _ = paths.append(current.path) %}
+      {% endfor %}
+      {% endfor %}
+      {{ paths | unique | list | to_json }}
+    verifier: '{{ playbook_dir }}/../artifacts/verify-oci-archive.py'
+    local_client: [docker, run, --rm, --pull=never, --network=host, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --tmpfs, '/var/tmp:rw,noexec,nosuid,size={{ (artifact_image.compressed_layer_bytes | int) * 2 + 16777216 }}', --add-host, '{{ registry_hostname }}:127.0.0.1', --env, HTTP_PROXY=, --env, HTTPS_PROXY=, --env, ALL_PROXY=, --env, 'NO_PROXY={{ registry_hostname }},127.0.0.1,localhost', --mount, 'type=bind,source={{ registry_config_dir }}/clients,target=/certs,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/publisher-auth.json,target=/publisher.json,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/puller-auth.json,target=/puller.json,readonly']
+  tasks:
+    - name: Skip publication only for an explicitly optional disabled component
+      ansible.builtin.meta: end_play
+      when:
+        - publication_skip_disabled | default(false) | bool
+        - not (publication_enabled | bool)
+    - name: Require the selected locked images and supported action
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - publication_action in ['plan', 'prepare', 'verify', 'publish']
+          - publication_download_timeout_seconds | default(600) | int >= 60
+          - publication_download_timeout_seconds | default(600) | int <= 7200
+          - publication_enabled | bool
+          - publication_image_ids is sequence and publication_image_ids is not string
+          - publication_image_ids | length > 0
+          - publication_image_ids | unique | length == publication_image_ids | length
+          - service_material_ids is not defined or publication_image_ids | difference(service_image_ids) | length == 0
+          - selected_images | map(attribute='id') | sort == publication_image_ids | sort
+          - images.platform == 'linux/amd64'
+          - registry_address == 'harbor.sunmoonai.com:30443'
+          - not (publication_remove_transport | default(false) | bool) or publication_image_directory | default('') == ((playbook_dir + '/../.build/applications/transfer') | realpath)
+    - name: Validate immutable inputs
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - publication_image_directory is defined or item.material_owner is match('^(cluster|host|registry|shared|components)/[a-z0-9-]+(/[a-z0-9-]+)*$')
+          - item.id is match('^[a-z][a-z0-9-]*$')
+          - item.manifest_digest is match('^sha256:[a-f0-9]{64}$')
+          - item.reference.endswith('@' + item.manifest_digest)
+          - item.status == 'resolved'
+      loop: '{{ selected_images }}'
+      loop_control: {label: '{{ item.id }}'}
+    - name: Show locked image plan
+      ansible.builtin.debug:
+        msg: '{{ item.reference }} -> {{ registry_address }}/platform/{{ item.id }}@{{ item.manifest_digest }}'
+      loop: '{{ selected_images }}'
+      loop_control: {label: '{{ item.id }}'}
+    - name: End read-only plan
+      ansible.builtin.meta: end_play
+      when: publication_action == 'plan'
+    - name: Inspect artifact directory without following links
+      ansible.builtin.stat:
+        path: '{{ item }}'
+        follow: false
+      loop: '{{ [publication_image_directory] if publication_image_directory is defined else (cache_directories | from_json) }}'
+      register: directories
+    - name: Require real existing artifact directory
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.exists or item.stat.isdir | default(false)
+          - not item.stat.islnk | default(false)
+          - publication_image_directory is not defined or item.stat.isdir | default(false)
+      loop: '{{ directories.results }}'
+      loop_control: {label: '{{ item.item }}'}
+    - name: Budget small metadata before individually budgeting missing content
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      vars:
+        capacity_planned_bytes: 16777216
+      when: publication_action in ['prepare', 'publish']
+    - name: Process each selected image through the same path
+      ansible.builtin.include_tasks: tasks/publish-image.yaml
+      loop: '{{ selected_images }}'
+      loop_control:
+        loop_var: artifact_image
+        label: '{{ artifact_image.id }}'

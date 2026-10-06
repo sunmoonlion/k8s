@@ -1,0 +1,242 @@
+apiVersion: v1
+kind: Service
+metadata: {name: mongodb, namespace: data-platform-dev}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector: {app.kubernetes.io/name: mongodb}
+  ports: [{name: mongodb, port: 27017, targetPort: mongodb}]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: mongodb-settings, namespace: data-platform-dev}
+data:
+  mongod.conf: |
+    storage:
+      dbPath: /data/db
+      wiredTiger:
+        engineConfig:
+          cacheSizeGB: 0.5
+    net:
+      bindIpAll: true
+      port: 27017
+      tls:
+        mode: requireTLS
+        certificateKeyFile: /run/identity/server.pem
+        CAFile: /run/auth/ca.crt
+        allowConnectionsWithoutCertificates: true
+    security:
+      authorization: enabled
+      keyFile: /run/identity/replica-key
+    replication:
+      replSetName: sunmoon
+      oplogSizeMB: 256
+  common.js: |
+    // Passwords are read from private files, never command arguments or logs.
+    var fs = require('fs');
+    var identity = JSON.parse(fs.readFileSync('/run/auth/input.json', 'utf8'));
+    var endpoint = process.env.MONGODB_HOST + ':' + process.env.MONGODB_PORT;
+    var uri = 'mongodb://' + endpoint + '/?directConnection=true&tls=true&tlsCAFile=/run/auth/ca.crt&serverSelectionTimeoutMS=10000&connectTimeoutMS=10000&socketTimeoutMS=20000';
+    function requireResult(ok, message) { if (!ok) throw new Error(message); }
+    function connectAs(user, password, database) {
+      const connection = new Mongo(uri);
+      requireResult(connection.getDB(database).auth(user, password).ok === 1, 'MongoDB authentication failed');
+      return connection;
+    }
+    function deny(action) {
+      let denied = false;
+      try { const result = action(); denied = result && result.ok === 0 && [13,18].includes(result.code); }
+      catch (error) { denied = [13,18].includes(error.code); }
+      requireResult(denied, 'MongoDB unauthorized action was not rejected');
+    }
+  health.js: |
+    try {
+      load('/settings/common.js');
+      const connection = connectAs(identity.root_username, identity.root_password, 'admin');
+      requireResult(connection.getDB('admin').runCommand({ping: 1}).ok === 1, 'MongoDB ping failed');
+      quit(0);
+    } catch (_) { quit(1); }
+  initialize.js: |
+    try {
+      load('/settings/common.js');
+      const connection = connectAs(identity.root_username, identity.root_password, 'admin');
+      const admin = connection.getDB('admin');
+      const expected = {_id: process.env.MONGODB_REPLICA_SET, members: [{_id: 0, host: endpoint}]};
+      let fresh = false;
+      try {
+        const status = admin.runCommand({replSetGetStatus: 1});
+        if (status.ok !== 1) {
+          requireResult(status.code === 94, 'Replica set state is not a fresh uninitialized instance');
+          fresh = true;
+        }
+      } catch (error) {
+        if (error.code !== 94) throw error;
+        fresh = true;
+      }
+      if (fresh) requireResult(admin.runCommand({replSetInitiate: expected}).ok === 1, 'Replica set initialization failed');
+      let primary = false;
+      for (let i = 0; i < 90; i++) {
+        if (admin.runCommand({hello: 1}).isWritablePrimary === true) { primary = true; break; }
+        sleep(1000);
+      }
+      requireResult(primary, 'Replica set primary election timed out');
+      const config = admin.runCommand({replSetGetConfig: 1}).config;
+      requireResult(config._id === expected._id && config.members.length === 1 && config.members[0]._id === 0 && config.members[0].host === endpoint, 'Existing replica set differs; automatic reconfiguration is forbidden');
+      const database = connection.getDB(process.env.MONGODB_ACCEPTANCE_DATABASE);
+      const user = database.getUser(identity.acceptance_username);
+      if (!user) database.createUser({user: identity.acceptance_username, pwd: identity.acceptance_password, roles: [{role: 'readWrite', db: database.getName()}]}, {w: 'majority', wtimeout: 10000});
+      else requireResult(user.roles.length === 1 && user.roles[0].role === 'readWrite' && user.roles[0].db === database.getName(), 'Existing acceptance account has unexpected privileges');
+      connectAs(identity.acceptance_username, identity.acceptance_password, database.getName());
+      print(JSON.stringify({initialized: true, single_member_replica_set: true, distinct_limited_identity: true}));
+    } catch (error) {
+      print(JSON.stringify({initialized: false, error: error.codeName || (error.code ? 'MongoDB code ' + error.code : error.message)}));
+      quit(1);
+    }
+  verify.js: |
+    // Actual bounded read/write, commit/abort, TLS and authorization checks.
+    let collection = null;
+    let acceptanceFailed = false;
+    try {
+      load('/settings/common.js');
+      const adminConnection = connectAs(identity.root_username, identity.root_password, 'admin');
+      const admin = adminConnection.getDB('admin');
+      const version = admin.runCommand({buildInfo: 1}).version;
+      requireResult(version === process.env.MONGODB_VERSION, 'Running MongoDB version differs from lock');
+      const hello = admin.runCommand({hello: 1});
+      requireResult(hello.isWritablePrimary && hello.setName === process.env.MONGODB_REPLICA_SET, 'Replica set is not the expected writable primary');
+      const databaseName = process.env.MONGODB_ACCEPTANCE_DATABASE;
+      const connection = connectAs(identity.acceptance_username, identity.acceptance_password, databaseName);
+      const database = connection.getDB(databaseName);
+      const name = 'check_' + new ObjectId().toHexString();
+      collection = database.getCollection(name);
+      collection.insertOne({_id: 'crud', value: '中文写入'}, {writeConcern: {w: 'majority', wtimeout: 10000}});
+      requireResult(collection.findOne({_id: 'crud'}).value === '中文写入', 'MongoDB read differs');
+      collection.updateOne({_id: 'crud'}, {$set: {value: '已更新'}});
+      requireResult(collection.findOne({_id: 'crud'}).value === '已更新', 'MongoDB update differs');
+      collection.deleteOne({_id: 'crud'});
+      requireResult(collection.countDocuments({_id: 'crud'}) === 0, 'MongoDB delete failed');
+      const session = connection.startSession();
+      try {
+        const transactional = session.getDatabase(databaseName).getCollection(name);
+        session.startTransaction({writeConcern: {w: 'majority', wtimeout: 10000}, readConcern: {level: 'snapshot'}});
+        transactional.insertMany([{_id: 'commit1'}, {_id: 'commit2'}]);
+        session.commitTransaction();
+        requireResult(collection.countDocuments({_id: {$in: ['commit1','commit2']}}) === 2, 'Multi-document commit failed');
+        session.startTransaction({writeConcern: {w: 'majority', wtimeout: 10000}});
+        transactional.insertOne({_id: 'abort'});
+        session.abortTransaction();
+        requireResult(collection.countDocuments({_id: 'abort'}) === 0, 'Transaction abort did not restore prior state');
+      } finally { session.endSession(); }
+      deny(() => connection.getDB('admin').runCommand({usersInfo: 1}));
+      deny(() => connection.getDB('sunmoon_foreign').runCommand({insert: name, documents: [{value: 1}]}));
+      deny(() => new Mongo(uri).getDB(databaseName).auth(identity.acceptance_username, 'invalid_' + new ObjectId().toHexString()));
+      const anonymous = new Mongo(uri);
+      deny(() => anonymous.getDB(databaseName).runCommand({find: name}));
+      print(JSON.stringify({passed: true, version, tls_chain_and_hostname: true, single_member_primary: true, least_privilege_crud: true, multi_document_commit: true, transaction_abort: true, anonymous_read_denied: true, wrong_password_denied: true, admin_action_denied: true, foreign_database_write_denied: true, scope: 'Internal MongoDB protocol and limited acceptance account; not business integration, HA or backup recovery'}));
+    } catch (error) {
+      acceptanceFailed = true;
+      print(JSON.stringify({passed: false, error: error.codeName || (error.code ? 'MongoDB code ' + error.code : error.message)}));
+    } finally { if (collection) collection.drop(); }
+    if (acceptanceFailed) quit(1);
+  persistence.js: |
+    // Operator-triggered, nonce-scoped acceptance across an actual Pod replacement.
+    try {
+      load('/settings/common.js');
+      const nonce = process.env.MONGODB_PERSISTENCE_NONCE;
+      const action = process.env.MONGODB_PERSISTENCE_ACTION;
+      requireResult(/^[a-f0-9]{32}$/.test(nonce), 'Invalid persistence acceptance nonce');
+      const connection = connectAs(identity.acceptance_username, identity.acceptance_password, process.env.MONGODB_ACCEPTANCE_DATABASE);
+      const collection = connection.getDB(process.env.MONGODB_ACCEPTANCE_DATABASE).getCollection('restart_' + nonce);
+      if (action === 'create') {
+        requireResult(collection.countDocuments({}) === 0, 'Persistence acceptance collection already exists');
+        collection.insertOne({_id: nonce, value: '重启后保留'}, {writeConcern: {w: 'majority', j: true, wtimeout: 10000}});
+      } else if (action === 'verify') {
+        requireResult(collection.findOne({_id: nonce}).value === '重启后保留' && collection.countDocuments({}) === 1, 'Persistent acceptance data differs after restart');
+      } else if (action === 'remove') {
+        requireResult(collection.findOne({_id: nonce}).value === '重启后保留' && collection.countDocuments({}) === 1, 'Refuse removing a foreign acceptance collection');
+        collection.drop();
+      } else throw new Error('Unsupported persistence acceptance action');
+      print(JSON.stringify({passed: true, action, nonce}));
+    } catch (error) {
+      print(JSON.stringify({passed: false, error: error.codeName || (error.code ? 'MongoDB code ' + error.code : error.message)}));
+      quit(1);
+    }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: mongodb, namespace: data-platform-dev}
+spec:
+  serviceName: mongodb
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector: {matchLabels: {app.kubernetes.io/name: mongodb}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: mongodb}
+      annotations: {sunmoonai.com/input-sha256: 'f756139682bb36e5c9440a34aa172d5c5d71b32189dd51e3ad3ea23bd8655d71'}
+    spec:
+      serviceAccountName: platform-runtime
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: 'sunmoon-kind-worker2'}
+      terminationGracePeriodSeconds: 120
+      securityContext: {runAsNonRoot: true, runAsUser: 999, runAsGroup: 999, fsGroup: 999, seccompProfile: {type: RuntimeDefault}}
+      initContainers:
+        - name: prepare-identity
+          image: harbor.sunmoonai.com:30443/platform/mongodb@sha256:17148334f6b0a4fad09ad70f6449cf4d0330bbf49469b6dff4338123a5f7bcbf
+          command: [sh, -ec]
+          args: ['umask 077; cp /run/auth/server.pem /run/auth/replica-key /run/identity/; chmod 0600 /run/identity/*']
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 128Mi}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: identity, mountPath: /run/identity}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+      containers:
+        - name: mongodb
+          image: harbor.sunmoonai.com:30443/platform/mongodb@sha256:17148334f6b0a4fad09ad70f6449cf4d0330bbf49469b6dff4338123a5f7bcbf
+          imagePullPolicy: IfNotPresent
+          args: [mongod, --config, /settings/mongod.conf]
+          env:
+            - {name: MONGO_INITDB_ROOT_USERNAME_FILE, value: /run/auth/root-username}
+            - {name: MONGO_INITDB_ROOT_PASSWORD_FILE, value: /run/auth/root-password}
+            - {name: MONGODB_HOST, value: 'mongodb.data-platform-dev.svc.cluster.local'}
+            - {name: MONGODB_PORT, value: '27017'}
+            - {name: MONGODB_REPLICA_SET, value: 'sunmoon'}
+            - {name: MONGODB_ACCEPTANCE_DATABASE, value: 'sunmoon_acceptance'}
+            - {name: MONGODB_VERSION, value: '9.0.2'}
+          ports: [{name: mongodb, containerPort: 27017}]
+          startupProbe: {tcpSocket: {port: mongodb}, periodSeconds: 5, failureThreshold: 120, timeoutSeconds: 5}
+          readinessProbe: {exec: {command: [mongosh, --quiet, --nodb, --file, /settings/health.js]}, periodSeconds: 30, timeoutSeconds: 10, failureThreshold: 3}
+          livenessProbe: {tcpSocket: {port: mongodb}, periodSeconds: 30, timeoutSeconds: 3, failureThreshold: 5}
+          resources: {"requests": {"cpu": "250m", "memory": "1Gi"}, "limits": {"cpu": "2", "memory": "2Gi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: data, mountPath: /data/db}
+            - {name: configdb, mountPath: /data/configdb}
+            - {name: tmp, mountPath: /tmp}
+            - {name: settings, mountPath: /settings, readOnly: true}
+            - {name: identity, mountPath: /run/identity, readOnly: true}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: mongodb-data}}
+        - {name: configdb, emptyDir: {sizeLimit: 16Mi}}
+        - {name: tmp, emptyDir: {sizeLimit: 128Mi}}
+        - {name: identity, emptyDir: {medium: Memory, sizeLimit: 4Mi}}
+        - {name: settings, configMap: {name: mongodb-settings}}
+        - {name: auth, secret: {secretName: mongodb-auth, defaultMode: 0440}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: mongodb-clients, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: mongodb}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: mongodb-initialize}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: mongodb}}
+      ports: [{protocol: TCP, port: 27017}]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: mongodb}}
+      ports: [{protocol: TCP, port: 27017}]

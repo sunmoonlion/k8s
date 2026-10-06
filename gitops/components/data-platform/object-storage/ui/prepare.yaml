@@ -1,0 +1,54 @@
+---
+- name: Validate the object storage console endpoint
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_ingress_enabled | bool and traefik_crd_enabled | bool
+      - object_storage_ui_origin | urlsplit('scheme') == 'https'
+      - object_storage_ui_origin | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
+      - object_storage_ui_origin | urlsplit('port') | int == entry_port | int
+      - object_storage_ui_origin | urlsplit('username') == None
+      - object_storage_ui_origin | urlsplit('path') == ''
+      - object_storage_ui_origin | urlsplit('query') == '' and object_storage_ui_origin | urlsplit('fragment') == ''
+  when: object_storage_ui_enabled | bool
+- name: Create the object storage console candidate directory
+  ansible.builtin.file: {path: '{{ build }}/data-platform/object-storage/ui', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+  when: object_storage_ui_enabled | bool
+- name: Prepare a separate object storage console TLS identity with non-overwritten backup
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ services_config_dir }}/object-storage-ui'
+    tls_backup_dir: '{{ services_backup_dir }}/object-storage-ui'
+    tls_declaration: '{{ playbook_dir }}/../../gitops/components/data-platform/object-storage/ui/tls.sops.yaml'
+    tls_hostnames: ['{{ object_storage_ui_origin | urlsplit("hostname") }}']
+  when: object_storage_ui_enabled | bool
+- name: Read the platform CA for object storage upstream trust
+  ansible.builtin.slurp: {src: '{{ registry_config_dir }}/tls/ca.crt'}
+  register: object_storage_ui_ca
+  when: object_storage_ui_enabled | bool
+- name: Encrypt object storage console TLS and upstream trust
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  loop:
+    - file: data-platform/object-storage/ui/tls.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: object-storage-ui-tls, namespace: '{{ data_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+    - file: data-platform/object-storage/ui/upstream-ca.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: object-storage-upstream-ca, namespace: '{{ data_namespace }}'}
+        data: {ca.crt: '{{ object_storage_ui_ca.content }}'}
+  loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
+  no_log: true
+  when: object_storage_ui_enabled | bool
+- name: Render the object storage console route
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/data-platform/object-storage/ui/workload.yaml.j2'
+    dest: '{{ build }}/data-platform/object-storage/ui/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+  when: object_storage_ui_enabled | bool

@@ -1,0 +1,29 @@
+# 用户配置，由原生 Ansible 读取；不作为 Kubernetes 对象应用。
+---
+services_redis_enabled: true
+redis_volume:
+  name: redis
+  node: worker2
+  size: 2Gi
+  uid: 999
+  gid: 999
+
+# Maintainer identity; permissions and current credential storage, never password values.
+operator_account_redis:
+  object: data-platform/redis
+  id: administrator
+  username: default
+  account_type: platform-administrator
+  table_row: '1'
+  table_import: true
+  current_file: '{{ services_config_dir }}/credentials.yaml'
+  current_field: service_credentials.redis_password
+  backup_file: '{{ services_backup_dir }}/credentials.yaml'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: redis
+  initial_preset_supported: true
+  protocol_check_supported: false
+  rotation_supported: false
+  initial_file: '{{ services_config_dir }}/presets/redis-admin-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/redis-admin-password'

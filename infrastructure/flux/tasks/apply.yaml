@@ -1,0 +1,16 @@
+---
+- name: Compare owned declaration with the live API
+  ansible.builtin.command:
+    argv: '{{ kube + ["diff", "--server-side", "--field-manager=sunmoon-bootstrap", "-f", "-"] }}'
+    stdin: '{{ flux_manifest }}'
+  register: declaration_diff
+  changed_when: false
+  failed_when: declaration_diff.rc not in [0, 1]
+  no_log: '{{ flux_manifest_sensitive | default(false) }}'
+- name: Apply only a changed declaration without forcing field ownership
+  ansible.builtin.command:
+    argv: '{{ kube + ["apply", "--server-side", "--field-manager=sunmoon-bootstrap", "-f", "-"] }}'
+    stdin: '{{ flux_manifest }}'
+  when: declaration_diff.rc == 1
+  changed_when: true
+  no_log: '{{ flux_manifest_sensitive | default(false) }}'

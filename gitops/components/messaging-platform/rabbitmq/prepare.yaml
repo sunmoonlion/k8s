@@ -1,0 +1,28 @@
+---
+# RabbitMQ private input: the shared operator login, Erlang cookie and fixed server configuration.
+- name: Read the shared core identities
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/shared-credentials.yaml'
+- name: Encrypt the RabbitMQ login and configuration
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: messaging-platform/rabbitmq/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: rabbitmq-auth, namespace: '{{ messaging_namespace }}'}
+        stringData:
+          erlang-cookie: '{{ service_credentials.rabbitmq_cookie }}'
+          username: '{{ service_credentials.rabbitmq_username }}'
+          password: '{{ service_credentials.rabbitmq_password }}'
+          rabbitmq.conf: |
+            default_user = {{ service_credentials.rabbitmq_username }}
+            default_pass = {{ service_credentials.rabbitmq_password }}
+            vm_memory_high_watermark.absolute = 512MiB
+            disk_free_limit.absolute = 1GB
+            log.console = true
+            log.file = false
+  no_log: true
+- name: Prepare the RabbitMQ browser route
+  ansible.builtin.include_tasks: ui/prepare.yaml
+  when: rabbitmq_ui_enabled | bool and 'rabbitmq-ui' in selection.selected_stages

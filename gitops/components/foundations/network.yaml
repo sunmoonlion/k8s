@@ -1,0 +1,216 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: postgresql-clients, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: postgresql}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: data-platform-dev}
+          podSelector:
+            matchLabels: {sunmoonai.com/postgresql-client: 'true'}
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: app-platform-dev}
+          podSelector:
+            matchLabels: {sunmoonai.com/postgresql-client: 'true'}
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ops-platform-dev}
+          podSelector:
+            matchLabels: {sunmoonai.com/postgresql-client: 'true'}
+      ports: [{protocol: TCP, port: 5432}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: postgresql-client-egress, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {sunmoonai.com/postgresql-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: data-platform-dev}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: postgresql}
+      ports: [{protocol: TCP, port: 5432}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: postgresql-client-egress, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {sunmoonai.com/postgresql-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: data-platform-dev}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: postgresql}
+      ports: [{protocol: TCP, port: 5432}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: postgresql-client-egress, namespace: ops-platform-dev}
+spec:
+  podSelector: {matchLabels: {sunmoonai.com/postgresql-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: data-platform-dev}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: postgresql}
+      ports: [{protocol: TCP, port: 5432}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: redis-clients, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: redis}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: app-platform-dev}
+          podSelector:
+            matchLabels: {sunmoonai.com/redis-client: 'true'}
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ops-platform-dev}
+          podSelector:
+            matchLabels: {sunmoonai.com/redis-client: 'true'}
+      ports: [{protocol: TCP, port: 6379}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: redis-client-egress, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {sunmoonai.com/redis-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: data-platform-dev}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: redis}
+      ports: [{protocol: TCP, port: 6379}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: redis-client-egress, namespace: ops-platform-dev}
+spec:
+  podSelector: {matchLabels: {sunmoonai.com/redis-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: data-platform-dev}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: redis}
+      ports: [{protocol: TCP, port: 6379}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: rabbitmq-clients, namespace: messaging-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: rabbitmq}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: app-platform-dev}
+          podSelector:
+            matchLabels: {sunmoonai.com/rabbitmq-client: 'true'}
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ops-platform-dev}
+          podSelector:
+            matchLabels: {sunmoonai.com/rabbitmq-client: 'true'}
+      ports: [{protocol: TCP, port: 5672}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: rabbitmq-client-egress, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {sunmoonai.com/rabbitmq-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: messaging-platform-dev}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: rabbitmq}
+      ports: [{protocol: TCP, port: 5672}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: rabbitmq-client-egress, namespace: ops-platform-dev}
+spec:
+  podSelector: {matchLabels: {sunmoonai.com/rabbitmq-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: messaging-platform-dev}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: rabbitmq}
+      ports: [{protocol: TCP, port: 5672}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: object-storage-clients, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: object-storage}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: data-platform-dev}
+          podSelector:
+            matchLabels: {sunmoonai.com/object-storage-client: 'true'}
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: app-platform-dev}
+          podSelector:
+            matchLabels: {sunmoonai.com/object-storage-client: 'true'}
+      ports: [{protocol: TCP, port: 9000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: object-storage-client-egress, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {sunmoonai.com/object-storage-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: data-platform-dev}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: object-storage}
+      ports: [{protocol: TCP, port: 9000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: object-storage-client-egress, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {sunmoonai.com/object-storage-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: data-platform-dev}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: object-storage}
+      ports: [{protocol: TCP, port: 9000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: casdoor-ingress, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: traefik}
+      ports: [{protocol: TCP, port: 8000}]

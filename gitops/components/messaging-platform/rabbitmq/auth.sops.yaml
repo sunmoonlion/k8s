@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: rabbitmq-auth
+    namespace: messaging-platform-dev
+stringData:
+    erlang-cookie: ENC[AES256_GCM,data:1HsG5pYXIdVBMZqvS1EpLv4BnYwhFQ==,iv:41FdXJbzm+BDmGPFYadVQnbb+J8WkemAhqhrmP+bV4c=,tag:y8jG931AlalUrwrzU59Cuw==,type:str]
+    username: ENC[AES256_GCM,data:dL8IqQc=,iv:KeszPm+y1lcSDFT0RgVK8S8rVBsasbl9TxJ4m2+UWXU=,tag:UDLpXQKnAWCw/w8K6cUoEg==,type:str]
+    password: ENC[AES256_GCM,data:jf2PU7faDeIpcGnt6g==,iv:gDkkSb2g/2LKF56CyyhKkdwUbakKQaaWPHZHFFEd220=,tag:NRdA0VCVlqDL4MGkf8MtjA==,type:str]
+    rabbitmq.conf: ENC[AES256_GCM,data:V20BD0gQ2XEacWmuo1N6qDeSHp2gQAPNZlpsxIGrkPkJDtkt3rTO584jUZgSbi4N3Kk0oWxOPrSsdFaYTX4hgoKA6wKcvu1MLwSDXBOd8Og+ag87hbTTdscoBZSZPD1FiBVzFJ2SHs0znEBZQr0rPPX6Nl+8vP+3z0GG9iXmKNj5PQ+2iPKYjESseEoGJmDUdIpj3gUxjc5d1VTRLzrcaQ==,iv:qvH+g+IIeSgDJtLFTb1an9sK8OUT+kCM6M+HWc5RDHo=,tag:oc3V+rungELz/P/ppxDAyw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBwYWlhWFZLOTJrdEE1SGNo
+            MVg3a0NmL2lmaEZtTjk1QWpKajF6dlV2V1ZFClRwNmZ6MVc3dWxabVM0enU1M0Jv
+            clRvWktmSmp1VTg3ai8rVktEVm5iK0EKLS0tIDdYelZFbEhMVnI5YTAzdDJzZVpI
+            cDhEN0VXbDBFNzVUYUR1VVJmQ284NVkKACJHGk0rGVqh24Q5dpUvpE4Rt8/2LYf0
+            mm62Ud7mlx5A5rATVZP7kQ9EYmhKsgLMhOoRcQig3nX03fiilfJSHw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-05T15:41:09Z"
+    mac: ENC[AES256_GCM,data:aFyy/a5/ktyGcWHN8ICVh1AE00rZWNZazio/SkrlDuGBSw3s4g6GhMuaduWk39LwcX3BrpKlPFkqYM1zeaNtpdTLD4cklbDVAECpoIcUwu9pRokEY6KsyAsnVL3OKVMIXCYT8cjMVfCBRznbkzYnQ36bDCyygIM7gRgkbbKQ0EM=,iv:9Nuq7OsuIGo2Ora7lo8JWH0BLkZQpmhlgh71qwXtuVE=,tag:YpKkwpByAO7oxX4Fdgj1ZA==,type:str]
+    version: 3.13.3

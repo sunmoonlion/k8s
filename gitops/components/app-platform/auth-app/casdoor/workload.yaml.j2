@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: casdoor, namespace: {{ app_namespace }}}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: casdoor}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: casdoor, sunmoonai.com/postgresql-client: 'true'}
+    spec:
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: {{ cluster_name }}-worker}
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: casdoor
+          image: {{ registry_address }}/platform/casdoor@{{ image_map.casdoor.manifest_digest }}
+          command: [/server]
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: '2', memory: 1Gi}}
+          ports: [{name: http, containerPort: 8000}]
+          startupProbe: {httpGet: {path: /, port: http}, periodSeconds: 5, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /, port: http}, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /, port: http}, periodSeconds: 20, initialDelaySeconds: 30}
+          volumeMounts:
+            - {name: config, mountPath: /conf, readOnly: true}
+            - {name: files, mountPath: /files}
+            - {name: logs, mountPath: /logs}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: config, secret: {secretName: casdoor-config, defaultMode: 0440}}
+        - {name: files, persistentVolumeClaim: {claimName: casdoor-data}}
+        - {name: logs, emptyDir: {sizeLimit: 32Mi}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: casdoor, namespace: {{ app_namespace }}}
+spec:
+  selector: {app.kubernetes.io/name: casdoor}
+  ports: [{name: http, port: 8000, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: casdoor
+  namespace: {{ app_namespace }}
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+spec:
+  ingressClassName: sunmoon
+  tls: [{hosts: [{{ casdoor_hostname }}], secretName: platform-tls}]
+  rules:
+    - host: {{ casdoor_hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: casdoor, port: {number: 8000}}}

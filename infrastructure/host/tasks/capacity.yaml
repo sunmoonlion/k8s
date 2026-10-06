@@ -1,0 +1,76 @@
+---
+# Shared host guard. Callers supply capacity_planned_bytes for their operation.
+- name: Validate the capacity budget and site floor
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - capacity_planned_bytes | int >= 0
+      - windows_minimum_free_gib | int >= 10
+      - data_vhd_maximum_gib | int > 0
+
+- name: Validate an explicitly approved temporary capacity exception
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - capacity_exception.id | length > 0
+      - capacity_exception.minimum_free_gib | int >= 10
+      - capacity_exception.minimum_free_gib | int < windows_minimum_free_gib | int
+      - capacity_exception.expires_epoch | int > lookup('ansible.builtin.pipe', 'date +%s') | int
+      - capacity_exception.expires_epoch | int <= (lookup('ansible.builtin.pipe', 'date +%s') | int) + 86400
+      - capacity_operation | default('unclassified') in capacity_exception.operations
+    fail_msg: Capacity exception is expired, outside its approved operation, or below the approved floor.
+  when: capacity_exception is defined
+
+- name: Report the active temporary exception without changing the site policy
+  ansible.builtin.debug:
+    msg: 'Owner exception {{ capacity_exception.id }}: {{ capacity_exception.minimum_free_gib }} GiB for {{ capacity_operation }}; default remains {{ windows_minimum_free_gib }} GiB.'
+  when: capacity_exception is defined
+
+- name: Publish read-only helper to Windows local script directory
+  ansible.builtin.file:
+    path: '{{ windows_script_directory }}'
+    state: directory
+    mode: '0755'
+
+- name: Install the reviewed capacity helper without changing execution policy
+  ansible.builtin.copy:
+    src: '{{ inventory_dir }}/windows-capacity.ps1'
+    dest: '{{ windows_script_directory }}/windows-capacity.ps1'
+    mode: '0644'
+
+- name: Resolve Windows path to read-only capacity helper
+  ansible.builtin.command:
+    argv: [wslpath, -w, '{{ windows_script_directory }}/windows-capacity.ps1']
+  register: capacity_script_path
+  changed_when: false
+
+- name: Require Windows growth budget before writing
+  ansible.builtin.command:
+    argv:
+      - '{{ windows_powershell }}'
+      - -NoProfile
+      - -NonInteractive
+      - -File
+      - '{{ capacity_script_path.stdout }}'
+      - -DataVhdPath
+      - '{{ data_vhd_windows_path }}'
+      - -DataMaximumGiB
+      - '{{ data_vhd_maximum_gib | string }}'
+      - -MinimumFreeGiB
+      - '{{ (capacity_exception.minimum_free_gib if capacity_exception is defined else windows_minimum_free_gib) | string }}'
+      - -PlannedBytes
+      - '{{ capacity_planned_bytes | string }}'
+  register: capacity_report
+  changed_when: false
+
+- name: Report physical capacity budget
+  ansible.builtin.debug:
+    msg: '{{ capacity_report.stdout | from_json }}'
+
+- name: Enforce the approved batch ceiling as well as the reserve floor
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - (capacity_report.stdout | from_json).remaining_after_growth_and_plan_bytes | int >= capacity_exception.minimum_remaining_bytes | int
+    fail_msg: This operation exceeds the approved batch growth allowance; prepare code only until capacity is available.
+  when: capacity_exception is defined and capacity_exception.minimum_remaining_bytes is defined

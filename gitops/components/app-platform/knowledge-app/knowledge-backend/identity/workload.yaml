@@ -1,0 +1,180 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: 'knowledge-identity-provision-v2', namespace: app-platform-dev}
+data:
+  provision.py: |
+    """Register the two browser clients through Casdoor's supported API."""
+    from datetime import datetime, timezone
+    import json
+    import os
+    from pathlib import Path
+    import re
+    from urllib.parse import urlsplit
+
+    import httpx
+
+
+    def require(condition, message):
+        if not condition:
+            raise RuntimeError(message)
+
+
+    def run():
+        origin = os.environ['CASDOOR_ORIGIN']
+        endpoint = os.environ['CASDOOR_INTERNAL_ENDPOINT']
+        organization = os.environ['CASDOOR_ORGANIZATION']
+        definitions = json.loads(os.environ['BROWSER_CLIENTS'])
+        secrets = json.loads(Path('/run/app/clients.json').read_text())
+        initialization = json.loads(Path('/run/admin/init_data.json').read_text())
+        admins = [u for u in initialization['users'] if u['owner'] == 'built-in' and u['name'] == 'admin']
+        require(len(admins) == 1 and organization == 'built-in', 'Unexpected administrator or organization')
+        require(set(definitions) == {'web', 'admin'}, 'Both browser surfaces are required')
+        require(definitions['web']['client_id'] != definitions['admin']['client_id'], 'Browser clients must differ')
+        require(secrets['web_secret'] != secrets['admin_secret'], 'Browser secrets must differ')
+        created = []
+        checked = []
+        with httpx.Client(base_url=endpoint, headers={'Origin': origin}, trust_env=False, timeout=15) as client:
+            def api(method, path, payload=None, params=None):
+                response = client.request(method, path, json=payload, params=params)
+                require(response.status_code == 200, 'Casdoor API HTTP failure')
+                result = response.json()
+                require(result.get('status') == 'ok', 'Casdoor API rejected operation')
+                return result.get('data')
+
+            api('POST', '/api/login', {'application': 'app-built-in', 'organization': 'built-in',
+                                     'username': 'admin', 'password': admins[0]['password'], 'type': 'login'})
+            baseline = api('GET', '/api/get-application', params={'id': 'admin/app-built-in'})
+            require(baseline and baseline['cert'], 'Existing Casdoor signing certificate missing')
+            for surface, config in definitions.items():
+                for name in ('name', 'client_id'):
+                    require(re.fullmatch(r'[a-z][a-z0-9-]{2,79}', config[name]), 'Invalid browser identity')
+                frontend = urlsplit(config['origin'])
+                require(frontend.scheme == 'https' and frontend.hostname and not frontend.username and
+                        not frontend.password and not frontend.query and not frontend.fragment and frontend.path in ('', '/'),
+                        'Frontend origin must be an exact HTTPS origin')
+                desired = {
+                    'owner': 'admin', 'name': config['name'], 'organization': organization,
+                    'description': 'sunmoon:knowledge:' + surface + ':managed-by-gitops',
+                    'displayName': 'SunMoon template ' + surface, 'category': 'Default', 'type': 'Web',
+                    'clientId': config['client_id'], 'clientSecret': secrets[surface + '_secret'],
+                    'redirectUris': [config['origin'] + '/api/auth/' + surface + '/callback'],
+                    'homepageUrl': config['origin'], 'cert': baseline['cert'],
+                    'grantTypes': ['authorization_code'], 'tokenFormat': 'JWT', 'tokenSigningMethod': 'RS256',
+                    'expireInHours': 1, 'refreshExpireInHours': 0,
+                    'enablePassword': True, 'enableSignUp': False, 'enableGuestSignin': False,
+                    'enableSigninSession': False, 'isShared': False,
+                    'signinMethods': [{'name': 'Password', 'displayName': 'Password', 'rule': 'All'}],
+                }
+                existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
+                if existing is None:
+                    # Check client-ID collision before creating; never change another application.
+                    applications = api('GET', '/api/get-applications', params={'owner': 'admin'})
+                    require(not any(a.get('clientId') == config['client_id'] for a in applications), 'Client ID belongs to another application')
+                    added = api('POST', '/api/add-application', dict(desired, createdTime=datetime.now(timezone.utc).isoformat()))
+                    require(added == 'Affected', 'Application was not created')
+                    created.append(surface)
+                    existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
+                require(existing and all(existing.get(k) == v for k, v in desired.items()),
+                        'Existing browser application differs; explicit migration required')
+                checked.append(surface)
+            response = client.get('/.well-known/openid-configuration')
+            require(response.status_code == 200, 'OIDC discovery failed')
+            discovery = response.json()
+            require(discovery['issuer'] == origin and 'S256' in discovery.get('code_challenge_methods_supported', []),
+                    'Unexpected issuer or missing PKCE')
+            for field in ('authorization_endpoint', 'token_endpoint', 'jwks_uri'):
+                value = urlsplit(discovery[field])
+                require(value.scheme + '://' + value.netloc == origin, 'OIDC endpoint origin mismatch')
+            response = client.get(urlsplit(discovery['jwks_uri']).path)
+            require(response.status_code == 200 and response.json().get('keys'), 'OIDC verification keys missing')
+        print(json.dumps({'browser_clients': sorted(checked), 'created': created,
+                          'distinct_identities': True, 'exact_redirects': True, 'client_secrets_match': True,
+                          'authorization_code_only': True, 'signup_disabled': True,
+                          'issuer': origin, 'pkce_s256': True, 'jwks_available': True,
+                          'full_browser_login_verified': False}))
+
+
+    if __name__ == '__main__':
+        try:
+            run()
+        except Exception as error:
+            # Only our fixed validation messages are safe; never stringify HTTP exceptions.
+            message = str(error) if type(error) is RuntimeError else type(error).__name__
+            raise SystemExit('Casdoor registration failed: ' + message)
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowledge-identity-provision-in, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-identity-provision}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowledge-identity-provision-out, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-identity-provision}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: 'knowledge-identity-v2', namespace: app-platform-dev}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: knowledge-identity-provision, app.kubernetes.io/part-of: knowledge}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:e65abcf5f8d37b29ea63194dad8380a1c1b45603c174438119f63dd338bd85e6
+          imagePullPolicy: IfNotPresent
+          command: [python, /script/provision.py]
+          env:
+            - {name: CASDOOR_INTERNAL_ENDPOINT, value: 'http://casdoor.app-platform-dev.svc.cluster.local:8000'}
+            - {name: CASDOOR_ORIGIN, value: 'https://casdoor.sunmoonai.com:30443'}
+            - {name: CASDOOR_ORGANIZATION, value: 'built-in'}
+            - name: BROWSER_CLIENTS
+              value: "{\"web\": {\"name\": \"sunmoonai-knowledge-web\", \"client_id\": \"sunmoon-kind-knowledge-web\", \"origin\": \"https://knowledge.sunmoonai.com:30443\"}, \"admin\": {\"name\": \"sunmoonai-knowledge-admin\", \"client_id\": \"sunmoon-kind-knowledge-admin\", \"origin\": \"https://knowledge-admin.sunmoonai.com:30443\"}}"
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          volumeMounts:
+            - {name: script, mountPath: /script, readOnly: true}
+            - {name: admin, mountPath: /run/admin, readOnly: true}
+            - {name: app, mountPath: /run/app, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: script, configMap: {name: 'knowledge-identity-provision-v2'}}
+        - {name: admin, secret: {secretName: casdoor-initial-identity, items: [{key: init_data.json, path: init_data.json}], defaultMode: 0440}}
+        - {name: app, secret: {secretName: knowledge-identity-provision, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 32Mi}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: knowledge-browser-identity, namespace: app-platform-dev}
+data:
+  CASDOOR_ENDPOINT: 'https://casdoor.sunmoonai.com:30443'
+  CASDOOR_ORGANIZATION: 'built-in'
+  WEB_CASDOOR_APPLICATION: 'sunmoonai-knowledge-web'
+  WEB_CASDOOR_CLIENT_ID: 'sunmoon-kind-knowledge-web'
+  WEB_CASDOOR_REDIRECT_URI: 'https://knowledge.sunmoonai.com:30443/api/auth/web/callback'
+  WEB_FRONTEND_BASE_URL: 'https://knowledge.sunmoonai.com:30443'
+  WEB_FRONTEND_ALLOWED_ORIGINS: 'https://knowledge.sunmoonai.com:30443'
+  ADMIN_CASDOOR_APPLICATION: 'sunmoonai-knowledge-admin'
+  ADMIN_CASDOOR_CLIENT_ID: 'sunmoon-kind-knowledge-admin'
+  ADMIN_CASDOOR_REDIRECT_URI: 'https://knowledge-admin.sunmoonai.com:30443/api/auth/admin/callback'
+  ADMIN_FRONTEND_BASE_URL: 'https://knowledge-admin.sunmoonai.com:30443'
+  ADMIN_FRONTEND_ALLOWED_ORIGINS: 'https://knowledge-admin.sunmoonai.com:30443'

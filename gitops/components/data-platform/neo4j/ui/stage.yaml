@@ -1,0 +1,9 @@
+# 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
+# enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
+---
+prepare: data-platform/neo4j/prepare.yaml
+stages:
+- name: neo4j-ui
+  dependsOn: [neo4j, traefik]
+  enabled: '{{ services_enabled and services_neo4j_enabled and neo4j_ui_enabled }}'
+  resources: [workload.yaml, tls.sops.yaml, upstream-ca.sops.yaml]

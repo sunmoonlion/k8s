@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowledge-browser-secrets
+    namespace: app-platform-dev
+stringData:
+    WEB_CASDOOR_CLIENT_SECRET: ENC[AES256_GCM,data:3vNZmmuybWblx/vEc5Wn/Lpm1iYN+h4jX8R+puKcRqyyPevGudTaoQ==,iv:5F9ZGYlS16gssZRVRudOTpLLIYAVEyV2Rom+G5TGXIE=,tag:G3yK8nDDst83SvRWbrB7wQ==,type:str]
+    ADMIN_CASDOOR_CLIENT_SECRET: ENC[AES256_GCM,data:/mwQw+mNrO5Hpg2to0mHxg3WJSA/38Uc92mj8ez0xiscMFfmZyEShw==,iv:dYlImsCpxIaG8VAOmp6Jmr/99RqBQkbjlWc3fkNWOD8=,tag:k5+xTsS1XXA7xLAHMLNfxg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAvNXEyeVI3VW1KRnY0N05C
+            QXk0WEJqazVBdE1IaitReDRKeGZkUXV2YVd3Ci9qSkFIVE9XSy93MjdTaDFEV2tV
+            UTNWZU42VytkbmhiZ0l2bHlqYlFEc1kKLS0tIG1CWUswRkZjVlpYYlZsbjUvQ0Nm
+            MnhJcWdRQ3ZmWCt4SmNYZkJJWmJIQlUKimwTM2PID6ugWIOTLl5kakdugwTK4C2c
+            oKLTwVjgmmcHfiK0o5gHxW5AVC0l29rOCkQsfj6Blp02Kb+M8IxR/g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:19:49Z"
+    mac: ENC[AES256_GCM,data:Xl0OLwHy4tk8TuIuZo2qBk2593MQzzX+XZygTmMEn2za5S5QfgCrlwTi8UBEceNIKc7HN7GTpOXLBqLtg03Gx6yZhJry1NZwx8XprQk/ry57neW76Tsy0jWuct1xta6t8kvVUPLrEK0AuNHICy6KnmU/OuRltE+K3SskOOnbfqg=,iv:+KhfkWHtWwib6VbOzF0/XQNeCCrZ+OfOV1HjNawtlPU=,tag:eiOaBn8bm0AokJtG7/R1aA==,type:str]
+    version: 3.13.3

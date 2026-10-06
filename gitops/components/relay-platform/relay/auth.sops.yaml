@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: relay-auth
+    namespace: relay-platform-dev
+stringData:
+    RELAY_ADMIN_TOKEN: ENC[AES256_GCM,data:uku0N1Np9Ql8tQX+VTzQlxKf/Er//XY1ac8mtOpPGI6WAZrnlnu4Rw==,iv:UgRRvB5eP+0HVSGtGvW637u1UvE4lFZ/JfYEOL5a6tI=,tag:LbGM3+yFjuVqSSPHtbIusw==,type:str]
+    tokens.json: ENC[AES256_GCM,data:IdI=,iv:kQo6NqL2NjZKHZvHBIkcS0Zw/PmBvWBN4nFbZmFugG4=,tag:Ag8qDkrFLbR0N92sAUO9bQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBKSnRmbGxwUTRiaWtQVWo1
+            ZEN5NTVFZGpyQWs5dzFpcUtqRFZmaXlrUjNzClNVdjE4N0F4K013cCtRbUxaSGhp
+            andVcTZqVG5YRkpXTE1vc1A0KzBUa0UKLS0tIDBxOWlTQmxLUVVjQmtmRUVUcDJv
+            OVBvTXRCRENXcXUvVU51M1YvbUw4M28KVKlCKDL72SX3WCaoQNsMNQcqCwvZ3Ygp
+            TZ1GJaRvVaEHAa/ynugBLC8d49QQtzHUvW0qCx2whbkq1CH6FEyT8w==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-05T16:32:45Z"
+    mac: ENC[AES256_GCM,data:RUyxwtO1aUXgAA7/kmA/PsX9Voe5FDd6a9alCi7BRZLmWFQf/P9AeqYsIWFzW/AF7JA0FH5Yd+5pI2RTGRbsrBWoQcwYXUMJdgQf1CCMGL+9gE+QS4aS7zVInPNSzYDp6aegn5ThOpky30w56bIfjZ/GV7VBXjjAFIwekgwG5vY=,iv:aA1oh5fsMXSU0nAjsFe0q05aDaI6952Pl3nbu9JUoLg=,tag:5ClQQcVfyOYSen6ijr5f5Q==,type:str]
+    version: 3.13.3

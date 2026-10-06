@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata: {name: casdoor-database-v1, namespace: data-platform-dev}
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: {sunmoonai.com/postgresql-client: 'true'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 999, runAsGroup: 999, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: harbor.sunmoonai.com:30443/platform/postgresql@sha256:0377e72c5289ed2f98cf61b1a9c2db9eb9d300317fe14244492fbc94343b3d04
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          env:
+            - {name: PGHOST, value: postgresql.data-platform-dev.svc.cluster.local}
+            - {name: PGUSER, value: postgres}
+            - {name: PGDATABASE, value: postgres}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: postgresql-auth, key: password}}}
+            - {name: APP_PASSWORD, valueFrom: {secretKeyRef: {name: casdoor-database-auth, key: password}}}
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              psql --no-psqlrc --set=ON_ERROR_STOP=1 <<'SQL'
+              \getenv app_password APP_PASSWORD
+              SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', 'casdoor', :'app_password') WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'casdoor') \gexec
+              SELECT format('CREATE DATABASE %I OWNER %I', 'casdoor', 'casdoor') WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'casdoor') \gexec
+              SQL
+              PGPASSWORD="$APP_PASSWORD" psql --no-psqlrc -U casdoor -d casdoor --set=ON_ERROR_STOP=1 -c 'SELECT 1' >/dev/null
+              echo 'Independent Casdoor database and login verified'

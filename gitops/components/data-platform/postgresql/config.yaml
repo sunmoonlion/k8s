@@ -1,0 +1,29 @@
+# 用户配置，由原生 Ansible 读取；不作为 Kubernetes 对象应用。
+---
+services_postgresql_enabled: true
+postgresql_volume:
+  name: postgresql
+  node: worker
+  size: 8Gi
+  uid: 999
+  gid: 999
+
+# Maintainer identity; permissions and current credential storage, never password values.
+operator_account_postgresql:
+  object: data-platform/postgresql
+  id: administrator
+  username: postgres
+  account_type: platform-administrator
+  table_row: '4'
+  table_import: true
+  current_file: '{{ services_config_dir }}/credentials.yaml'
+  current_field: service_credentials.postgresql_password
+  backup_file: '{{ services_backup_dir }}/credentials.yaml'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: postgresql
+  initial_preset_supported: true
+  protocol_check_supported: false
+  rotation_supported: false
+  initial_file: '{{ services_config_dir }}/presets/postgresql-admin-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/postgresql-admin-password'

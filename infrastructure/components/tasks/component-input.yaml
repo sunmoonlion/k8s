@@ -1,0 +1,50 @@
+---
+# Native renderer include, not a separate executable or deployment entry point.
+- name: Inspect the exact independent component input pair
+  ansible.builtin.stat: {path: '{{ item }}', follow: false}
+  loop: ['{{ services_config_dir }}/{{ component_input_name }}.yaml', '{{ services_backup_dir }}/{{ component_input_name }}.yaml']
+  register: component_inputs
+  no_log: true
+- name: Reject redirected or insecure component inputs
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - component_input_name is match('^[a-z][a-z0-9-]+$')
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ component_inputs.results }}'
+  no_log: true
+- name: Restore missing input only from the preserved independent copy
+  ansible.builtin.copy: {src: '{{ services_backup_dir }}/{{ component_input_name }}.yaml', dest: '{{ services_config_dir }}/{{ component_input_name }}.yaml', remote_src: true, mode: '0600'}
+  when: not component_inputs.results[0].stat.exists and component_inputs.results[1].stat.exists
+  no_log: true
+- name: Refuse regenerating declared component passwords
+  ansible.builtin.assert:
+    quiet: true
+    that: component_inputs.results[0].stat.exists or component_inputs.results[1].stat.exists or query('fileglob', playbook_dir + '/../../gitops/components/' + component_input_manifest) | length == 0
+    fail_msg: Restore the private component input backup; declared identities must never be regenerated silently.
+- name: Generate a component input once for a fresh deployment
+  ansible.builtin.copy:
+    dest: '{{ services_config_dir }}/{{ component_input_name }}.yaml'
+    content: '{{ component_initial_input | to_nice_yaml }}'
+    force: false
+    owner: root
+    group: root
+    mode: '0600'
+  when: not component_inputs.results[0].stat.exists and not component_inputs.results[1].stat.exists
+  no_log: true
+- name: Keep an independent non-overwritten component input copy
+  ansible.builtin.copy: {src: '{{ services_config_dir }}/{{ component_input_name }}.yaml', dest: '{{ services_backup_dir }}/{{ component_input_name }}.yaml', remote_src: true, force: false, mode: '0600'}
+  no_log: true
+- name: Require byte identical recoverable component input
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ services_config_dir }}/{{ component_input_name }}.yaml', '{{ services_backup_dir }}/{{ component_input_name }}.yaml']}
+  changed_when: false
+  no_log: true
+- name: Read component identity only into memory
+  ansible.builtin.slurp: {src: '{{ services_config_dir }}/{{ component_input_name }}.yaml'}
+  register: component_input_bytes
+  no_log: true
+- name: Decode component identity without exposing values
+  ansible.builtin.set_fact:
+    component_private_input: '{{ component_input_bytes.content | b64decode | from_yaml }}'
+  no_log: true

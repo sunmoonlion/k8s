@@ -1,0 +1,28 @@
+---
+# Traefik inputs: the locked chart source, the ingress namespace pull identity,
+# the optional locked standard CRDs and the optional private HTTPS service transport.
+- name: Read the locked chart source selected by services-chart
+  ansible.builtin.set_fact:
+    chart_source: '{{ lookup("file", build + "/chart-source.yaml") | from_yaml }}'
+- name: Read namespace pull-only identity
+  ansible.builtin.slurp: {src: '{{ registry_config_dir }}/private/puller-auth.json'}
+  register: puller
+  no_log: true
+- name: Encrypt the ingress namespace pull identity
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: ingress-platform/traefik/puller.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: registry-puller, namespace: '{{ ingress_namespace }}'}
+        type: kubernetes.io/dockerconfigjson
+        data: {'.dockerconfigjson': '{{ puller.content }}'}
+  no_log: true
+- name: Prepare locked standard Traefik CRDs
+  ansible.builtin.include_tasks: prepare-crds.yaml
+  when: traefik_crd_enabled | bool
+- name: Prepare the private HTTPS service transport
+  ansible.builtin.include_tasks: service-access/prepare.yaml
+  when: service_access_enabled | bool

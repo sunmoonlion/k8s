@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "installer_id": "harbor-installer",
+  "installer_sha256": "67517e0ba4a3f9db90731aa560dacbc0b24a0de04d5a1b428c7d32ea96656432",
+  "platform": "linux/amd64",
+  "inner_archive": "harbor/harbor.v2.15.2.tar.gz",
+  "verified_blob_count": 177,
+  "images": [
+    {
+      "id": "harbor-core",
+      "source_reference": "docker.io/goharbor/harbor-core@sha256:d7b780d23721a000f0fb8e181add6675eafa336de5d033b77fd7da0c171ff7f7",
+      "archive_reference": "docker.io/goharbor/harbor-core@sha256:6f0498fbc67948b381cf02e06e10ed783b60d6be96501509aa029067a992f3b5",
+      "config_digest": "sha256:06396e2c823b582ae3da9b8d471bd250e4934d10b864f6c627546707af32cefc",
+      "archive_manifest_digest": "sha256:6f0498fbc67948b381cf02e06e10ed783b60d6be96501509aa029067a992f3b5",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    },
+    {
+      "id": "harbor-portal",
+      "source_reference": "docker.io/goharbor/harbor-portal@sha256:b811b67f7a7f6f1614e4bdf7478b207d13e8aa3f815ff6ad84f216a5098d213d",
+      "archive_reference": "docker.io/goharbor/harbor-portal@sha256:684f469dfc8a15872e9edd70975d1d9bea8f9985531ae52627403b72b4d36c6a",
+      "config_digest": "sha256:b04a2d729c562424c5a6501c24cb96c5e822e7751384ffae0bc20caabb26ca03",
+      "archive_manifest_digest": "sha256:684f469dfc8a15872e9edd70975d1d9bea8f9985531ae52627403b72b4d36c6a",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    },
+    {
+      "id": "harbor-jobservice",
+      "source_reference": "docker.io/goharbor/harbor-jobservice@sha256:f71a4452a095bcd2a8f0683648a3ae28415432df87ccfb00ec7625f3e340a598",
+      "archive_reference": "docker.io/goharbor/harbor-jobservice@sha256:2f068549b1fc9cf338a00fd6d01cc22e6574d3155050cde294e500fd99519e01",
+      "config_digest": "sha256:460b146d96ede9450247c4238ce515ce7558c6f5e7ae5b76cf0cb166c2e155bb",
+      "archive_manifest_digest": "sha256:2f068549b1fc9cf338a00fd6d01cc22e6574d3155050cde294e500fd99519e01",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    },
+    {
+      "id": "harbor-db",
+      "source_reference": "docker.io/goharbor/harbor-db@sha256:5ebfb345b33d673fa8483ffc997013113b7d14ea56abfa65cfcb621b4acf3039",
+      "archive_reference": "docker.io/goharbor/harbor-db@sha256:e1e7a6d32182d2f144eac821d1658955263dac83737fce93823c93473e3a0e37",
+      "config_digest": "sha256:8af219aa23d91e1d9778532981b1a4ff5b022ce01e06e42207782d84341552d3",
+      "archive_manifest_digest": "sha256:e1e7a6d32182d2f144eac821d1658955263dac83737fce93823c93473e3a0e37",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    },
+    {
+      "id": "harbor-log",
+      "source_reference": "docker.io/goharbor/harbor-log@sha256:dad88aa27590f7b7018533f500bd2bb43e64144f5d4abe0e5f23fba88d36332c",
+      "archive_reference": "docker.io/goharbor/harbor-log@sha256:25325fc182c0fc352327766c7f5b5d7ba18a8ead569a6389140e6e188545f209",
+      "config_digest": "sha256:53002f96b6d8f6ae80e25a7bba9fa0c23c7e05fd3c37aeb2e39aeaa975400717",
+      "archive_manifest_digest": "sha256:25325fc182c0fc352327766c7f5b5d7ba18a8ead569a6389140e6e188545f209",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    },
+    {
+      "id": "harbor-registryctl",
+      "source_reference": "docker.io/goharbor/harbor-registryctl@sha256:223d5cb49d5dbf0ba4ae022e7dd9775fa459904112dc12084d3aaa36c1408362",
+      "archive_reference": "docker.io/goharbor/harbor-registryctl@sha256:a2f7576589b5bc5036dc51e3b315b3ba29f0f8c4bb068b972c7d843b2569312a",
+      "config_digest": "sha256:8b1493c7a7d9da504ca2f89273823e107110967d6b6d1f5982cc6444d59ae2ae",
+      "archive_manifest_digest": "sha256:a2f7576589b5bc5036dc51e3b315b3ba29f0f8c4bb068b972c7d843b2569312a",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    },
+    {
+      "id": "harbor-exporter",
+      "source_reference": "docker.io/goharbor/harbor-exporter@sha256:e1b0a248f61aad5084c5d1612d5f1da89f99c23ce743eaf8cba913d6d00c0547",
+      "archive_reference": "docker.io/goharbor/harbor-exporter@sha256:8c12051d64346ad8495773c651250fe7b23273fe35cb298c680dd33a92c418d6",
+      "config_digest": "sha256:39b7682c8b7d3b358ee94430c9bd2f0b48e801262235ed150f895be31fa1bd8d",
+      "archive_manifest_digest": "sha256:8c12051d64346ad8495773c651250fe7b23273fe35cb298c680dd33a92c418d6",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    },
+    {
+      "id": "registry-photon",
+      "source_reference": "docker.io/goharbor/registry-photon@sha256:c4ebef61ceb50a3d8bc21d149bc280422db20a1e69df317b64b74098c3615855",
+      "archive_reference": "docker.io/goharbor/registry-photon@sha256:2c730b6c088a8e0ab0825cee28290d4664a8bef9f16e0517b986a5fd4fc6e5d0",
+      "config_digest": "sha256:b702cdd9489d574d8cbbb6b6f5523e375b529677197799696e376e8cae04c240",
+      "archive_manifest_digest": "sha256:2c730b6c088a8e0ab0825cee28290d4664a8bef9f16e0517b986a5fd4fc6e5d0",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    },
+    {
+      "id": "valkey-photon",
+      "source_reference": "docker.io/goharbor/valkey-photon@sha256:7337783e8148f01a25b113f5c7b1d640f78b1860fcaf80a33d0dbb294f7b99d0",
+      "archive_reference": "docker.io/goharbor/valkey-photon@sha256:b1c20ea5bc7e29af6ed0d0fcda047c73045c4f11fcc37896250c7f935fb9fdef",
+      "config_digest": "sha256:e7847c15d1eb52fb405849eba57cdcba73c1cb3b96a3d014d1a7cf6011f1faf1",
+      "archive_manifest_digest": "sha256:b1c20ea5bc7e29af6ed0d0fcda047c73045c4f11fcc37896250c7f935fb9fdef",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    },
+    {
+      "id": "nginx-photon",
+      "source_reference": "docker.io/goharbor/nginx-photon@sha256:0ccc1eca228ecea120d7ad9e4386b8e86ced200212f00060a9abc753dbe7f17f",
+      "archive_reference": "docker.io/goharbor/nginx-photon@sha256:f4bed8d2f5ee69f4726f18c08063cfd82bcd8007014e8e66a96178811de42a00",
+      "config_digest": "sha256:8376dcaf5c2f99606da6da6cec4cb611b692e8cea67d86b19c01ef8352e44115",
+      "archive_manifest_digest": "sha256:f4bed8d2f5ee69f4726f18c08063cfd82bcd8007014e8e66a96178811de42a00",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    },
+    {
+      "id": "trivy-adapter-photon",
+      "source_reference": "docker.io/goharbor/trivy-adapter-photon@sha256:215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98",
+      "archive_reference": "docker.io/goharbor/trivy-adapter-photon@sha256:2135d25681ebf8c018a6a8e81d5eef9ba1046c3bebf4847ba65a8550c4865772",
+      "config_digest": "sha256:00f2535bcde46ebeaa3b260601841a2ebc493b940a311e77dc3010e6b94aa4e2",
+      "archive_manifest_digest": "sha256:2135d25681ebf8c018a6a8e81d5eef9ba1046c3bebf4847ba65a8550c4865772",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    },
+    {
+      "id": "prepare",
+      "source_reference": "docker.io/goharbor/prepare@sha256:5b9428fb649b3a0e0fe497189a880d7c9f1281538b85de9ad377cb524e427bd5",
+      "archive_reference": "docker.io/goharbor/prepare@sha256:7faea28802da579590a99a54572090e91235bb16d8b5a49b677b77d7a9e0cf66",
+      "config_digest": "sha256:55b74fd32bf25332787cb5e8196d6b084313efc0a5e4555348f19b39b6265fc4",
+      "archive_manifest_digest": "sha256:7faea28802da579590a99a54572090e91235bb16d8b5a49b677b77d7a9e0cf66",
+      "archive_layer_media_types": [
+        "application/vnd.oci.image.layer.v1.tar"
+      ],
+      "uncompressed_layers_match_config": true
+    }
+  ],
+  "scope": "Official archive bytes verified; Docker load and runtime digest lookup not yet verified"
+}

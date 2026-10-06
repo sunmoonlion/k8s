@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "platform": "linux/amd64",
+  "scope": "KIND node and Calico image archives only; not a full platform offline release",
+  "files": [
+    {
+      "id": "calico-cni",
+      "path": "cluster/calico/images/calico-cni-8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a.tar",
+      "size_bytes": 69878784,
+      "sha256": "5ec376fa8e85cdd974128a73ee1cb3f2819e814fbeafab3810a4d8f1d4668f34",
+      "source": "quay.io/calico/cni@sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "config_digest": "sha256:cf5fc378d71fb69befb3fb1ac6ffb3f24354ee45a1b8504e415937e46ffb98ab",
+      "layers": 3,
+      "manifest_digest": "sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a"
+    },
+    {
+      "id": "calico-kube-controllers",
+      "path": "cluster/calico/images/calico-kube-controllers-f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b.tar",
+      "size_bytes": 63201280,
+      "sha256": "f0ab2fb43a7b4ff3cb609f64a5ed4ff23afda9eea1b0dce237cefe3ba9076275",
+      "source": "quay.io/calico/kube-controllers@sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
+      "config_digest": "sha256:81a30a7a240377576c569956df911285a92366ade3dd19e4ea5e73cf868d29db",
+      "layers": 2,
+      "manifest_digest": "sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b"
+    },
+    {
+      "id": "calico-node",
+      "path": "cluster/calico/images/calico-node-d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3.tar",
+      "size_bytes": 123398656,
+      "sha256": "dc73d10a3b2700edb27328224bb0c8ace8e143fa4d9212f06f5431a801d75265",
+      "source": "quay.io/calico/node@sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
+      "config_digest": "sha256:c5f89ea6b7611095794794d81aef1b36e0cb7c322800cf707be2f42e45a3b7e1",
+      "layers": 1,
+      "manifest_digest": "sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3"
+    },
+    {
+      "id": "kind-node",
+      "path": "cluster/kind/images/kind-node-676c571e38792c196595853476dc020e628b9b56f3b0c3ca1d2056e5ce612a0b.tar",
+      "size_bytes": 384877056,
+      "sha256": "44f540991ca5c52c3edb51a2bf3f5a9435b1cf884e545bed789ece24383a1fc0",
+      "source": "docker.io/library/sunmoon-kind-node@sha256:676c571e38792c196595853476dc020e628b9b56f3b0c3ca1d2056e5ce612a0b",
+      "config_digest": "sha256:a113118abe8273aa6820ae7809d1ff305cc2fd9444dd0a78154e539d4d65942f",
+      "layers": 2,
+      "manifest_digest": "sha256:676c571e38792c196595853476dc020e628b9b56f3b0c3ca1d2056e5ce612a0b"
+    }
+  ],
+  "material_layout": "component-owned-v1"
+}

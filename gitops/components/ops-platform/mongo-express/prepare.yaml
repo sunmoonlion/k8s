@@ -1,0 +1,75 @@
+---
+- name: Validate the Mongo Express browser endpoint
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_ingress_enabled | bool and traefik_crd_enabled | bool
+      - services_mongodb_enabled | bool
+      - image_map['mongo-express'] is mapping
+      - mongo_express_origin | urlsplit('scheme') == 'https'
+      - mongo_express_origin | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
+      - mongo_express_origin | urlsplit('port') | int == entry_port | int
+      - mongo_express_origin | urlsplit('username') == None
+      - mongo_express_origin | urlsplit('path') == ''
+      - mongo_express_origin | urlsplit('query') == '' and mongo_express_origin | urlsplit('fragment') == ''
+      - mongo_express_port | int == 8081
+      - mongo_express_username is match('^[a-z][a-z0-9_-]+$')
+- name: Prepare a recoverable Mongo Express basic-auth identity
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: mongo-express
+    component_input_manifest: ops-platform/mongo-express/auth.sops.yaml
+    component_initial_input:
+      username: '{{ mongo_express_username }}'
+      password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+  no_log: true
+- name: Keep Mongo Express credential only in memory
+  ansible.builtin.set_fact: {mongo_express_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Read the MongoDB administrator without logging
+  ansible.builtin.slurp: {src: '{{ services_config_dir }}/mongodb.yaml'}
+  register: mongo_express_upstream
+  no_log: true
+- name: Derive Mongo Express connection inputs in memory
+  ansible.builtin.set_fact:
+    mongo_express_url: 'mongodb://{{ (mongo_express_upstream.content | b64decode | from_yaml).root_username | urlencode }}:{{ (mongo_express_upstream.content | b64decode | from_yaml).root_password | urlencode }}@mongodb.{{ data_namespace }}.svc.cluster.local:{{ mongodb_port }}/?tls=true&tlsCAFile=/run/mongo-ca/ca.crt&replicaSet={{ mongodb_replica_set }}'
+  no_log: true
+- name: Prepare a separate Mongo Express TLS identity with non-overwritten backup
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ services_config_dir }}/mongo-express'
+    tls_backup_dir: '{{ services_backup_dir }}/mongo-express'
+    tls_declaration: '{{ playbook_dir }}/../../gitops/components/ops-platform/mongo-express/tls.sops.yaml'
+    tls_hostnames: ['{{ mongo_express_origin | urlsplit("hostname") }}']
+- name: Encrypt Mongo Express login, upstream URL and browser TLS
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  loop:
+    - file: ops-platform/mongo-express/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: mongo-express-auth, namespace: '{{ ops_namespace }}'}
+        stringData:
+          ME_CONFIG_BASICAUTH_USERNAME: '{{ mongo_express_credentials.username }}'
+          ME_CONFIG_BASICAUTH_PASSWORD: '{{ mongo_express_credentials.password }}'
+          ME_CONFIG_MONGODB_URL: '{{ mongo_express_url }}'
+          ca.crt: '{{ lookup("file", registry_config_dir + "/clients/ca.crt") }}'
+    - file: ops-platform/mongo-express/tls.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: mongo-express-tls, namespace: '{{ ops_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+  loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
+  no_log: true
+- name: Derive the Mongo Express rollout identity
+  ansible.builtin.set_fact:
+    mongo_express_input_digest: '{{ [mongo_express_credentials.username, mongo_express_origin] | to_json | hash("sha256") }}'
+  no_log: true
+- name: Render the Mongo Express runtime candidate
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/ops-platform/mongo-express/workload.yaml.j2'
+    dest: '{{ build }}/ops-platform/mongo-express/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'

@@ -1,0 +1,9 @@
+---
+# Browser console for MongoDB. Default off: no image lock entry yet; old KIND also defaulted off.
+services_mongo_express_enabled: false
+mongo_express_origin: 'https://mongo-express.sunmoonai.com:{{ entry_port }}'
+mongo_express_port: 8081
+mongo_express_username: admin
+mongo_express_resources:
+  requests: {cpu: 50m, memory: 128Mi}
+  limits: {cpu: '1', memory: 512Mi}

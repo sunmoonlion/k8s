@@ -1,0 +1,80 @@
+---
+- name: Prepare and publish immutable Flux controller images
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    material_action: '{{ flux_material_action }}'
+    flux_material_action: plan
+    capacity_operation: flux-materials
+    images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
+    controllers: '{{ images.images | selectattr("group", "equalto", "delivery") | list }}'
+    skopeo: '{{ images.images | selectattr("id", "equalto", "skopeo") | first }}'
+    cache_directories: >-
+      {% set paths = [artifact_cache_root] %}
+      {% for relative in controllers | map(attribute='material_owner') | map('regex_replace', '$', '/images') | list %}
+      {% set current = namespace(path=artifact_cache_root) %}
+      {% for part in relative.split('/') %}
+      {% set current.path = current.path + '/' + part %}
+      {% set _ = paths.append(current.path) %}
+      {% endfor %}
+      {% endfor %}
+      {{ paths | unique | list | to_json }}
+    verifier: '{{ playbook_dir }}/../artifacts/verify-oci-archive.py'
+    local_client: [docker, run, --rm, --pull=never, --network=host, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --tmpfs, '/var/tmp:rw,noexec,nosuid,size={{ (artifact_image.compressed_layer_bytes | int) * 2 + 16777216 }}', --add-host, '{{ registry_hostname }}:127.0.0.1', --env, HTTP_PROXY=, --env, HTTPS_PROXY=, --env, ALL_PROXY=, --env, 'NO_PROXY={{ registry_hostname }},127.0.0.1,localhost', --mount, 'type=bind,source={{ registry_config_dir }}/clients,target=/certs,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/publisher-auth.json,target=/publisher.json,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/puller-auth.json,target=/puller.json,readonly']
+  tasks:
+    - name: Require the four locked controllers and supported action
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - flux_material_action in ['plan', 'prepare', 'verify', 'publish']
+          - flux_material_action != 'publish' or flux_enabled | bool
+          - controllers | map(attribute='id') | sort == ['helm-controller', 'kustomize-controller', 'notification-controller', 'source-controller']
+          - images.platform == 'linux/amd64'
+          - registry_address == 'harbor.sunmoonai.com:30443'
+    - name: Validate immutable inputs
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.material_owner == 'shared/flux'
+          - item.manifest_digest is match('^sha256:[a-f0-9]{64}$')
+          - item.reference == 'ghcr.io/fluxcd/' + item.id + '@' + item.manifest_digest
+          - item.source is match('^ghcr.io/fluxcd/[a-z-]+:v[0-9.]+$')
+      loop: '{{ controllers }}'
+      loop_control: {label: '{{ item.id }}'}
+    - name: Show locked controller plan
+      ansible.builtin.debug:
+        msg: '{{ item.reference }} -> {{ registry_address }}/platform/{{ item.id }}@{{ item.manifest_digest }}'
+      loop: '{{ controllers }}'
+      loop_control: {label: '{{ item.id }}'}
+    - name: End read-only plan
+      ansible.builtin.meta: end_play
+      when: flux_material_action == 'plan'
+    - name: Inspect artifact directory without following links
+      ansible.builtin.stat:
+        path: '{{ item }}'
+        follow: false
+      loop: '{{ cache_directories | from_json }}'
+      register: directories
+    - name: Require real existing artifact directory
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.exists or item.stat.isdir | default(false)
+          - not item.stat.islnk | default(false)
+      loop: '{{ directories.results }}'
+      loop_control: {label: '{{ item.item }}'}
+    - name: Budget missing archives and registry writes
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      vars:
+        capacity_planned_bytes: '{{ (controllers | map(attribute="compressed_layer_bytes") | sum | int) * 3 + 268435456 }}'
+      when: flux_material_action in ['prepare', 'publish']
+    - name: Process each controller through the same path
+      ansible.builtin.include_tasks: ../artifacts/tasks/publish-image.yaml
+      loop: '{{ controllers }}'
+      loop_control:
+        loop_var: artifact_image
+        label: '{{ artifact_image.id }}'

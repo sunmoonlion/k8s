@@ -1,0 +1,9 @@
+---
+# Edge rendezvous for local agents and sandboxes. Independent of the password table.
+services_relay_enabled: true
+relay_origin: 'https://relay.sunmoonai.com:{{ entry_port }}'
+relay_port: 47100
+relay_name: edge-1
+relay_resources:
+  requests: {cpu: 50m, memory: 64Mi}
+  limits: {cpu: 500m, memory: 256Mi}

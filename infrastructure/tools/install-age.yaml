@@ -1,0 +1,83 @@
+---
+- name: Install the locked age tools from local material
+  hosts: kind_hosts
+  gather_facts: false
+  become: false
+  vars:
+    capacity_operation: sops-tools
+    files: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    package: '{{ files.files | selectattr("id", "equalto", "age") | first }}'
+    tool_root: '{{ playbook_dir }}/../.tools'
+  tasks:
+    - name: Verify the original age package
+      ansible.builtin.stat:
+        path: '{{ artifact_cache_root }}/{{ package.path }}'
+        follow: false
+        checksum_algorithm: sha256
+      register: archive
+    - name: Require exact locked bytes
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - archive.stat.isreg | default(false)
+          - not archive.stat.islnk | default(false)
+          - archive.stat.checksum | default('') == package.sha256
+          - archive.stat.size | default(0) == package.size_bytes
+          - package.archive_members | map(attribute='path') | sort == ['age/age', 'age/age-keygen']
+    - name: Budget selected tools and extraction
+      ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+      vars:
+        capacity_planned_bytes: 67108864
+    - name: Inspect tool directories
+      ansible.builtin.stat:
+        path: '{{ item }}'
+        follow: false
+      loop: ['{{ tool_root }}', '{{ tool_root }}/bin', '{{ tool_root }}/age', '{{ tool_root }}/age/{{ package.version }}']
+      register: directories
+    - name: Refuse links and non-directories
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.islnk | default(false)
+          - not item.stat.exists or item.stat.isdir | default(false)
+      loop: '{{ directories.results }}'
+      loop_control: {label: '{{ item.item }}'}
+    - name: Create versioned tool directory
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        mode: '0755'
+      loop: ['{{ tool_root }}/bin', '{{ tool_root }}/age/{{ package.version }}']
+    - name: Extract only the two selected official executables
+      ansible.builtin.unarchive:
+        src: '{{ artifact_cache_root }}/{{ package.path }}'
+        dest: '{{ tool_root }}/age/{{ package.version }}'
+        remote_src: true
+        include: ['age/age', 'age/age-keygen']
+    - name: Verify executable members
+      ansible.builtin.stat:
+        path: '{{ tool_root }}/age/{{ package.version }}/{{ item.path }}'
+        follow: false
+        checksum_algorithm: sha256
+      loop: '{{ package.archive_members }}'
+      register: members
+    - name: Require exact member identities
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.stat.isreg | default(false)
+          - not item.stat.islnk | default(false)
+          - item.stat.checksum | default('') == item.item.sha256
+          - item.stat.size | default(0) == item.item.size_bytes
+      loop: '{{ members.results }}'
+      loop_control: {label: '{{ item.item.path }}'}
+    - name: Install worktree-local tools
+      ansible.builtin.copy:
+        src: '{{ tool_root }}/age/{{ package.version }}/{{ item.path }}'
+        dest: '{{ tool_root }}/bin/{{ item.path | basename }}'
+        remote_src: true
+        follow: false
+        mode: '0755'
+      loop: '{{ package.archive_members }}'
+      loop_control: {label: '{{ item.path }}'}

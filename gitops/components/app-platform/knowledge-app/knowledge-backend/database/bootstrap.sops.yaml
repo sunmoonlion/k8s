@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowledge-database-bootstrap
+    namespace: data-platform-dev
+stringData:
+    migrator_password: ENC[AES256_GCM,data:KUNaaz+1ygLSDq+yOM8RdPZV01OEaFyvTf9ab1kSR1SHUTQsI4ilGA==,iv:w80J6FhTDEcd2koBW+n+TwHf4gd5ucLDayTshzsdIAI=,tag:1qfwybxOrrrh6Prek96J0w==,type:str]
+    runtime_password: ENC[AES256_GCM,data:C06IqV+vskZRFHgDWHO1oTzhmF+BXjQ8+yLpAHZfbIWr1Y/kxYqTVQ==,iv:SzvyJidTVUWAtu8N96eFNBhqv3+LpbcTMszBe/vrY/M=,tag:zZpoYghlcbZ/wi+5P7s3Kg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBxQ3ljTGdaWFJmc1B2bk5O
+            dU1jL1RXSjF2WUYzSG1SemY3WHFnd2NXMmpzCjJwTmJWUmd2VVo4cHRqUTVkZWhG
+            MFR6MlU1QlVEZzlVUEpoSU85L1RFWDQKLS0tIFF3eDJHODF0YVlRajJINmdXZW5n
+            RkFEZGM2dm5keHBWQitNR3RMTlZtNUkKw4QoHsAbsM+xiTaGLPUCrsxiLgN315E6
+            1VpGu0a00RVUyk0Fnpq/djjegNeW4+zcW1xXu8ur5pkgWBhBOtHkFQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:19:39Z"
+    mac: ENC[AES256_GCM,data:UWyV9xcnBi9KxUB1ANVeqoMlagnl2nTdZhZrrlV3Th8cfh5ACxfnVscrlUVW0Hrf+xkMtOnmfd+S+zD3cjPXi0Ee0DUirT6CqbEuCyerSkjYdn5Cb83tlgacUH/mjLwqexidKwvlp8P7AkAHtvB22iiQd3ydY6G5DIdoWA6+96k=,iv:+KRKL++NveXm3OzokrrsYkeV251l4PiWrQzSuPSlPRA=,tag:14ldGyRDsYtnpdA0UZc2gQ==,type:str]
+    version: 3.13.3

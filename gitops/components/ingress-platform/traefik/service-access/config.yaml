@@ -1,0 +1,6 @@
+# Cluster-local HTTPS transport. Hostnames derive from the environment namespace.
+---
+service_access_enabled: true
+service_access_hosts:
+  casdoor: 'casdoor-tls.{{ app_namespace }}.svc.cluster.local'
+  knowledge: 'knowledge-tls.{{ app_namespace }}.svc.cluster.local'

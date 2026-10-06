@@ -1,0 +1,15 @@
+---
+# Node-level collector admission is isolated; business namespaces stay restricted.
+elk_collector_enabled: true
+elk_collector_namespace: sunmoon-log-collector
+elk_collector_applications: [tpl, info, knowledge, investment, casdoor]
+# Persist offsets and undelivered chunks on each node's independent data mount.
+elk_collector_state_directory: /data/kind-local-storage/log-collector
+elk_collector_memory_chunks: 32
+elk_collector_resources:
+  requests: {cpu: 50m, memory: 64Mi}
+  limits: {cpu: 500m, memory: 256Mi}
+# Read existing retained container logs on first installation; offsets govern repeats.
+elk_collector_read_from_head: true
+# Three node image expansions plus first log indexing; checked before rendering.
+elk_collector_initial_budget_bytes: 1073741824

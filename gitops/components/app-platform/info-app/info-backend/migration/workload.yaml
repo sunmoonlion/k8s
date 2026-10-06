@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: 'info-schema-check-v1', namespace: app-platform-dev}
+data:
+  verify.py: |
+    """Check the deployed schema and real runtime grants without printing credentials."""
+    import asyncio
+    import json
+    import os
+    import uuid
+    import asyncpg
+
+
+    async def run():
+        def dsn(key):
+            return os.environ[key].replace('postgresql+asyncpg://', 'postgresql://', 1)
+        owner = await asyncpg.connect(dsn('MIGRATION_DATABASE_URL'), timeout=10)
+        runtime = await asyncpg.connect(dsn('DATABASE_URL'), timeout=10)
+        name = 'deployment_probe_' + uuid.uuid4().hex
+        try:
+            identity = await runtime.fetchrow('SELECT current_user AS role, current_database() AS db')
+            owner_name = await owner.fetchval('SELECT current_user')
+            assert identity['role'] != owner_name
+            role = await runtime.fetchrow('SELECT rolsuper,rolcreatedb,rolcreaterole,rolreplication,rolbypassrls FROM pg_roles WHERE rolname=current_user')
+            assert not any(role.values())
+            assert not await runtime.fetchval("SELECT has_schema_privilege(current_user,'public','CREATE')")
+            assert not await runtime.fetchval("SELECT has_database_privilege(current_user,current_database(),'CREATE')")
+            revision = await runtime.fetch('SELECT version_num FROM alembic_version')
+            assert [r['version_num'] for r in revision] == [os.environ['EXPECTED_SCHEMA_REVISION']]
+            # Runtime may read migration state but may never alter it.
+            await owner.execute('REVOKE INSERT,UPDATE,DELETE ON TABLE alembic_version FROM ' + '"' + identity['role'].replace('"','""') + '"')
+            assert not await runtime.fetchval("SELECT has_table_privilege(current_user,'alembic_version','UPDATE')")
+            await owner.execute('CREATE TABLE ' + name + ' (id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, value text NOT NULL)')
+            async with runtime.transaction():
+                key = await runtime.fetchval('INSERT INTO ' + name + "(value) VALUES('first') RETURNING id")
+                await runtime.execute('UPDATE ' + name + " SET value='second' WHERE id=$1", key)
+                assert await runtime.fetchval('SELECT value FROM ' + name + ' WHERE id=$1', key) == 'second'
+                await runtime.execute('DELETE FROM ' + name + ' WHERE id=$1', key)
+            try:
+                await runtime.execute('CREATE TABLE forbidden_' + name + '(id int)')
+            except asyncpg.InsufficientPrivilegeError:
+                pass
+            else:
+                await owner.execute('DROP TABLE forbidden_' + name)
+                raise RuntimeError('Runtime unexpectedly has DDL privileges')
+            print(json.dumps({'schema':os.environ['EXPECTED_SCHEMA_REVISION'],'database':identity['db'],'separate_identities':True,'runtime_crud':True,'runtime_ddl_denied':True,'migration_metadata_write_denied':True}))
+        finally:
+            await owner.execute('DROP TABLE IF EXISTS ' + name)
+            await runtime.close()
+            await owner.close()
+
+
+    if __name__ == '__main__':
+        try:
+            asyncio.run(run())
+        except Exception as exc:
+            raise SystemExit('Database acceptance failed: ' + type(exc).__name__)
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: 'info-migrate-2443d576ab1b-v1', namespace: app-platform-dev}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 420
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: info-migration, app.kubernetes.io/part-of: info, sunmoonai.com/postgresql-client: 'true'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: info-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: migrate
+          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:2443d576ab1b24b99092f41b6c0562e0fa34b3b1ffeffdd7c70365a6921c242a
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
+          envFrom: [{secretRef: {name: info-migration-auth}}]
+          env:
+            - {name: ENV, value: production}
+            - {name: DEPLOYMENT_ID, value: 'a4b6f59b99f7ef6dc48b346803560e6b2ceeb0a7'}
+            - {name: ADMIN_FRONTEND_BASE_URL, value: 'https://info-admin.sunmoonai.com:30443'}
+            - {name: WEB_FRONTEND_BASE_URL, value: 'https://info.sunmoonai.com:30443'}
+            - {name: EXPECTED_SCHEMA_REVISION, value: '20260913_0009'}
+          command: [/bin/sh, -ec]
+          args: ['python -m app.bootstrap.migration upgrade && python /verify/verify.py']
+          volumeMounts:
+            - {name: verify, mountPath: /verify, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: verify, configMap: {name: 'info-schema-check-v1'}}
+        - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

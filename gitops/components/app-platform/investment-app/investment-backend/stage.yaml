@@ -1,0 +1,35 @@
+# 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
+# enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
+---
+prepare: {file: app-platform/common/backend/prepare.yaml, vars: {application_name: investment}}
+defaults: {enabled: '{{ investment_deployment.enabled }}', timeout: 8m}
+stages:
+- name: investment-database
+  path: database
+  dependsOn: [postgresql]
+  resources: [workload.yaml, bootstrap.sops.yaml, runtime.sops.yaml]
+- name: investment-migration
+  path: migration
+  dependsOn: [investment-database]
+  resources: [workload.yaml, auth.sops.yaml]
+- name: investment-redis
+  path: redis
+  dependsOn: [investment-migration, redis]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: investment-rabbitmq
+  path: rabbitmq
+  dependsOn: [investment-redis, rabbitmq]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: investment-identity
+  path: identity
+  dependsOn: [investment-rabbitmq, casdoor]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: investment-runtime
+  path: runtime
+  dependsOn: '{{ ["investment-identity"] + (["investment-service-identity"] if investment_backend_deployment.knowledge_service.enabled | default(false) else []) }}'
+  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["storage.sops.yaml"] if investment_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if investment_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if investment_backend_deployment.knowledge_service.enabled | default(false) else []) }}'
+- name: investment-service-identity
+  path: service-identity
+  dependsOn: [casdoor, postgresql]
+  enabled: '{{ investment_deployment.enabled and investment_backend_deployment.knowledge_service.enabled | default(false) }}'
+  resources: [workload.yaml, provision.sops.yaml]

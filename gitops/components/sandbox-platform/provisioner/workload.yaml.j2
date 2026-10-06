@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: sandbox-provisioner, namespace: {{ sandbox_namespace }}}
+automountServiceAccountToken: true
+imagePullSecrets:
+  - {name: registry-puller}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: sandbox-provisioner, namespace: {{ sandbox_namespace }}}
+rules:
+  - apiGroups: ['']
+    resources: [secrets, persistentvolumeclaims, services]
+    verbs: [get, list, create, update, delete]
+  - apiGroups: ['']
+    resources: [pods]
+    verbs: [get, list]
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [get, list, create, update, delete]
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies]
+    verbs: [get, list, create, update, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: sandbox-provisioner, namespace: {{ sandbox_namespace }}}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: sandbox-provisioner}
+subjects:
+  - {kind: ServiceAccount, name: sandbox-provisioner, namespace: '{{ sandbox_namespace }}'}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: sandbox-provisioner, namespace: {{ sandbox_namespace }}}
+spec:
+  selector: {app.kubernetes.io/name: sandbox-provisioner}
+  ports: [{name: http, port: {{ sandbox_provisioner_port }}, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: sandbox-provisioner, namespace: {{ sandbox_namespace }}}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector: {matchLabels: {app.kubernetes.io/name: sandbox-provisioner}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: sandbox-provisioner}
+      annotations: {sunmoonai.com/input-sha256: '{{ sandbox_provisioner_input_digest }}'}
+    spec:
+      serviceAccountName: sandbox-provisioner
+      enableServiceLinks: false
+      automountServiceAccountToken: true
+      securityContext: {runAsNonRoot: true, runAsUser: 10003, runAsGroup: 10003, fsGroup: 10003, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provisioner
+          image: {{ registry_address }}/{{ sandbox_image.harbor_project }}/{{ sandbox_image.repository }}@{{ sandbox_image.digest }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: SANDBOX_NAMESPACE, value: '{{ sandbox_namespace }}'}
+            - {name: SANDBOX_IMAGE, value: '{{ registry_address }}/{{ sandbox_image.sandbox.harbor_project }}/{{ sandbox_image.sandbox.repository }}@{{ sandbox_image.sandbox.digest }}'}
+            - {name: RELAY_URL, value: 'ws://relay.{{ relay_namespace }}.svc.cluster.local:{{ relay_port }}'}
+            - {name: KNOWLEDGE_MCP_URL, value: '{{ knowledge_mcp_url }}'}
+            - {name: SANDBOX_PVC_SIZE, value: '{{ sandbox_pvc_size }}'}
+            - {name: PROVISIONER_TOKEN, valueFrom: {secretKeyRef: {name: sandbox-provisioner, key: token}}}
+          ports: [{name: http, containerPort: {{ sandbox_provisioner_port }}}]
+          startupProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 5, failureThreshold: 24}
+          readinessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 10, timeoutSeconds: 3}
+          livenessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 20, timeoutSeconds: 3}
+          resources: {{ sandbox_provisioner_resources | to_json }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {sizeLimit: 16Mi}}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: sandbox-provisioner, namespace: {{ sandbox_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: sandbox-provisioner}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: '{{ app_namespace }}'}}
+      ports: [{protocol: TCP, port: {{ sandbox_provisioner_port }}}]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - ports: [{protocol: TCP, port: 443}, {protocol: TCP, port: 6443}]
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: '{{ relay_namespace }}'}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: relay}}
+      ports: [{protocol: TCP, port: {{ relay_port }}}]

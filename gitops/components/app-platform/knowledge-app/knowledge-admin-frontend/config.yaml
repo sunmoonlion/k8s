@@ -1,0 +1,9 @@
+# 浏览器入口；后端身份配置读取同一来源。运行配置与本组件声明同处。
+---
+knowledge_admin_deployment:
+  origin: https://knowledge-admin.sunmoonai.com:30443
+  casdoor_application: sunmoonai-knowledge-admin
+  casdoor_client_id: sunmoon-kind-knowledge-admin
+  port: 3000
+  replicas: 1
+  resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}

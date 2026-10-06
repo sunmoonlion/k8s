@@ -1,0 +1,25 @@
+---
+- name: Execute the owning component account release operation
+  ansible.builtin.command:
+    argv:
+      - '{{ inventory_dir }}/../.venv/bin/python'
+      - -c
+      - |
+        import importlib.util,json,sys
+        sys.path.insert(0,sys.argv[1])
+        data=json.load(sys.stdin)
+        spec=importlib.util.spec_from_file_location('component_password',data['protocol'])
+        protocol=importlib.util.module_from_spec(spec);spec.loader.exec_module(protocol)
+        arguments=[data['settings'],data['account']]
+        if data['step'] in ['stage','validate_candidate']:arguments.append(data['operation'])
+        result=getattr(protocol,data['step'])(*arguments)
+        print(json.dumps(result))
+      - '{{ inventory_dir }}'
+    stdin: '{{ {"account":human_account,"protocol":account_protocol_path,"settings":account_protocol_settings,"step":account_component_step,"operation":account_operation} | to_json }}'
+  register: account_component_result
+  changed_when: account_component_step in ['stage','validate_candidate']
+  no_log: true
+- name: Preserve only the nonsecret component result
+  ansible.builtin.set_fact: {account_component_receipt: '{{ account_component_result.stdout | from_json }}'}
+- name: Report component account preparation without password values
+  ansible.builtin.debug: {msg: '{{ account_component_receipt }}'}

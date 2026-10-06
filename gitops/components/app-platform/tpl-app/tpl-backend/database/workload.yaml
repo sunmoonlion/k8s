@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: tpl-runtime, namespace: app-platform-dev}
+automountServiceAccountToken: false
+imagePullSecrets: [{name: registry-puller}]
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: 'tpl-database-v2', namespace: data-platform-dev}
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: {app.kubernetes.io/part-of: tpl, sunmoonai.com/postgresql-client: 'true'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 999, runAsGroup: 999, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: harbor.sunmoonai.com:30443/platform/postgresql@sha256:0377e72c5289ed2f98cf61b1a9c2db9eb9d300317fe14244492fbc94343b3d04
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          env:
+            - {name: PGHOST, value: 'postgresql.data-platform-dev.svc.cluster.local'}
+            - {name: PGUSER, value: postgres}
+            - {name: PGDATABASE, value: postgres}
+            - {name: PGCONNECT_TIMEOUT, value: '10'}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: postgresql-auth, key: password}}}
+            - {name: MIGRATOR_PASSWORD, valueFrom: {secretKeyRef: {name: tpl-database-bootstrap, key: migrator_password}}}
+            - {name: RUNTIME_PASSWORD, valueFrom: {secretKeyRef: {name: tpl-database-bootstrap, key: runtime_password}}}
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              psql --no-psqlrc --set=ON_ERROR_STOP=1 <<'SQL'
+              \set VERBOSITY terse
+              \getenv migrator_password MIGRATOR_PASSWORD
+              \getenv runtime_password RUNTIME_PASSWORD
+              SELECT pg_advisory_lock(hashtextextended('sunmoon/tpl/database',0));
+              DO $bootstrap$ BEGIN
+                IF EXISTS (SELECT FROM pg_roles WHERE rolname IN ('tpl_runtime','tpl_migrator') AND shobj_description(oid,'pg_authid') IS DISTINCT FROM 'sunmoon-kind/tpl') THEN
+                  RAISE EXCEPTION 'Refusing a foreign existing role';
+                END IF;
+                IF EXISTS (SELECT FROM pg_database WHERE datname='tpl' AND shobj_description(oid,'pg_database') IS DISTINCT FROM 'sunmoon-kind/tpl') THEN
+                  RAISE EXCEPTION 'Refusing a foreign existing database';
+                END IF;
+              END $bootstrap$;
+              SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %L','tpl_migrator',:'migrator_password') WHERE NOT EXISTS(SELECT FROM pg_roles WHERE rolname='tpl_migrator') \gexec
+              SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %L','tpl_runtime',:'runtime_password') WHERE NOT EXISTS(SELECT FROM pg_roles WHERE rolname='tpl_runtime') \gexec
+              COMMENT ON ROLE tpl_migrator IS 'sunmoon-kind/tpl';
+              COMMENT ON ROLE tpl_runtime IS 'sunmoon-kind/tpl';
+              SELECT format('CREATE DATABASE %I OWNER %I','tpl','tpl_migrator') WHERE NOT EXISTS(SELECT FROM pg_database WHERE datname='tpl') \gexec
+              COMMENT ON DATABASE tpl IS 'sunmoon-kind/tpl';
+              REVOKE ALL ON DATABASE tpl FROM PUBLIC;
+              GRANT CONNECT ON DATABASE tpl TO tpl_runtime;
+              SQL
+              PGPASSWORD="$MIGRATOR_PASSWORD" psql --no-psqlrc -U tpl_migrator -d tpl --set=ON_ERROR_STOP=1 <<'SQL'
+              REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+              GRANT USAGE ON SCHEMA public TO tpl_runtime;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO tpl_runtime;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE,SELECT ON SEQUENCES TO tpl_runtime;
+              SQL
+              PGPASSWORD="$RUNTIME_PASSWORD" psql --no-psqlrc -U tpl_runtime -d tpl --set=ON_ERROR_STOP=1 -c 'SELECT 1' >/dev/null
+              echo 'TPL independent database identities verified'

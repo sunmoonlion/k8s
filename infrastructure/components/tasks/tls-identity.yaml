@@ -1,0 +1,128 @@
+---
+# Application certificate: distinct from the Casdoor certificate, same trusted CA.
+- name: Inspect certificate responsibility directories without following links
+  ansible.builtin.stat: {path: '{{ item }}', follow: false}
+  loop: ['{{ tls_private_dir }}', '{{ tls_backup_dir }}']
+  register: tls_parents
+- name: Refuse redirected or foreign certificate responsibility directories
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isdir | default(false) and item.stat.uid == 0)
+  loop: '{{ tls_parents.results }}'
+- name: Create root-only certificate responsibility directories
+  ansible.builtin.file: {path: '{{ item }}', state: directory, owner: root, group: root, mode: '0700'}
+  loop: ['{{ tls_private_dir }}', '{{ tls_backup_dir }}']
+- name: Inspect primary and backup TLS directories
+  ansible.builtin.stat: {path: '{{ item }}/tls', follow: false}
+  loop: ['{{ tls_private_dir }}', '{{ tls_backup_dir }}']
+  register: tls_dirs
+- name: Reject redirected or foreign TLS directories
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isdir | default(false) and item.stat.uid == 0)
+  loop: '{{ tls_dirs.results }}'
+- name: Create protected TLS directories
+  ansible.builtin.file: {path: '{{ item }}/tls', state: directory, owner: root, group: root, mode: '0700'}
+  loop: ['{{ tls_private_dir }}', '{{ tls_backup_dir }}']
+- name: Inspect recoverable keys and certificates
+  ansible.builtin.stat: {path: '{{ item }}', follow: false}
+  loop:
+    - '{{ tls_private_dir }}/tls/server.key'
+    - '{{ tls_private_dir }}/tls/server.crt'
+    - '{{ tls_backup_dir }}/tls/server.key'
+    - '{{ tls_backup_dir }}/tls/server.crt'
+  register: tls_files
+  no_log: true
+- name: Require protected regular TLS inputs
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ tls_files.results }}'
+  no_log: true
+- name: Restore absent TLS inputs from their backup
+  ansible.builtin.copy:
+    src: '{{ tls_backup_dir }}/tls/{{ item.name }}'
+    dest: '{{ tls_private_dir }}/tls/{{ item.name }}'
+    remote_src: true
+    mode: '0600'
+  loop: [{name: server.key, index: 0}, {name: server.crt, index: 1}]
+  when: not tls_files.results[item.index].stat.exists and tls_files.results[item.index + 2].stat.exists
+  no_log: true
+- name: Refuse regeneration of a previously declared TLS identity
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - tls_files.results[0].stat.exists or tls_files.results[2].stat.exists or (query('fileglob', tls_declaration) | length == 0)
+      - tls_files.results[1].stat.exists or tls_files.results[3].stat.exists or (query('fileglob', tls_declaration) | length == 0)
+      - not (tls_files.results[1].stat.exists or tls_files.results[3].stat.exists) or (tls_files.results[0].stat.exists or tls_files.results[2].stat.exists)
+- name: Generate the application TLS key only once
+  ansible.builtin.command:
+    argv: [openssl, genpkey, -algorithm, RSA, -pkeyopt, 'rsa_keygen_bits:3072', -out, '{{ tls_private_dir }}/tls/server.key']
+    creates: '{{ tls_private_dir }}/tls/server.key'
+  no_log: true
+- name: Restrict the private key
+  ansible.builtin.file: {path: '{{ tls_private_dir }}/tls/server.key', owner: root, group: root, mode: '0600'}
+- name: Generate application CSR
+  ansible.builtin.command:
+    argv: [openssl, req, -new, -key, '{{ tls_private_dir }}/tls/server.key', -out, '{{ tls_private_dir }}/tls/server.csr', -subj, '/CN={{ tls_hostnames[0] }}']
+    creates: '{{ tls_private_dir }}/tls/server.csr'
+- name: Specify the declared DNS identities
+  ansible.builtin.copy:
+    dest: '{{ tls_private_dir }}/tls/extensions.cnf'
+    mode: '0600'
+    content: |
+      basicConstraints=critical,CA:FALSE
+      keyUsage=critical,digitalSignature,keyEncipherment
+      extendedKeyUsage=serverAuth
+      subjectAltName={{ tls_hostnames | map('regex_replace','^','DNS:') | join(',') }}
+- name: Issue the five-year application certificate
+  ansible.builtin.command:
+    argv: [openssl, x509, -req, -in, '{{ tls_private_dir }}/tls/server.csr', -CA, '{{ registry_config_dir }}/tls/ca.crt', -CAkey, '{{ registry_config_dir }}/tls/ca.key', -set_serial, '0x{{ lookup("pipe", "openssl rand -hex 16") }}', -days, '1825', -sha256, -extfile, '{{ tls_private_dir }}/tls/extensions.cnf', -out, '{{ tls_private_dir }}/tls/server.crt']
+    creates: '{{ tls_private_dir }}/tls/server.crt'
+- name: Restrict certificate input consistently with its backup
+  ansible.builtin.file: {path: '{{ tls_private_dir }}/tls/server.crt', owner: root, group: root, mode: '0600'}
+- name: Verify all certificate hostnames with the actual platform CA
+  ansible.builtin.command:
+    argv: [openssl, verify, -CAfile, '{{ registry_config_dir }}/tls/ca.crt', -verify_hostname, '{{ item }}', '{{ tls_private_dir }}/tls/server.crt']
+  loop: '{{ tls_hostnames }}'
+  changed_when: false
+- name: Compare key and certificate public identities in memory
+  ansible.builtin.command:
+    argv: '{{ item }}'
+  loop:
+    - [openssl, pkey, -in, '{{ tls_private_dir }}/tls/server.key', -pubout]
+    - [openssl, x509, -in, '{{ tls_private_dir }}/tls/server.crt', -pubkey, -noout]
+  register: tls_public
+  changed_when: false
+  no_log: true
+- name: Require matching TLS public keys
+  ansible.builtin.assert:
+    quiet: true
+    that: tls_public.results[0].stdout == tls_public.results[1].stdout
+  no_log: true
+- name: Back up application TLS without replacing existing identity
+  ansible.builtin.copy:
+    src: '{{ tls_private_dir }}/tls/{{ item }}'
+    dest: '{{ tls_backup_dir }}/tls/{{ item }}'
+    remote_src: true
+    force: false
+    mode: '0600'
+  loop: [server.key, server.crt]
+  no_log: true
+- name: Require identical independent TLS backup
+  ansible.builtin.command:
+    argv: [cmp, --silent, '{{ tls_private_dir }}/tls/{{ item }}', '{{ tls_backup_dir }}/tls/{{ item }}']
+  loop: [server.key, server.crt]
+  changed_when: false
+  no_log: true
+- name: Read application TLS only in memory for SOPS encryption
+  ansible.builtin.slurp: {src: '{{ tls_private_dir }}/tls/{{ item }}'}
+  loop: [server.key, server.crt]
+  register: app_tls
+  no_log: true

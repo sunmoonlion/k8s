@@ -1,0 +1,113 @@
+---
+# 由现有 services renderer 直接引用；模型来自 files.lock.json，不在 Pod 启动时下载。
+- name: Select immutable model files from the single artifact lock
+  ansible.builtin.set_fact:
+    embedding_files: '{{ (lookup("file",playbook_dir + "/../artifacts/files.lock.json") | from_json).files | selectattr("kind","equalto","model") | selectattr("model","equalto",text_embeddings_model) | list }}'
+    embedding_root: '{{ cluster_data_root }}/{{ cluster_name }}/{{ text_embeddings_volume.node }}/static/text-embeddings/models/{{ text_embeddings_model_revision }}'
+- name: Validate bounded CPU model configuration and exact file paths
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - text_embeddings_model == 'Qwen/Qwen3-Embedding-0.6B'
+      - text_embeddings_model_revision is match('^[a-f0-9]{40}$')
+      - text_embeddings_dimensions == 1024
+      - text_embeddings_port == 8080
+      - text_embeddings_volume.name == 'text-embeddings'
+      - text_embeddings_batch_tokens | int >= 512
+      - text_embeddings_batch_tokens | int <= 4096
+      - text_embeddings_client_batch_size | int >= 1
+      - text_embeddings_client_batch_size | int <= 8
+      - text_embeddings_concurrent_requests | int >= 1
+      - text_embeddings_concurrent_requests | int <= 4
+      - text_embeddings_tokenization_workers | int >= 1
+      - text_embeddings_tokenization_workers | int <= 4
+      - embedding_files | length == 9
+      - embedding_files | map(attribute='version') | unique | list == [text_embeddings_model_revision]
+      - item.model_path in ['config.json','tokenizer_config.json','config_sentence_transformers.json','modules.json','1_Pooling/config.json','merges.txt','vocab.json','model.safetensors','tokenizer.json']
+  loop: '{{ embedding_files }}'
+  loop_control: {label: '{{ item.id }}'}
+- name: Inspect immutable model directory ancestors
+  ansible.builtin.stat: {path: '{{ item }}', follow: false, get_checksum: false}
+  loop: ['{{ embedding_root | dirname }}','{{ embedding_root }}','{{ embedding_root }}/1_Pooling']
+  register: embedding_dirs
+- name: Refuse redirected model directories
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or item.stat.isdir | default(false)
+  loop: '{{ embedding_dirs.results }}'
+  loop_control: {label: '{{ item.item }}'}
+- name: Create immutable revision directories
+  ansible.builtin.file: {path: '{{ item }}', state: directory, owner: root, group: root, mode: '0755'}
+  loop: ['{{ embedding_root | dirname }}','{{ embedding_root }}','{{ embedding_root }}/1_Pooling']
+- name: Inspect each verified formal source file
+  ansible.builtin.stat: {path: '{{ artifact_cache_root }}/{{ item.path }}', follow: false, checksum_algorithm: sha256}
+  loop: '{{ embedding_files }}'
+  register: embedding_sources
+  loop_control: {label: '{{ item.id }}'}
+- name: Require source bytes to equal the fixed model revision
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.stat.isreg | default(false)
+      - not item.stat.islnk | default(false)
+      - item.stat.checksum | default('') == item.item.sha256
+      - item.stat.size | default(0) == item.item.size_bytes
+  loop: '{{ embedding_sources.results }}'
+  loop_control: {label: '{{ item.item.id }}'}
+- name: Inspect immutable installed files before copying
+  ansible.builtin.stat: {path: '{{ embedding_root }}/{{ item.model_path }}', follow: false, checksum_algorithm: sha256}
+  loop: '{{ embedding_files }}'
+  register: embedding_installed
+  loop_control: {label: '{{ item.id }}'}
+- name: Refuse overwriting foreign installed model bytes
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.checksum == item.item.sha256 and item.stat.size == item.item.size_bytes)
+  loop: '{{ embedding_installed.results }}'
+  loop_control: {label: '{{ item.item.id }}'}
+- name: Budget only missing installed model bytes
+  ansible.builtin.include_tasks:
+    file: '{{ playbook_dir }}/../host/tasks/capacity.yaml'
+    apply: {become: false}
+  vars:
+    capacity_planned_bytes: '{{ (embedding_installed.results | rejectattr("stat.exists") | map(attribute="item.size_bytes") | sum) + 16777216 }}'
+- name: Copy only missing verified model files without changing existing data
+  ansible.builtin.copy:
+    src: '{{ artifact_cache_root }}/{{ item.item.path }}'
+    dest: '{{ embedding_root }}/{{ item.item.model_path }}'
+    remote_src: true
+    force: false
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ embedding_installed.results }}'
+  loop_control: {label: '{{ item.item.id }}'}
+  when: not item.stat.exists
+- name: Verify installed model content before declaring runtime readiness
+  ansible.builtin.stat: {path: '{{ embedding_root }}/{{ item.model_path }}', follow: false, checksum_algorithm: sha256}
+  loop: '{{ embedding_files }}'
+  register: embedding_verified
+  loop_control: {label: '{{ item.id }}'}
+- name: Require every installed file SHA256 and size to match
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.stat.isreg | default(false)
+      - not item.stat.islnk | default(false)
+      - item.stat.checksum == item.item.sha256
+      - item.stat.size == item.item.size_bytes
+  loop: '{{ embedding_verified.results }}'
+  loop_control: {label: '{{ item.item.id }}'}
+- name: Derive model content identity from the complete file set
+  ansible.builtin.set_fact:
+    text_embeddings_model_digest: '{{ embedding_files | map(attribute="sha256") | list | to_json | hash("sha256") }}'
+- name: Render CPU inference through the existing candidate chain
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/data-platform/text-embeddings/workload.yaml.j2'
+    dest: '{{ build }}/data-platform/text-embeddings/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'

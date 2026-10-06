@@ -1,0 +1,517 @@
+---
+- import_playbook: ../host/deployment.yaml
+  vars: {deployment_action: check, selection_persist: false, selection_report: false}
+- name: Verify the promoted service release and real database operations
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars_files: [../components/layout.yaml]
+  vars:
+    capacity_operation: services-verify
+    images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images + (((lookup("file", playbook_dir + "/../../gitops/components/data-platform/ragflow/image.lock.json") | from_json).images) if services_ragflow_enabled else []) }}'
+    enabled_names: '{{ (component_stages | selectattr("name","in",selection.selected_stages) | map(attribute="name") | list) | intersect(["postgresql","redis","rabbitmq","casdoor","traefik","object-storage","text-embeddings","elasticsearch","kibana","logstash","neo4j","mongodb","infinity","valkey","ragflow-runtime","pgadmin","redisinsight","flower","mongo-express"]) }}'
+    stages_to_check: '{{ selection.required_stages }}'
+    check_postgresql: '{{ "postgresql" in enabled_names }}'
+    check_redis: '{{ "redis" in enabled_names }}'
+    check_rabbitmq: '{{ "rabbitmq" in enabled_names }}'
+    check_casdoor: '{{ "casdoor" in enabled_names }}'
+    check_object_storage: '{{ "object-storage" in enabled_names }}'
+    check_text_embeddings: '{{ "text-embeddings" in enabled_names }}'
+    check_neo4j: '{{ "neo4j" in enabled_names }}'
+    check_mongodb: '{{ "mongodb" in enabled_names }}'
+    check_infinity: '{{ "infinity" in enabled_names }}'
+    check_valkey: '{{ "valkey" in enabled_names }}'
+    check_ragflow: '{{ "ragflow-runtime" in enabled_names }}'
+    check_elk: '{{ selection.selected_stages | intersect(["elasticsearch","elk-initialize","kibana","logstash","elk-collector","elk-data-view"]) | length > 0 }}'
+    check_kibana_ui: '{{ "elk-kibana-ui" in selection.selected_stages }}'
+    check_rabbitmq_ui: '{{ "rabbitmq-ui" in selection.selected_stages }}'
+    check_neo4j_ui: '{{ "neo4j-ui" in selection.selected_stages }}'
+    check_object_storage_ui: '{{ "object-storage-ui" in selection.selected_stages }}'
+    check_pgadmin: '{{ "pgadmin" in selection.selected_stages }}'
+    check_redisinsight: '{{ "redisinsight" in selection.selected_stages }}'
+    check_flower: '{{ "flower" in selection.selected_stages }}'
+    check_mongo_express: '{{ "mongo-express" in selection.selected_stages }}'
+    check_relay: '{{ "relay" in selection.selected_stages }}'
+    check_sandbox_provisioner: '{{ "sandbox-provisioner" in selection.selected_stages }}'
+    kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+  tasks:
+    - name: Verify ownership before workload operations
+      ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
+      register: identity
+    - name: Require exact owned API UID
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "ns", "kube-system", "-o", "jsonpath={.metadata.uid}"] }}'
+      register: uid
+      changed_when: false
+      failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+    - name: Recheck approved floor and small verification allowance
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      vars: {capacity_planned_bytes: 16777216}
+    - name: Read observed reconciliation stages
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", "flux-system", "get", "kustomization", item, "-o", "json"] }}'
+      loop: '{{ stages_to_check }}'
+      register: stages
+      changed_when: false
+    - name: Require current stage generations Ready
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - state.status.observedGeneration == state.metadata.generation
+          - state.status.conditions | selectattr('type','equalto','Ready') | selectattr('status','equalto','True') | list | length == 1
+      vars: {state: '{{ item.stdout | from_json }}'}
+      loop: '{{ stages.results }}'
+      loop_control: {label: '{{ item.item }}'}
+    - name: Inspect actual pod image identities
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", item, "get", "pods", "-o", "json"] }}'
+      loop: '{{ [data_namespace, messaging_namespace, app_namespace, ingress_namespace, ops_namespace, relay_namespace, sandbox_namespace] }}'
+      register: service_pods
+      changed_when: false
+    - name: Collect actual runtime identities independently of pod specifications
+      ansible.builtin.set_fact:
+        observed_image_ids: '{{ service_pods.results | map(attribute="stdout") | map("from_json") | map(attribute="items") | flatten | map(attribute="status.containerStatuses", default=[]) | flatten | map(attribute="imageID", default="") | unique | list }}'
+    - name: Require all enabled locked manifests to be present in runtime image IDs
+      ansible.builtin.assert:
+        quiet: true
+        that: (registry_address + '/platform/' + item.id + '@' + item.manifest_digest) in observed_image_ids
+      loop: '{{ images | selectattr("id", "in", enabled_names + (["aistor"] if check_object_storage else []) + (["text-embeddings-inference"] if check_text_embeddings else [])) | list }}'
+      loop_control: {label: '{{ item.id }}'}
+    - name: Require enabled retained volumes bound
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "pv", cluster_name + "-" + item.name, "-o", "json"] }}'
+      loop: '{{ services_volumes | selectattr("name", "in", enabled_names) | list }}'
+      register: volumes
+      changed_when: false
+    - name: Verify durable mapping and reclaim policy
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - volume.status.phase == 'Bound'
+          - volume.spec.persistentVolumeReclaimPolicy == 'Retain'
+          - volume.spec.local.path == '/data/kind-local-storage/' + item.item.name
+          - volume.spec.claimRef.namespace == component_namespaces[item.item.name]
+          - volume.spec.claimRef.name == item.item.name + '-data'
+          - volume.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0]['values'] == [cluster_name + '-' + item.item.node]
+      vars: {volume: '{{ item.stdout | from_json }}'}
+      loop: '{{ volumes.results }}'
+      loop_control: {label: '{{ item.item.name }}'}
+    - name: Execute transactional PostgreSQL read and write
+      when: check_postgresql | bool
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", data_namespace, "exec", "postgresql-0", "--", "sh", "-ec", pg_acceptance] }}'
+      vars:
+        pg_acceptance: |
+          export PGPASSWORD="$(cat /run/auth/password)"
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d postgres --set=ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          CREATE TEMP TABLE sunmoon_acceptance(v text);
+          INSERT INTO sunmoon_acceptance VALUES ('verified');
+          SELECT v FROM sunmoon_acceptance;
+          ROLLBACK;
+          SQL
+      changed_when: false
+      register: pg_check
+      failed_when: pg_check.rc != 0 or 'verified' not in pg_check.stdout
+      no_log: true
+    - name: Verify Redis write and read with a bounded temporary key
+      when: check_redis | bool
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", data_namespace, "exec", "redis-0", "--", "sh", "-ec", ''export REDISCLI_AUTH="$(cat /run/auth/password)"; key="sunmoon:acceptance:$(date +%s):$$"; redis-cli SET "$key" verified EX 60 >/dev/null; test "$(redis-cli GET "$key")" = verified; redis-cli DEL "$key" >/dev/null; echo verified''] }}'
+      register: redis_check
+      changed_when: false
+      failed_when: redis_check.rc != 0 or redis_check.stdout != 'verified'
+      no_log: true
+    - name: Verify RabbitMQ running state and alarms
+      when: check_rabbitmq | bool
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", messaging_namespace, "exec", "rabbitmq-0", "-c", "rabbitmq", "--", "rabbitmq-diagnostics", "-q", item] }}'
+      loop: [check_running, check_local_alarms]
+      changed_when: false
+    - name: Read operator inputs without printing values
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/credentials.yaml'}
+      register: private_input
+      no_log: true
+      when: check_postgresql | bool or check_rabbitmq | bool or check_casdoor | bool
+    - name: Verify real message delivery and authenticated TLS identity flow
+      ansible.builtin.command:
+        argv: '{{ ["python3", playbook_dir + "/verify-live.py", "--kubectl", playbook_dir + "/../.tools/bin/kubectl", "--kubeconfig", cluster_kubeconfig, "--messaging-namespace", messaging_namespace, "--app-namespace", app_namespace, "--data-namespace", data_namespace, "--probe-node", cluster_name + "-" + (services_volumes | selectattr("name","equalto","postgresql") | first).node, "--ca", registry_config_dir + "/clients/ca.crt"] + (["--probe-image", registry_address + "/platform/postgresql@" + (images | selectattr("id","equalto","postgresql") | first).manifest_digest] if check_postgresql else []) + ([] if check_rabbitmq else ["--skip-rabbitmq"]) + ([] if check_casdoor else ["--skip-casdoor"]) }}'
+        stdin: '{{ private_input.content | b64decode | from_yaml | to_json }}'
+      no_log: true
+      changed_when: false
+      register: acceptance
+      failed_when: false
+      when: check_postgresql | bool or check_rabbitmq | bool or check_casdoor | bool
+    - name: Require live protocol checks to pass
+      ansible.builtin.assert:
+        quiet: true
+        that: acceptance.rc == 0
+        fail_msg: '{{ acceptance.stdout }}'
+      when: check_postgresql | bool or check_rabbitmq | bool or check_casdoor | bool
+    - name: Verify licensed TLS object storage through actual versioned S3 operations
+      when: check_object_storage | bool
+      block:
+        - name: Read private object storage root identity without logging
+          ansible.builtin.slurp: {src: '{{ services_config_dir }}/object-storage.yaml'}
+          register: storage_check_input
+          no_log: true
+        - name: Require the exact official management client bytes
+          ansible.builtin.stat: {path: '{{ playbook_dir }}/../.tools/bin/mc', follow: false, checksum_algorithm: sha256}
+          register: storage_client
+        - name: Reject an unverified or redirected management client
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - storage_client.stat.isreg | default(false)
+              - not storage_client.stat.islnk | default(false)
+              - storage_client.stat.checksum == ((lookup('file',playbook_dir + '/../artifacts/files.lock.json') | from_json).files | selectattr('id','equalto','mc') | first).sha256
+        - name: Execute bounded S3 roundtrip without printing private inputs
+          ansible.builtin.command:
+            argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/object-storage/verify.py', --kubectl, '{{ playbook_dir }}/../.tools/bin/kubectl', --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ data_namespace }}', --mc, '{{ playbook_dir }}/../.tools/bin/mc', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+            stdin: '{{ storage_check_input.content | b64decode | from_yaml | to_json }}'
+          register: storage_acceptance
+          changed_when: false
+          no_log: true
+          failed_when: false
+        - name: Require licensed S3 version and bytes verification
+          ansible.builtin.assert:
+            quiet: true
+            that: storage_acceptance.rc == 0
+            fail_msg: '{{ storage_acceptance.stdout }}'
+        - name: Report only public S3 acceptance results
+          ansible.builtin.debug: {msg: '{{ storage_acceptance.stdout | from_json }}'}
+    - name: Verify actual CPU inference with Chinese finite repeatable vectors
+      when: check_text_embeddings | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/text-embeddings/verify.py', --kubectl, '{{ playbook_dir }}/../.tools/bin/kubectl', --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ data_namespace }}', --model, '{{ text_embeddings_model }}', --revision, '{{ text_embeddings_model_revision }}', --dimensions, '{{ text_embeddings_dimensions | string }}']
+      register: embedding_acceptance
+      changed_when: false
+    - name: Report CPU embedding results and explicit acceptance scope
+      when: check_text_embeddings | bool
+      ansible.builtin.debug: {msg: '{{ embedding_acceptance.stdout | from_json }}'}
+    - name: Read independent ELK private input for bounded protocol checks
+      when: check_elk | bool or check_kibana_ui | bool
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/elk.yaml'}
+      register: elk_check_input
+      no_log: true
+    - name: Verify actual secured ELK ingestion, search and denied privileges
+      when: check_elk | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/elk/verify.py', --kubectl, '{{ playbook_dir }}/../.tools/bin/kubectl', --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ data_namespace }}', --ca, '{{ registry_config_dir }}/clients/ca.crt', --version, '{{ (images | selectattr("id","equalto","elasticsearch") | first).source.rsplit(":",1)[1] }}', --writer, '{{ elk_logstash_writer }}', --reader, '{{ elk_log_reader }}', --ingest-user, '{{ elk_ingest_username }}', --index-prefix, '{{ elk_index_prefix }}', --collector-enabled, '{{ elk_collector_enabled | string }}', --collector-namespace, '{{ elk_collector_namespace }}', --application-namespace, '{{ app_namespace }}', --collector-digest, '{{ (images | selectattr("id","equalto","fluent-bit") | first).manifest_digest }}', '--data-view-id', '{{ elk_log_data_view_id }}', '--components', '{{ selection.selected_stages | intersect(["elasticsearch","elk-initialize","kibana","logstash","elk-collector","elk-data-view"]) | join(",") }}']
+        stdin: '{{ elk_check_input.content | b64decode | from_yaml | to_json }}'
+      register: elk_acceptance
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Require actual ELK protocol acceptance to pass
+      when: check_elk | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: elk_acceptance.rc == 0
+        fail_msg: '{{ elk_acceptance.stdout }}'
+    - name: Report public ELK protocol assertions only
+      when: check_elk | bool
+      ansible.builtin.debug: {msg: '{{ elk_acceptance.stdout | from_json }}'}
+    - name: Read independent Kibana browser credentials without disclosure
+      when: check_kibana_ui | bool
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/elk-kibana-ui.yaml'}
+      register: kibana_ui_check_input
+      no_log: true
+    - name: Verify ingress TLS, browser sessions and read-only permissions
+      when: check_kibana_ui | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/elk/kibana/ui/verify.py', --origin, '{{ kibana_ui_origin }}', --port, '{{ services_ui_verify_port | default(cluster_ingress_port) }}', --ca, '{{ registry_config_dir }}/clients/ca.crt', --username, '{{ kibana_ui_viewer_user }}', --version, '{{ (images | selectattr("id","equalto","kibana") | first).source.rsplit(":",1)[1] }}', '--data-view-id', '{{ elk_log_data_view_id }}']
+        stdin: '{{ {"password":(kibana_ui_check_input.content | b64decode | from_yaml).password,"admin_password":(elk_check_input.content | b64decode | from_yaml).elastic_password} | to_json }}'
+      register: kibana_ui_acceptance
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Require browser acceptance without printing private inputs
+      when: check_kibana_ui | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: kibana_ui_acceptance.rc == 0
+        fail_msg: '{{ kibana_ui_acceptance.stdout }}'
+    - name: Report only the credential-free browser result
+      when: check_kibana_ui | bool
+      ansible.builtin.debug: {msg: '{{ kibana_ui_acceptance.stdout | from_json }}'}
+    - name: Read broker operator credentials for the management UI without disclosure
+      when: check_rabbitmq_ui | bool
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/credentials.yaml'}
+      register: rabbitmq_ui_check_input
+      no_log: true
+    - name: Verify RabbitMQ management TLS, login page and authenticated API
+      when: check_rabbitmq_ui | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/messaging-platform/rabbitmq/ui/verify.py', --origin, '{{ rabbitmq_ui_origin }}', --port, '{{ services_ui_verify_port | default(cluster_ingress_port) }}', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+        stdin: '{{ {"username":(rabbitmq_ui_check_input.content | b64decode | from_yaml).rabbitmq_username,"password":(rabbitmq_ui_check_input.content | b64decode | from_yaml).rabbitmq_password} | to_json }}'
+      register: rabbitmq_ui_acceptance
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Require RabbitMQ management acceptance without printing private inputs
+      when: check_rabbitmq_ui | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: rabbitmq_ui_acceptance.rc == 0
+        fail_msg: '{{ rabbitmq_ui_acceptance.stdout }}'
+    - name: Report only the credential-free RabbitMQ management result
+      when: check_rabbitmq_ui | bool
+      ansible.builtin.debug: {msg: '{{ rabbitmq_ui_acceptance.stdout | from_json }}'}
+    - name: Verify Neo4j Browser TLS and HTML through ingress
+      when: check_neo4j_ui | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/neo4j/ui/verify.py', --origin, '{{ neo4j_ui_origin }}', --port, '{{ services_ui_verify_port | default(cluster_ingress_port) }}', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+      register: neo4j_ui_acceptance
+      changed_when: false
+      failed_when: false
+    - name: Require Neo4j Browser acceptance
+      when: check_neo4j_ui | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: neo4j_ui_acceptance.rc == 0
+        fail_msg: '{{ neo4j_ui_acceptance.stdout }}'
+    - name: Report only the credential-free Neo4j Browser result
+      when: check_neo4j_ui | bool
+      ansible.builtin.debug: {msg: '{{ neo4j_ui_acceptance.stdout | from_json }}'}
+    - name: Read object storage root identity for the console without logging
+      when: check_object_storage_ui | bool
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/object-storage.yaml'}
+      register: object_storage_ui_check_input
+      no_log: true
+    - name: Verify object storage console TLS, login page and authenticated session
+      when: check_object_storage_ui | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/object-storage/ui/verify.py', --origin, '{{ object_storage_ui_origin }}', --port, '{{ services_ui_verify_port | default(cluster_ingress_port) }}', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+        stdin: '{{ object_storage_ui_check_input.content | b64decode | from_yaml | to_json }}'
+      register: object_storage_ui_acceptance
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Require object storage console acceptance without printing private inputs
+      when: check_object_storage_ui | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: object_storage_ui_acceptance.rc == 0
+        fail_msg: '{{ object_storage_ui_acceptance.stdout }}'
+    - name: Report only the credential-free object storage console result
+      when: check_object_storage_ui | bool
+      ansible.builtin.debug: {msg: '{{ object_storage_ui_acceptance.stdout | from_json }}'}
+    - name: Verify pgAdmin TLS, login page and ping
+      when: check_pgadmin | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/ops-platform/pgadmin/verify.py', --origin, '{{ pgadmin_origin }}', --port, '{{ services_ui_verify_port | default(cluster_ingress_port) }}', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+      register: pgadmin_acceptance
+      changed_when: false
+      failed_when: false
+    - name: Require pgAdmin acceptance
+      when: check_pgadmin | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: pgadmin_acceptance.rc == 0
+        fail_msg: '{{ pgadmin_acceptance.stdout }}'
+    - name: Report only the credential-free pgAdmin result
+      when: check_pgadmin | bool
+      ansible.builtin.debug: {msg: '{{ pgadmin_acceptance.stdout | from_json }}'}
+    - name: Verify RedisInsight TLS and HTML through ingress
+      when: check_redisinsight | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/ops-platform/redisinsight/verify.py', --origin, '{{ redisinsight_origin }}', --port, '{{ services_ui_verify_port | default(cluster_ingress_port) }}', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+      register: redisinsight_acceptance
+      changed_when: false
+      failed_when: false
+    - name: Require RedisInsight acceptance
+      when: check_redisinsight | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: redisinsight_acceptance.rc == 0
+        fail_msg: '{{ redisinsight_acceptance.stdout }}'
+    - name: Report only the credential-free RedisInsight result
+      when: check_redisinsight | bool
+      ansible.builtin.debug: {msg: '{{ redisinsight_acceptance.stdout | from_json }}'}
+    - name: Read Flower basic-auth without logging
+      when: check_flower | bool
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/flower.yaml'}
+      register: flower_check_input
+      no_log: true
+    - name: Verify Flower TLS and HTTP basic authentication
+      when: check_flower | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/ops-platform/flower/verify.py', --origin, '{{ flower_origin }}', --port, '{{ services_ui_verify_port | default(cluster_ingress_port) }}', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+        stdin: '{{ flower_check_input.content | b64decode | from_yaml | to_json }}'
+      register: flower_acceptance
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Require Flower acceptance without printing private inputs
+      when: check_flower | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: flower_acceptance.rc == 0
+        fail_msg: '{{ flower_acceptance.stdout }}'
+    - name: Report only the credential-free Flower result
+      when: check_flower | bool
+      ansible.builtin.debug: {msg: '{{ flower_acceptance.stdout | from_json }}'}
+    - name: Read Mongo Express basic-auth without logging
+      when: check_mongo_express | bool
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/mongo-express.yaml'}
+      register: mongo_express_check_input
+      no_log: true
+    - name: Verify Mongo Express TLS and HTTP basic authentication
+      when: check_mongo_express | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/ops-platform/mongo-express/verify.py', --origin, '{{ mongo_express_origin }}', --port, '{{ services_ui_verify_port | default(cluster_ingress_port) }}', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+        stdin: '{{ mongo_express_check_input.content | b64decode | from_yaml | to_json }}'
+      register: mongo_express_acceptance
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Require Mongo Express acceptance without printing private inputs
+      when: check_mongo_express | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: mongo_express_acceptance.rc == 0
+        fail_msg: '{{ mongo_express_acceptance.stdout }}'
+    - name: Report only the credential-free Mongo Express result
+      when: check_mongo_express | bool
+      ansible.builtin.debug: {msg: '{{ mongo_express_acceptance.stdout | from_json }}'}
+    - name: Verify relay TLS and healthz through ingress
+      when: check_relay | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/relay-platform/relay/verify.py', --origin, '{{ relay_origin }}', --port, '{{ services_ui_verify_port | default(cluster_ingress_port) }}', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+      register: relay_acceptance
+      changed_when: false
+      failed_when: false
+    - name: Require relay acceptance
+      when: check_relay | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: relay_acceptance.rc == 0
+        fail_msg: '{{ relay_acceptance.stdout }}'
+    - name: Report only the credential-free relay result
+      when: check_relay | bool
+      ansible.builtin.debug: {msg: '{{ relay_acceptance.stdout | from_json }}'}
+    - name: Verify sandbox provisioner health through the cluster service
+      when: check_sandbox_provisioner | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/sandbox-platform/provisioner/verify.py', --kubectl, '{{ playbook_dir }}/../.tools/bin/kubectl', --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ sandbox_namespace }}']
+      register: sandbox_provisioner_acceptance
+      changed_when: false
+      failed_when: false
+    - name: Require sandbox provisioner acceptance
+      when: check_sandbox_provisioner | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: sandbox_provisioner_acceptance.rc == 0
+        fail_msg: '{{ sandbox_provisioner_acceptance.stdout }}'
+    - name: Report only the credential-free sandbox provisioner result
+      when: check_sandbox_provisioner | bool
+      ansible.builtin.debug: {msg: '{{ sandbox_provisioner_acceptance.stdout | from_json }}'}
+    - name: Read independent graph administrator without logging
+      when: check_neo4j | bool
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/neo4j.yaml'}
+      register: neo4j_check_input
+      no_log: true
+    - name: Verify actual graph commit, rollback and required TLS
+      when: check_neo4j | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/neo4j/verify.py', --kubectl, '{{ playbook_dir }}/../.tools/bin/kubectl', --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ data_namespace }}', --ca, '{{ registry_config_dir }}/clients/ca.crt', --version, '{{ (images | selectattr("id","equalto","neo4j") | first).source.rsplit(":",1)[1].split("-")[0] }}']
+        stdin: '{{ neo4j_check_input.content | b64decode | from_yaml | to_json }}'
+      register: neo4j_acceptance
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Require graph protocol checks to pass
+      when: check_neo4j | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: neo4j_acceptance.rc == 0
+        fail_msg: '{{ neo4j_acceptance.stdout }}'
+    - name: Report only public graph acceptance assertions
+      when: check_neo4j | bool
+      ansible.builtin.debug: {msg: '{{ neo4j_acceptance.stdout | from_json }}'}
+    - name: Verify MongoDB TLS, limited CRUD, transactions and denied privileges
+      when: check_mongodb | bool
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", data_namespace, "exec", "mongodb-0", "-c", "mongodb", "--", "mongosh", "--quiet", "--nodb", "--file", "/settings/verify.js"] }}'
+      register: mongodb_acceptance
+      changed_when: false
+      failed_when: false
+    - name: Require the MongoDB live protocol checks
+      when: check_mongodb | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: mongodb_acceptance.rc == 0 and (mongodb_acceptance.stdout | from_json).passed
+        fail_msg: '{{ mongodb_acceptance.stdout }}'
+    - name: Report only public MongoDB acceptance results
+      when: check_mongodb | bool
+      ansible.builtin.debug: {msg: '{{ mongodb_acceptance.stdout | from_json }}'}
+    - name: Verify real Infinity node identity through its local HTTP endpoint
+      when: check_infinity | bool
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n",data_namespace,"exec","infinity-0","--","curl","--silent","--show-error","--fail","--max-time","10","http://127.0.0.1:23820/admin/node/current"] }}'
+      changed_when: false
+      register: infinity_acceptance
+      failed_when: infinity_acceptance.rc != 0 or (infinity_acceptance.stdout | from_json).error_code | default(-1) != 0
+    - name: Verify bounded Valkey KV operations and denied permissions
+      when: check_valkey | bool
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n",data_namespace,"exec","valkey-0","--","sh","-ec",valkey_protocol] }}'
+      vars:
+        valkey_protocol: |
+          export REDISCLI_AUTH="$(cat /run/auth/probe-password)"
+          cli() { valkey-cli --user {{ valkey_probe_username }} "$@"; }
+          key="sunmoon:acceptance:$(date +%s):$$"
+          trap 'cli DEL "$key" >/dev/null' EXIT
+          test "$(cli SET "$key" verified EX 60)" = OK
+          test "$(cli GET "$key")" = verified
+          case "$(cli SET foreign verified)" in *NOPERM*) : ;; *) exit 1 ;; esac
+          case "$(cli CONFIG GET '*')" in *NOPERM*) : ;; *) exit 1 ;; esac
+          case "$(valkey-cli ping)" in *NOAUTH*) : ;; *) exit 1 ;; esac
+          case "$(REDISCLI_AUTH=deliberately-wrong valkey-cli --user {{ valkey_probe_username }} ping 2>&1)" in *WRONGPASS*) : ;; *) exit 1 ;; esac
+          echo verified
+      register: valkey_acceptance
+      changed_when: false
+      failed_when: valkey_acceptance.rc != 0 or valkey_acceptance.stdout != 'verified'
+      no_log: true
+    - name: Read dedicated RAGFlow protocol identity without printing credentials
+      when: check_ragflow | bool
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/ragflow.yaml'}
+      register: ragflow_private_input
+      no_log: true
+    - name: Verify real RAGFlow isolated-tenant upload parsing and Chinese retrieval
+      when: check_ragflow | bool
+      ansible.builtin.command:
+        argv: ['python3','{{ playbook_dir }}/../../gitops/components/data-platform/ragflow/verify.py','--kubectl','{{ playbook_dir }}/../.tools/bin/kubectl','--kubeconfig','{{ cluster_kubeconfig }}','--namespace','{{ data_namespace }}','--base','https://ragflow.{{ data_namespace }}.svc.cluster.local:{{ ragflow_port }}','--timeout','{{ ragflow_ingestion_timeout_seconds | string }}']
+        stdin: '{{ ragflow_private_input.content | b64decode | from_yaml | to_json }}'
+      no_log: true
+      changed_when: false
+      register: ragflow_acceptance
+      failed_when: false
+    - name: Require actual RAGFlow ingestion and retrieval checks
+      when: check_ragflow | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: ragflow_acceptance.rc == 0 and (ragflow_acceptance.stdout | from_json).passed
+        fail_msg: '{{ ragflow_acceptance.stdout }}'
+    - name: Report only public RAGFlow acceptance result
+      when: check_ragflow | bool
+      ansible.builtin.debug: {msg: '{{ ragflow_acceptance.stdout | from_json }}'}
+    - name: Report public acceptance results only
+      ansible.builtin.debug: {msg: '{{ acceptance.stdout | from_json }}'}
+      when: check_postgresql | bool or check_rabbitmq | bool or check_casdoor | bool
+    - name: Keep public verification receipt outside the repository
+      ansible.builtin.file:
+        path: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/evidence/services'
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+    - name: Record the source, ownership, checks and physical capacity
+      ansible.builtin.copy:
+        dest: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/evidence/services/{{ selection.object | replace("/","--") }}.json'
+        mode: '0600'
+        content: |
+          {{ {'checked_at_utc':lookup('pipe','date -u +%Y-%m-%dT%H:%M:%SZ'), 'cluster_uid':uid.stdout, 'source':lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml, 'object':selection.object,'selected_stages':selection.selected_stages,'checks':((acceptance.stdout | from_json) if not acceptance.skipped | default(false) else {}) | combine({'postgresql_transaction':check_postgresql,'redis_write_read':check_redis,'retained_volumes_bound':true}), 'capacity':capacity_report.stdout | from_json, 'object_storage':(storage_acceptance.stdout | from_json) if check_object_storage else {}, 'object_storage_ui':(object_storage_ui_acceptance.stdout | from_json) if check_object_storage_ui else {}, 'text_embeddings':(embedding_acceptance.stdout | from_json) if check_text_embeddings else {}, 'elk':(elk_acceptance.stdout | from_json) if check_elk else {}, 'kibana_ui':(kibana_ui_acceptance.stdout | from_json) if check_kibana_ui else {}, 'neo4j':(neo4j_acceptance.stdout | from_json) if check_neo4j else {}, 'neo4j_ui':(neo4j_ui_acceptance.stdout | from_json) if check_neo4j_ui else {}, 'rabbitmq_ui':(rabbitmq_ui_acceptance.stdout | from_json) if check_rabbitmq_ui else {}, 'mongodb':(mongodb_acceptance.stdout | from_json) if check_mongodb else {}, 'infinity':(infinity_acceptance.stdout | from_json) if check_infinity else {}, 'valkey_bounded_kv':check_valkey, 'ragflow':(ragflow_acceptance.stdout | from_json) if check_ragflow else {}, 'pgadmin':(pgadmin_acceptance.stdout | from_json) if check_pgadmin else {}, 'redisinsight':(redisinsight_acceptance.stdout | from_json) if check_redisinsight else {}, 'flower':(flower_acceptance.stdout | from_json) if check_flower else {}, 'mongo_express':(mongo_express_acceptance.stdout | from_json) if check_mongo_express else {}, 'relay':(relay_acceptance.stdout | from_json) if check_relay else {}, 'sandbox_provisioner':(sandbox_provisioner_acceptance.stdout | from_json) if check_sandbox_provisioner else {}, 'scope':'Service protocol checks; no WSL/KIND restart or rebuild claim'} | to_nice_json }}

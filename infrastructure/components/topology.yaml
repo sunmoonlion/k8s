@@ -1,0 +1,49 @@
+---
+# Cluster stage declarations (gitops/clusters/<env>/stages.yaml) rendered from the component stage graph.
+# topology_action: render (candidate only) | stage (copy into the source tree) | validate (candidate equals committed).
+- import_playbook: ../host/deployment.yaml
+  vars: {deployment_action: select, selection_persist: false, selection_report: false}
+- name: Render, stage or validate the cluster stage declarations from component stage.yaml files
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    topology_action: render
+    repo: '{{ playbook_dir }}/../..'
+    cluster_dir: '{{ repo }}/gitops/clusters/kind'
+    candidate: '{{ playbook_dir }}/../.build/components/cluster-stages.yaml'
+    committed: '{{ cluster_dir }}/stages.yaml'
+  tasks:
+    - name: Require a bounded topology action
+      ansible.builtin.assert:
+        quiet: true
+        that: topology_action in ['render', 'stage', 'validate']
+    - name: Render enabled stage declarations in graph order
+      ansible.builtin.template:
+        src: '{{ cluster_dir }}/stages.yaml.j2'
+        dest: '{{ candidate }}'
+        owner: '{{ cluster_operator }}'
+        mode: '0644'
+    - name: Require unselected stage declarations to remain unchanged
+      ansible.builtin.assert:
+        quiet: true
+        that: candidate_unselected == committed_unselected
+        fail_msg: Unselected stage declarations differ. Review and stage the complete topology with OBJECT=all first.
+      vars:
+        candidate_unselected: '{{ lookup("file", candidate) | from_yaml_all | rejectattr("metadata.name", "in", selection.selected_stages) | list }}'
+        committed_unselected: '{{ lookup("file", committed) | from_yaml_all | rejectattr("metadata.name", "in", selection.selected_stages) | list }}'
+      when: topology_action == 'stage' and selection.object != 'all'
+    - name: Stage the cluster stage declarations without applying them
+      ansible.builtin.copy:
+        src: '{{ candidate }}'
+        dest: '{{ committed }}'
+        remote_src: true
+        owner: '{{ cluster_operator }}'
+        mode: '0644'
+      when: topology_action == 'stage'
+    - name: Require committed stage declarations to equal the rendered graph
+      ansible.builtin.assert:
+        quiet: true
+        that: (lookup('file', candidate) | from_yaml_all | list) == (lookup('file', committed) | from_yaml_all | list)
+        fail_msg: Stage declarations differ from the promoted release. Review and publish generated stages before deploying.
+      when: topology_action == 'validate'

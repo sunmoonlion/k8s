@@ -1,0 +1,31 @@
+global
+    maxconn 2048
+    log stdout format raw local0 warning
+
+defaults
+    mode tcp
+    log global
+    timeout connect 5s
+    timeout client 1h
+    timeout server 1h
+
+frontend tls_entry
+    bind {{ entry_listen_address }}:{{ entry_port }}
+    tcp-request inspect-delay 10s
+    tcp-request content accept if { req.ssl_hello_type 1 }
+    use_backend registry if { req.ssl_sni -i {{ registry_hostname }} }
+{% for route in entry_cluster_routes %}
+    use_backend cluster_{{ route.name }} if { req.ssl_sni -i {{ route.hostnames | join(' ') }} }
+{% endfor %}
+    default_backend cluster
+
+backend registry
+    server registry 127.0.0.1:{{ registry_https_port }} check inter 10s fall 3 rise 2
+
+backend cluster
+    server cluster {{ entry_cluster_backend }} check inter 10s fall 3 rise 2
+{% for route in entry_cluster_routes %}
+
+backend cluster_{{ route.name }}
+    server cluster {{ route.backend }} check inter 10s fall 3 rise 2
+{% endfor %}

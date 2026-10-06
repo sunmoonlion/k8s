@@ -1,0 +1,459 @@
+---
+# Shared backend prepare for tpl/info/knowledge/investment. Templates live in common/;
+# this file writes them under .build/components/<application_object>/ because the generic
+# renderer looks for j2 beside each stage path.
+- name: Bind application identity
+  ansible.builtin.include_tasks:
+    file: '{{ components_root }}/app-platform/common/backend/bind.yaml'
+- name: Validate the selected deployment and identity boundaries
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - cfg.enabled | bool
+      - cfg.namespace == app_namespace
+      - "'namespace' not in application_cfg"
+      - "'namespace' not in backend_cfg"
+      - application_cfg.keys() | intersect(backend_cfg.keys()) | length == 0
+      - cfg.database is match('^[a-z][a-z0-9_]{1,40}$')
+      - cfg.database_runtime_user is match('^[a-z][a-z0-9_]{1,40}$')
+      - cfg.database_migrator_user is match('^[a-z][a-z0-9_]{1,40}$')
+      - cfg.database_runtime_user != cfg.database_migrator_user
+      - cfg.database_extensions | default([]) | difference(['uuid-ossp']) | length == 0
+      - cfg.database_bootstrap_revision is match('^[a-z0-9-]{1,16}$')
+      - cfg.migration_job_revision is match('^[a-z0-9-]{1,16}$')
+      - cfg.private_dir == '/etc/sunmoon/applications/' + cluster_name + '/' + application_name
+      - cfg.backup_dir == '/mnt/sunmoon-data/backups/applications/' + cluster_name + '/' + application_name
+      - app_images.backend.repository == application_name + '-backend'
+      - app_images.backend.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
+      - app_images.web.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
+      - app_images.admin.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
+      - app_images.backend.digest is match('^sha256:[a-f0-9]{64}$')
+      - app_images.backend.source_revision == source_lock.backend_revision
+      - cfg.deploy_budget_bytes | int >= 2147483648
+      - app_images.web.repository == application_name + '-web-frontend'
+      - app_images.admin.repository == application_name + '-admin-frontend'
+      - app_images.web.digest is match('^sha256:[a-f0-9]{64}$')
+      - app_images.admin.digest is match('^sha256:[a-f0-9]{64}$')
+      - app_images.web.source_revision == source_lock.web_revision
+      - app_images.admin.source_revision == source_lock.admin_revision
+      - cfg.scheduler_replicas | int == 1
+      - cfg.celery_control_queue_exclusive is sameas true
+      - cfg.celery_event_queue_exclusive is sameas true
+      - cfg.api_replicas | int >= 1
+      - cfg.worker_replicas | int >= 1
+      - cfg.worker_concurrency | int >= 1
+      - cfg.api_port | int > 1024 and cfg.api_port | int < 65536
+      - web_cfg.port | int > 1024 and web_cfg.port | int < 65536
+      - admin_cfg.port | int > 1024 and admin_cfg.port | int < 65536
+      - web_cfg.replicas | int >= 1
+      - admin_cfg.replicas | int >= 1
+      - cfg.web_origin is match('^https://[a-z0-9.-]+:30443$')
+      - cfg.admin_origin is match('^https://[a-z0-9.-]+:30443$')
+      - cfg.web_origin != cfg.admin_origin
+      - cfg.rabbitmq_user is match('^[a-z][a-z0-9_.-]{1,63}$')
+      - cfg.rabbitmq_user not in ['admin','guest']
+      - cfg.rabbitmq_vhost == application_name
+      - cfg.rabbitmq_queue == application_name + '.default'
+      - cfg.rabbitmq_identity_revision is match('^[a-z0-9-]{1,16}$')
+      - cfg.identity_organization == 'built-in'
+      - cfg.identity_revision is match('^[a-z0-9-]{1,16}$')
+      - browser_clients.web.client_id != browser_clients.admin.client_id
+      - browser_clients.web.name != browser_clients.admin.name
+      - cfg.redis_user == application_name + '_runtime'
+      - cfg.redis_key_pattern == application_name + ':*'
+      - not provider_enabled | bool or (application_name == 'knowledge' and not storage_enabled | bool)
+      - not service_enabled | bool or (application_name in ['info','investment'] and service_access_enabled | bool)
+      - not receiver_enabled | bool or (application_name == 'knowledge' and provider_enabled | bool and service_access_enabled | bool)
+      - not receiver_enabled | bool or (service_bindings.ingest.enabled | bool and service_bindings.retrieve.enabled | bool)
+      - not receiver_enabled | bool or service_bindings.ingest.client_id != service_bindings.retrieve.client_id
+      - not receiver_enabled | bool or service_bindings.ingest.organization != service_bindings.retrieve.organization
+      - cfg.domain_runtime_env | default({}) | list | difference(['STORAGE_BACKEND','SEARCH_BACKEND']) | length == 0
+- name: Require capacity for the whole database and migration unit
+  ansible.builtin.include_tasks:
+    file: '{{ playbook_dir }}/../host/tasks/capacity.yaml'
+    apply: {become: false}
+  vars: {capacity_planned_bytes: '{{ cfg.deploy_budget_bytes }}'}
+- name: Read the migration head from the pinned backend Git object
+  become: false
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - |
+        import ast,json,subprocess,sys
+        repo,revision=sys.argv[1:]
+        files=subprocess.check_output(['git','-C',repo,'ls-tree','-r','--name-only',revision,'app/alembic/versions'],text=True).splitlines()
+        chain={}
+        for path in files:
+            if not path.endswith('.py'):continue
+            text=subprocess.check_output(['git','-C',repo,'show',revision+':'+path],text=True)
+            fields={}
+            for node in ast.parse(text).body:
+                names=node.targets if isinstance(node,ast.Assign) else [node.target] if isinstance(node,ast.AnnAssign) else []
+                for name in names:
+                    if isinstance(name,ast.Name) and name.id in ('revision','down_revision'):
+                        fields[name.id]=ast.literal_eval(node.value)
+            if 'revision' not in fields:continue
+            value=fields['revision'];parent=fields['down_revision']
+            assert isinstance(value,str) and (parent is None or isinstance(parent,str)) and value not in chain
+            chain[value]=parent
+        assert chain and sum(v is None for v in chain.values())==1
+        assert all(v is None or v in chain for v in chain.values())
+        heads=set(chain)-set(v for v in chain.values() if v is not None)
+        assert len(heads)==1
+        print(json.dumps({'revision':revision,'head':heads.pop(),'migration_count':len(chain)}))
+      - '{{ playbook_dir }}/../../../{{ application_name }}-app/{{ application_name }}-backend'
+      - '{{ source_lock.backend_revision }}'
+  register: pinned_schema
+  changed_when: false
+- name: Require the configured schema to match the immutable source chain
+  ansible.builtin.assert:
+    quiet: true
+    that: cfg.expected_schema_revision == (pinned_schema.stdout | from_json).head
+    fail_msg: Expected schema differs from pinned backend source. Correct the configuration before rendering or deployment.
+- name: Inspect private and independent backup directories
+  ansible.builtin.stat: {path: '{{ item }}', follow: false}
+  loop: ['{{ cfg.private_dir }}','{{ cfg.backup_dir }}']
+  register: private_dirs
+- name: Reject redirected or foreign private directories
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isdir | default(false) and item.stat.uid == 0)
+  loop: '{{ private_dirs.results }}'
+  loop_control: {label: '{{ item.item }}'}
+- name: Create root-only application input and backup directories
+  ansible.builtin.file: {path: '{{ item }}', state: directory, owner: root, group: root, mode: '0700'}
+  loop: ['{{ cfg.private_dir }}','{{ cfg.backup_dir }}']
+- name: Inspect both credential files before initialization
+  ansible.builtin.stat: {path: '{{ item }}/credentials.yaml', follow: false}
+  loop: ['{{ cfg.private_dir }}','{{ cfg.backup_dir }}']
+  register: credential_files
+  no_log: true
+- name: Require secure regular files
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ credential_files.results }}'
+  no_log: true
+- name: Restore an existing independent backup without changing its values
+  ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/credentials.yaml', dest: '{{ cfg.private_dir }}/credentials.yaml', remote_src: true, mode: '0600'}
+  when: not credential_files.results[0].stat.exists and credential_files.results[1].stat.exists
+  no_log: true
+- name: Never replace lost credentials after declarations exist
+  ansible.builtin.assert:
+    quiet: true
+    that: credential_files.results[0].stat.exists or credential_files.results[1].stat.exists or (query('fileglob', component_root + '/database/bootstrap.sops.yaml') | length == 0)
+    fail_msg: Restore the application credential backup; never regenerate an existing database identity.
+- name: Initialize two distinct private identities for a new deployment
+  ansible.builtin.copy:
+    dest: '{{ cfg.private_dir }}/credentials.yaml'
+    force: false
+    mode: '0600'
+    content: |
+      migrator_password: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
+      runtime_password: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
+  when: not credential_files.results[0].stat.exists and not credential_files.results[1].stat.exists
+  no_log: true
+- name: Preserve independent non-overwritten credential backup
+  ansible.builtin.copy: {src: '{{ cfg.private_dir }}/credentials.yaml', dest: '{{ cfg.backup_dir }}/credentials.yaml', remote_src: true, force: false, mode: '0600'}
+  no_log: true
+- name: Require byte-identical primary and backup inputs
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/credentials.yaml', '{{ cfg.backup_dir }}/credentials.yaml']}
+  changed_when: false
+  no_log: true
+- name: Read private application input
+  ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/credentials.yaml'}
+  register: secret_input
+  no_log: true
+- name: Decode secrets only in memory
+  ansible.builtin.set_fact:
+    app_credentials: '{{ secret_input.content | b64decode | from_yaml }}'
+  no_log: true
+- name: Validate URL-safe strong independent credentials
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - app_credentials.runtime_password is match('^[a-zA-Z0-9]{40}$')
+      - app_credentials.migrator_password is match('^[a-zA-Z0-9]{40}$')
+      - app_credentials.runtime_password != app_credentials.migrator_password
+  no_log: true
+- name: Inspect recoverable Redis credential input
+  ansible.builtin.stat: {path: '{{ item }}/redis.yaml', follow: false}
+  loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+  register: redis_files
+  no_log: true
+- name: Require root-only regular Redis input files
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ redis_files.results }}'
+  no_log: true
+- name: Restore a preserved Redis input without rotating its password
+  ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/redis.yaml', dest: '{{ cfg.private_dir }}/redis.yaml', remote_src: true, mode: '0600'}
+  when: not redis_files.results[0].stat.exists and redis_files.results[1].stat.exists
+  no_log: true
+- name: Refuse to regenerate a declared Redis identity
+  ansible.builtin.assert:
+    quiet: true
+    that: redis_files.results[0].stat.exists or redis_files.results[1].stat.exists or (query('fileglob', component_root + '/redis/provision.sops.yaml') | length == 0)
+- name: Create an independent Redis password only on first preparation
+  ansible.builtin.copy:
+    dest: '{{ cfg.private_dir }}/redis.yaml'
+    force: false
+    mode: '0600'
+    content: |
+      password: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
+  when: not redis_files.results[0].stat.exists and not redis_files.results[1].stat.exists
+  no_log: true
+- name: Preserve the independent Redis credential backup
+  ansible.builtin.copy: {src: '{{ cfg.private_dir }}/redis.yaml', dest: '{{ cfg.backup_dir }}/redis.yaml', remote_src: true, force: false, mode: '0600'}
+  no_log: true
+- name: Verify Redis input against its non-overwritten backup
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/redis.yaml', '{{ cfg.backup_dir }}/redis.yaml']}
+  changed_when: false
+  no_log: true
+- name: Read private Redis input without logging
+  ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/redis.yaml'}
+  register: redis_input
+  no_log: true
+- name: Decode private Redis credentials in memory
+  ansible.builtin.set_fact:
+    redis_credentials: '{{ redis_input.content | b64decode | from_yaml }}'
+  no_log: true
+- name: Require a strong distinct application Redis password
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - redis_credentials.password is match('^[a-zA-Z0-9]{40}$')
+      - redis_credentials.password != app_credentials.runtime_password
+      - redis_credentials.password != app_credentials.migrator_password
+  no_log: true
+- name: Inspect recoverable RabbitMQ credential input
+  ansible.builtin.stat: {path: '{{ item }}/rabbitmq.yaml', follow: false}
+  loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+  register: rabbitmq_files
+  no_log: true
+- name: Require root-only regular RabbitMQ input files
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ rabbitmq_files.results }}'
+  no_log: true
+- name: Restore a preserved RabbitMQ input without rotating its password
+  ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/rabbitmq.yaml', dest: '{{ cfg.private_dir }}/rabbitmq.yaml', remote_src: true, mode: '0600'}
+  when: not rabbitmq_files.results[0].stat.exists and rabbitmq_files.results[1].stat.exists
+  no_log: true
+- name: Refuse to regenerate a declared RabbitMQ identity
+  ansible.builtin.assert:
+    quiet: true
+    that: rabbitmq_files.results[0].stat.exists or rabbitmq_files.results[1].stat.exists or (query('fileglob', component_root + '/rabbitmq/provision.sops.yaml') | length == 0)
+- name: Create an independent RabbitMQ password only on first preparation
+  ansible.builtin.copy:
+    dest: '{{ cfg.private_dir }}/rabbitmq.yaml'
+    force: false
+    mode: '0600'
+    content: |
+      password: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
+  when: not rabbitmq_files.results[0].stat.exists and not rabbitmq_files.results[1].stat.exists
+  no_log: true
+- name: Preserve the independent RabbitMQ credential backup
+  ansible.builtin.copy: {src: '{{ cfg.private_dir }}/rabbitmq.yaml', dest: '{{ cfg.backup_dir }}/rabbitmq.yaml', remote_src: true, force: false, mode: '0600'}
+  no_log: true
+- name: Verify RabbitMQ input against its non-overwritten backup
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/rabbitmq.yaml', '{{ cfg.backup_dir }}/rabbitmq.yaml']}
+  changed_when: false
+  no_log: true
+- name: Read private RabbitMQ input without logging
+  ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/rabbitmq.yaml'}
+  register: rabbitmq_input
+  no_log: true
+- name: Decode private RabbitMQ credentials in memory
+  ansible.builtin.set_fact:
+    rabbitmq_credentials: '{{ rabbitmq_input.content | b64decode | from_yaml }}'
+  no_log: true
+- name: Require a strong distinct application RabbitMQ password
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - rabbitmq_credentials.password is match('^[a-zA-Z0-9]{40}$')
+      - rabbitmq_credentials.password != app_credentials.runtime_password
+      - rabbitmq_credentials.password != app_credentials.migrator_password
+      - rabbitmq_credentials.password != redis_credentials.password
+  no_log: true
+- name: Inspect recoverable browser identity credential input
+  ansible.builtin.stat: {path: '{{ item }}/identity.yaml', follow: false}
+  loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+  register: identity_files
+  no_log: true
+- name: Require root-only regular browser identity input files
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ identity_files.results }}'
+  no_log: true
+- name: Restore a preserved browser identity input without rotating its password
+  ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/identity.yaml', dest: '{{ cfg.private_dir }}/identity.yaml', remote_src: true, mode: '0600'}
+  when: not identity_files.results[0].stat.exists and identity_files.results[1].stat.exists
+  no_log: true
+- name: Refuse to regenerate a declared browser identity identity
+  ansible.builtin.assert:
+    quiet: true
+    that: identity_files.results[0].stat.exists or identity_files.results[1].stat.exists or (query('fileglob', component_root + '/identity/provision.sops.yaml') | length == 0)
+- name: Create an independent browser identity password only on first preparation
+  ansible.builtin.copy:
+    dest: '{{ cfg.private_dir }}/identity.yaml'
+    force: false
+    mode: '0600'
+    content: |
+      web_secret: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
+      admin_secret: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
+  when: not identity_files.results[0].stat.exists and not identity_files.results[1].stat.exists
+  no_log: true
+- name: Preserve the independent browser identity credential backup
+  ansible.builtin.copy: {src: '{{ cfg.private_dir }}/identity.yaml', dest: '{{ cfg.backup_dir }}/identity.yaml', remote_src: true, force: false, mode: '0600'}
+  no_log: true
+- name: Verify browser identity input against its non-overwritten backup
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/identity.yaml', '{{ cfg.backup_dir }}/identity.yaml']}
+  changed_when: false
+  no_log: true
+- name: Read private browser identity input without logging
+  ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/identity.yaml'}
+  register: identity_input
+  no_log: true
+- name: Decode private browser identity credentials in memory
+  ansible.builtin.set_fact:
+    identity_credentials: '{{ identity_input.content | b64decode | from_yaml }}'
+  no_log: true
+- name: Require a strong distinct application browser identity password
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - identity_credentials.web_secret is match('^[a-zA-Z0-9]{40}$')
+      - identity_credentials.admin_secret is match('^[a-zA-Z0-9]{40}$')
+      - identity_credentials.web_secret != identity_credentials.admin_secret
+  no_log: true
+- name: Prepare recoverable application TLS material
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ cfg.private_dir }}'
+    tls_backup_dir: '{{ cfg.backup_dir }}'
+    tls_declaration: '{{ component_root }}/runtime/tls.sops.yaml'
+    tls_hostnames: ['{{ cfg.web_origin | urlsplit("hostname") }}', '{{ cfg.admin_origin | urlsplit("hostname") }}']
+- name: Prepare independent versioned object storage inputs when enabled
+  ansible.builtin.include_tasks: '{{ mechanism_root }}/storage/prepare.yaml'
+  when: storage_enabled | bool
+- name: Prepare independent knowledge provider and upstream read-only identity
+  ansible.builtin.include_tasks: '{{ component_root }}/provider/prepare.yaml'
+  when: provider_enabled | bool
+- name: Prepare an independent relation-specific service identity
+  ansible.builtin.include_tasks: '{{ mechanism_root }}/service-identity/prepare.yaml'
+  when: service_enabled | bool
+- name: Bind runtime rollout to public configuration and private input changes
+  ansible.builtin.set_fact:
+    runtime_config_digest: '{{ (([cfg, browser_clients, secret_input.content, redis_input.content, rabbitmq_input.content, identity_input.content] + ([s3_input.content] if storage_enabled | bool else []) + ([provider_runtime_data] if provider_enabled | bool else []) + ([workload_input.content,service_access_hosts] if service_enabled | bool else []) + ([service_bindings,service_access_hosts] if receiver_enabled | bool else [])) | to_json) | hash("sha256") }}'
+  no_log: true
+- name: Prepare public candidate directories
+  ansible.builtin.file: {path: '{{ build }}/{{ application_object }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+  loop: '{{ ["database","migration","redis","rabbitmq","identity","runtime"] + (["storage"] if storage_enabled | bool else []) }}'
+- name: Render the shared mechanics into the selected component candidates
+  ansible.builtin.template:
+    src: '{{ mechanism_root }}/{{ item.source }}.j2'
+    dest: '{{ build }}/{{ application_object }}/{{ item.dest }}'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+  loop:
+    - {source: database/workload.yaml, dest: database/workload.yaml}
+    - {source: migration/workload.yaml, dest: migration/workload.yaml}
+    - {source: redis/workload.yaml, dest: redis/workload.yaml}
+    - {source: rabbitmq/workload.yaml, dest: rabbitmq/workload.yaml}
+    - {source: identity/workload.yaml, dest: identity/workload.yaml}
+    - {source: runtime/workload.yaml, dest: runtime/workload.yaml}
+- name: Render the optional storage provisioning stage
+  ansible.builtin.template:
+    src: '{{ mechanism_root }}/storage/workload.yaml.j2'
+    dest: '{{ build }}/{{ application_object }}/storage/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+  when: storage_enabled | bool
+- name: Derive independent connection URLs without logging
+  ansible.builtin.set_fact:
+    runtime_url: 'postgresql+asyncpg://{{ cfg.database_runtime_user }}:{{ app_credentials.runtime_password }}@postgresql.{{ data_namespace }}.svc.cluster.local:5432/{{ cfg.database }}'
+    migrator_url: 'postgresql+asyncpg://{{ cfg.database_migrator_user }}:{{ app_credentials.migrator_password }}@postgresql.{{ data_namespace }}.svc.cluster.local:5432/{{ cfg.database }}'
+  no_log: true
+- name: Encrypt credentials with the shared SOPS mechanism and verify recovery
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  loop:
+    - file: '{{ application_object }}/database/bootstrap.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-database-bootstrap', namespace: '{{ data_namespace }}'}
+        stringData: '{{ app_credentials }}'
+    - file: '{{ application_object }}/database/runtime.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-database-runtime', namespace: '{{ cfg.namespace }}'}
+        stringData: {DATABASE_URL: '{{ runtime_url }}'}
+    - file: '{{ application_object }}/migration/auth.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-migration-auth', namespace: '{{ cfg.namespace }}'}
+        stringData: {DATABASE_URL: '{{ runtime_url }}', MIGRATION_DATABASE_URL: '{{ migrator_url }}'}
+    - file: '{{ application_object }}/redis/provision.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-redis-provision', namespace: '{{ data_namespace }}'}
+        stringData: {password: '{{ redis_credentials.password }}'}
+    - file: '{{ application_object }}/redis/runtime.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-redis-runtime', namespace: '{{ cfg.namespace }}'}
+        stringData: {REDIS_USER: '{{ cfg.redis_user }}', REDIS_PASSWORD: '{{ redis_credentials.password }}'}
+    - file: '{{ application_object }}/rabbitmq/provision.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-rabbitmq-provision', namespace: '{{ messaging_namespace }}'}
+        stringData: {password: '{{ rabbitmq_credentials.password }}'}
+    - file: '{{ application_object }}/rabbitmq/runtime.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-rabbitmq-runtime', namespace: '{{ cfg.namespace }}'}
+        stringData:
+          CELERY_BROKER_URL: 'amqp://{{ cfg.rabbitmq_user }}:{{ rabbitmq_credentials.password }}@rabbitmq.{{ messaging_namespace }}.svc.cluster.local:5672/{{ cfg.rabbitmq_vhost }}'
+    - file: '{{ application_object }}/identity/provision.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-identity-provision', namespace: '{{ app_namespace }}'}
+        stringData: {clients.json: '{{ identity_credentials | to_json }}'}
+    - file: '{{ application_object }}/identity/runtime.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-browser-secrets', namespace: '{{ app_namespace }}'}
+        stringData: {WEB_CASDOOR_CLIENT_SECRET: '{{ identity_credentials.web_secret }}', ADMIN_CASDOOR_CLIENT_SECRET: '{{ identity_credentials.admin_secret }}'}
+    - file: '{{ application_object }}/runtime/tls.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-tls', namespace: '{{ app_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+  loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
+  no_log: true

@@ -1,0 +1,9 @@
+---
+# Per-user sandbox factory. Default off until the image is rebuilt for restricted PSS and parameterized namespaces.
+services_sandbox_provisioner_enabled: false
+sandbox_provisioner_port: 8080
+sandbox_pvc_size: 2Gi
+knowledge_mcp_url: 'http://knowledge-backend.{{ app_namespace }}.svc.cluster.local:8000/api/mcp/knowledge'
+sandbox_provisioner_resources:
+  requests: {cpu: 50m, memory: 64Mi}
+  limits: {cpu: 500m, memory: 256Mi}

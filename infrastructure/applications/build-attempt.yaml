@@ -1,0 +1,91 @@
+---
+# Included at most twice: configured mode, then official-proxy on a download error.
+- name: Reset diagnostics for this attempt
+  ansible.builtin.set_fact:
+    image_build: {}
+- name: Run one bounded build attempt and preserve its private diagnostics
+  block:
+    - name: Require an explicit HTTP proxy endpoint for official sources
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - lookup('env', 'HTTPS_PROXY') is match('^https?://[^ ]+$')
+        fail_msg: '官方源模式需要HTTPS_PROXY；请开启代理、配置该环境变量后重新运行原命令。当前非零退出，不等待交互。'
+      when: download_profile.proxy
+    - name: Check the configured proxy against the selected official source
+      ansible.builtin.command:
+        argv: [curl, --silent, --show-error, --fail, --location, --connect-timeout, '10', --max-time, '30', --noproxy, '', --output, /dev/null, --write-out, '%{http_code} remote=%{remote_ip} connect=%{http_connect}', '{{ download_profile.npm_registry + "/" if build_component != "backend" else download_profile.python_index + "/uv/" }}']
+      environment:
+        HTTPS_PROXY: '{{ lookup("env", "HTTPS_PROXY") }}'
+        HTTP_PROXY: '{{ lookup("env", "HTTPS_PROXY") }}'
+        https_proxy: ''
+        http_proxy: ''
+        ALL_PROXY: ''
+        all_proxy: ''
+        NO_PROXY: ''
+        no_proxy: ''
+      register: proxy_probe
+      changed_when: false
+      failed_when: false
+      no_log: true
+      when: download_profile.proxy
+    - name: Stop when the proxy or official source is unavailable
+      ansible.builtin.assert:
+        quiet: true
+        that: [proxy_probe.rc == 0]
+        fail_msg: '代理或官方源HTTPS探测失败（curl={{ proxy_probe.rc }}，HTTP={{ proxy_probe.stdout | default("无响应") }}）。请开启/修复HTTPS_PROXY对应代理后重新执行原命令；不会等待输入，也不会开始构建重试。TLS验证保持开启。'
+      when: download_profile.proxy
+    - name: Identify the build by source, recipe, base and runtime target
+      ansible.builtin.set_fact:
+        build_input:
+          source_revision: '{{ component_revision }}'
+          parent_revision: '{{ source_lock.parent_revision }}'
+          parent_gitlink_revision: '{{ parent_gitlink_revision }}'
+          context: '{{ component.context }}'
+          requested_download_mode: '{{ application_download_mode }}'
+          download_mode: '{{ effective_download_mode }}'
+          download_profile: '{{ download_profile }}'
+          source_projection_sha256: '{{ lookup("file", application_directory + "/select-python-source.py", rstrip=false) | hash("sha256") }}'
+          dockerfile_sha256: '{{ recipe.stdout | hash("sha256") }}'
+          image_arguments: '{{ component.args + (["--build-arg=NPM_CONFIG_REGISTRY=" + download_profile.npm_registry] if build_component != "backend" else ["--build-arg=PYPI_INDEX_URL=" + download_profile.python_index]) }}'
+          target: '{{ component.target }}'
+    - name: Select Python URLs in the disposable context without changing dependency identities
+      ansible.builtin.command:
+        argv: [python3, '{{ application_directory }}/select-python-source.py', '--context={{ staging.path }}/context', '--mode={{ effective_download_mode }}']
+      register: python_projection
+      changed_when: python_projection.rc == 0 and (python_projection.stdout | from_json).changed
+      when: build_component == 'backend'
+    - name: Record the effective Python input identities
+      ansible.builtin.set_fact:
+        build_input: '{{ build_input | combine({"python_sources": python_projection.stdout | from_json}) }}'
+      when: build_component == 'backend'
+    - name: Derive immutable local build name from all effective inputs
+      ansible.builtin.set_fact:
+        local_tag: 'sunmoon-build/{{ component.repository }}:{{ component_revision[:12] }}-{{ (build_input | to_json | hash("sha256"))[:12] }}'
+    - name: Build using the committed recipe and locked base images
+      ansible.builtin.command:
+        argv: '{{ ["docker", "build", "--network=host", "--progress=plain", "--target=" + component.target, "--file=" + staging.path + "/context/" + component.dockerfile, "--tag=" + local_tag, "--build-arg=HTTP_PROXY", "--build-arg=HTTPS_PROXY", "--build-arg=NO_PROXY", "--label=org.opencontainers.image.revision=" + component_revision, "--label=org.opencontainers.image.source=https://github.com/sunmoonlion/" + component.repository] + build_input.image_arguments + [staging.path + "/context"] }}'
+      environment:
+        DOCKER_CONFIG: '{{ staging.path }}/auth'
+        # Buildx token authentication runs in the client; daemon certs.d is insufficient.
+        SSL_CERT_FILE: '{{ registry_config_dir }}/clients/ca.crt'
+        HTTP_PROXY: '{{ lookup("env", "HTTPS_PROXY") if download_profile.proxy else "" }}'
+        HTTPS_PROXY: '{{ lookup("env", "HTTPS_PROXY") if download_profile.proxy else "" }}'
+        ALL_PROXY: ''
+        http_proxy: ''
+        https_proxy: ''
+        all_proxy: ''
+        NO_PROXY: '{{ registry_hostname }},127.0.0.1,localhost'
+        no_proxy: '{{ registry_hostname }},127.0.0.1,localhost'
+      timeout: 1200
+      register: image_build
+      changed_when: true
+      no_log: true
+  always:
+    - name: Retain diagnostics separately for each attempted mode
+      ansible.builtin.copy:
+        dest: '{{ build_root }}/{{ component.repository }}-build-{{ effective_download_mode }}.log'
+        mode: '0600'
+        content: '{{ image_build.stdout | default("") }}{{ image_build.stderr | default("") }}'
+      when: image_build.stderr is defined or image_build.stdout is defined
+      no_log: true

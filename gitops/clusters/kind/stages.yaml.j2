@@ -1,0 +1,28 @@
+{% for stage in component_stages if stage.enabled | bool %}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: {{ stage.name }}, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: {{ stage.timeout }}
+  path: ./components/{{ stage.path }}
+  sourceRef: {kind: OCIRepository, name: platform}
+{% if stage.dependencies %}
+  dependsOn:
+{% for dependency in stage.dependencies %}
+    - {name: {{ dependency }}}
+{% endfor %}
+{% endif %}
+  prune: false
+  deletionPolicy: Orphan
+  wait: {{ stage.wait | default(true) | lower }}
+{% if stage.health_checks | default([]) %}
+  healthChecks:
+{{ stage.health_checks | to_nice_yaml(indent=2) | indent(4, true) }}
+{% endif %}
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+{% endfor %}

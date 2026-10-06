@@ -1,0 +1,14 @@
+{
+  "domestic": {
+    "npm_registry": "https://registry.npmmirror.com",
+    "python_index": "https://pypi.tuna.tsinghua.edu.cn/simple",
+    "python_packages": "https://pypi.tuna.tsinghua.edu.cn/packages/",
+    "proxy": false
+  },
+  "official-proxy": {
+    "npm_registry": "https://registry.npmjs.org",
+    "python_index": "https://pypi.org/simple",
+    "python_packages": "https://files.pythonhosted.org/packages/",
+    "proxy": true
+  }
+}

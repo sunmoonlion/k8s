@@ -1,0 +1,7 @@
+# 已实际构建发布并以独立 Harbor 只读身份核对。
+---
+repository: investment-web-frontend
+digest: sha256:0f5f4b183b7b737ebb23bb2c7efa0ea5c43132c472fada097c5da61faba093d5
+source_revision: 745dfe697eca3d7aee746b782024d8f454f44c78
+# Component deployment identity; migrated from the unchanged existing workload.
+deployment_id: investment-93185775a849faf4

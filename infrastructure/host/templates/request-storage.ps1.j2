@@ -1,0 +1,27 @@
+# Request the already registered owner task; no UAC or task registration here.
+$ErrorActionPreference = 'Stop'
+$Task = Get-ScheduledTask -TaskName 'sunmoon-data-mount' -TaskPath '\'
+$Launcher = '{{ windows_launcher_script }}'
+if (Test-Path -LiteralPath 'C:\wsl-disks\sunmoon-data.maintenance') { throw 'Storage maintenance active' }
+if (-not $Task.Settings.Enabled -or $Task.Principal.RunLevel -ne 'Highest' -or $Task.Principal.LogonType -ne 'Interactive' -or @($Task.Actions).Count -ne 1 -or $Task.Actions[0].Arguments -ne ('//B //Nologo "' + $Launcher + '"') -or $Task.Actions[0].Execute -ne (Join-Path $env:SystemRoot 'System32\wscript.exe')) { throw 'Attachment task is absent, disabled or still points to the historical implementation' }
+$Principal = [string]$Task.Principal.UserId
+if ($Principal -match '^S-1-') { $Sid = ([Security.Principal.SecurityIdentifier]$Principal).Value }
+else {
+    if ($Principal -notmatch '[\\@]') { $Principal = $env:COMPUTERNAME + '\' + $Principal }
+    $Sid = ([Security.Principal.NTAccount]$Principal).Translate([Security.Principal.SecurityIdentifier]).Value
+}
+if ($Sid -ne [Security.Principal.WindowsIdentity]::GetCurrent().User.Value) { throw 'Task belongs to a different WSL owner' }
+$Requested = Get-Date
+$Joined = $Task.State -eq 'Running'
+if (-not $Joined) { Start-ScheduledTask -TaskName 'sunmoon-data-mount' -TaskPath '\' }
+$Deadline = (Get-Date).AddSeconds(120)
+do {
+    Start-Sleep -Seconds 1
+    $Info = Get-ScheduledTaskInfo -TaskName 'sunmoon-data-mount' -TaskPath '\'
+    $Task = Get-ScheduledTask -TaskName 'sunmoon-data-mount' -TaskPath '\'
+    if (($Joined -or $Info.LastRunTime -ge $Requested.AddSeconds(-1)) -and $Task.State -ne 'Running') {
+        if ($Info.LastTaskResult -ne 0) { throw 'Attachment task failed; services remain blocked' }
+        exit 0
+    }
+} while ((Get-Date) -lt $Deadline)
+throw 'Attachment task timed out; do not start services'

@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: '{{ application_name }}-schema-check-{{ cfg.migration_job_revision }}', namespace: {{ cfg.namespace }}}
+data:
+  verify.py: |
+{{ lookup('template', mechanism_root + '/migration/verify-database.py.j2') | regex_replace('\n+$', '') | indent(4, true) }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: '{{ migration_job }}', namespace: {{ cfg.namespace }}}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 420
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: {{ application_name }}-migration, app.kubernetes.io/part-of: {{ application_name }}, sunmoonai.com/postgresql-client: 'true'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ application_name }}-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: migrate
+          image: {{ registry_address }}/platform/{{ app_images.backend.repository }}@{{ app_images.backend.digest }}
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
+          envFrom: [{secretRef: {name: {{ application_name }}-migration-auth}}]
+          env:
+            - {name: ENV, value: production}
+            - {name: DEPLOYMENT_ID, value: '{{ app_images.backend.source_revision }}'}
+            - {name: ADMIN_FRONTEND_BASE_URL, value: '{{ cfg.admin_origin }}'}
+            - {name: WEB_FRONTEND_BASE_URL, value: '{{ cfg.web_origin }}'}
+            - {name: EXPECTED_SCHEMA_REVISION, value: '{{ cfg.expected_schema_revision }}'}
+          command: [/bin/sh, -ec]
+          args: ['python -m app.bootstrap.migration upgrade && python /verify/verify.py']
+          volumeMounts:
+            - {name: verify, mountPath: /verify, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: verify, configMap: {name: '{{ application_name }}-schema-check-{{ cfg.migration_job_revision }}'}}
+        - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

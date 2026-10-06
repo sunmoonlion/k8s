@@ -1,0 +1,133 @@
+---
+- name: Install verified binary tools into this worktree only
+  hosts: kind_hosts
+  gather_facts: false
+  become: false
+  vars:
+    binary_ids: kind,kubectl,kubeadm
+    file_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    available: '{{ file_lock.files | selectattr("kind", "equalto", "binary") | list }}'
+    selected: '{{ available if binary_ids == "all" else available | selectattr("id", "in", binary_ids.split(",")) | list }}'
+    tool_root: '{{ playbook_dir }}/../.tools'
+    executable_names:
+      compose: docker-compose
+  tasks:
+    - name: Validate selected tools
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - ansible_version.full == '2.21.4'
+          - file_lock.schema_version == 1
+          - file_lock.platform == 'linux/amd64'
+          - selected | length > 0
+          - binary_ids == 'all' or binary_ids.split(',') | difference(available | map(attribute='id') | list) | length == 0
+        fail_msg: Select locked binary IDs; use plan-artifacts to inspect material first.
+
+    - name: Validate binary file descriptors
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.id is match('^[a-z][a-z0-9-]*$')
+          - item.path is match('^(cluster|host|registry|shared|components)/[a-z0-9-]+(/[a-z0-9-]+)*/bin/[a-zA-Z0-9_.-]+$')
+          - "'..' not in item.path.split('/')"
+          - item.sha256 is match('^[a-f0-9]{64}$')
+          - item.size_bytes | int > 0
+      loop: '{{ selected }}'
+      loop_control:
+        label: '{{ item.id }}'
+
+    - name: Check exact source files without following symlinks
+      ansible.builtin.stat:
+        path: '{{ artifact_cache_root }}/{{ item.path }}'
+        follow: false
+        checksum_algorithm: sha256
+      loop: '{{ selected }}'
+      loop_control:
+        label: '{{ item.id }}'
+      register: sources
+
+    - name: Require verified inputs before installing anything
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.stat.isreg | default(false)
+          - item.stat.checksum | default('') == item.item.sha256
+          - item.stat.size | default(0) == item.item.size_bytes
+        fail_msg: '{{ item.item.id }} missing or invalid; use fetch-artifacts.'
+      loop: '{{ sources.results }}'
+      loop_control:
+        label: '{{ item.item.id }}'
+
+    - name: Inspect installation directories
+      ansible.builtin.stat:
+        path: '{{ item }}'
+        follow: false
+      loop: ['{{ tool_root }}', '{{ tool_root }}/bin']
+      register: directories
+
+    - name: Require private installation directories
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.exists or item.stat.isdir | default(false)
+          - not item.stat.islnk | default(false)
+      loop: '{{ directories.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Check Windows capacity for copies and temporary files
+      ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+      vars:
+        capacity_planned_bytes: '{{ (selected | map(attribute="size_bytes") | sum) * 2 }}'
+
+    - name: Check worktree filesystem free bytes
+      ansible.builtin.command:
+        argv: [df, -B1, '--output=avail', '{{ playbook_dir }}/..']
+      changed_when: false
+      register: filesystem_capacity
+
+    - name: Require space for verified tool copies
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - filesystem_capacity.stdout_lines[-1] | trim | int >= (selected | map(attribute='size_bytes') | sum) * 2
+
+    - name: Create the private binary directory
+      ansible.builtin.file:
+        path: '{{ tool_root }}/bin'
+        state: directory
+        mode: '0755'
+
+    - name: Install locked binary copies
+      ansible.builtin.copy:
+        src: '{{ artifact_cache_root }}/{{ item.path }}'
+        dest: '{{ tool_root }}/bin/{{ executable_names[item.id] | default(item.id) }}'
+        remote_src: true
+        follow: false
+        mode: '0755'
+      loop: '{{ selected }}'
+      loop_control:
+        label: '{{ item.id }}'
+
+    - name: Read installed binary identities
+      ansible.builtin.stat:
+        path: '{{ tool_root }}/bin/{{ executable_names[item.id] | default(item.id) }}'
+        follow: false
+        checksum_algorithm: sha256
+      loop: '{{ selected }}'
+      loop_control:
+        label: '{{ item.id }}'
+      register: installed
+
+    - name: Require installed bytes to match the file lock
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.stat.isreg | default(false)
+          - item.stat.checksum | default('') == item.item.sha256
+          - item.stat.size | default(0) == item.item.size_bytes
+          - item.stat.executable | default(false)
+      loop: '{{ installed.results }}'
+      loop_control:
+        label: '{{ item.item.id }}'

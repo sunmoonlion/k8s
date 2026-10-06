@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Service
+metadata: {name: pgadmin, namespace: ops-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: pgadmin}
+  ports: [{name: http, port: 5050, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: pgadmin, namespace: ops-platform-dev}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app.kubernetes.io/name: pgadmin}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: pgadmin, sunmoonai.com/postgresql-client: 'true'}
+      annotations: {sunmoonai.com/input-sha256: 'deed1cdf8d73d524deb24f5dcb8c3b9b66431bb2618d27f4727314f7cb2ec56e'}
+    spec:
+      serviceAccountName: platform-runtime
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: 'sunmoon-kind-worker2'}
+      securityContext: {runAsNonRoot: true, runAsUser: 5050, runAsGroup: 5050, fsGroup: 5050, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: pgadmin
+          image: harbor.sunmoonai.com:30443/platform/pgadmin@sha256:33eb7d070ee7500d1513453773f61df1256fdea08257d4a3f4aebd8cf1cc87cf
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: PGADMIN_LISTEN_ADDRESS, value: 0.0.0.0}
+            - {name: PGADMIN_LISTEN_PORT, value: '5050'}
+            - {name: PGADMIN_CONFIG_SERVER_MODE, value: 'True'}
+          envFrom: [{secretRef: {name: pgadmin-auth}}]
+          ports: [{name: http, containerPort: 5050}]
+          startupProbe: {httpGet: {path: /misc/ping, port: http}, periodSeconds: 5, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /misc/ping, port: http}, periodSeconds: 10, timeoutSeconds: 3}
+          livenessProbe: {httpGet: {path: /misc/ping, port: http}, periodSeconds: 20, timeoutSeconds: 3}
+          resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "1", "memory": "768Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/pgadmin}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: pgadmin-data}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: pgadmin
+  namespace: ops-platform-dev
+  annotations: {kubernetes.io/ingress.class: sunmoon}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: 'Host(`pgadmin.sunmoonai.com`)'
+      services: [{name: pgadmin, port: http, scheme: http}]
+  tls: {secretName: pgadmin-tls}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: pgadmin-ingress, namespace: ops-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: pgadmin}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: 'ingress-platform-dev'}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: 5050}]

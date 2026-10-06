@@ -1,0 +1,9 @@
+# 浏览器入口；后端身份配置读取同一来源。运行配置与本组件声明同处。
+---
+info_web_deployment:
+  origin: https://info.sunmoonai.com:30443
+  casdoor_application: sunmoonai-info-web
+  casdoor_client_id: sunmoon-kind-info-web
+  port: 3000
+  replicas: 1
+  resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}

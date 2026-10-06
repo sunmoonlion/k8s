@@ -1,0 +1,135 @@
+apiVersion: v1
+kind: Service
+metadata: {name: logstash, namespace: data-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: logstash}
+  ports: [{name: ingest, port: 8080, targetPort: ingest}]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: logstash-settings, namespace: data-platform-dev}
+data:
+  logstash.yml: |
+    node.name: sunmoon-logstash
+    path.data: /usr/share/logstash/data
+    pipeline.workers: 2
+    pipeline.batch.size: 125
+    queue.type: persisted
+    queue.max_bytes: 512mb
+    queue.checkpoint.writes: 1
+    api.enabled: true
+    api.http.host: 127.0.0.1
+    api.http.port: 9600
+    xpack.monitoring.enabled: false
+    config.debug: false
+    log.level: info
+  pipelines.yml: |
+    - pipeline.id: sunmoon-logs
+      path.config: /pipeline/main.conf
+      pipeline.ecs_compatibility: v8
+  main.conf: |
+    input {
+      http {
+        host => "0.0.0.0"
+        port => 8080
+        user => "sunmoon_log_ingest"
+        password => "${LOGSTASH_INGEST_PASSWORD}"
+        ssl_enabled => true
+        ssl_certificate => "/run/auth/public.crt"
+        ssl_key => "/run/auth/private.key"
+        max_content_length => 8388608
+        max_pending_requests => 32
+        threads => 2
+      }
+    }
+    output {
+      elasticsearch {
+        hosts => ["https://elasticsearch.data-platform-dev.svc.cluster.local:9200"]
+        user => "sunmoon_log_writer"
+        password => "${LOGSTASH_WRITER_PASSWORD}"
+        ssl_certificate_authorities => ["/run/auth/ca.crt"]
+        ssl_verification_mode => "full"
+        index => "sunmoon-logs-%{+YYYY.MM.dd}"
+        data_stream => false
+        ilm_enabled => false
+        manage_template => false
+      }
+    }
+  log4j2.properties: |
+    status = error
+    appender.console.type = Console
+    appender.console.name = console
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = %d{ISO8601} [%p] %c - %m%n
+    rootLogger.level = info
+    rootLogger.appenderRef.console.ref = console
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: logstash, namespace: data-platform-dev}
+spec:
+  serviceName: logstash
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector: {matchLabels: {app.kubernetes.io/name: logstash}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: logstash, sunmoonai.com/elasticsearch-client: 'true'}
+      annotations: {sunmoonai.com/input-sha256: '3c6df58bbfa99d9bd7ccffb26b088def47be1479224f3df3bcdbc35fd3b151b6'}
+    spec:
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: 'sunmoon-kind-worker2'}
+      terminationGracePeriodSeconds: 120
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      initContainers:
+        - name: prepare-config
+          image: harbor.sunmoonai.com:30443/platform/logstash@sha256:d199a24727742f0433f99ed38b00165f767cffb23c2efffb32777c05ecdcc691
+          command: [sh, -ec]
+          args: ['cp -R /usr/share/logstash/config/. /work-config/; cp /settings/logstash.yml /settings/pipelines.yml /settings/log4j2.properties /work-config/']
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: config, mountPath: /work-config}
+            - {name: settings, mountPath: /settings, readOnly: true}
+      containers:
+        - name: logstash
+          image: harbor.sunmoonai.com:30443/platform/logstash@sha256:d199a24727742f0433f99ed38b00165f767cffb23c2efffb32777c05ecdcc691
+          command: [/usr/share/logstash/bin/logstash]
+          args: [--path.settings, /usr/share/logstash/config]
+          env:
+            - {name: LS_JAVA_OPTS, value: '-Xms1g -Xmx1g'}
+            - {name: LOGSTASH_INGEST_PASSWORD, valueFrom: {secretKeyRef: {name: logstash-auth, key: ingest-password}}}
+            - {name: LOGSTASH_WRITER_PASSWORD, valueFrom: {secretKeyRef: {name: logstash-auth, key: writer-password}}}
+          ports: [{name: ingest, containerPort: 8080}]
+          startupProbe: {tcpSocket: {port: ingest}, periodSeconds: 5, failureThreshold: 120}
+          readinessProbe: {tcpSocket: {port: ingest}, periodSeconds: 10}
+          livenessProbe: {tcpSocket: {port: ingest}, periodSeconds: 30, failureThreshold: 5}
+          resources: {"requests": {"cpu": "250m", "memory": "1536Mi"}, "limits": {"cpu": "2", "memory": "2Gi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: data, mountPath: /usr/share/logstash/data}
+            - {name: config, mountPath: /usr/share/logstash/config}
+            - {name: settings, mountPath: /pipeline, readOnly: true}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: logstash-data}}
+        - {name: config, emptyDir: {sizeLimit: 32Mi}}
+        - {name: settings, configMap: {name: logstash-settings}}
+        - {name: auth, secret: {secretName: logstash-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 256Mi}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: logstash-clients, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: logstash}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: 'sunmoon-log-collector'}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: fluent-bit}
+      ports: [{protocol: TCP, port: 8080}]

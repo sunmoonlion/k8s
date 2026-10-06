@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sunmoon-kind-redis
+  annotations:
+    sunmoonai.com/storage-owner: sunmoon-kind
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  capacity: {storage: 2Gi}
+  accessModes: [ReadWriteOnce]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: sunmoon-static
+  local:
+    path: /data/kind-local-storage/redis
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [sunmoon-kind-worker2]
+  claimRef:
+    namespace: data-platform-dev
+    name: redis-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data
+  namespace: data-platform-dev
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: sunmoon-static
+  volumeName: sunmoon-kind-redis
+  resources:
+    requests: {storage: 2Gi}

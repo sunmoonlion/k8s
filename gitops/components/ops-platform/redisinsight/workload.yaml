@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Service
+metadata: {name: redisinsight, namespace: ops-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: redisinsight}
+  ports: [{name: http, port: 5540, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: redisinsight, namespace: ops-platform-dev}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app.kubernetes.io/name: redisinsight}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: redisinsight, sunmoonai.com/redis-client: 'true'}
+      annotations: {sunmoonai.com/input-sha256: 'cf4395fd7c6fd2a4eb788ab9905dfb7f242d678c5d164c759a94f2f9037d6e4e'}
+    spec:
+      serviceAccountName: platform-runtime
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: 'sunmoon-kind-worker2'}
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: redisinsight
+          image: harbor.sunmoonai.com:30443/platform/redisinsight@sha256:0131987fd5fefe3828ed33666f9742bd071b729f5a95cf923c593c14a8995c2c
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: RI_APP_PORT, value: '5540'}
+            - {name: RI_APP_HOST, value: 0.0.0.0}
+          ports: [{name: http, containerPort: 5540}]
+          startupProbe: {tcpSocket: {port: http}, periodSeconds: 5, failureThreshold: 60}
+          readinessProbe: {tcpSocket: {port: http}, periodSeconds: 10, timeoutSeconds: 3}
+          livenessProbe: {tcpSocket: {port: http}, periodSeconds: 20, timeoutSeconds: 3}
+          resources: {"requests": {"cpu": "50m", "memory": "256Mi"}, "limits": {"cpu": "1", "memory": "768Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: redisinsight-data}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: redisinsight
+  namespace: ops-platform-dev
+  annotations: {kubernetes.io/ingress.class: sunmoon}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: 'Host(`redisinsight.sunmoonai.com`)'
+      services: [{name: redisinsight, port: http, scheme: http}]
+  tls: {secretName: redisinsight-tls}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: redisinsight-ingress, namespace: ops-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: redisinsight}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: 'ingress-platform-dev'}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: 5540}]

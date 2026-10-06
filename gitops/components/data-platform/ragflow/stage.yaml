@@ -1,0 +1,26 @@
+# 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
+# enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
+---
+defaults: {enabled: '{{ services_enabled and services_ragflow_enabled }}'}
+stages:
+- name: ragflow-database
+  path: database
+  dependsOn: [postgresql]
+  images: [postgresql]
+  resources: [workload.yaml, bootstrap.sops.yaml]
+- name: ragflow-storage
+  path: storage
+  dependsOn: [object-storage]
+  images: [aistor-mc]
+  resources: [workload.yaml, provision.sops.yaml]
+- name: ragflow-initialize
+  path: initialize
+  dependsOn: [ragflow-database, ragflow-storage]
+  images: [ragflow]
+  timeout: 20m
+  resources: [workload.yaml, auth.sops.yaml]
+- name: ragflow-runtime
+  path: runtime
+  dependsOn: [ragflow-initialize, infinity, valkey, text-embeddings]
+  images: [ragflow]
+  resources: [workload.yaml, auth.sops.yaml]

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: investment-redis-provision
+    namespace: data-platform-dev
+stringData:
+    password: ENC[AES256_GCM,data:awgcvkcDB4kgATL6odYfHxCiSb/sQHbT75KS3HJh3yxrxvzl0J/uZA==,iv:0EWEHh+1Xf/dGKHMgwREtVBIaNqqkPa615yFemzrXoU=,tag:kTUDGeQHytL6lnhgr9z05w==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAxU1BaQzBLMG1aYytRTkVH
+            WWwreElGWEZPR25pSzltdDhTSkU1NzJmTkIwCmtMUkcrL3YzTWlnVlBUNUk1TDdQ
+            dUdFeXJJZWxmd2tRMm1sZGFTdjdmUGsKLS0tIFR2UWhNb1Z2OHhIVCtQR2RmaTVl
+            dnBQU21VeGQzNG8rYXIyMGxleGNFR1kKtxWa8+S631MzrnRTBl2VmtlL8oJwpugT
+            BvjKl5k9xpS11mCV30HR8aq+Hcl5/eTzNN4XSOjg+fT/vXxuHJbmyA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:32:19Z"
+    mac: ENC[AES256_GCM,data:wxpe5PTJZTrZtc2drOxRppnYoobWL/23rm/BIFgkn1FfHX+JwUb1EaO/6oAjlA9+DDXsMpA4vICqY3w6g719p7TZ36XXgCMnkiX87ZTZ1Cevz66hkj4Rt6BgOROcu3mtETlzEFZHpyAvjqhG7JJ6w8N7yLxhUQFI7ER82fGKZ+4=,iv:eHb5SPmMG1X5xBTe2XwXM9MdqX7vZDfGXwiW5jCxjQg=,tag:ntsfRyC5UZKTLZ33V1OuSw==,type:str]
+    version: 3.13.3

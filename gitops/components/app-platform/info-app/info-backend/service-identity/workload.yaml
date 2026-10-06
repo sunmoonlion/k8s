@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: 'info-service-provision-v1', namespace: app-platform-dev}
+data:
+  provision.py: |
+    """Create a relation-specific M2M application in an otherwise empty organization."""
+    from datetime import datetime, timezone
+    import base64
+    import json
+    import os
+    from pathlib import Path
+    from urllib.parse import urlsplit
+    import httpx
+    from joserfc import jwt
+    from joserfc.jwk import KeySet
+    from joserfc.jwt import JWTClaimsRegistry
+
+
+    def require(condition, message):
+        if not condition:
+            raise RuntimeError(message)
+
+
+    def run():
+        origin = os.environ['CASDOOR_ORIGIN']
+        definition = json.loads(os.environ['SERVICE_DEFINITION'])
+        secret = Path('/run/app/client_secret').read_text()
+        admins = json.loads(Path('/run/admin/init_data.json').read_text())['users']
+        require(len(admins) == 1 and admins[0]['owner'] == 'built-in' and admins[0]['name'] == 'admin', 'Unexpected admin initialization')
+        organization = definition['organization']
+        require(organization.startswith('sunmoon-workload-') and organization != 'built-in', 'Service organization must be isolated')
+        created = []
+        with httpx.Client(base_url=os.environ['CASDOOR_INTERNAL_ENDPOINT'], verify='/run/app/ca.crt', headers={'Origin':origin, 'Host':urlsplit(origin).netloc}, trust_env=False, timeout=20, follow_redirects=False) as client:
+            def api(method, path, payload=None, params=None):
+                response = client.request(method, path, json=payload, params=params)
+                require(response.status_code == 200, 'Casdoor API HTTP failure')
+                data = response.json()
+                require(data.get('status') == 'ok', 'Casdoor API rejected operation')
+                return data.get('data')
+            api('POST','/api/login',{'application':'app-built-in','organization':'built-in','username':'admin','password':admins[0]['password'],'type':'login'})
+            baseline = api('GET','/api/get-application',params={'id':'admin/app-built-in'})
+            desired_org = {'owner':'admin','name':organization,'displayName':organization,'passwordType':'bcrypt','defaultApplication':definition['application']}
+            org = api('GET','/api/get-organization',params={'id':'admin/'+organization})
+            if org is None:
+                require(api('POST','/api/add-organization',dict(desired_org,createdTime=datetime.now(timezone.utc).isoformat())) == 'Affected', 'Organization not created')
+                created.append('organization')
+                org = api('GET','/api/get-organization',params={'id':'admin/'+organization})
+            require(org and all(org.get(k) == v for k,v in desired_org.items()), 'Existing service organization differs')
+            users = api('GET','/api/get-users',params={'owner':organization})
+            require(users == [], 'Service organization contains human accounts')
+            desired = {'owner':'admin','name':definition['application'],'displayName':definition['application'],'description':'sunmoon:info:knowledge:managed-by-gitops','organization':organization,'cert':baseline['cert'],'clientId':definition['client_id'],'clientSecret':secret,'grantTypes':['client_credentials'],'redirectUris':[],'tokenFormat':'JWT','tokenSigningMethod':'RS256','expireInHours':definition['token_seconds']/3600,'refreshExpireInHours':0,'enablePassword':False,'enableSignUp':False,'enableGuestSignin':False,'enableSigninSession':False,'isShared':False,'disableSignin':True,'scopes':[{'name':definition['scope'],'displayName':definition['scope'],'description':'Exact relation capability'}]}
+            existing = api('GET','/api/get-application',params={'id':'admin/'+definition['application']})
+            applications = api('GET','/api/get-applications',params={'owner':'admin'})
+            require(all(a['name']==definition['application'] for a in applications if a.get('organization')==organization), 'Service organization is shared')
+            if existing is None:
+                require(not any(a.get('clientId')==definition['client_id'] for a in applications), 'Client ID collision')
+                require(api('POST','/api/add-application',dict(desired,createdTime=datetime.now(timezone.utc).isoformat())) == 'Affected', 'Service application not created')
+                created.append('application')
+                existing = api('GET','/api/get-application',params={'id':'admin/'+definition['application']})
+            require(existing and all(existing.get(k)==v for k,v in desired.items() if k != 'scopes') and [v.get('name') for v in existing.get('scopes',[])] == [definition['scope']], 'Existing service application differs; explicit migration required')
+            token_response = client.post('/api/login/oauth/access_token', data={'grant_type':'client_credentials','client_id':definition['client_id'],'client_secret':secret,'scope':definition['scope']})
+            require(token_response.status_code==200, 'Service token exchange HTTP failure')
+            token_data = token_response.json()
+            require(token_data.get('access_token') and token_data.get('expires_in')==definition['token_seconds'], 'Missing or unexpectedly long-lived service token')
+            discovery = client.get('/.well-known/openid-configuration').json()
+            require(discovery['issuer']==origin, 'Incorrect canonical issuer')
+            jwks_url = urlsplit(discovery['jwks_uri'])
+            require(jwks_url.scheme+'://'+jwks_url.netloc==origin, 'Foreign verification key endpoint')
+            keys = KeySet.import_key_set(client.get(jwks_url.path).json())
+            decoded = jwt.decode(token_data['access_token'], keys, algorithms=['RS256'])
+            JWTClaimsRegistry(iss={'essential':True,'value':origin},aud={'essential':True,'value':definition['client_id']},sub={'essential':True,'value':'admin/'+definition['application']},exp={'essential':True},iat={'essential':True}).validate(decoded.claims)
+            require(decoded.claims.get('scope')==definition['scope'], 'Wrong service relation scope')
+            client.cookies.clear()
+            # A service client must not read the built-in organization using its credentials.
+            denied = client.get('/api/get-users',params={'owner':'built-in','clientId':definition['client_id'],'clientSecret':secret})
+            require(denied.status_code in (401,403) or (denied.status_code==200 and denied.json().get('status')=='error'), 'Service client can administer built-in users')
+            bad = client.post('/api/login/oauth/access_token',data={'grant_type':'client_credentials','client_id':definition['client_id'],'client_secret':'invalid-credential','scope':definition['scope']})
+            require(not bad.json().get('access_token'), 'Invalid client secret accepted')
+        print(json.dumps({'created':created,'isolated_organization':True,'no_human_accounts':True,'client_credentials_only':True,'distinct_credential':True,'token_signature_issuer_audience_subject_scope':True,'token_seconds':definition['token_seconds'],'built_in_users_denied':True,'invalid_secret_denied':True}))
+
+
+    if __name__ == '__main__':
+        try:
+            run()
+        except Exception as error:
+            message = str(error) if type(error) is RuntimeError else type(error).__name__
+            raise SystemExit('Service registration failed: '+message)
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: info-service-provision-out, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: info-service-provision}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: 8443}]
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: 'info-service-identity-v1', namespace: app-platform-dev}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: info-service-provision, app.kubernetes.io/part-of: info}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:2443d576ab1b24b99092f41b6c0562e0fa34b3b1ffeffdd7c70365a6921c242a
+          imagePullPolicy: IfNotPresent
+          command: [python, /script/provision.py]
+          env:
+            - {name: CASDOOR_INTERNAL_ENDPOINT, value: 'https://casdoor-tls.app-platform-dev.svc.cluster.local'}
+            - {name: CASDOOR_ORIGIN, value: 'https://casdoor.sunmoonai.com:30443'}
+            - {name: CASDOOR_ORGANIZATION, value: 'sunmoon-workload-info-knowledge'}
+            - name: SERVICE_DEFINITION
+              value: "{\"enabled\": true, \"application\": \"sunmoonai-info-knowledge-ingest\", \"client_id\": \"sunmoon-info-knowledge-ingest\", \"organization\": \"sunmoon-workload-info-knowledge\", \"scope\": \"knowledge:ingest\", \"job_revision\": \"v1\", \"token_seconds\": 900}"
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          volumeMounts:
+            - {name: script, mountPath: /script, readOnly: true}
+            - {name: admin, mountPath: /run/admin, readOnly: true}
+            - {name: app, mountPath: /run/app, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: script, configMap: {name: 'info-service-provision-v1'}}
+        - {name: admin, secret: {secretName: casdoor-initial-identity, items: [{key: init_data.json, path: init_data.json}], defaultMode: 0440}}
+        - {name: app, secret: {secretName: info-service-provision, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

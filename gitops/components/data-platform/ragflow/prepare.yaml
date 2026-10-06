@@ -1,0 +1,169 @@
+---
+- name: Load the separately reviewed non-root runtime image
+  ansible.builtin.set_fact:
+    ragflow_runtime_image: '{{ (lookup("file",playbook_dir + "/../../gitops/components/data-platform/ragflow/image.lock.json") | from_json).images[0] }}'
+- name: Require RAGFlow's owned dependencies and immutable profile
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_postgresql_enabled and services_object_storage_enabled and services_text_embeddings_enabled and services_infinity_enabled and services_valkey_enabled
+      - ragflow_database == 'ragflow'
+      - ragflow_database_owner == 'ragflow_owner'
+      - ragflow_database_runtime == 'ragflow_runtime'
+      - ragflow_storage_user == 'ragflow_storage'
+      - ragflow_bucket == 'ragflow-derived'
+      - ragflow_port == 9380
+      - ragflow_initialize_generation is match('^v[1-9][0-9]*$')
+      - image_map.ragflow.source == 'docker.io/infiniflow/ragflow:v0.27.2'
+- name: Observe live image usage on the exact selected RAGFlow node
+  ansible.builtin.command:
+    argv: '{{ kube + ["-n",data_namespace,"get","pods","-l","app.kubernetes.io/name=ragflow","-o","json"] }}'
+  register: ragflow_cached_pods
+  changed_when: false
+- name: Derive whether the locked image is currently present in the selected node runtime
+  ansible.builtin.set_fact:
+    ragflow_live_image_cached: '{{ (registry_address + "/platform/ragflow-runtime@" + ragflow_runtime_image.manifest_digest) in ((ragflow_cached_pods.stdout | from_json)["items"] | selectattr("spec.nodeName","defined") | selectattr("spec.nodeName","equalto",cluster_name + "-" + ragflow_node) | selectattr("status.phase","equalto","Running") | map(attribute="status.containerStatuses",default=[]) | flatten | map(attribute="imageID",default="") | list) }}'
+- name: Read immutable content already cached in the exact KIND node
+  ansible.builtin.command:
+    argv: [docker, exec, '{{ cluster_name }}-{{ ragflow_node }}', ctr, --namespace, k8s.io, content, ls, -q]
+  register: ragflow_node_content
+  changed_when: false
+  when: not ragflow_live_image_cached
+- name: Measure only absent locked layers without writing extracted files
+  ansible.builtin.command:
+    argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/ragflow/image-budget.py', '{{ artifact_cache_root }}/{{ ragflow_runtime_image.material_owner }}/images/ragflow-runtime-{{ ragflow_runtime_image.manifest_digest[7:] }}.tar', '{{ ragflow_runtime_image.manifest_digest }}', --node-cache]
+    stdin: '{{ ragflow_node_content.stdout }}'
+  register: ragflow_node_budget
+  changed_when: false
+  when: not ragflow_live_image_cached
+- name: Account for actual missing layers instead of repeating a full image budget
+  ansible.builtin.include_tasks:
+    file: '{{ playbook_dir }}/../host/tasks/capacity.yaml'
+    apply: {become: false}
+  vars: {capacity_planned_bytes: '{{ 67108864 if ragflow_live_image_cached else (ragflow_node_budget.stdout | from_json).planned_bytes }}'}
+- name: Prepare independently recoverable RAGFlow identities
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: ragflow
+    component_input_manifest: data-platform/ragflow/runtime/auth.sops.yaml
+    component_initial_input:
+      owner_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      runtime_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      storage_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      session_secret: '{{ lookup("password","/dev/null",length=64,chars=["ascii_letters","digits"]) }}'
+      knowledge_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      acceptance_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      knowledge_token: '{{ lookup("password","/dev/null",length=64,chars=["ascii_letters","digits"]) }}'
+      acceptance_token: '{{ lookup("password","/dev/null",length=64,chars=["ascii_letters","digits"]) }}'
+  no_log: true
+- name: Keep independent RAGFlow identity only in memory
+  ansible.builtin.set_fact: {ragflow_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Prepare separate RAGFlow internal TLS identity
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-tls.yaml'
+  vars:
+    tls_component: ragflow
+    tls_component_namespace: '{{ data_namespace }}'
+    tls_guard_manifest: data-platform/ragflow/runtime/auth.sops.yaml
+- name: Read only the S3 bootstrap identity for its bounded provisioning Job
+  ansible.builtin.slurp: {src: '{{ services_config_dir }}/object-storage.yaml'}
+  register: ragflow_storage_input
+  no_log: true
+- name: Collect S3 bootstrap identity in memory
+  ansible.builtin.set_fact: {ragflow_storage_root: '{{ ragflow_storage_input.content | b64decode | from_yaml }}'}
+  no_log: true
+- name: Encrypt independent database bootstrap inputs
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/ragflow/database/bootstrap.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: ragflow-database-bootstrap, namespace: '{{ data_namespace }}'}
+        stringData: {migrator_password: '{{ ragflow_credentials.owner_password }}', runtime_password: '{{ ragflow_credentials.runtime_password }}'}
+  no_log: true
+- name: Encrypt independent S3 provisioning inputs
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    url: 'https://object-storage.{{ data_namespace }}.svc.cluster.local:{{ object_storage_port }}'
+    secret_item:
+      file: data-platform/ragflow/storage/provision.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: ragflow-storage-provision, namespace: '{{ data_namespace }}'}
+        stringData:
+          config.json: '{{ {"version":"10","aliases":{"owned":{"url":url,"accessKey":ragflow_storage_root.root_user,"secretKey":ragflow_storage_root.root_password,"api":"S3v4","path":"on"},"application":{"url":url,"accessKey":ragflow_storage_user,"secretKey":ragflow_credentials.storage_password,"api":"S3v4","path":"on"}}} | to_json }}'
+          user: '{{ ragflow_storage_user }}'
+          password: '{{ ragflow_credentials.storage_password }}'
+          ca.crt: '{{ component_tls_material.ragflow.ca }}'
+  no_log: true
+- name: Encrypt independent schema and tenant initialization input
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    initializing: true
+    secret_item:
+      file: data-platform/ragflow/initialize/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: ragflow-initialize-auth, namespace: '{{ data_namespace }}'}
+        stringData:
+          service_conf.yaml: '{{ lookup("template",playbook_dir + "/../../gitops/components/data-platform/ragflow/service_conf.yaml.j2") }}'
+          input.json: '{{ {"knowledge_password":ragflow_credentials.knowledge_password,"acceptance_password":ragflow_credentials.acceptance_password,"knowledge_token":ragflow_credentials.knowledge_token,"acceptance_token":ragflow_credentials.acceptance_token,"embedding_model":text_embeddings_model,"embedding_url":"http://text-embeddings." + data_namespace + ".svc.cluster.local:" + (text_embeddings_port | string)} | to_json }}'
+          ca.crt: '{{ component_tls_material.ragflow.ca }}'
+  no_log: true
+- name: Encrypt runtime-only configuration and HTTPS identity
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    initializing: false
+    secret_item:
+      file: data-platform/ragflow/runtime/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: ragflow-auth, namespace: '{{ data_namespace }}'}
+        stringData:
+          service_conf.yaml: '{{ lookup("template",playbook_dir + "/../../gitops/components/data-platform/ragflow/service_conf.yaml.j2") }}'
+          server.key: '{{ component_tls_material.ragflow.key }}'
+          server.crt: '{{ component_tls_material.ragflow.cert }}'
+          ca.crt: '{{ component_tls_material.ragflow.ca }}'
+  no_log: true
+- name: Derive only runtime rollout digest
+  ansible.builtin.set_fact:
+    ragflow_input_digest: '{{ [ragflow_credentials.runtime_password,ragflow_credentials.session_secret,ragflow_credentials.storage_password,valkey_credentials.runtime_password,component_tls_material.ragflow] | to_json | hash("sha256") }}'
+  no_log: true
+- name: Render RAGFlow directly from the owned or shared provisioning templates
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/{{ ragflow_workload.template }}'
+    dest: '{{ build }}/data-platform/ragflow/{{ ragflow_workload.stage }}/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+  loop:
+    - {stage: database, template: app-platform/common/backend/database/workload.yaml.j2}
+    - {stage: storage, template: app-platform/common/backend/storage/workload.yaml.j2}
+    - {stage: initialize, template: data-platform/ragflow/initialize/workload.yaml.j2}
+    - {stage: runtime, template: data-platform/ragflow/runtime/workload.yaml.j2}
+  loop_control: {loop_var: ragflow_workload, label: '{{ ragflow_workload.stage }}'}
+  vars:
+    application_name: ragflow
+    cfg:
+      namespace: '{{ data_namespace }}'
+      database_bootstrap_revision: '{{ ragflow_initialize_generation }}'
+      database: '{{ ragflow_database }}'
+      database_runtime_user: '{{ ragflow_database_runtime }}'
+      database_migrator_user: '{{ ragflow_database_owner }}'
+      object_storage: {user: '{{ ragflow_storage_user }}', bucket: '{{ ragflow_bucket }}', job_revision: '{{ ragflow_initialize_generation }}', policy_name: ragflow-derived, policy_extra_bucket_actions: ['s3:ListBucketVersions'], policy_extra_object_actions: ['s3:DeleteObjectVersion']}
+- name: Declare explicit RAGFlow roots
+  ansible.builtin.copy:
+    dest: '{{ build }}/data-platform/ragflow/{{ item.path }}/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: |
+      {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':['workload.yaml',item.secret]} | to_nice_yaml }}
+  loop:
+    - {path: database, secret: bootstrap.sops.yaml}
+    - {path: storage, secret: provision.sops.yaml}
+    - {path: initialize, secret: auth.sops.yaml}
+    - {path: runtime, secret: auth.sops.yaml}

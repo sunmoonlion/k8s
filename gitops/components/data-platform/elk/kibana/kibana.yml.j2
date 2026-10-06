@@ -1,0 +1,27 @@
+server.name: sunmoon-kibana
+server.host: 0.0.0.0
+server.port: {{ kibana_port }}
+server.ssl.enabled: true
+server.ssl.key: /run/auth/private.key
+server.ssl.certificate: /run/auth/public.crt
+elasticsearch.hosts: ['https://elasticsearch.{{ data_namespace }}.svc.cluster.local:{{ elasticsearch_port }}']
+elasticsearch.username: kibana_system
+elasticsearch.password: {{ elk_credentials.kibana_password | to_json }}
+elasticsearch.ssl.certificateAuthorities: [/run/auth/ca.crt]
+elasticsearch.ssl.verificationMode: full
+path.data: /usr/share/kibana/data
+xpack.security.encryptionKey: {{ elk_credentials.kibana_security_key | to_json }}
+xpack.encryptedSavedObjects.encryptionKey: {{ elk_credentials.kibana_saved_objects_key | to_json }}
+xpack.reporting.encryptionKey: {{ elk_credentials.kibana_reporting_key | to_json }}
+{% if kibana_ui_enabled | bool %}
+server.publicBaseUrl: {{ kibana_ui_origin | to_json }}
+xpack.security.secureCookies: true
+xpack.security.sameSiteCookies: Lax
+xpack.security.authc.providers:
+  basic.basic1: {order: 0}
+xpack.security.session.idleTimeout: {{ kibana_ui_session_idle_timeout }}
+xpack.security.session.lifespan: {{ kibana_ui_session_lifespan }}
+{% endif %}
+telemetry.enabled: false
+telemetry.optIn: false
+logging.root.level: info

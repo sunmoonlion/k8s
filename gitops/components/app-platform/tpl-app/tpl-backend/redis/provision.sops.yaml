@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: tpl-redis-provision
+    namespace: data-platform-dev
+stringData:
+    password: ENC[AES256_GCM,data:zm1kebGnuKJp3KRKyAOrYvprcDv3yqZ9xmE1cMGPT7TcNa1uqRhjoQ==,iv:BLbdWjtwRZ/HBqHqvKKSeDfiC6nW6JoQM5r1zjNGNv0=,tag:03OKlNhdVi4vNfv320ACoQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBQQXhNTjlXalhxVmlxUVgr
+            ZERKZ3JDcDk2Qlo2d2JiRlUybTY1bTRzbmswCnN3TUh5dXFzdjRkRGNjS2M1MTEz
+            akdPNmhtK25QVVhaM3NXb1Evalg3R1kKLS0tIG9wTGpTVGNmQ1BqbWZXSzhKYW9m
+            dFNOL3FVeGpLYzNoakVFMm5oeTQwdmsKi/6Uh3PrXK+3k8c90QtfVPFMb55qFdUN
+            1Rgw59BXTTs905smmkAkUDkONfR+aoF2r333wsSOPyoF5C/Q5fm+ww==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T11:10:50Z"
+    mac: ENC[AES256_GCM,data:EwZSXRJpUFuNUMsjyHAY4DfInhoauatc2P4HSp1/HcIM8SRzjZ8wuga4AeI4FJvXO6mbRF3C5n7J1USJUxbkKviZNP62KobnFwHpew9zeCpPjnmlDGTXPbrOUJSHlQI8fehkVwTlKuC6E2qAJS7f78FBV2145zx0UAIHrgbkATM=,iv:NPM8o2izc0JLqw5xVvWmH8R3YSBhF2Y8lNbJxuyS9N0=,tag:MNZtII5Zh+3Hq41YmL6tBw==,type:str]
+    version: 3.13.3

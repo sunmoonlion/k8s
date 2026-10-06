@@ -1,0 +1,33 @@
+---
+# Community single-purpose graph instance; versions/digests live in artifacts lock.
+services_neo4j_enabled: true
+# Rebuild only an unhealthy old controller revision; never remove current/healthy Pods or volumes.
+neo4j_failed_rollout_recovery: true
+neo4j_volume: {name: neo4j, node: worker2, size: 10Gi, uid: 7474, gid: 7474}
+neo4j_heap: 1G
+neo4j_pagecache: 1G
+neo4j_https_port: 7473
+neo4j_bolt_port: 7687
+neo4j_resources:
+  requests: {cpu: 250m, memory: 2Gi}
+  limits: {cpu: '2', memory: 3Gi}
+
+# Maintainer identity; permissions and current credential storage, never password values.
+operator_account_neo4j:
+  object: data-platform/neo4j
+  id: administrator
+  username: neo4j
+  account_type: platform-administrator
+  table_row: '10'
+  table_import: true
+  current_file: '{{ services_config_dir }}/neo4j.yaml'
+  current_field: password
+  backup_file: '{{ services_backup_dir }}/neo4j.yaml'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: neo4j
+  initial_preset_supported: true
+  initial_file: '{{ services_config_dir }}/presets/neo4j-admin-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/neo4j-admin-password'
+  protocol_check_supported: false
+  rotation_supported: false

@@ -1,0 +1,99 @@
+---
+- name: Install the locked Flux CLI from its verified local archive
+  hosts: kind_hosts
+  gather_facts: false
+  become: false
+  vars:
+    capacity_operation: flux-tools
+    files: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    package: '{{ files.files | selectattr("id", "equalto", "flux") | first }}'
+    tool_root: '{{ playbook_dir }}/../.tools'
+  tasks:
+    - name: Validate fixed package descriptor
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - package.kind == 'package'
+          - package.path is match('^shared/flux/packages/flux-[0-9.]+-linux-amd64.tar.gz$')
+          - package.version is match('^v[0-9.]+$')
+          - package.sha256 is match('^[a-f0-9]{64}$')
+    - name: Verify the complete local CLI package
+      ansible.builtin.stat:
+        path: '{{ artifact_cache_root }}/{{ package.path }}'
+        follow: false
+        checksum_algorithm: sha256
+      register: archive
+    - name: Require original locked package bytes
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - archive.stat.isreg | default(false)
+          - not archive.stat.islnk | default(false)
+          - archive.stat.checksum | default('') == package.sha256
+          - archive.stat.size | default(0) == package.size_bytes
+    - name: Read archive entries without extraction
+      ansible.builtin.command:
+        argv: [tar, -tzf, '{{ artifact_cache_root }}/{{ package.path }}']
+      changed_when: false
+      register: entries
+    - name: Require the single expected executable
+      ansible.builtin.assert:
+        quiet: true
+        that: entries.stdout_lines == ['flux']
+    - name: Budget CLI extraction and installation
+      ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+      vars:
+        capacity_planned_bytes: 268435456
+    - name: Inspect tool paths before creating them
+      ansible.builtin.stat:
+        path: '{{ item }}'
+        follow: false
+      loop: ['{{ tool_root }}', '{{ tool_root }}/bin', '{{ tool_root }}/flux', '{{ tool_root }}/flux/{{ package.version }}']
+      register: directories
+    - name: Refuse symlink tool directories
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not item.stat.exists or item.stat.isdir | default(false)
+          - not item.stat.islnk | default(false)
+      loop: '{{ directories.results }}'
+      loop_control: {label: '{{ item.item }}'}
+    - name: Create versioned tool directories
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        mode: '0755'
+      loop: ['{{ tool_root }}/bin', '{{ tool_root }}/flux/{{ package.version }}']
+    - name: Extract the verified Flux executable
+      ansible.builtin.unarchive:
+        src: '{{ artifact_cache_root }}/{{ package.path }}'
+        dest: '{{ tool_root }}/flux/{{ package.version }}'
+        remote_src: true
+    - name: Install the worktree-local CLI
+      ansible.builtin.copy:
+        src: '{{ tool_root }}/flux/{{ package.version }}/flux'
+        dest: '{{ tool_root }}/bin/flux'
+        remote_src: true
+        mode: '0755'
+    - name: Verify the installed executable against the package member lock
+      ansible.builtin.stat:
+        path: '{{ tool_root }}/bin/flux'
+        follow: false
+        checksum_algorithm: sha256
+      register: executable
+    - name: Require exact executable content
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - executable.stat.isreg | default(false)
+          - not executable.stat.islnk | default(false)
+          - executable.stat.checksum | default('') == package.archive_members[0].sha256
+          - executable.stat.size | default(0) == package.archive_members[0].size_bytes
+    - name: Verify client version without accessing any cluster
+      ansible.builtin.command:
+        argv: ['{{ tool_root }}/bin/flux', version, --client]
+      changed_when: false
+      register: version
+      failed_when: >-
+        version.rc != 0 or ('flux: ' + package.version) not in version.stdout

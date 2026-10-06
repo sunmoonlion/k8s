@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: Service
+metadata: {name: neo4j, namespace: data-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: neo4j}
+  ports:
+    - {name: https, port: 7473, targetPort: https}
+    - {name: bolt, port: 7687, targetPort: bolt}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: neo4j-settings, namespace: data-platform-dev}
+data:
+  neo4j.conf: |
+    server.default_listen_address=0.0.0.0
+    server.bolt.enabled=true
+    server.bolt.listen_address=:7687
+    server.bolt.advertised_address=neo4j.data-platform-dev.svc.cluster.local:7687
+    server.bolt.tls_level=REQUIRED
+    server.http.enabled=false
+    server.https.enabled=true
+    server.https.listen_address=:7473
+    server.https.advertised_address=neo4j.sunmoonai.com:30443
+    dbms.ssl.policy.bolt.enabled=true
+    dbms.ssl.policy.bolt.base_directory=/tls
+    dbms.ssl.policy.bolt.client_auth=NONE
+    dbms.ssl.policy.https.enabled=true
+    dbms.ssl.policy.https.base_directory=/tls
+    dbms.ssl.policy.https.client_auth=NONE
+    dbms.security.auth_enabled=true
+    dbms.security.auth_minimum_password_length=20
+    server.memory.heap.initial_size=1G
+    server.memory.heap.max_size=1G
+    server.memory.pagecache.size=1G
+    server.directories.data=/data
+    server.directories.transaction.logs.root=/data/transactions
+    server.directories.logs=/logs
+    server.logs.config=/var/lib/neo4j/conf/server-logs.xml
+    server.logs.user.config=/var/lib/neo4j/conf/user-logs.xml
+    dbms.usage_report.enabled=false
+  server-logs.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Configuration status="WARN"><Appenders><Console name="Console" target="SYSTEM_OUT"><PatternLayout pattern="%d{ISO8601} [%p] %c - %m%n"/></Console></Appenders><Loggers><Root level="INFO"><AppenderRef ref="Console"/></Root></Loggers></Configuration>
+  user-logs.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Configuration status="WARN"><Appenders><Console name="Console" target="SYSTEM_OUT"><PatternLayout pattern="%d{ISO8601} [%p] %c - %m%n"/></Console></Appenders><Loggers><Root level="INFO"><AppenderRef ref="Console"/></Root></Loggers></Configuration>
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: neo4j, namespace: data-platform-dev}
+spec:
+  serviceName: neo4j
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector: {matchLabels: {app.kubernetes.io/name: neo4j}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: neo4j}
+      annotations: {sunmoonai.com/input-sha256: '14ccce360c28d40d0bf492694b9b0d64b7783329c26cb900a14a9a552291abeb'}
+    spec:
+      serviceAccountName: platform-runtime
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: 'sunmoon-kind-worker2'}
+      terminationGracePeriodSeconds: 120
+      securityContext: {runAsNonRoot: true, runAsUser: 7474, runAsGroup: 7474, fsGroup: 7474, seccompProfile: {type: RuntimeDefault}}
+      initContainers:
+        - name: prepare-config
+          image: harbor.sunmoonai.com:30443/platform/neo4j@sha256:5ed9ae1dc7119bea322d4f486b9c374a2250f5140d78be8c709da1e25435a37f
+          command: [sh, -ec]
+          args:
+            - |
+              cp -R /var/lib/neo4j/conf/. /work-config/
+              awk -F= 'NR==FNR {if ($0 !~ /^#/ && NF>=2) settings[$1]=$0; next} !($1 in settings) {print} END {for (key in settings) print settings[key]}' /settings/neo4j.conf /work-config/neo4j.conf > /work-config/neo4j.conf.new
+              mv /work-config/neo4j.conf.new /work-config/neo4j.conf
+              cp /settings/server-logs.xml /settings/user-logs.xml /work-config/
+              mkdir -p /work-tls/trusted /work-tls/revoked
+              cp /run/auth/private.key /run/auth/public.crt /work-tls/
+              cp /run/auth/ca.crt /work-tls/trusted/ca.crt
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: config, mountPath: /work-config}
+            - {name: tls, mountPath: /work-tls}
+            - {name: settings, mountPath: /settings, readOnly: true}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+      containers:
+        - name: neo4j
+          image: harbor.sunmoonai.com:30443/platform/neo4j@sha256:5ed9ae1dc7119bea322d4f486b9c374a2250f5140d78be8c709da1e25435a37f
+          imagePullPolicy: IfNotPresent
+          env: [{name: NEO4J_AUTH_FILE, value: /run/auth/neo4j-auth}]
+          ports: [{name: https, containerPort: 7473}, {name: bolt, containerPort: 7687}]
+          startupProbe: {tcpSocket: {port: bolt}, periodSeconds: 5, failureThreshold: 120, timeoutSeconds: 5}
+          readinessProbe: {tcpSocket: {port: bolt}, periodSeconds: 10, timeoutSeconds: 5}
+          livenessProbe: {tcpSocket: {port: bolt}, periodSeconds: 30, timeoutSeconds: 3, failureThreshold: 5}
+          resources: {"requests": {"cpu": "250m", "memory": "2Gi"}, "limits": {"cpu": "2", "memory": "3Gi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: config, mountPath: /var/lib/neo4j/conf}
+            - {name: run, mountPath: /var/lib/neo4j/run}
+            - {name: tls, mountPath: /tls, readOnly: true}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: logs, mountPath: /logs}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: neo4j-data}}
+        - {name: config, emptyDir: {sizeLimit: 32Mi}}
+        - {name: run, emptyDir: {sizeLimit: 16Mi}}
+        - {name: tls, emptyDir: {medium: Memory, sizeLimit: 4Mi}}
+        - {name: settings, configMap: {name: neo4j-settings}}
+        - {name: auth, secret: {secretName: neo4j-auth, defaultMode: 0440}}
+        - {name: logs, emptyDir: {sizeLimit: 64Mi}}
+        - {name: tmp, emptyDir: {sizeLimit: 128Mi}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: neo4j-clients, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: neo4j}}
+  policyTypes: [Ingress]
+  ingress: []

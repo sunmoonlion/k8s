@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata: {name: casdoor-initialize-v1, namespace: {{ app_namespace }}}
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: {sunmoonai.com/postgresql-client: 'true'}
+    spec:
+      restartPolicy: Never
+      nodeSelector: {kubernetes.io/hostname: {{ cluster_name }}-worker}
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: initialize
+          image: {{ registry_address }}/platform/casdoor@{{ image_map.casdoor.manifest_digest }}
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              if [ -f /files/.initialized-v1 ]; then
+                /server -export -exportPath /dev/null
+                exit 0
+              fi
+              /server &
+              server_pid=$!
+              trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true' EXIT
+              ready=false
+              for attempt in $(seq 1 90); do
+                kill -0 "$server_pid"
+                if curl --fail --silent --output /dev/null http://127.0.0.1:8000/; then ready=true; break; fi
+                sleep 2
+              done
+              [ "$ready" = true ]
+              printf '%s\n' 'casdoor-v4.12.0-init-v1' > /files/.initialized-v1
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: '2', memory: 1Gi}}
+          volumeMounts:
+            - {name: files, mountPath: /files}
+            - {name: config, mountPath: /conf, readOnly: true}
+            - {name: init, mountPath: /bootstrap, readOnly: true}
+            - {name: logs, mountPath: /logs}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: files, persistentVolumeClaim: {claimName: casdoor-data}}
+        - {name: config, secret: {secretName: casdoor-init-config, defaultMode: 0440}}
+        - {name: init, secret: {secretName: casdoor-initial-identity, defaultMode: 0440}}
+        - {name: logs, emptyDir: {sizeLimit: 32Mi}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}

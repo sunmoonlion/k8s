@@ -1,0 +1,18 @@
+---
+# Only derived retrieval data; original documents remain owned by domain applications.
+services_ragflow_enabled: true
+ragflow_database: ragflow
+ragflow_database_owner: ragflow_owner
+ragflow_database_runtime: ragflow_runtime
+ragflow_bucket: ragflow-derived
+ragflow_storage_user: ragflow_storage
+ragflow_initialize_generation: v6
+ragflow_port: 9380
+ragflow_node: worker2
+ragflow_ingestion_timeout_seconds: 300
+ragflow_api_resources:
+  requests: {cpu: 250m, memory: 1Gi}
+  limits: {cpu: '2', memory: 3Gi}
+ragflow_worker_resources:
+  requests: {cpu: 250m, memory: 2Gi}
+  limits: {cpu: '2', memory: 6Gi}

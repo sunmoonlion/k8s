@@ -1,0 +1,49 @@
+---
+- import_playbook: ../host/deployment.yaml
+  vars: {deployment_action: select, selection_persist: false, selection_report: false}
+- name: Require generated settings to match the committed promoted release
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars_files: [layout.yaml]
+  vars:
+    repo: '{{ playbook_dir }}/../..'
+    build: '{{ playbook_dir }}/../.build/components'
+    selected_service_stages: '{{ component_stages | selectattr("name", "in", selection.selected_stages) | list }}'
+    selected_candidate_paths: '{{ selected_service_stages | map(attribute="path") | unique | list }}'
+    source: '{{ lookup("file", playbook_dir + "/../environments/kind/flux-source.yaml") | from_yaml }}'
+  tasks:
+    - name: Require a clean declaration worktree
+      become: false
+      ansible.builtin.command:
+        argv: [git, -C, '{{ repo }}', status, --porcelain, --untracked-files=all, '--', gitops]
+      changed_when: false
+      register: dirty
+      failed_when: dirty.rc != 0 or dirty.stdout != ''
+    - name: Require the worktree declarations to equal the promoted Git object
+      become: false
+      ansible.builtin.command:
+        argv: [git, -C, '{{ repo }}', diff, --exit-code, '{{ source.revision }}', '--', gitops, ':(glob,exclude)gitops/**/README.md']
+      changed_when: false
+      no_log: true
+    - name: Find rendered component candidates
+      ansible.builtin.find:
+        paths: '{{ selected_candidate_paths | map("regex_replace","^",build + "/") | list }}'
+        recurse: false
+        patterns: '*.yaml'
+        file_type: file
+      register: candidates
+    - name: Require complete rendering
+      ansible.builtin.assert:
+        quiet: true
+        that: candidates.files | length > 0
+    - name: Compare generated public objects and decrypted secret content
+      ansible.builtin.include_tasks: tasks/check-declaration.yaml
+      vars:
+        relative_path: '{{ item.path | relpath(build) }}'
+        committed_path: '{{ repo }}/gitops/components/{{ relative_path }}'
+      loop: '{{ candidates.files }}'
+      loop_control: {label: '{{ item.path | basename }}'}
+# Stage declarations are validated from the component stage graph, not from service rendering.
+- import_playbook: ../components/topology.yaml
+  vars: {topology_action: validate}

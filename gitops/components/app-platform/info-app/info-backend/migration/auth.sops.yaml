@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: info-migration-auth
+    namespace: app-platform-dev
+stringData:
+    DATABASE_URL: ENC[AES256_GCM,data:doSqKa60woS7HeoIvMF3UJrpf6saKtoMQEZ9/9fQyg0HAL3nDc7b7AcoVcLLmy+fKhD9tZ8l1KwQDBGOBrm5Y6J74JOeIO0wxm8+ImqW2Q85QmB2r62g6VNVwUMXh0VUja+Ai5k/ZInpi2fs4HZadvqVf4dK20e1z8e8SYpIJMnhgao=,iv:YKCs2wQcJCzdUKerfczouNiWv9PrpVkc3R3GGve/dO0=,tag:4nU9hzjFsxFUrAJ+pOLi/Q==,type:str]
+    MIGRATION_DATABASE_URL: ENC[AES256_GCM,data:jAMSFC2b2qClRjQr3qrUWble2owNZXtDDzF5GeyZqnurB7c6tYYJ2Vw8PO8+2AuypCgYX9lCCW/h8O+x6FXor0FMEdzFUr4q2gKsHYhBUBcHNYz2IkBikALbYsQwDDuuQQrzXGoSnGDgiyOk+Ro03FFdjkhQcYhoXSqxOyGX+/mNs/NY,iv:IqDPZIFX1KuiG3mzk0ggyIsIlMAiP1mU4KigD553owE=,tag:+XAYJWrCa/FDUN7TlR64ww==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBibUNEVkZuWFRQbDB3SU5H
+            V04zWUVwaTBnMjRFcWRLd3VFclBjcDBRVW4wCjRTRWVvM2NTNjVPcTNndHlUcVh0
+            VU9pVDlNWk1sUmE2ZCtmV2xHVnJPVWMKLS0tIGRLc0FYRFZ1dFRkZFZLT2NiVG5i
+            cU9aNHJRZW1Qb242WGlGZDQ1SDJFbUUKiAAQbI+tMwht0UsSR1cxyz79h4acfj9K
+            HV4gjSNaVI4FqPATpCUH+zn6gmRmseGxjjk7srzA8pWQyteyFSFfcw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T13:45:40Z"
+    mac: ENC[AES256_GCM,data:mvTfh9EcFlO3FbjRBUasz0wc/X+aoKGzOn3Ab1FWu4w9WD56oZuspUsI2g0gZcpSlm0QR78LN5amTHjwEMlSacqrEsp9fop67thQ1kiu0WVdaID92gOnL1DDj6IQb9p8gCCxgjaMIq3aZhIhhdGNsmVBxhOdKBNgdGjZ2emkbYI=,iv:ae0WOAUVOXBJxXlwHUkFmh7axJrJIJivUJ95rQ9BCiw=,tag:Q5pSOcSJvAwyReINTxdoiA==,type:str]
+    version: 3.13.3

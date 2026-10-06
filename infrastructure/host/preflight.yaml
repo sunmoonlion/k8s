@@ -1,0 +1,63 @@
+---
+- name: Read-only KIND host preflight
+  hosts: kind_hosts
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Check tool version and required site settings
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - ansible_version.full == '2.21.4'
+          - storage_uuid is match('^[0-9a-f-]{36}$')
+          - storage_mounts | length == 3
+          - cluster_name is match('^[a-z0-9][a-z0-9-]+$')
+          - registry_address == 'harbor.sunmoonai.com:30443'
+        fail_msg: Invalid site settings or Ansible version.
+
+    - name: Read filesystem identity for each required mount
+      ansible.builtin.command:
+        argv:
+          - findmnt
+          - --json
+          - --target
+          - '{{ item.target }}'
+          - --output
+          - TARGET,SOURCE,FSTYPE,UUID,FSROOT
+      loop: '{{ storage_mounts }}'
+      loop_control:
+        label: '{{ item.target }}'
+      register: mount_results
+      changed_when: false
+      check_mode: false
+
+    - name: Require exact mountpoint, filesystem UUID and bind root
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - mounts | length == 1
+          - mounts[0].target == item.item.target
+          - mounts[0].fstype == 'ext4'
+          - mounts[0].uuid == storage_uuid
+          - mounts[0].fsroot == item.item.fsroot
+          - item.item.target != '/data/kind-local-storage'
+        fail_msg: '{{ item.item.target }} is not the configured data disk mount.'
+      vars:
+        mounts: '{{ (item.stdout | from_json).filesystems }}'
+      loop: '{{ mount_results.results }}'
+      loop_control:
+        label: '{{ item.item.target }}'
+
+    - name: Read data filesystem capacity
+      ansible.builtin.command:
+        argv: [df, -B1, '--output=size,used,avail,pcent,target', '{{ storage_mounts[0].target }}']
+      register: data_capacity
+      changed_when: false
+      check_mode: false
+
+    - name: Report the scope of this preflight
+      ansible.builtin.debug:
+        msg:
+          - '{{ data_capacity.stdout_lines }}'
+          - 'Host mount identity checked; no services started or changed.'
+          - 'Docker mount visibility, Windows free space and full offline closure remain separate deployment prerequisites.'

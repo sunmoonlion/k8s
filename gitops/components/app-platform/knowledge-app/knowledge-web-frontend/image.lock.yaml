@@ -1,0 +1,7 @@
+# 已实际构建发布并以独立 Harbor 只读身份核对。
+---
+repository: knowledge-web-frontend
+digest: sha256:7527cb90817f3d1727db666d2bfbaf2493182b49464460c39d4f461dab589fd8
+source_revision: b1b45963723bdc9299bf3391afc8eeabab428927
+# Component deployment identity; migrated from the unchanged existing workload.
+deployment_id: knowledge-c4b5fb051de89782

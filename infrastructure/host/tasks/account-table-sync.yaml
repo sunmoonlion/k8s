@@ -1,0 +1,16 @@
+---
+- name: Synchronize only the explicitly retained development password lookup row
+  ansible.builtin.command:
+    argv:
+      - '{{ inventory_dir }}/../.venv/bin/python'
+      - -c
+      - |
+        import json,sys
+        sys.path.insert(0,sys.argv[1])
+        from account_files import sync_table
+        data=json.load(sys.stdin)
+        print(json.dumps(sync_table(data['table'],data['account'])))
+      - '{{ inventory_dir }}'
+    stdin: '{{ {"table":account_table,"account":human_account} | to_json }}'
+  no_log: true
+  changed_when: true

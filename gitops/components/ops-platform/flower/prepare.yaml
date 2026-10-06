@@ -1,0 +1,79 @@
+---
+- name: Validate the Flower browser endpoint
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_ingress_enabled | bool and traefik_crd_enabled | bool
+      - services_rabbitmq_enabled | bool
+      - flower_origin | urlsplit('scheme') == 'https'
+      - flower_origin | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
+      - flower_origin | urlsplit('port') | int == entry_port | int
+      - flower_origin | urlsplit('username') == None
+      - flower_origin | urlsplit('path') == ''
+      - flower_origin | urlsplit('query') == '' and flower_origin | urlsplit('fragment') == ''
+      - flower_port | int == 5555
+      - flower_username is match('^[a-z][a-z0-9_-]+$')
+      - image_map.flower.source is search('flower:')
+- name: Prepare a recoverable Flower basic-auth identity
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: flower
+    component_input_manifest: ops-platform/flower/auth.sops.yaml
+    component_initial_input:
+      username: '{{ flower_username }}'
+      password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+  no_log: true
+- name: Keep Flower credential only in memory
+  ansible.builtin.set_fact: {flower_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Require Flower basic-auth policy
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - flower_credentials.username == flower_username
+      - flower_credentials.password is match('^[a-zA-Z0-9]{40}$')
+  no_log: true
+- name: Read the shared core identities
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/shared-credentials.yaml'
+- name: Derive the Flower broker URL in memory
+  ansible.builtin.set_fact:
+    flower_broker_url: 'amqp://{{ service_credentials.rabbitmq_username | urlencode }}:{{ service_credentials.rabbitmq_password | urlencode }}@rabbitmq.{{ messaging_namespace }}.svc.cluster.local:5672/'
+  no_log: true
+- name: Prepare a separate Flower TLS identity with non-overwritten backup
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ services_config_dir }}/flower'
+    tls_backup_dir: '{{ services_backup_dir }}/flower'
+    tls_declaration: '{{ playbook_dir }}/../../gitops/components/ops-platform/flower/tls.sops.yaml'
+    tls_hostnames: ['{{ flower_origin | urlsplit("hostname") }}']
+- name: Encrypt Flower login, broker URL and browser TLS
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  loop:
+    - file: ops-platform/flower/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: flower-auth, namespace: '{{ ops_namespace }}'}
+        stringData:
+          FLOWER_UNAUTHENTICATED_API: 'false'
+          FLOWER_BASIC_AUTH: '{{ flower_credentials.username }}:{{ flower_credentials.password }}'
+          FLOWER_BROKER_URL: '{{ flower_broker_url }}'
+    - file: ops-platform/flower/tls.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: flower-tls, namespace: '{{ ops_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+  loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
+  no_log: true
+- name: Derive the Flower rollout identity
+  ansible.builtin.set_fact:
+    flower_input_digest: '{{ [flower_credentials.username, flower_origin] | to_json | hash("sha256") }}'
+  no_log: true
+- name: Render the Flower runtime candidate
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/ops-platform/flower/workload.yaml.j2'
+    dest: '{{ build }}/ops-platform/flower/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'

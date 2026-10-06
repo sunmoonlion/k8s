@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: Service
+metadata: {name: mongo-express, namespace: {{ ops_namespace }}}
+spec:
+  selector: {app.kubernetes.io/name: mongo-express}
+  ports: [{name: http, port: {{ mongo_express_port }}, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: mongo-express, namespace: {{ ops_namespace }}}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector: {matchLabels: {app.kubernetes.io/name: mongo-express}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: mongo-express, sunmoonai.com/mongodb-client: 'true'}
+      annotations: {sunmoonai.com/input-sha256: '{{ mongo_express_input_digest }}'}
+    spec:
+      serviceAccountName: platform-runtime
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: mongo-express
+          image: {{ registry_address }}/platform/mongo-express@{{ image_map['mongo-express'].manifest_digest }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: ME_CONFIG_MONGODB_ENABLE_ADMIN, value: 'true'}
+            - {name: ME_CONFIG_SITE_SSL_ENABLED, value: 'false'}
+          envFrom: [{secretRef: {name: mongo-express-auth}}]
+          ports: [{name: http, containerPort: {{ mongo_express_port }}}]
+          startupProbe: {tcpSocket: {port: http}, periodSeconds: 5, failureThreshold: 60}
+          readinessProbe: {tcpSocket: {port: http}, periodSeconds: 10, timeoutSeconds: 3}
+          livenessProbe: {tcpSocket: {port: http}, periodSeconds: 20, timeoutSeconds: 3}
+          resources: {{ mongo_express_resources | to_json }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: mongo-ca, mountPath: /run/mongo-ca, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 32Mi}}
+        - {name: mongo-ca, secret: {secretName: mongo-express-auth, items: [{key: ca.crt, path: ca.crt}], defaultMode: 0440}}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mongo-express
+  namespace: {{ ops_namespace }}
+  annotations: {kubernetes.io/ingress.class: sunmoon}
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: 'Host(`{{ mongo_express_origin | urlsplit("hostname") }}`)'
+      services: [{name: mongo-express, port: http, scheme: http}]
+  tls: {secretName: mongo-express-tls}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: mongo-express-ingress, namespace: {{ ops_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: mongo-express}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: '{{ ingress_namespace }}'}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: {{ mongo_express_port }}}]

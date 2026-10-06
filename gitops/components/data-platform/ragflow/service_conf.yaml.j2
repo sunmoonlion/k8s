@@ -1,0 +1,33 @@
+# Private rendering only; never store this plaintext in Git.
+ragflow:
+  host: 0.0.0.0
+  http_port: {{ ragflow_port }}
+  secret_key: {{ ragflow_credentials.session_secret | to_json }}
+postgres:
+  name: {{ ragflow_database }}
+  host: postgresql.{{ data_namespace }}.svc.cluster.local
+  port: 5432
+  user: {{ ragflow_database_owner if initializing else ragflow_database_runtime }}
+  password: {{ (ragflow_credentials.owner_password if initializing else ragflow_credentials.runtime_password) | to_json }}
+  max_connections: 20
+  stale_timeout: 30
+redis:
+  host: valkey.{{ data_namespace }}.svc.cluster.local:6379
+  db: 1
+  username: {{ valkey_runtime_username }}
+  password: {{ valkey_credentials.runtime_password | to_json }}
+infinity:
+  uri: infinity.{{ data_namespace }}.svc.cluster.local:23817
+  postgres_port: 5432
+  db_name: ragflow
+s3:
+  access_key: {{ ragflow_storage_user }}
+  secret_key: {{ ragflow_credentials.storage_password | to_json }}
+  endpoint_url: https://object-storage.{{ data_namespace }}.svc.cluster.local:{{ object_storage_port }}
+  bucket: {{ ragflow_bucket }}
+  prefix_path: derived
+  region: us-east-1
+  signature_version: s3v4
+  addressing_style: path
+user_default_llm:
+  default_models: {}

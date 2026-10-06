@@ -1,0 +1,187 @@
+---
+- import_playbook: ../host/preflight.yaml
+- name: Bootstrap the fixed Flux controllers on the owned cluster
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    flux_action: deploy
+    capacity_operation: flux-deploy
+    images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
+    controllers: '{{ images.images | selectattr("group", "equalto", "delivery") | list }}'
+    files: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    package: '{{ files.files | selectattr("id", "equalto", "flux") | first }}'
+    flux: '{{ playbook_dir }}/../.tools/bin/flux'
+    kubectl: '{{ playbook_dir }}/../.tools/bin/kubectl'
+    build: '{{ playbook_dir }}/../.build/flux'
+    kube: ['{{ kubectl }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+  environment:
+    HTTP_PROXY: ''
+    HTTPS_PROXY: ''
+    ALL_PROXY: ''
+    http_proxy: ''
+    https_proxy: ''
+    all_proxy: ''
+    NO_PROXY: '{{ registry_hostname }},127.0.0.1,localhost'
+    no_proxy: '{{ registry_hostname }},127.0.0.1,localhost'
+  tasks:
+    - name: Validate explicit new-cluster ownership boundary
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - flux_action in ['deploy', 'status']
+          - flux_action != 'deploy' or flux_enabled | bool
+          - cluster_name == 'sunmoon-kind'
+          - cluster_enabled | bool and registry_enabled | bool
+          - controllers | length == 4
+    - name: Verify the installed CLI bytes before API operations
+      ansible.builtin.stat:
+        path: '{{ flux }}'
+        follow: false
+        checksum_algorithm: sha256
+      register: cli_bytes
+    - name: Require the exact locked CLI
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - cli_bytes.stat.isreg | default(false)
+          - not cli_bytes.stat.islnk | default(false)
+          - cli_bytes.stat.checksum | default('') == package.archive_members[0].sha256
+    - name: Load independent cluster ownership receipt
+      ansible.builtin.slurp:
+        src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'
+      register: identity
+    - name: Verify the live API UID before changes
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "namespace", "kube-system", "-o", "jsonpath={.metadata.uid}"] }}'
+      register: uid
+      changed_when: false
+      failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+    - name: Require the three nodes to be Ready
+      ansible.builtin.command:
+        argv: '{{ kube + ["wait", "--for=condition=Ready", "node", "--all", "--timeout=60s"] }}'
+      changed_when: false
+    - name: Read the expected host gateway
+      ansible.builtin.command:
+        argv: [docker, inspect, '{{ cluster_name }}-control-plane', --format, '{{ "{{.NetworkSettings.Networks.kind.Gateway}}" }}']
+      changed_when: false
+      register: gateway
+    - name: Verify every node resolves the registry to the host before creating workloads
+      ansible.builtin.command:
+        argv: [docker, exec, '{{ cluster_name }}-{{ item }}', getent, ahostsv4, '{{ registry_hostname }}']
+      loop: [control-plane, worker, worker2]
+      changed_when: false
+      register: resolution
+      failed_when: >-
+        resolution.rc != 0 or
+        (resolution.stdout_lines | map('regex_replace', '\s+.*$', '') | unique | list) != [gateway.stdout]
+    - name: Read existing Flux namespace ownership
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "namespace", "flux-system", "--ignore-not-found", "-o", "json"] }}'
+      register: namespace
+      changed_when: false
+    - name: Reject adopting a foreign Flux installation
+      ansible.builtin.assert:
+        quiet: true
+        that: namespace.stdout == '' or (namespace.stdout | from_json).metadata.annotations['sunmoonai.com/bootstrap-owner'] | default('') == cluster_name
+    - name: Install controllers from verified local release tooling
+      when: flux_action == 'deploy'
+      block:
+        - name: Reserve controller image and runtime capacity
+          ansible.builtin.include_tasks:
+            file: ../host/tasks/capacity.yaml
+            apply: {become: false}
+          vars:
+            capacity_planned_bytes: '{{ (controllers | map(attribute="compressed_layer_bytes") | sum | int) * 9 + 268435456 }}'
+        - name: Verify the installed CLI release
+          ansible.builtin.command:
+            argv: ['{{ flux }}', version, --client]
+          register: cli_version
+          changed_when: false
+          failed_when: >-
+            cli_version.rc != 0 or ('flux: ' + package.version) not in cli_version.stdout
+        - name: Render the manifests embedded in the verified CLI (no upstream fetch)
+          ansible.builtin.command:
+            argv: ['{{ flux }}', install, --export, '--registry={{ registry_address }}/platform', --image-pull-secret=registry-puller]
+          register: official
+          changed_when: false
+        - name: Require the CLI's component versions to agree with the image lock
+          ansible.builtin.assert:
+            quiet: true
+            that: >-
+              ('image: ' + registry_address + '/platform/' + item.id + ':' + item.source.rsplit(':', 1)[1]) in official.stdout
+          loop: '{{ controllers }}'
+          loop_control: {label: '{{ item.id }}'}
+        - name: Create this worktree's render directory
+          ansible.builtin.file:
+            path: '{{ build }}'
+            state: directory
+            mode: '0755'
+            owner: '{{ cluster_operator }}'
+        - name: Save the official declarations for native Kustomize
+          ansible.builtin.copy:
+            dest: '{{ build }}/official.yaml'
+            content: '{{ official.stdout }}'
+            mode: '0644'
+            owner: '{{ cluster_operator }}'
+        - name: Render digest overrides and controller restrictions
+          ansible.builtin.template:
+            src: kustomization.yaml.j2
+            dest: '{{ build }}/kustomization.yaml'
+            mode: '0644'
+            owner: '{{ cluster_operator }}'
+        - name: Build the final controller declarations
+          ansible.builtin.command:
+            argv: ['{{ kubectl }}', kustomize, '{{ build }}']
+          register: rendered
+          changed_when: false
+        - name: Create the bootstrap namespace before the pull Secret
+          ansible.builtin.include_tasks: tasks/apply.yaml
+          vars:
+            flux_manifest: '{{ {"apiVersion":"v1", "kind":"Namespace", "metadata":{"name":"flux-system", "annotations":{"sunmoonai.com/bootstrap-owner":cluster_name}}} | to_json }}'
+          when: namespace.stdout == ''
+        - name: Read the pull-only identity without exposing it
+          ansible.builtin.slurp:
+            src: '{{ registry_config_dir }}/private/puller-auth.json'
+          register: puller
+          no_log: true
+        - name: Apply the namespace-scoped controller pull Secret
+          ansible.builtin.include_tasks: tasks/apply.yaml
+          vars:
+            flux_manifest_sensitive: true
+            flux_manifest: '{{ {"apiVersion":"v1", "kind":"Secret", "metadata":{"name":"registry-puller", "namespace":"flux-system"}, "type":"kubernetes.io/dockerconfigjson", "data":{".dockerconfigjson":puller.content}} | to_json }}'
+        - name: Apply the owned controller declarations without pruning other resources
+          ansible.builtin.include_tasks: tasks/apply.yaml
+          vars:
+            flux_manifest: '{{ rendered.stdout }}'
+        - name: Wait for each fixed controller rollout
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", "flux-system", "rollout", "status", "deployment/" + item.id, "--timeout=180s"] }}'
+          loop: '{{ controllers }}'
+          loop_control: {label: '{{ item.id }}'}
+          changed_when: false
+    - name: Run native Flux health and CRD checks
+      ansible.builtin.command:
+        argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', check, --timeout=60s]
+      changed_when: false
+      register: health
+    - name: Read actual controller images and readiness
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", "flux-system", "get", "deployments", "-o", "json"] }}'
+      changed_when: false
+      register: deployments
+    - name: Require all four locked images with Ready replicas
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - matched | length == 1
+          - matched[0].spec.template.spec.containers[0].image == registry_address + '/platform/' + item.id + '@' + item.manifest_digest
+          - matched[0].status.availableReplicas | default(0) == 1
+      vars:
+        matched: '{{ (deployments.stdout | from_json)["items"] | selectattr("metadata.name", "equalto", item.id) | list }}'
+      loop: '{{ controllers }}'
+      loop_control: {label: '{{ item.id }}'}
+    - name: Report actual Flux health
+      ansible.builtin.debug:
+        var: health.stdout_lines

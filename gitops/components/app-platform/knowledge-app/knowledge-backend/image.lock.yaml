@@ -1,0 +1,7 @@
+# Built and published through the native chain; independent Harbor identity checked.
+---
+repository: knowledge-backend
+digest: sha256:e65abcf5f8d37b29ea63194dad8380a1c1b45603c174438119f63dd338bd85e6
+source_revision: 5732eab2e6e25eb225fbad4249ae01c0178fdb89
+# Component deployment identity; migrated from the unchanged existing workload.
+deployment_id: knowledge-c4b5fb051de89782

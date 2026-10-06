@@ -1,0 +1,158 @@
+---
+- name: Set the single robot identity and expected permissions
+  ansible.builtin.set_fact:
+    robot_username: 'robot${{ project_name }}+{{ robot_role.name }}'
+    robot_secret_path: '{{ registry_config_dir }}/private/{{ robot_role.name }}.json'
+    robot_access: []
+
+- name: Build exact repository permissions
+  ansible.builtin.set_fact:
+    robot_access: '{{ robot_access + [{"resource": "repository", "action": item, "effect": "allow"}] }}'
+  loop: '{{ robot_role.actions }}'
+
+- name: Inspect the persisted private identity
+  ansible.builtin.stat:
+    path: '{{ robot_secret_path }}'
+    follow: false
+  register: local_robot
+
+- name: Require safe private identity file
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not local_robot.stat.exists or local_robot.stat.isreg | default(false)
+      - not local_robot.stat.islnk | default(false)
+      - not local_robot.stat.exists or (local_robot.stat.mode == '0600' and local_robot.stat.uid == 0)
+
+- name: Inspect exact remote robot identity
+  ansible.builtin.uri:
+    url: '{{ registry_api }}/robots?q={{ ("Level=project,ProjectID=" + (platform_project.json.project_id | string)) | urlencode }}&page_size=100'
+  register: robot_page
+  no_log: true
+
+- name: Require complete project robot enumeration
+  ansible.builtin.assert:
+    quiet: true
+    that: robot_page.x_total_count | int == robot_page.json | length
+
+- name: Select only the exact returned full identity
+  ansible.builtin.set_fact:
+    remote_robots: '{{ {"json": robot_page.json | selectattr("name", "equalto", robot_username) | list} }}'
+  no_log: true
+
+- name: Refuse unknown remote credentials or duplicate identities
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - remote_robots.json | length <= 1
+      - local_robot.stat.exists == (remote_robots.json | length == 1)
+    fail_msg: Existing robot has no matching private credential file; restore its credential or approve an explicit rotation.
+
+- name: Create the missing project-scoped robot using its server-generated secret
+  ansible.builtin.uri:
+    url: '{{ registry_api }}/robots'
+    method: POST
+    body_format: json
+    body:
+      name: '{{ robot_role.name }}'
+      description: 'platform-kind-v1 {{ robot_role.name }}'
+      level: project
+      duration: 90
+      disable: false
+      permissions:
+        - kind: project
+          namespace: '{{ project_name }}'
+          access: '{{ robot_access }}'
+    status_code: 201
+  when: remote_robots.json | length == 0
+  register: created_robot
+  changed_when: true
+  no_log: true
+
+- name: Persist the returned secret without overwriting existing identities
+  ansible.builtin.copy:
+    dest: '{{ robot_secret_path }}'
+    content: '{{ created_robot.json | to_nice_json }}'
+    force: false
+    mode: '0600'
+    owner: root
+    group: root
+  when: remote_robots.json | length == 0
+  no_log: true
+  diff: false
+
+- name: Read private identity
+  ansible.builtin.slurp:
+    src: '{{ robot_secret_path }}'
+  register: robot_identity
+  no_log: true
+
+- name: Require the intended username and nonempty secret
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - (robot_identity.content | b64decode | from_json).name == robot_username
+      - (robot_identity.content | b64decode | from_json).secret | length >= 16
+  no_log: true
+
+- name: Read back robot metadata
+  ansible.builtin.uri:
+    url: '{{ registry_api }}/robots?q={{ ("Level=project,ProjectID=" + (platform_project.json.project_id | string)) | urlencode }}&page_size=100'
+  register: actual_robot_page
+  no_log: true
+
+- name: Select the exact resulting full identity
+  ansible.builtin.set_fact:
+    actual_robots: '{{ {"json": actual_robot_page.json | selectattr("name", "equalto", robot_username) | list} }}'
+  no_log: true
+
+- name: Require exact enabled identity and least permissions
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - actual_robots.json | length == 1
+      - actual_robots.json[0].name == robot_username
+      - actual_robots.json[0].level == 'project'
+      - not actual_robots.json[0].disable
+      - actual_robots.json[0].expires_at | int > (current_epoch.stdout | int) + 604800
+      - actual_robots.json[0].permissions | length == 1
+      - actual_robots.json[0].permissions[0].namespace == project_name
+      - actual_robots.json[0].permissions[0].access | sort(attribute='action') == robot_access | sort(attribute='action')
+  no_log: true
+
+- name: Write a scoped client auth file without using the administrator
+  ansible.builtin.copy:
+    dest: '{{ registry_config_dir }}/private/{{ robot_role.name }}-auth.json'
+    content: '{{ {"auths": {registry_address: {"auth": (robot_username + ":" + (robot_identity.content | b64decode | from_json).secret) | b64encode}}} | to_nice_json }}'
+    mode: '0600'
+    owner: root
+    group: root
+  no_log: true
+  diff: false
+
+- name: Report only role and expiration
+  ansible.builtin.debug:
+    msg:
+      role: '{{ robot_role.name }}'
+      expires_at_unix: '{{ actual_robots.json[0].expires_at }}'
+
+- name: Authenticate the robot directly against the trusted token service
+  ansible.builtin.uri:
+    url: 'https://127.0.0.1:{{ registry_https_port }}/service/token?service=harbor-registry&scope=repository:{{ project_name }}/haproxy:pull,push'
+    url_username: '{{ robot_username }}'
+    url_password: '{{ (robot_identity.content | b64decode | from_json).secret }}'
+    return_content: true
+  register: robot_token
+  no_log: true
+
+- name: Require the authenticated identity and exact granted actions
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - claims.sub == robot_username
+      - claims.access | length == 1
+      - claims.access[0].name == project_name + '/haproxy'
+      - claims.access[0].actions | sort == robot_role.actions | sort
+  vars:
+    claims: '{{ ((robot_token.json.token.split(".")[1] + "===") | b64decode(urlsafe=true)) | from_json }}'
+  no_log: true

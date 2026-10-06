@@ -1,0 +1,56 @@
+---
+- name: Read the pinned sandbox provisioner image identity
+  ansible.builtin.set_fact:
+    sandbox_image: '{{ lookup("file", playbook_dir + "/../../gitops/components/sandbox-platform/provisioner/image.lock.yaml") | from_yaml }}'
+- name: Validate the sandbox provisioner contract
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_relay_enabled | bool
+      - sandbox_provisioner_port | int == 8080
+      - sandbox_pvc_size is match('^[1-9][0-9]*Gi$')
+      - knowledge_mcp_url | urlsplit('scheme') in ['http', 'https']
+      - knowledge_mcp_url | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
+      - sandbox_image.harbor_project is match('^[a-z][a-z0-9-]+$')
+      - sandbox_image.repository == 'sandbox-provisioner'
+      - sandbox_image.digest is match('^sha256:[a-f0-9]{64}$')
+      - sandbox_image.sandbox.harbor_project is match('^[a-z][a-z0-9-]+$')
+      - sandbox_image.sandbox.repository == 'sandbox'
+      - sandbox_image.sandbox.digest is match('^sha256:[a-f0-9]{64}$')
+- name: Prepare a recoverable provisioner shared token
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: sandbox-provisioner
+    component_input_manifest: sandbox-platform/provisioner/auth.sops.yaml
+    component_initial_input:
+      token: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+  no_log: true
+- name: Keep provisioner credential only in memory
+  ansible.builtin.set_fact: {sandbox_provisioner_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Require provisioner token policy
+  ansible.builtin.assert:
+    quiet: true
+    that: sandbox_provisioner_credentials.token is match('^[a-zA-Z0-9]{40}$')
+  no_log: true
+- name: Encrypt the provisioner shared token
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: sandbox-platform/provisioner/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: sandbox-provisioner, namespace: '{{ sandbox_namespace }}'}
+        stringData: {token: '{{ sandbox_provisioner_credentials.token }}'}
+  no_log: true
+- name: Derive the provisioner rollout identity
+  ansible.builtin.set_fact:
+    sandbox_provisioner_input_digest: '{{ [sandbox_image.digest, sandbox_image.sandbox.digest, sandbox_namespace] | to_json | hash("sha256") }}'
+  no_log: true
+- name: Render the sandbox provisioner runtime candidate
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/sandbox-platform/provisioner/workload.yaml.j2'
+    dest: '{{ build }}/sandbox-platform/provisioner/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'

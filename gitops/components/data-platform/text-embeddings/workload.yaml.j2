@@ -1,0 +1,109 @@
+---
+apiVersion: v1
+kind: Service
+metadata: {name: text-embeddings, namespace: {{ data_namespace }}}
+spec:
+  selector: {app.kubernetes.io/name: text-embeddings}
+  ports: [{name: http, port: {{ text_embeddings_port }}, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: text-embeddings, namespace: {{ data_namespace }}}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app.kubernetes.io/name: text-embeddings}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: text-embeddings}
+      annotations:
+        sunmoonai.com/model-revision: {{ text_embeddings_model_revision | quote }}
+        sunmoonai.com/model-files-sha256: {{ text_embeddings_model_digest | quote }}
+    spec:
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: {{ cluster_name }}-{{ text_embeddings_volume.node }}}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: inference
+          image: {{ registry_address }}/platform/text-embeddings-inference@{{ image_map['text-embeddings-inference'].manifest_digest }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --model-id
+            - /models/{{ text_embeddings_model_revision }}
+            - --served-model-name
+            - {{ text_embeddings_model }}
+            - --port
+            - {{ text_embeddings_port | string | to_json }}
+            - --dtype
+            - float32
+            - --pooling
+            - last-token
+            - --max-batch-tokens
+            - {{ text_embeddings_batch_tokens | string | to_json }}
+            - --max-client-batch-size
+            - {{ text_embeddings_client_batch_size | string | to_json }}
+            - --max-concurrent-requests
+            - {{ text_embeddings_concurrent_requests | string | to_json }}
+            - --tokenization-workers
+            - {{ text_embeddings_tokenization_workers | string | to_json }}
+            - --auto-truncate
+            - 'true'
+            - --json-output
+          env:
+            - {name: HF_HUB_OFFLINE, value: '1'}
+            - {name: HF_HUB_DISABLE_TELEMETRY, value: '1'}
+            - {name: HF_HOME, value: /tmp/huggingface}
+            - {name: OMP_NUM_THREADS, value: '4'}
+            - {name: MKL_NUM_THREADS, value: '4'}
+          ports: [{name: http, containerPort: {{ text_embeddings_port }}}]
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 5
+            failureThreshold: 120
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 30
+            failureThreshold: 5
+          resources: {{ text_embeddings_resources | to_json }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: model, mountPath: /models, subPath: models, readOnly: true}
+            - {name: temporary, mountPath: /tmp}
+      volumes:
+        - name: model
+          persistentVolumeClaim: {claimName: text-embeddings-data, readOnly: true}
+        - name: temporary
+          emptyDir: {sizeLimit: 256Mi}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: text-embeddings-clients, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: text-embeddings}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: ragflow}}
+      ports: [{protocol: TCP, port: {{ text_embeddings_port }}}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ragflow-embedding-egress, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: ragflow}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: text-embeddings}}
+      ports: [{protocol: TCP, port: {{ text_embeddings_port }}}]

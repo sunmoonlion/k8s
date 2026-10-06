@@ -1,0 +1,9 @@
+---
+- name: Require the explicit approved account maintenance deadline with recovery time
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - account_maintenance_deadline | int > (lookup('pipe','date +%s') | int) + 900
+      - account_maintenance_deadline | int <= (lookup('pipe','date +%s') | int) + 7200
+      - account_operation is match('^[a-zA-Z0-9_-]{1,80}$')
+    fail_msg: Use the approved two-hour account maintenance deadline and one operation identity; retain 15 minutes for recovery.

@@ -1,0 +1,28 @@
+---
+# Browser console for PostgreSQL. Login is an independent pgAdmin email identity.
+services_pgadmin_enabled: true
+pgadmin_origin: 'https://pgadmin.sunmoonai.com:{{ entry_port }}'
+pgadmin_port: 5050
+pgadmin_volume: {name: pgadmin, node: worker2, size: 2Gi, uid: 5050, gid: 5050}
+pgadmin_resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {cpu: '1', memory: 768Mi}
+
+operator_account_pgadmin:
+  object: ops-platform/pgadmin
+  id: administrator
+  username: admin@sunmoonai.com
+  account_type: platform-administrator
+  table_row: '14'
+  table_import: true
+  current_file: '{{ services_config_dir }}/pgadmin.yaml'
+  current_field: password
+  backup_file: '{{ services_backup_dir }}/pgadmin.yaml'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: pgadmin
+  initial_preset_supported: true
+  initial_file: '{{ services_config_dir }}/presets/pgadmin-admin-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/pgadmin-admin-password'
+  protocol_check_supported: false
+  rotation_supported: false

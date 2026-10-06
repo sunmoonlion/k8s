@@ -1,0 +1,23 @@
+'use strict';
+const {request:call,readAuth}=require('./tls-client');
+const name={{ elk_log_data_view_id | to_json }};
+const title={{ (elk_index_prefix + '-*') | to_json }};
+const auth=readAuth('/run/auth');
+const request=(method,path,data)=>call('kibana',method,path,auth,data);
+(async () => {
+  const path = '/api/data_views/data_view/' + encodeURIComponent(name);
+  let result = await request('GET', path);
+  let created = false;
+  if (result.status === 404) {
+    result = await request('POST', '/api/data_views/data_view', {
+      data_view:{id:name,title,name:'SunMoon application logs',timeFieldName:'@timestamp',allowNoIndex:true},override:false});
+    created = true;
+  }
+  if (result.status !== 200) throw new Error('Kibana view operation returned HTTP '+result.status);
+  result = await request('GET', path);
+  const view = result.data.data_view;
+  if (result.status !== 200 || !view || view.id !== name || view.title !== title || view.timeFieldName !== '@timestamp') {
+    throw new Error('Refuse changing foreign Kibana view identity');
+  }
+  console.log(JSON.stringify({passed:true,id:name,created,existing_view_preserved:!created}));
+})().catch(error => { console.error(error.message); process.exitCode=1; });
