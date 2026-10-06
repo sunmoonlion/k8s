@@ -165,4 +165,5 @@ Casdoor真实检查先失败，原因是把Go IsGlobalAdmin()方法当JSON属性
 - 所有者决定（2026-10-06）：**边缘放东京服务器**（远程助手所在的云 VM，Ubuntu 24.04，2 核 3G，80/443/7000 空闲，有 Docker）。边缘（Traefik、会合点、frps）和集群里的 frpc 做成新体系的部署单元，排在第 7 步人手点通之后；域名与证书、机房上行仍待定。`docs/拓扑.md` 第一节是正式拓扑，第二节是现网过渡形态。
 - 待办 27 续十一（2026-10-06 20:27）：供给器新镜像（带拉取凭据）第五次发布晋级（`aa8e2634`，指针 `72113bee` / `sha256:a6575451…`，tag `release-20261006-3`）。Neo4j 控制台改成不透传 Host 后仍 400 Invalid SNI。按 Jetty 12 的源码：它核的是 **Host 头与服务端自己证书的名字**（`x509.matches(serverName)`），Neo4j 内部证书的 SAN 只有集群内名字；透传时 Host 是公网名字、不透传时 Traefik 把 Host 换成 Pod IP，都对不上。改法：`component-tls.yaml` 支持 `tls_extra_hostnames`，Neo4j 控制台开着时把公网名字签进内部证书；路由恢复透传。现网要重签一次 Neo4j 证书（删主备 `public.crt`，私钥不动，Neo4j 会滚动一次）。
 - 第 7 步进行中（2026-10-06 21:10）：key 登记成功、沙箱运行中、本地代理（Linux 版，在 WSL 里）连上会合点（`relay connected`）。查出一个没做的环节：**代理连上后后端不知道有这台机器**（账 49），「项目」页因此显示没有工作区；先用 CLI 手工登记继续点。另：WSL 里要把 `relay.sunmoonai.com` 加进 `/etc/hosts`、把平台 CA 拷到用户目录给 `NODE_EXTRA_CA_CERTS`；`pnpm approve-builds` 要批准 esbuild。
+- 所有者决定（2026-10-06 21:20）：第 7 步剩下的（项目、工作、专家、数据目录、申请入库）**等账 49 做好再点**，不手工登记机器。到此已点通：登录、登记 key、拉起沙箱、本地代理连上会合点。未跑的轮次：续十二（Neo4j 内部证书加公网名字，`321f58f7`）、待办 28（统一目标改 Wants）。远程下一件：账 49。
 
