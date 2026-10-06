@@ -103,3 +103,15 @@
 ```
 
 `domain_secrets` 的来源只有四种：`random`、`component-input`（平台级输入 `services_config_dir/<name>.yaml` 的一个键）、`workbench-signing`（共享签名密钥对，`private_key_pem` / `public_key_pem`）、`private`（所有者手工放进 `private_dir/domain.yaml` 的值，例如模型厂商的 key；prepare 只读不生成）。
+
+## 九、`infrastructure/` 的收敛（所有者 2026-10-06 问「其它的也要合并吧」）
+
+现在不动；第 10 步跑通后分两次收，大头留到换 Argo。
+
+| 时机 | 做什么 |
+| --- | --- |
+| B 段（和 Jenkins 一起） | Makefile 入口收敛：删 A 段留下的转接名（`services-render/stage`、`application-render/stage/validate-release`），只留 `platform-*` 公开入口和模块入口；`applications/` 改名 `build/`，只留构建链（源码钉版、在线构建、自研镜像清单、锁同步）；应用的 plan 和两份 verify（`services/verify.yaml`、`applications/verify.yaml`）并进 `components/`，检查按组件拆 |
+| C 段 | 环境参数化 |
+| D 段（换 Argo） | `components/` 的渲染器和应用模板换成 Helm/Kustomize，`services/` 残余随之消失，`flux/` → `argocd/`；Ansible 只留 host、registry、entry、cluster、tools |
+| 不做 | `artifacts/` 重构：物料锁和发布器与控制器无关，换 Argo 照用 |
+
