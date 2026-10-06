@@ -8,7 +8,7 @@ dataset_key/name、tenant_id、source_user/bucket/prefix及job_revision界定知
 
 private_dir/provider-source.yaml为原文读取口令，provider-binding.json为远端数据集绑定；root0600并在backup_dir非覆盖逐字节保存，Git只存SOPS。API/Worker获得RAGFlow token和源只读身份；Scheduler仅挂公共CA。
 
-只允许GetObject/GetObjectVersion到info-originals/info/original/*，拒绝写、列桶、读派生桶及管理。严格核VersionId、大小、媒体类型、SHA和TLS。任何摘要/范围不符停止，不用最新对象代替指定历史版本。
+只允许GetObject/GetObjectVersion到info-originals/<source_prefix>*（现为info/，覆盖原文info/original/和登记的数据集文件），拒绝写、列桶、读派生桶及管理。严格核VersionId、大小、媒体类型、SHA和TLS。任何摘要/范围不符停止，不用最新对象代替指定历史版本。
 
 ## 准备与部署
 

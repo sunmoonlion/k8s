@@ -7,12 +7,15 @@ FROM ${NODE_IMAGE}
 ARG CODEX_VERSION=0.155.1
 ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org
 ARG PYPI_INDEX_URL=https://pypi.org/simple
+# Debian 软件源：构建链按下载模式传（国内 mirrors.tuna.tsinghua.edu.cn），不传就用官方
+ARG DEBIAN_MIRROR=
 ENV CODEX_VERSION=${CODEX_VERSION} \
     PIP_BREAK_SYSTEM_PACKAGES=1 \
     CODEX_HOME=/data/codex \
     BRIDGE_PORT=47002 \
     APP_SERVER_PORT=47800
-RUN apt-get update \
+RUN if [ -n "$DEBIAN_MIRROR" ]; then sed -i "s|https\?://deb.debian.org|${DEBIAN_MIRROR}|g" /etc/apt/sources.list.d/debian.sources; fi \
+    && apt-get update \
     && apt-get install -y --no-install-recommends python3 python3-pip ca-certificates git ripgrep tini bash curl \
     && rm -rf /var/lib/apt/lists/* \
     && pip3 install --no-cache-dir --index-url "$PYPI_INDEX_URL" "websockets>=13,<18" \

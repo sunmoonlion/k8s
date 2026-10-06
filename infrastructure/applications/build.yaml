@@ -21,12 +21,14 @@
       executable: '{{ component_image_spec.executable | default("") }}'
       version: '{{ component_image_spec.version | default("") }}'
       budget: '{{ application_build_budget_bytes }}'
+      timeout: '{{ component_image_spec.timeout_seconds | default(1200) }}'
       args: "{{ ['--build-arg=PYTHON_IMAGE=' + registry_address + '/platform/python@' + image_map.python.manifest_digest] if component_image_spec.base | default('') == 'python' else ['--build-arg=NODE_IMAGE=' + registry_address + '/platform/node-runtime@' + image_map['node-runtime'].manifest_digest] }}"
     application_directory: '{{ playbook_dir }}'
     download_modes: '{{ lookup("file", playbook_dir + "/download-modes.json") | from_json }}'
     download_profile: '{{ download_modes[effective_download_mode] }}'
     component: '{{ components[build_component] if build_kind == "application" else component_image_definition }}'
-    component_revision: '{{ source_lock[build_component + "_revision"] if build_kind == "application" else component_images.revision }}'
+    # 组件镜像可以各钉各的提交（images.<名>.revision），没写就用顶层的；这样改一个镜像的源码不必重建另外两个
+    component_revision: '{{ source_lock[build_component + "_revision"] if build_kind == "application" else (component_image_spec.revision | default(component_images.revision)) }}'
     parent_gitlink_revision: '{{ (source_lock[build_component + "_parent_revision"] | default(component_revision)) if build_kind == "application" else component_revision }}'
     components:
       backend:
@@ -98,7 +100,8 @@
         argv: '{{ item }}'
       loop:
         - [git, -C, '{{ source_checkout }}', rev-parse, HEAD]
-        - [git, -C, '{{ source_checkout }}', status, --porcelain, --untracked-files=all]
+        # 组件镜像的源码在本仓：只看它自己的 context 干不干净，别处（例如刚同步进来的 image.lock.yaml）不算
+        - "{{ ['git', '-C', source_checkout, 'status', '--porcelain', '--untracked-files=all'] + (['--', component.context] if build_kind == 'component' else []) }}"
       register: source_state
       changed_when: false
     - name: Read the pinned parent Git object and its component gitlink

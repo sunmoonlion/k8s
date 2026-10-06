@@ -6,8 +6,8 @@
   rescue:
     - name: Classify the failing step without treating earlier recovered warnings as the cause
       vars:
-        failure_output: '{{ (image_build.stderr | default(""))[-8192:] }}'
-        failing_step: '{{ (image_build.stderr | default("")).split("ERROR: failed to")[-1] }}'
+        failure_output: '{{ ((image_build.stdout | default("")) + (image_build.stderr | default("")))[-8192:] }}'
+        failing_step: '{{ ((image_build.stdout | default("")) + (image_build.stderr | default(""))).split("ERROR: failed to")[-1] }}'
       ansible.builtin.set_fact:
         download_failed: >-
           {{ failing_step is search('(?i)pnpm install|corepack install|uv sync|pip install') and failure_output is search('(?i)ERR_PNPM_FETCH|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|UND_ERR_CONNECT_TIMEOUT|Network is unreachable|Connection timed out|Failed to download|failed to fetch|ReadTimeoutError|ConnectionError|Error when performing the request') }}

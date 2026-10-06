@@ -3,12 +3,14 @@
     "npm_registry": "https://registry.npmmirror.com",
     "python_index": "https://pypi.tuna.tsinghua.edu.cn/simple",
     "python_packages": "https://pypi.tuna.tsinghua.edu.cn/packages/",
-    "proxy": false
+    "proxy": false,
+    "debian_mirror": "https://mirrors.tuna.tsinghua.edu.cn"
   },
   "official-proxy": {
     "npm_registry": "https://registry.npmjs.org",
     "python_index": "https://pypi.org/simple",
     "python_packages": "https://files.pythonhosted.org/packages/",
-    "proxy": true
+    "proxy": true,
+    "debian_mirror": ""
   }
 }

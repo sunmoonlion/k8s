@@ -29,3 +29,5 @@ images:
     user: codex
     executable: node
     version: v24.21.0
+    # 要装 apt 包、pip 包和 Codex 的 npm 包，第一次比别的慢
+    timeout_seconds: 3600
