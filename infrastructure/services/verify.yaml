@@ -246,7 +246,7 @@
       when: check_rabbitmq_ui | bool
       ansible.builtin.command:
         argv: [python3, '{{ playbook_dir }}/../../gitops/components/messaging-platform/rabbitmq/ui/verify.py', --origin, '{{ rabbitmq_ui_origin }}', --port, '{{ services_ui_verify_port | default(cluster_ingress_port) }}', --ca, '{{ registry_config_dir }}/clients/ca.crt']
-        stdin: '{{ {"username":(rabbitmq_ui_check_input.content | b64decode | from_yaml).rabbitmq_username,"password":(rabbitmq_ui_check_input.content | b64decode | from_yaml).rabbitmq_password} | to_json }}'
+        stdin: '{{ {"username":(rabbitmq_ui_check_input.content | b64decode | from_yaml).service_credentials.rabbitmq_username,"password":(rabbitmq_ui_check_input.content | b64decode | from_yaml).service_credentials.rabbitmq_password} | to_json }}'
       register: rabbitmq_ui_acceptance
       changed_when: false
       failed_when: false

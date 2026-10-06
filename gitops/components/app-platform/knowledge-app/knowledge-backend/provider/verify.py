@@ -82,8 +82,8 @@ try:
     result=execute('knowledge-api',(root/'verify-runtime.py').read_text(),records)
     records.update(result);save_probe()
     if args.http_service_identities:
-        result['checks'].update(execute('investment-api',(root/'verify-investment-http.py').read_text(),records,120)['http_checks'])
-        result['scope']='Actual Info HTTPS ingestion with Casdoor token, real Scheduler/Outbox/Worker, and Investment HTTPS domain retrieval with independent token'
+        # fable 的 investment 后端没有 HTTP 检索端口（知识检索改走沙箱里的 MCP），原来的 verify-investment-http.py 已删；检索绑定的撤销见账 21
+        result['scope']='Actual Info HTTPS ingestion with Casdoor token, real Scheduler/Outbox/Worker'
     # Clean derived content using the provider's own DML/S3 identity, not an App administrator.
     binding=json.loads(Path(secret['binding_path']).read_text())
     cleanup={**records,'dataset_id':binding['dataset_id'],'filename':'knowledge-'+uuid.UUID(result['upload_identity']).hex+'-'+source['sha256']+'.txt','base':'https://ragflow.'+args.data_namespace+'.svc.cluster.local:9380','token':secret['ragflow']['knowledge_token']}
