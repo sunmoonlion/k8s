@@ -3,6 +3,7 @@
 > 规则（所有者 2026-09-28）：本地助手做集群迁移期间，凡是会影响迁移的部分，远程**不动，只记账**。
 > 迁移完成、所有者说「luna 做完了」之后，按这张表逐项处理，处理完的划掉并写上提交。
 > 远程在此期间只改三个应用仓库的代码与本文档目录。
+> **2026-10-06 起规则变了**（所有者定）：本地助手的额度用完，新体系（`infrastructure/`、`gitops/`）由远程接着做完，本地由 Cursor 按 `switch-test/inbox/` 的待办协助调试。luna 的分支已并进 `fable`，以后都在 `fable` 上改、在 `fable` 工位上跑。旧 `sunmoonai/` 树冻结不删（所有者定）。这张表接着用：每一行在新体系里的落点见 [`platform-kind-v1-review.md`](platform-kind-v1-review.md) 第四节。
 
 ## 怎么记
 
@@ -54,5 +55,5 @@
 | 40 | knowledge 后端多了两个配置，都可不配：`KNOWLEDGE_DATASET_TITLE`（默认数据集在数据目录页上叫什么，不配就显示标识）、`KNOWLEDGE_CATALOG_RATE_PER_MINUTE`（数据目录页面接口的限流，默认 120）。没有数据库迁移。数据目录页的「申请入库」要第 36 行的 `CROSS_APP_TARGETS_JSON` 里有 info | 远程第 9 步，knowledge-backend `8c4f5f4` | 同上 | 只是告知 |
 | 41 | knowledge-admin-frontend 现在也有 `fable` 分支了（2026-10-04 第一次提交）。对齐工位时算进去 | 远程第 9 步 | 同上 | 只是告知 |
 | 42 | 四个后端（模板与三个应用）的镜像要用 2026-10-04 之后的 `fable` 重新构建，才带上「会话在提交后不让对象过期」的修复（账本 H66）。只改了代码，没有新配置、没有数据库迁移。luna 在它自己的分支上为了让真链路走下去而带的同一处改动，要和 `fable` 上的写法一字不差（`postgres.py` 里的 `make_session_factory`），合并时才不冲突 | luna 2026-10-04 在真链路上发现，远程在 `fable` 上修 | 同上 | 待办 |
-| 43 | **合并 luna 的分支（`platform-kind-v1`）时要对的一件事**：luna 在它的分支上也修了第 42 行这个故障（所有者 2026-10-04 告知：「它已经修了」），两边各修了一遍，写法多半不同。合并时四个后端的 `app/infrastructure/storage/postgres.py` 会冲突或重复。处理办法：以 `fable` 的为准（`make_session_factory` 一处建会话、测试从那里取、`tests/test_session_config.py` 守着）；先看 luna 那边除了这一行还改了什么（它说过要「先修模板，再同步实例」，可能动了别的文件和测试），有 `fable` 没有的东西逐项判断要不要留；合并后四套测试全跑，`test_session_config.py` 必须是绿的（它会抓出第二处建会话工厂的地方） | luna 与远程各修了一遍 | 合并 luna 的分支时 | 待办 |
-| 44 | luna 的分支 `platform-kind-v1` 远程已看过（2026-10-06），结论和 43 行待办在新体系里的落点见 [`platform-kind-v1-review.md`](platform-kind-v1-review.md)。要点：新体系是另起的一套，旧 `sunmoonai/` 没动；应用钉的是 master 版源码和 master 版的迁移版本；合并方向建议 `platform-kind-v1` → `fable` | 所有者 2026-10-04 让远程先看 | 合并前 | 等所有者定第六节的四件事 |
+| 43 | **合并 luna 的分支（`platform-kind-v1`）时要对的一件事**：luna 在它的分支上也修了第 42 行这个故障（所有者 2026-10-04 告知：「它已经修了」），两边各修了一遍，写法多半不同。合并时四个后端的 `app/infrastructure/storage/postgres.py` 会冲突或重复。处理办法：以 `fable` 的为准（`make_session_factory` 一处建会话、测试从那里取、`tests/test_session_config.py` 守着）；先看 luna 那边除了这一行还改了什么（它说过要「先修模板，再同步实例」，可能动了别的文件和测试），有 `fable` 没有的东西逐项判断要不要留；合并后四套测试全跑，`test_session_config.py` 必须是绿的（它会抓出第二处建会话工厂的地方） | luna 与远程各修了一遍 | 合并 luna 的分支时 | **已做** 2026-10-06：合并时四个后端的 `postgres.py` 以 fable 为准（tpl-backend `834dff5`、info `89d6598`、knowledge `f75996b`、investment `a49577a`），四仓 `test_session_config.py` 绿 |
+| 44 | luna 的分支 `platform-kind-v1` 远程已看过（2026-10-06），结论和 43 行待办在新体系里的落点见 [`platform-kind-v1-review.md`](platform-kind-v1-review.md)。要点：新体系是另起的一套，旧 `sunmoonai/` 没动；应用钉的是 master 版源码和 master 版的迁移版本；合并方向建议 `platform-kind-v1` → `fable` | 所有者 2026-10-04 让远程先看 | 合并前 | **已做** 2026-10-06：看过，并进了 fable（k8s `997cc610`，父仓 tpl `6579f30`、info `6729dd0`、investment `8bb0a42`、knowledge `116930f`，十二个子仓各一个合并提交）。所有者定：15d 接受；三件任务重排；旧树暂不删；远程接手新体系 |
