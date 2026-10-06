@@ -46,7 +46,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: sandbox-provisioner}
-      annotations: {sunmoonai.com/input-sha256: 'c71fc15b1ec292db534240bbc74b4bf295a60066d3279a935b47020df318fc86'}
+      annotations: {sunmoonai.com/input-sha256: '827eb323af837851c8806ad75d2e627c005a807af677b5325bd354d89c1fdc41'}
     spec:
       serviceAccountName: sandbox-provisioner
       enableServiceLinks: false
@@ -58,7 +58,7 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - {name: SANDBOX_NAMESPACE, value: 'sandbox-platform-dev'}
-            - {name: SANDBOX_IMAGE, value: 'harbor.sunmoonai.com:30443/app-images/sandbox@sha256:ba14b8d3f69e4359a4b13dc78c1078b2ef2ec1498e54eeda8dd62e100c219a2f'}
+            - {name: SANDBOX_IMAGE, value: 'harbor.sunmoonai.com:30443/platform/sandbox@sha256:e758ccb23d40e07f53c4e26b9473bb26d5425ef80848e15d5a7ca4eb88a75c3b'}
             - {name: RELAY_URL, value: 'ws://relay.relay-platform-dev.svc.cluster.local:47100'}
             # 新体系按环境参数化：沙箱的网络策略里，应用（两个 MCP、runner）和会合点各在哪个命名空间
             - {name: APP_NAMESPACE, value: 'app-platform-dev'}
