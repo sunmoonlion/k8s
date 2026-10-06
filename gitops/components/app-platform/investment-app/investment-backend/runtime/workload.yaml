@@ -69,7 +69,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 8efaee814c4f8023e488ac239fa887821cbf6dc26ec513644568495235d39102
+        sunmoonai.com/config-sha256: c2463c94702350018959126756a2d6be9880a2b7d424742dc9918c003e7e593f
     spec:
       serviceAccountName: investment-runtime
       automountServiceAccountToken: false
@@ -129,7 +129,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 8efaee814c4f8023e488ac239fa887821cbf6dc26ec513644568495235d39102
+        sunmoonai.com/config-sha256: c2463c94702350018959126756a2d6be9880a2b7d424742dc9918c003e7e593f
     spec:
       serviceAccountName: investment-runtime
       automountServiceAccountToken: false
@@ -184,7 +184,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 8efaee814c4f8023e488ac239fa887821cbf6dc26ec513644568495235d39102
+        sunmoonai.com/config-sha256: c2463c94702350018959126756a2d6be9880a2b7d424742dc9918c003e7e593f
     spec:
       serviceAccountName: investment-runtime
       automountServiceAccountToken: false
@@ -239,7 +239,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 8efaee814c4f8023e488ac239fa887821cbf6dc26ec513644568495235d39102
+        sunmoonai.com/config-sha256: c2463c94702350018959126756a2d6be9880a2b7d424742dc9918c003e7e593f
     spec:
       serviceAccountName: investment-runtime
       automountServiceAccountToken: false
