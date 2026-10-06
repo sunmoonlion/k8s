@@ -48,7 +48,7 @@ def main():
     require(status == 200 and 'text/html' in headers.get('content-type', ''), 'Console HTML is unavailable')
     require(b'minio' in body.lower() or b'aistor' in body.lower() or b'console' in body.lower(), 'Console page identity missing')
     denied = request('POST', '/api/v1/login', {'accessKey': secret['root_user'], 'secretKey': 'invalid-ui-acceptance-password'})[0]
-    require(denied in [401, 403], 'Invalid console credentials must be denied')
+    require(denied in [401, 403], f'Invalid console credentials must be denied: HTTP {denied}')
     status, headers, _ = request('POST', '/api/v1/login', {'accessKey': secret['root_user'], 'secretKey': secret['root_password']})
     require(status in [200, 201, 204], f'Console login failed: HTTP {status}')
     print(json.dumps({'passed': True, 'origin': args.origin, 'verified_ingress_port': int(args.port),
