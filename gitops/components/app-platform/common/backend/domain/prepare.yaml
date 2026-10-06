@@ -85,61 +85,68 @@
 - name: Prepare the domain secret input pair
   when: domain_secrets_enabled | bool
   block:
-    - name: Inspect preserved domain inputs
-      ansible.builtin.stat: {path: '{{ item }}/domain.yaml', follow: false}
-      loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
-      register: domain_files
-      no_log: true
-    - name: Refuse insecure or redirected domain input
-      ansible.builtin.assert:
-        quiet: true
-        that:
-          - not item.stat.islnk | default(false)
-          - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
-      loop: '{{ domain_files.results }}'
-      no_log: true
-    - name: Restore preserved domain input without rotation
-      ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/domain.yaml', dest: '{{ cfg.private_dir }}/domain.yaml', remote_src: true, mode: '0600'}
-      when: not domain_files.results[0].stat.exists and domain_files.results[1].stat.exists
-      no_log: true
-    - name: Refuse silently regenerating declared domain secrets
-      ansible.builtin.assert:
-        quiet: true
-        that: domain_files.results[0].stat.exists or domain_files.results[1].stat.exists or query('fileglob', component_root + '/runtime/domain.sops.yaml') | length == 0
-    - name: Generate random domain secrets only on first preparation
-      ansible.builtin.copy:
-        dest: '{{ cfg.private_dir }}/domain.yaml'
-        force: false
-        mode: '0600'
-        content: |
-          {% for key in domain_random_keys %}{{ key }}: {{ lookup('password', '/dev/null', length=40, chars=['ascii_letters','digits']) }}
-          {% endfor %}
-      when: not domain_files.results[0].stat.exists and not domain_files.results[1].stat.exists and domain_random_keys | length > 0
-      no_log: true
-    - name: Preserve non-overwritten domain input backup
-      ansible.builtin.copy: {src: '{{ cfg.private_dir }}/domain.yaml', dest: '{{ cfg.backup_dir }}/domain.yaml', remote_src: true, force: false, mode: '0600'}
-      no_log: true
-    - name: Require byte identical recoverable domain input
-      ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/domain.yaml', '{{ cfg.backup_dir }}/domain.yaml']}
-      changed_when: false
-      no_log: true
-    - name: Read private domain input in memory
-      ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/domain.yaml'}
-      register: domain_input
-      no_log: true
-    - name: Decode private domain input
-      ansible.builtin.set_fact: {domain_private_values: '{{ domain_input.content | b64decode | from_yaml }}'}
-      no_log: true
-    - name: Require every random and private value to be present and well formed
-      ansible.builtin.assert:
-        quiet: true
-        that:
-          - item in domain_private_values
-          - domain_private_values[item] is string and domain_private_values[item] | length >= 8
-          - item not in domain_random_keys or domain_private_values[item] is match('^[a-zA-Z0-9]{40}$')
-        fail_msg: 'private_dir/domain.yaml lacks {{ item }}: random keys are generated once; private keys are placed by the owner'
-      loop: '{{ domain_random_keys + domain_private_keys }}'
-      no_log: true
+    - name: Keep a private input pair only for secrets that live in it (random, private)
+      # 只引用平台级输入或共享签名密钥对的应用（如 knowledge）没有 private_dir/domain.yaml，也不该有
+      when: domain_random_keys | length > 0 or domain_private_keys | length > 0
+      block:
+        - name: Inspect preserved domain inputs
+          ansible.builtin.stat: {path: '{{ item }}/domain.yaml', follow: false}
+          loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+          register: domain_files
+          no_log: true
+        - name: Refuse insecure or redirected domain input
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - not item.stat.islnk | default(false)
+              - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+          loop: '{{ domain_files.results }}'
+          no_log: true
+        - name: Restore preserved domain input without rotation
+          ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/domain.yaml', dest: '{{ cfg.private_dir }}/domain.yaml', remote_src: true, mode: '0600'}
+          when: not domain_files.results[0].stat.exists and domain_files.results[1].stat.exists
+          no_log: true
+        - name: Refuse silently regenerating declared domain secrets
+          ansible.builtin.assert:
+            quiet: true
+            that: domain_files.results[0].stat.exists or domain_files.results[1].stat.exists or query('fileglob', component_root + '/runtime/domain.sops.yaml') | length == 0
+        - name: Generate random domain secrets only on first preparation
+          ansible.builtin.copy:
+            dest: '{{ cfg.private_dir }}/domain.yaml'
+            force: false
+            mode: '0600'
+            content: |
+              {% for key in domain_random_keys %}{{ key }}: {{ lookup('password', '/dev/null', length=40, chars=['ascii_letters','digits']) }}
+              {% endfor %}
+          when: not domain_files.results[0].stat.exists and not domain_files.results[1].stat.exists and domain_random_keys | length > 0
+          no_log: true
+        - name: Preserve non-overwritten domain input backup
+          ansible.builtin.copy: {src: '{{ cfg.private_dir }}/domain.yaml', dest: '{{ cfg.backup_dir }}/domain.yaml', remote_src: true, force: false, mode: '0600'}
+          no_log: true
+        - name: Require byte identical recoverable domain input
+          ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/domain.yaml', '{{ cfg.backup_dir }}/domain.yaml']}
+          changed_when: false
+          no_log: true
+        - name: Read private domain input in memory
+          ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/domain.yaml'}
+          register: domain_input
+          no_log: true
+        - name: Decode private domain input
+          ansible.builtin.set_fact: {domain_private_values: '{{ domain_input.content | b64decode | from_yaml }}'}
+          no_log: true
+        - name: Require every random and private value to be present and well formed
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - item in domain_private_values
+              - domain_private_values[item] is string and domain_private_values[item] | length >= 8
+              - item not in domain_random_keys or domain_private_values[item] is match('^[a-zA-Z0-9]{40}$')
+            fail_msg: 'private_dir/domain.yaml lacks {{ item }}: random keys are generated once; private keys are placed by the owner'
+          loop: '{{ domain_random_keys + domain_private_keys }}'
+          no_log: true
+    - name: Use no private domain values unless the pair exists
+      ansible.builtin.set_fact: {domain_private_values: {}, domain_input: {content: ''}}
+      when: not (domain_random_keys | length > 0 or domain_private_keys | length > 0)
     - name: Read referenced platform component inputs only into memory
       ansible.builtin.slurp: {src: '{{ services_config_dir }}/{{ item }}.yaml'}
       loop: '{{ domain_component_inputs }}'
