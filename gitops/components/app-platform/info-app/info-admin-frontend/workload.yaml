@@ -18,7 +18,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/info-admin-frontend@sha256:830a02d932de934006ae48055c4ed7dfb50cc9e6c3d2a89237996c02efc50759
+          image: harbor.sunmoonai.com:30443/platform/info-admin-frontend@sha256:c7c096d48d0a458e968bc98bee1ff47fb8d2cf8039991f06c7887a108b3e4194
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
@@ -27,7 +27,7 @@ spec:
             - {name: AUTH_APP, value: info}
             - {name: APP_ORIGIN, value: "https://info-admin.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://info-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "info-aacd423b74d2a837"}
+            - {name: DEPLOYMENT_ID, value: "info-admin-frontend-c7c096d48d0a458e"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}

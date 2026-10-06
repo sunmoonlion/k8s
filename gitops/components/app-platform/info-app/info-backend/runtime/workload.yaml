@@ -4,7 +4,7 @@ metadata: {name: info-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: info
-  DEPLOYMENT_ID: "info-aacd423b74d2a837"
+  DEPLOYMENT_ID: "info-backend-9e536b0ad5e4d35e"
   ALLOWED_HOSTS: "localhost,127.0.0.1,info-api,info-api.app-platform-dev.svc.cluster.local,info.sunmoonai.com,info-admin.sunmoonai.com"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -30,6 +30,9 @@ data:
   SSL_CERT_FILE: /etc/sunmoon/service/ca.crt
   STORAGE_BACKEND: "s3"
   SEARCH_BACKEND: "disabled"
+  CROSS_APP_TARGETS_JSON: "{\"knowledge\": {\"web_base_url\": \"https://knowledge.sunmoonai.com:30443\"}}"
+  CROSS_APP_SOURCES_JSON: "{\"investment\": {\"return_url\": \"https://investment.sunmoonai.com:30443/zh-CN/workbench?ref={ref}\"}, \"knowledge\": {}}"
+  KNOWLEDGE_APP_DATASET_URL: "https://knowledge-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowledge/datasets"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -62,7 +65,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: fddd799051551e312efa097efa4bcc85af27a44f53ef21118046c47bca8c1498
+        sunmoonai.com/config-sha256: 2a8f91ae496ac172efc4c52e412798ef69d8029d675f458733a9b430b36ff990
     spec:
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
@@ -70,7 +73,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:2443d576ab1b24b99092f41b6c0562e0fa34b3b1ffeffdd7c70365a6921c242a
+          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:9e536b0ad5e4d35e1070a0cdcad724c0a669d6e09aac7de8653803701633ffb5
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -125,7 +128,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: fddd799051551e312efa097efa4bcc85af27a44f53ef21118046c47bca8c1498
+        sunmoonai.com/config-sha256: 2a8f91ae496ac172efc4c52e412798ef69d8029d675f458733a9b430b36ff990
     spec:
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
@@ -133,7 +136,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:2443d576ab1b24b99092f41b6c0562e0fa34b3b1ffeffdd7c70365a6921c242a
+          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:9e536b0ad5e4d35e1070a0cdcad724c0a669d6e09aac7de8653803701633ffb5
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -152,7 +155,7 @@ spec:
             - {secretRef: {name: info-rabbitmq-runtime}}
             - {secretRef: {name: info-storage-runtime}}
             - {secretRef: {name: info-knowledge-service}}
-          resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "2", "memory": "1Gi"}}
+          resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "2", "memory": "1536Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
             - {name: service-ca, mountPath: /etc/sunmoon/service, readOnly: true}
@@ -184,7 +187,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: fddd799051551e312efa097efa4bcc85af27a44f53ef21118046c47bca8c1498
+        sunmoonai.com/config-sha256: 2a8f91ae496ac172efc4c52e412798ef69d8029d675f458733a9b430b36ff990
     spec:
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
@@ -192,7 +195,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:2443d576ab1b24b99092f41b6c0562e0fa34b3b1ffeffdd7c70365a6921c242a
+          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:9e536b0ad5e4d35e1070a0cdcad724c0a669d6e09aac7de8653803701633ffb5
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
@@ -310,3 +313,16 @@ spec:
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
           podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
       ports: [{protocol: TCP, port: 8443}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: info-public-sites-out, namespace: app-platform-dev}
+spec:
+  podSelector:
+    matchExpressions:
+      - {key: app.kubernetes.io/name, operator: In, values: [info-worker]}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock: {cidr: 0.0.0.0/0}
+      ports: [{protocol: TCP, port: 443}, {protocol: TCP, port: 80}]
