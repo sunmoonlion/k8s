@@ -18,7 +18,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/knowledge-admin-frontend@sha256:9828df053f968852cd931166f78c145502dc2ebb0a4de343acfa9c35c7865771
+          image: harbor.sunmoonai.com:30443/platform/knowledge-admin-frontend@sha256:b4c23cdcd7e00f39e84402022458c6bdbf4d1fae1c9f4ec703d112c2b4d506c5
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
@@ -27,7 +27,7 @@ spec:
             - {name: AUTH_APP, value: knowledge}
             - {name: APP_ORIGIN, value: "https://knowledge-admin.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://knowledge-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "knowledge-c4b5fb051de89782"}
+            - {name: DEPLOYMENT_ID, value: "knowledge-admin-frontend-b4c23cdcd7e00f39"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}

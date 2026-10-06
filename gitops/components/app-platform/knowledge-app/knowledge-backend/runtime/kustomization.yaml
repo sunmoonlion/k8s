@@ -4,3 +4,4 @@ resources:
 - workload.yaml
 - tls.sops.yaml
 - provider.sops.yaml
+- domain.sops.yaml

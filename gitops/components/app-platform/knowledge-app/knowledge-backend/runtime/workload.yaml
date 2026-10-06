@@ -4,7 +4,7 @@ metadata: {name: knowledge-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: knowledge
-  DEPLOYMENT_ID: "knowledge-c4b5fb051de89782"
+  DEPLOYMENT_ID: "knowledge-backend-be3c4269ce1a14a8"
   ALLOWED_HOSTS: "localhost,127.0.0.1,knowledge-api,knowledge-api.app-platform-dev.svc.cluster.local,knowledge.sunmoonai.com,knowledge-admin.sunmoonai.com,knowledge-tls.app-platform-dev.svc.cluster.local"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -24,7 +24,7 @@ data:
   S3_REGION: us-east-1
   S3_FORCE_PATH_STYLE: 'true'
   ARTIFACT_S3_ALLOWED_BUCKETS: "info-originals"
-  ARTIFACT_S3_ALLOWED_PREFIXES: "info/original/"
+  ARTIFACT_S3_ALLOWED_PREFIXES: "info/"
   SSL_CERT_FILE: /etc/sunmoon/provider/ca.crt
   INTERNAL_AUTH_CASDOOR_APPLICATION: "sunmoonai-info-knowledge-ingest"
   INTERNAL_AUTH_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
@@ -38,6 +38,17 @@ data:
   RETRIEVAL_AUTH_AUDIENCE: "sunmoon-investment-knowledge-retrieve"
   RETRIEVAL_AUTH_SUBJECT_ALLOWLIST: "admin/sunmoonai-investment-knowledge-retrieve"
   RETRIEVAL_AUTH_REQUIRED_SCOPE: "knowledge:retrieve"
+  CROSS_APP_TARGETS_JSON: "{\"info\": {\"web_base_url\": \"https://info.sunmoonai.com:30443\"}}"
+  CROSS_APP_SOURCES_JSON: "{\"investment\": {\"return_url\": \"https://investment.sunmoonai.com:30443/zh-CN/workbench?ref={ref}\"}, \"info\": {}}"
+  KNOWLEDGE_MCP_JWT_ISSUER: "sunmoon-workbench"
+  KNOWLEDGE_MCP_RATE_PER_MINUTE: "120"
+  KNOWLEDGE_CATALOG_RATE_PER_MINUTE: "120"
+  KNOWLEDGE_DATASET_TITLE: "\u96f6\u552e\u7ecf\u8425\u5e93\uff08\u6700\u5c0f\u5b9e\u4f8b\uff09"
+  KNOWLEDGE_DATASET_REGISTRY_ENABLED: "true"
+  KNOWLEDGE_DATASET_ALLOWED_BUCKETS: "info-originals"
+  KNOWLEDGE_DATASET_CACHE_DIR: "/tmp/knowledge-datasets"
+  KNOWLEDGE_SEMANTIC_ENGINE_ENABLED: "true"
+  KNOWLEDGE_SEMANTIC_CACHE_DIR: "/tmp/knowledge-semantic"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -71,7 +82,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 3c109c46b39467ae4796032939d95279f78a8566f4dcfce244bdd1f9a0da0074
+        sunmoonai.com/config-sha256: 43f18e3760837a98ffb79ab299f12c1210c39243adf8c1652e58081a56d82eaf
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
@@ -79,7 +90,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:e65abcf5f8d37b29ea63194dad8380a1c1b45603c174438119f63dd338bd85e6
+          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:be3c4269ce1a14a8c6bf17d2197b8e9d46d1db650e03588c61e2fb19c93a752c
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -100,6 +111,7 @@ spec:
             - {secretRef: {name: knowledge-rabbitmq-runtime}}
             - {secretRef: {name: knowledge-redis-runtime}}
             - {secretRef: {name: knowledge-browser-secrets}}
+            - {secretRef: {name: knowledge-domain-runtime}}
             - {secretRef: {name: knowledge-provider-runtime}}
           resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "2", "memory": "768Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
@@ -109,7 +121,7 @@ spec:
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
         - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
-        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: tmp, emptyDir: {sizeLimit: 2Gi}}
         - {name: celery-config, configMap: {name: knowledge-celery-config}}
 ---
 apiVersion: apps/v1
@@ -132,7 +144,7 @@ spec:
         sunmoonai.com/ragflow-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 3c109c46b39467ae4796032939d95279f78a8566f4dcfce244bdd1f9a0da0074
+        sunmoonai.com/config-sha256: 43f18e3760837a98ffb79ab299f12c1210c39243adf8c1652e58081a56d82eaf
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
@@ -140,7 +152,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:e65abcf5f8d37b29ea63194dad8380a1c1b45603c174438119f63dd338bd85e6
+          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:be3c4269ce1a14a8c6bf17d2197b8e9d46d1db650e03588c61e2fb19c93a752c
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -166,7 +178,7 @@ spec:
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
         - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
-        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: tmp, emptyDir: {sizeLimit: 2Gi}}
         - {name: celery-config, configMap: {name: knowledge-celery-config}}
 ---
 apiVersion: apps/v1
@@ -187,7 +199,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 3c109c46b39467ae4796032939d95279f78a8566f4dcfce244bdd1f9a0da0074
+        sunmoonai.com/config-sha256: 43f18e3760837a98ffb79ab299f12c1210c39243adf8c1652e58081a56d82eaf
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
@@ -195,7 +207,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:e65abcf5f8d37b29ea63194dad8380a1c1b45603c174438119f63dd338bd85e6
+          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:be3c4269ce1a14a8c6bf17d2197b8e9d46d1db650e03588c61e2fb19c93a752c
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
@@ -220,7 +232,7 @@ spec:
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
         - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
-        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: tmp, emptyDir: {sizeLimit: 2Gi}}
         - {name: celery-config, configMap: {name: knowledge-celery-config}}
 ---
 apiVersion: v1
@@ -292,3 +304,15 @@ spec:
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
           podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
       ports: [{protocol: TCP, port: 8443}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowledge-sandboxes-in, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-api}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: sandbox-platform-dev}}
+          podSelector: {matchLabels: {"sunmoonai.com/sandbox": "true"}}
+      ports: [{protocol: TCP, port: 8000}]
