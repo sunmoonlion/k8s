@@ -17,10 +17,12 @@ def main():
         parser.add_argument('--' + key, required=True)
     args = parser.parse_args()
     require(args.namespace.startswith('sandbox-'), 'Unexpected sandbox namespace')
-    probe = "curl --silent --show-error --fail --max-time 10 http://127.0.0.1:8080/healthz"
+    # 供给器镜像是 python slim，没有 curl（第 27 轮 platform-check 停在这里）：用它自己的 python 探
+    probe = ("import json,sys,urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=10); "
+             "sys.exit(0 if r.status == 200 and sys.stdout.write(r.read().decode()) is not None else 1)")
     result = subprocess.run(
         [args.kubectl, '--kubeconfig', args.kubeconfig, '--request-timeout=30s',
-         '-n', args.namespace, 'exec', 'deployment/sandbox-provisioner', '--', 'sh', '-ec', probe],
+         '-n', args.namespace, 'exec', 'deployment/sandbox-provisioner', '--', 'python', '-c', probe],
         check=False, capture_output=True, text=True)
     require(result.returncode == 0, result.stderr.strip() or 'provisioner healthz exec failed')
     body = json.loads(result.stdout)
