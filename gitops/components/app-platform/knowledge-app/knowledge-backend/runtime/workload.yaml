@@ -4,7 +4,7 @@ metadata: {name: knowledge-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: knowledge
-  DEPLOYMENT_ID: "knowledge-backend-be3c4269ce1a14a8"
+  DEPLOYMENT_ID: "knowledge-backend-f9cccfe6a8448d19"
   ALLOWED_HOSTS: "localhost,127.0.0.1,knowledge-api,knowledge-api.app-platform-dev.svc.cluster.local,knowledge.sunmoonai.com,knowledge-admin.sunmoonai.com,knowledge-tls.app-platform-dev.svc.cluster.local"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -90,7 +90,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:be3c4269ce1a14a8c6bf17d2197b8e9d46d1db650e03588c61e2fb19c93a752c
+          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:f9cccfe6a8448d19d2e0f786ce3ae06789424d716ecbd7ec71e7de21c812c7e2
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -152,7 +152,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:be3c4269ce1a14a8c6bf17d2197b8e9d46d1db650e03588c61e2fb19c93a752c
+          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:f9cccfe6a8448d19d2e0f786ce3ae06789424d716ecbd7ec71e7de21c812c7e2
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -207,7 +207,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:be3c4269ce1a14a8c6bf17d2197b8e9d46d1db650e03588c61e2fb19c93a752c
+          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:f9cccfe6a8448d19d2e0f786ce3ae06789424d716ecbd7ec71e7de21c812c7e2
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]

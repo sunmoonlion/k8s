@@ -58,7 +58,7 @@ data:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'knowledge-migrate-be3c4269ce1a-v2', namespace: app-platform-dev}
+metadata: {name: 'knowledge-migrate-f9cccfe6a844-v2', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 420
@@ -72,14 +72,14 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: migrate
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:be3c4269ce1a14a8c6bf17d2197b8e9d46d1db650e03588c61e2fb19c93a752c
+          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:f9cccfe6a8448d19d2e0f786ce3ae06789424d716ecbd7ec71e7de21c812c7e2
           imagePullPolicy: IfNotPresent
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
           envFrom: [{secretRef: {name: knowledge-migration-auth}}]
           env:
             - {name: ENV, value: production}
-            - {name: DEPLOYMENT_ID, value: 'f75996bbf7853cd81fbfbd6574999c1b396f66e8'}
+            - {name: DEPLOYMENT_ID, value: 'ee3b0b0cf9b62f19acab6b4529d921f482e5d9fa'}
             - {name: ADMIN_FRONTEND_BASE_URL, value: 'https://knowledge-admin.sunmoonai.com:30443'}
             - {name: WEB_FRONTEND_BASE_URL, value: 'https://knowledge.sunmoonai.com:30443'}
             - {name: EXPECTED_SCHEMA_REVISION, value: '20260927_0007'}
