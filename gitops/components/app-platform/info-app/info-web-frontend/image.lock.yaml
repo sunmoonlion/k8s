@@ -1,6 +1,6 @@
 # Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
 repository: info-web-frontend
-digest: sha256:a2749a27479d217aa3cdb3363bde648f3a50e5fcd5ee6927db9bbd8e21caf159
-source_revision: 58f01b6b1c720388656b15c8cbea296b25288d41
-deployment_id: info-web-frontend-a2749a27479d217a
+digest: sha256:80dbaa9b1d23c14f6d0b1daff951c33f384d4f9730873de90ceceb806ee692a0
+source_revision: 0ac00faf431adb6d7a31ad41f11168bbf144a65b
+deployment_id: info-web-frontend-80dbaa9b1d23c14f

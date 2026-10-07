@@ -18,7 +18,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/investment-admin-frontend@sha256:7060113659a092b1d3d18e940e0b564127b5a41ac1fec283eb249017c9dd7aa9
+          image: harbor.sunmoonai.com:30443/platform/investment-admin-frontend@sha256:7d8e65f691228af1dde02515bd3a85cc89d94e19852d1ade1849fffa707ac1e7
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
@@ -27,10 +27,11 @@ spec:
             - {name: AUTH_APP, value: investment}
             - {name: APP_ORIGIN, value: "https://investment-admin.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://investment-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "investment-admin-frontend-7060113659a092b1"}
+            - {name: DEPLOYMENT_ID, value: "investment-admin-frontend-7d8e65f691228af1"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
+            - {name: INFO_ADMIN_URL, value: "https://info-admin.sunmoonai.com:30443"}
           startupProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 3, failureThreshold: 60}
           readinessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 10, timeoutSeconds: 3}
           livenessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 20, timeoutSeconds: 3}
