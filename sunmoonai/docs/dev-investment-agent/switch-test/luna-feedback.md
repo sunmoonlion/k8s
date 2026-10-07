@@ -22,3 +22,23 @@
 5. 「本机历史上做过 elevated setup」这一条记着：第 1 段 `init` 探测沙箱模式时，要能区分「本机有 elevated 环境」和「没有」，别只看配置文件。
 
 不用改的：报告与 CHECKPOINT 的写法保持；`scripts/results/` 继续只追加。
+
+## 2026-10-07 晚 · 第 1 段中途（runtime `36ec68b`）：沙箱承载方案定了
+
+**决定（所有者 2026-10-07 采纳 luna 的意见）：同意按「内层沙箱 + 严格协议过滤」继续第 1 段。Windows 不做外层，两层嵌套在 0.155.1 上起不来（`CreateRestrictedToken failed: 87`、elevated 超时），不再试。** 但下面几条补齐并通过攻击性用例之后才放开 Windows 启动；不能只凭一次真实路径解析就认定安全。
+
+| 要补的 | 内容 |
+| --- | --- |
+| 命令权限检查完整 | `process/start` 不只看模式、cwd、workspaceRoots：请求里每一项实际写权限都核；关闭内层沙箱（`sandbox: null` / `none`）、扩大可写目录、放开网络，高于上限的一律拒 |
+| 协议入口收紧 | 只放行明确列出的方法；未知方法、二进制帧、没列的消息一律拒并记日志。**读也限在白名单 + 代理自己的 codex-home**（`fs/readFile`、`fs/open`、`fs/readDirectory`、`fs/walk` 等目标在外面就拒）；这一条比 Linux 现状严，Linux 以后跟上 |
+| 文件操作的目录联接与竞态 | 检查时路径在白名单内、执行前被换成联接指向外面，这种「检查后替换」要堵。**优先把 `fs/writeFile|createDirectory|remove|copy` 改为由受限执行环境实施**：桥不直接转发，而是在 Codex 的 Windows 沙箱里（白名单可写的 profile）跑一个小助手完成写入，由 OS 挡，竞态自然没了；做不到或代价太大，就必须用攻击用例证明别的办法挡得住替换（联接、符号链接、硬链接、大小写、8.3 短名、`\\?\` 前缀各试） |
+| 验收 | 加一组攻击性用例（上面每一项至少一个），全部被拒才算；写进 `agent/test/`，Windows 上跑 |
+
+说明：「和 Codex 自己给 Windows 用户的做法一样」说过头了，只是复用了它的内层沙箱；我们的请求来自远端，安全性取决于桥。官方也说 `unelevated` 隔离较弱——所以 `init` 探测到本机有 elevated 环境时优先用 elevated，没有才用 unelevated，并在状态里写明用的是哪一种。
+
+两处顺手的：
+
+1. 任务书里会合点端口写错了：网页「设置」发的 `init` 命令是 `wss://relay.sunmoonai.com:30443`（走入口），不是 30471。任务书已改，以网页发的为准。
+2. Windows 启动「准入没过就拒绝」是对的，保留；上面四条做完、用例全过，再放开。`--no-outer-sandbox` 这个开关在 Windows 上没有意义，去掉或忽略即可。
+
+设计文档 `SDD/modules/0005-agent.md`「本地上限由谁挡」已加 Windows 一段。

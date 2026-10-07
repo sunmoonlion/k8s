@@ -79,6 +79,8 @@ Windows 开工前先探两件，都是上线门：
 
 已定（探针 2026-09-23）：exec-server 不挡，代理挡，两层：OS 级外沙箱包住 exec-server 进程，加出站桥内的协议过滤。细节见 [安全](../architecture/security.md)「本地上限」。
 
+**Windows（所有者 2026-10-07 定，采纳 luna 的审读）：不做外层。** 0.155.1 上外层受限令牌与内层每请求沙箱叠不起来（`CreateRestrictedToken failed: 87`，elevated 超时；`runtime/scripts/results/windows-agent-1.20261007-2025.md`）。Windows 的两层是：Codex 自己的 Windows 沙箱按每个 `process/start` 的模式挡命令（本机有 elevated 环境用 elevated，否则 unelevated），加出站桥内的**严格**协议过滤——只放行列出的方法，命令请求逐项核权限，读写都限在白名单与代理的 codex-home，文件写操作优先改为在受限执行环境里实施（堵目录联接的「检查后替换」），并以攻击性用例验收后才启用。比 Linux 多出的限制（读限白名单、文件写走受限环境）以后 Linux 跟上。
+
 ## 探针已知
 
 本地上限：执行端 `config.toml`/`requirements.toml` 不限制编排端要求（`probe/REPORT-2026-09-23-local-ceiling.md`）。exec-server 可远端执行、可改本地文件、沙箱在 executor 侧生效、审批请求带 `environmentId`、stdin 关闭即退出（须 `setsid … < /dev/null`）、listen 模式无认证。见 `runtime/probe/REPORT-2026-09-23-remote-exec.md`。

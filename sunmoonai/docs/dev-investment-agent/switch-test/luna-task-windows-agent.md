@@ -41,7 +41,7 @@
 - 执行端家的 `config.toml` 由代理写：`[windows] sandbox = "elevated"`（做过 setup）或 `"unelevated"`；`init` 时探测哪一种可用。
 - `init | roots | ceiling | start | status` 在 PowerShell 下能用；路径处理（`paths.ts`、`pathuri.ts`）对 Windows 路径（盘符、反斜杠、`file:///C:/…`）有测试。
 - 过滤规则对 Windows 路径的判断（白名单根的前缀比较要不分大小写、规范化分隔符）有测试，用真实抓到的帧。
-- 在 Windows 上 `pnpm typecheck && pnpm test` 全过；对着现网会合点（`wss://relay.sunmoonai.com:30471`，令牌从网页设置页拿）连上，网页「我的机器」里出现这台机器、在线。
+- 在 Windows 上 `pnpm typecheck && pnpm test` 全过；对着现网会合点（地址和令牌都从网页「设置 → 本地代理」发的 `init` 命令里拿，现在是 `wss://relay.sunmoonai.com:30443`）连上，网页「我的机器」里出现这台机器、在线。
 
 **停点**：结果写 `runtime/scripts/results/windows-agent-1.<时间>.md`；`CHECKPOINT.md` 更新。
 
