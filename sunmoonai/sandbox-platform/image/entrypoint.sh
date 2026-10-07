@@ -29,6 +29,11 @@ if [ ! -f "$CODEX_HOME/config.toml" ] || [ "${REWRITE_CONFIG:-1}" = 1 ]; then
     echo "[features]"
     echo "multi_agent = false"
     echo "goals = false"
+    # Windows 执行端（0005-agent，2026-10-08）：编排端按自己这一项决定发给 Windows 执行器的内层沙箱级别，
+    # 不配就是 disabled，app-server 在 Windows 环境上一条命令都不发。配 unelevated（不要管理员）；
+    # 本地代理在本机有 elevated 环境时自己升级，远端降不了级。对 Linux 执行器这一项没有作用。
+    echo "[windows]"
+    echo "sandbox = \"unelevated\""
     # 知识服务 MCP（0006）：HTTP 型写进编排端 config；令牌走环境变量名，不落盘（F-KNOW-03）
     if [ -n "${KNOWLEDGE_MCP_URL:-}" ]; then
       echo "[mcp_servers.sunmoon_knowledge]"
