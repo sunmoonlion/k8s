@@ -7,3 +7,6 @@ investment_admin_deployment:
   port: 3000
   replicas: 1
   resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
+  # 管理端自己的明文配置（账 56）：「缺数据的需求」页链去 info 管理端发起采集
+  env:
+    INFO_ADMIN_URL: https://info-admin.sunmoonai.com:30443

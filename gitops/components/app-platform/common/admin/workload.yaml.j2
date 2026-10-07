@@ -32,6 +32,9 @@ spec:
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '{{ front.port }}'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
+{% for key,value in (front.env | default({})).items() %}
+            - {name: {{ key }}, value: {{ value | string | to_json }}}
+{% endfor %}
           startupProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 3, failureThreshold: 60}
           readinessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 10, timeoutSeconds: 3}
           livenessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 20, timeoutSeconds: 3}

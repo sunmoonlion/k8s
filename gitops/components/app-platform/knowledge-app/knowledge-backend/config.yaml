@@ -57,7 +57,6 @@ knowledge_backend_deployment:
   domain_env:
     KNOWLEDGE_MCP_JWT_ISSUER: sunmoon-workbench
     KNOWLEDGE_MCP_RATE_PER_MINUTE: '120'
-    KNOWLEDGE_CATALOG_RATE_PER_MINUTE: '120'
     KNOWLEDGE_DATASET_TITLE: 零售经营库（最小实例）
     KNOWLEDGE_DATASET_REGISTRY_ENABLED: 'true'
     KNOWLEDGE_DATASET_ALLOWED_BUCKETS: info-originals
