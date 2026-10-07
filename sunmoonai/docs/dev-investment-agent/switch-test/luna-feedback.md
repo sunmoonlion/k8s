@@ -42,3 +42,8 @@
 2. Windows 启动「准入没过就拒绝」是对的，保留；上面四条做完、用例全过，再放开。`--no-outer-sandbox` 这个开关在 Windows 上没有意义，去掉或忽略即可。
 
 设计文档 `SDD/modules/0005-agent.md`「本地上限由谁挡」已加 Windows 一段。
+
+## 2026-10-08 · 第 1 段中途：文件写助手不用 Python；应用控制拦未签名 exe
+
+1. **不加 Python 依赖。** 用户机器上只装一个东西（`0005-agent`「分发与安装」），Node、Python、Git 都不要求。助手用我们本来就带的 Node 跑：一个 `helper.mjs`，写入命令是 `codex.exe sandbox --permission-profile <白名单可写> -- node.exe helper.mjs <参数>`。边界由 Codex 沙箱在 OS 层挡，助手里普通 `fs.writeFile` 即可，不需要句柄级接口——联接跟出去会被沙箱拒，这正是把写入放进沙箱的目的。开发时用本机 Node 24；安装包里带官方签名的 `node.exe`。攻击用例照样全跑。
+2. **应用控制把新编译的未签名 exe 拦了，这是打包的硬约束。** 说明开着 Smart App Control / WDAC 的机器上，「不签名、点仍要运行」这条路也走不通。所以第 3 段打包**不编译自己的 exe**：包里只放签过名的 `node.exe`、`codex.exe` 和我们的 JS；启动与开机自启走计划任务拉 `node.exe`，快捷方式也指向它；托盘若必须是原生窗口再单独议。把这台机器的应用控制状态（`Get-MpComputerStatus`、Smart App Control 开关、是否有 WDAC 策略）记进结果，第 3 段要在这种机器上装一次。
