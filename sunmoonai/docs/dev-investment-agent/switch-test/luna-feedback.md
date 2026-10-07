@@ -66,3 +66,27 @@
 - 报告、证据、清理、不扩大结论的写法都好；保持。
 
 第 2 段的内容不变（MCP 合并、抬高上限的本机确认、reject 提示、日志轮转），等上面三件过了再开。
+
+## 2026-10-08 · 第 1 段补验 1b（runtime `0c5779d`）：代理侧的修复接受；两处衔接由双方分头做
+
+**结论：1b 的查法和修法都对**——环境变量继承、14 组 fs 回包逐字段对齐、握手/命令字段按真实 app-server 补齐、拒绝逐条留底、不用模拟轮次冒充验收。1b 仍未通过（三项网页验收没做成），原因是编排端两处要配合，不是代理的错。分工如下。
+
+**远程已做 / 在做（编排端与工作台）：**
+
+1. **编排端的 Windows 沙箱级别。** 你的本机对照说明了：app-server 按自己配置里的 `[windows] sandbox` 决定发给 Windows 执行器的级别，不配就是 disabled、一条 `process/start` 都不发。沙箱入口脚本已加 `[windows] sandbox = "unelevated"`（k8s `2fe6652c`），重建沙箱镜像上现网是待办 33（Cursor 跑），之后所有者回收并重新拉起沙箱。代理侧保持「远端的 `windowsSandboxLevel` 只接受 `restricted-token|elevated`，本机有 elevated 就升级」。
+2. **`tmpdir` / `slash_tmp`：先走代理侧，不改工作台。** 0.155.1 的 `workspaceWrite` 自动追加这两个「特殊」可写项，是 exec-server 按执行端自己的 TEMP/TMP 解析的。所以代理可以：给 exec-server 进程设 `TEMP`/`TMP` 指向代理自己管的目录（`%LOCALAPPDATA%\sunmoon-agent\tmp`，代理建、代理清），策略**只在** `tmpdir` 特殊项解析到这个目录时接受它的写权限；`slash_tmp` 查 0.155.1 在 Windows 上实际解析成什么（`cfg!(unix)` 之外多半不生成或指向不存在的路径），按实际处理。这样命令写临时文件照常，白名单没扩到用户的全局 Temp。走不通再由远程改工作台 `turn_settings()` 加 `excludeTmpdirEnvVar` / `excludeSlashTmp`——那会让命令写不了临时文件，是退路。
+3. 「＋新建」从项目里点应带上当前项目、独立聊天要说明没挂项目：记账 61，远程改网页端。
+
+**luna 这一轮接着做（仍在第 1 段内）：**
+
+| # | 要做的 |
+| --- | --- |
+| a | 上面第 2 条的代理侧临时目录方案，加攻击用例：`tmpdir` 指向别处（远端改 env 想改 TEMP 被保留项拦；执行端 TEMP 被换）时拒 |
+| b | 白名单内**不存在**的路径：助手现在回「filesystem worker refused request」（5 次），真 exec-server 回的是 not-found 类错误。对着 0.155.1 抓一帧不存在路径的 `fs/getMetadata`/`fs/readFile` 真回包，助手照它答；app-server 探路径靠这个区分「没有」和「不许」 |
+| c | 命令结束后客户端补发的 `process/terminate` 现在被当成 `unknown processId` 拒绝并计入 denied：guard 释放后仍认得这个 processId 一小段时间（或照 exec-server 对已结束进程的真回包答），不算 denied |
+| d | `environmentConfig/read`：读的是执行端自己的 `config.toml`（代理写的，不含凭据）。第 2 段 MCP 合并要用它，现在先放行**只读这一个文件**（路径固定为代理 codex-home 的 config.toml，字段照 0.155.1 核），别的仍拒 |
+| e | 待办 33 上现网、所有者重拉沙箱后，重连 Windows 代理，所有者从**项目页**走三项：新聊天列文件、新工作建 `browser-check.txt`（内容 `Windows stage1b OK`）、请一次专家。贴完整 denied 列表与三项结果；三项都成才把 1b 记通过，然后等审读进第 2 段 |
+
+补一句：`capabilityRoots/discoverV1`、带 `sandbox` 的 fs 请求、`http/request` 这三个，第 e 项实测里看 app-server 发不发、拒了有没有影响；要放行就照「逐字段核、路径限白名单」加。
+
+目录句柄实验（`opendirSync` 挡不住重命名、cwd 固定能挡）结论清楚，保留现状即可；并发进程数问题记着，第 3 段前再看。
