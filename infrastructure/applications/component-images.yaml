@@ -30,7 +30,8 @@ images:
     # 沙箱 Dockerfile 在 e3ce871f 加了 DEBIAN_MIRROR：只有它钉新提交，会合点/供给器仍钉顶层的。
     # 源的地址在 download-modes.json（不在 context 里，不用改钉的提交）；国内源用 http：slim 基础镜像没有 ca-certificates，
     # apt 走 https 会在证书上失败（2026-10-06 第 26 轮退出 100），包本身有签名
-    revision: e3ce871f96d160aa2017960e98d176c102b991e4
+    # 2fe6652c：编排端配置加 [windows] sandbox = unelevated（Windows 代理第 1 段联调）
+    revision: 2fe6652cb99c3bb482263724ccefd42ea01532e4
     context: sunmoonai/sandbox-platform
     dockerfile: image/Dockerfile
     base: node-runtime
