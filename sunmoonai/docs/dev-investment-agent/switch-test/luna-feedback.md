@@ -47,3 +47,22 @@
 
 1. **不加 Python 依赖。** 用户机器上只装一个东西（`0005-agent`「分发与安装」），Node、Python、Git 都不要求。助手用我们本来就带的 Node 跑：一个 `helper.mjs`，写入命令是 `codex.exe sandbox --permission-profile <白名单可写> -- node.exe helper.mjs <参数>`。边界由 Codex 沙箱在 OS 层挡，助手里普通 `fs.writeFile` 即可，不需要句柄级接口——联接跟出去会被沙箱拒，这正是把写入放进沙箱的目的。开发时用本机 Node 24；安装包里带官方签名的 `node.exe`。攻击用例照样全跑。
 2. **应用控制把新编译的未签名 exe 拦了，这是打包的硬约束。** 说明开着 Smart App Control / WDAC 的机器上，「不签名、点仍要运行」这条路也走不通。所以第 3 段打包**不编译自己的 exe**：包里只放签过名的 `node.exe`、`codex.exe` 和我们的 JS；启动与开机自启走计划任务拉 `node.exe`，快捷方式也指向它；托盘若必须是原生窗口再单独议。把这台机器的应用控制状态（`Get-MpComputerStatus`、Smart App Control 开关、是否有 WDAC 策略）记进结果，第 3 段要在这种机器上装一次。
+
+## 2026-10-08 · 第 1 段（runtime `9d68ed9`）：代码审读通过，三件做完才算交付
+
+**结论：实现方向对、边界做得实（逐项核权限、方法白名单、读限白名单、文件操作进沙箱助手、目录固定、攻击用例、真实会合点上线又恢复），代码审读通过。但还不能进第 2 段：下面三件做完、结果贴 `windows-agent-1b.<时间>.md`，第 1 段才算交付。**
+
+| # | 要做的 | 为什么 |
+| --- | --- | --- |
+| 1 | **真机端到端一轮。** Windows 代理在线时，所有者在网页上真走：聊天「这个项目里有哪些文件？」；工作里让它建一个文件；请一次专家。结果里贴桥的 `denied` 计数和每一条被拒的方法与原因 | 现在只验了「连上、在线」，没有一轮真实流量过桥。真实轮次里 app-server 的客户端会调 `capabilityRoots/discoverV1`（0.155.1 的 `environmentInfo.capabilities.capabilityDiscoverySandbox: true`，客户端有 `discover_capability_roots`），可能发带 `sandbox` 的 fs 请求，开网时发 `http/request`；这些现在全部被拒。被拒了 app-server 是容忍还是整轮失败，只有实测知道。要加进允许清单的，照样逐字段核、路径限白名单，不是放行了事 |
+| 2 | **命令的环境变量。** `windowsEnvironment` 只给 System32 和 node 目录，用户的 PATH 没了：沙箱里跑 `git`、`python`、`uv` 都会「找不到命令」。Linux 版给的是整份 `process.env`。改成：以用户当前环境为底，去掉保留项（`CODEX*`、`SUNMOON*`、`NODE_OPTIONS`、`NODE_PATH`、`RUST*`、`LD_*`），`CODEX_HOME` 固定为代理的家，再叠远端的 env（远端的仍按现在的保留项检查拦） | 安全靠受限令牌，不靠藏 PATH；藏了 PATH 产品就不能用 |
+| 3 | **助手响应对着 0.155.1 的真回包核一遍。** 我按手头 Codex 源码（HEAD 的 `exec-server-protocol/src/protocol.rs`）核过：`dataBase64`、`handleId`、`chunk`/`eof`、`isDirectory`/`isFile`/`isSymlink`/`size`/`createdAtMs`/`modifiedAtMs`、`fileName`、walk 的 `entries`/`errors`/`truncated`、`kind: directory|file`，助手拼的都对得上。但我手里不是 0.155.1。luna 用本机 0.155.1 的 `codex exec-server` 对每个 fs 方法各抓一帧真回包，入 `probe/frames.jsonl`，和助手的输出逐字段比；差一个字段按 0.155.1 改 | 助手替 exec-server 答复，字段错一个 app-server 就解析失败 |
+
+不阻塞、但记下的：
+
+- `fs/readFile` 超过 8 MiB 直接拒绝：app-server 读大文件会不会先走 `readFile`，第 1 件实测时看；要是会，改成助手分块读完再答。
+- `pinWindowsDirectories` 每个目录起一个 node 进程，一次 `process/start` 可能四五个，64 个并发就是几百个进程。建议改成一个常驻助手进程用 `fs.opendirSync` 持有多个目录句柄（Windows 上打开的目录句柄同样阻止重命名）；先用一个小实验确认句柄确实挡得住重命名，挡得住就改，挡不住保留现状并写明。
+- `http/request` 在 Windows 全拒：开网（`ceiling.network=true`）时该和 Linux 一样放行并核字段；第 1 件实测里看它来不来。
+- 报告、证据、清理、不扩大结论的写法都好；保持。
+
+第 2 段的内容不变（MCP 合并、抬高上限的本机确认、reject 提示、日志轮转），等上面三件过了再开。
