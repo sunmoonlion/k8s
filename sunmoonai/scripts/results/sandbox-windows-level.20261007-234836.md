@@ -1,6 +1,6 @@
 # 待办 33 回传：沙箱镜像加 Windows 沙箱级别
 
-时间：2026-10-07 23:48。没有退回。网页回收和重新拉起没做。
+时间：2026-10-07 23:51。没有退回。所有者 23:49 拉起了沙箱。
 
 ## 一、核对与构建
 
@@ -41,14 +41,21 @@ diff 只有 digest 和 revision。提交 `125d8b49`。`flux-source-apply` 退出
 
 ## 四、重拉沙箱
 
-网页没点。现有用户沙箱还是旧镜像：
+23:48 时旧 Pod `sandbox-u-f1cee6277692-65bfcbd995-ggdqf` 仍是 `sha256:e758ccb2…`，进容器找 `[windows]` 退出 1。所有者随后拉起。23:50 新 Pod：
 
 ```text
-sandbox-u-f1cee6277692-65bfcbd995-ggdqf  sandbox@sha256:e758ccb2…  Running
+sandbox-u-f1cee6277692-b87d4946d-8cjvc  sandbox@sha256:57b2db0e…  Running  2026-10-07T15:49:55Z
 ```
 
-进容器找 `^\[windows\]`，`exec` 退出 1，没有这段。`platform-check OBJECT=sandbox-platform/provisioner` 退出 0，19 秒。
+`/data/codex/config.toml` 第 12–13 行：
+
+```text
+[windows]
+sandbox = "unelevated"
+```
+
+`exec` 退出 0。`platform-check OBJECT=sandbox-platform/provisioner` 再跑一次，退出 0，19 秒。
 
 ## 结论
 
-镜像、供给器和检查通过。所有者的沙箱还没回收再拉起，所以还没看到新镜像和 `[windows] sandbox = "unelevated"`。整单判断不了。
+通过。新沙箱用的是新镜像，配置里有 `[windows] sandbox = "unelevated"`。
