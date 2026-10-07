@@ -65,3 +65,4 @@
 | 50 | **知识后端的默认数据集在新集群上没有**（第 7 步问数时查出）：默认库是第 23 课的样例 sqlite，不进 git、不进镜像，目录每次都先取它，取不到就整条数据工具链回 dataset unavailable。已改成「没装就只列登记的数据集」（knowledge-backend `ee3b0b0c`）；要不要在集群上另装样例库（放对象存储、配 `KNOWLEDGE_DATASET_OBJECT` 与 sha256，供评测用）待定 | 远程 | 待办 30 | 2026-10-06 记 |
 | 51 | **对象存储控制台登录回 HTTP 500「unable to login due to network error」**（错误口令和正确口令都可能如此）：控制台在服务端 Pod 里，要按 `MINIO_SERVER_URL` 回连自己的 Service；疑似网络策略没放行 Pod 回连自己，或没信平台 CA。`platform-check` 因此停在这一项，后面的 pgAdmin、RedisInsight、Flower、会合点四项探测结果正常（302/200、200、401、200） | 远程 | 待办 30 里取日志后修 | 2026-10-06 记 |
 | 52 | **`runtime` 仓改名 `agent`**（所有者 2026-10-07 定）：远程两个远端的仓名、本地工位目录、`switch-test` 的同步脚本（仓清单）、k8s 文档里的 `runtime` 引用一起改；做 Windows 版代理时一并做 | 远程 + 所有者 | Windows 版代理那一轮 | 2026-10-07 记 |
+| 53 | **`runner` → `manager`（工作台管理者）改名**：investment 后端约 28 个文件（模块、配置项、测试）、k8s 共用模板与 investment 配置约 21 处（角色名、副本数、资源、网络策略角色、校验脚本的 Job/Deployment 名）、PRD 2 处；网页端没有引用。改完要重建后端镜像、重新暂存、发布晋级 | 远程 | 第 7 步点完、600009 数据链跑通之后 | 2026-10-07 记 |
