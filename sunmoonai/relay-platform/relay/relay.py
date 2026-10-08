@@ -22,6 +22,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import secrets
 import signal
 import time
@@ -31,6 +32,10 @@ from urllib.parse import parse_qs, urlparse
 
 import websockets
 from websockets.asyncio.server import ServerConnection, serve
+from permission_reports import (
+    CAPABILITY, NOTICE_CAPABILITY, REPORT_TTL, MAX_REPORTS_PER_AGENT,
+    MAX_REPORTS_TOTAL, valid_report,
+)
 
 RELAY_PROTOCOL = 1
 RELAY_NAME = os.environ.get("RELAY_NAME", "relay-v1")
@@ -148,6 +153,10 @@ class Agent:
     jti: str = ""  # JWT 令牌的 jti（静态表令牌为空）；按 jti 吊销时据此断开在线代理
     machine: dict = field(default_factory=dict)  # hello 里报的机器信息（machine_of）
     since: float = field(default_factory=time.time)
+    connections: set[str] = field(default_factory=set)
+    # Unacknowledged transport only; cleared on disconnect/restart. Audit lives
+    # in the workbench transaction, never in the relay state file.
+    permission_reports: dict[str, dict] = field(default_factory=dict)
 
 
 @dataclass
@@ -212,11 +221,22 @@ class Relay:
                       machine=machine_of(hello))
         self.agents[user] = agent
         self.stats["agent_up"] += 1
-        await ws.send(json.dumps({"type": "welcome", "relay": RELAY_NAME, "proto": RELAY_PROTOCOL}))
+        await ws.send(json.dumps({"type": "welcome", "relay": RELAY_NAME, "proto": RELAY_PROTOCOL,
+                                  "capabilities": [CAPABILITY, NOTICE_CAPABILITY]}))
         log.info("agent up user=%s codex=%s software=%s", user, agent.codex, agent.software)
         try:
-            async for _ in ws:  # 控制通道上只期待 pong；其它忽略
-                pass
+            async for raw in ws:
+                # Never interpret Codex frames here or reflect untrusted data.
+                if not isinstance(raw, str) or len(raw) > 4096:
+                    await ws.close(code=1008, reason="invalid control message"); break
+                try:
+                    message = json.loads(raw)
+                except ValueError:
+                    await ws.close(code=1008, reason="invalid control message"); break
+                if isinstance(message, dict) and message.get("type") == "permission_report":
+                    if self.agents.get(user) is not agent:
+                        break
+                    await self.permission_report(agent, message)
         except websockets.ConnectionClosed:
             pass
         finally:
@@ -246,6 +266,9 @@ class Relay:
         if agent is None:
             await self._reject(ws, "agent offline"); return
         if str(hello["codex"]) != agent.codex:
+            # Nonfatal for the agent: another correctly paired sandbox can still
+            # connect. Do not kick a healthy executor or repeat raw reason text.
+            await self.send_permission_control(agent, {"type": "notice", "code": "codex_version_mismatch"})
             await self._reject(ws, f"codex version mismatch: sandbox {hello['codex']} vs agent {agent.codex}"); return
         if agent.streams >= MAX_STREAMS_PER_USER:
             await self._reject(ws, "too many streams"); return
@@ -261,6 +284,7 @@ class Relay:
         finally:
             self.waiting.pop(conn, None)
         agent.streams += 1
+        agent.connections.add(conn)
         self.stats["paired"] += 1
         await ws.send(json.dumps({"type": "welcome", "relay": RELAY_NAME, "proto": RELAY_PROTOCOL, "conn": conn}))
         log.info("paired user=%s conn=%s", user, conn)
@@ -269,7 +293,44 @@ class Relay:
             await asyncio.gather(self._pipe(ws, agent_ws), self._pipe(agent_ws, ws))
         finally:
             agent.streams -= 1
+            agent.connections.discard(conn)
+            for receipt, item in list(agent.permission_reports.items()):
+                if item["report"]["conn"] == conn:
+                    del agent.permission_reports[receipt]
             log.info("closed user=%s conn=%s after %.1fs", user, conn, time.monotonic() - t0)
+
+    @staticmethod
+    async def send_permission_control(agent: Agent, message: dict):
+        try:
+            await agent.ws.send(json.dumps(message))
+        except websockets.ConnectionClosed:
+            pass
+
+    def expire_permission_reports(self):
+        now = time.monotonic()
+        for agent in self.agents.values():
+            for receipt, item in list(agent.permission_reports.items()):
+                if item["deadline"] <= now:
+                    del agent.permission_reports[receipt]
+
+    async def permission_report(self, agent: Agent, message: dict):
+        self.expire_permission_reports()
+        report = message.get("report")
+        if (set(message) != {"type", "report"} or not valid_report(report)
+                or report["conn"] not in agent.connections or not agent.machine.get("name")):
+            await agent.ws.close(code=1008, reason="invalid permission report")
+            return
+        for item in agent.permission_reports.values():
+            if item["report"]["id"] == report["id"]:
+                if item["report"] != report:
+                    await agent.ws.close(code=1008, reason="conflicting permission report")
+                return
+        if (len(agent.permission_reports) >= MAX_REPORTS_PER_AGENT
+                or sum(len(a.permission_reports) for a in self.agents.values()) >= MAX_REPORTS_TOTAL):
+            await self.send_permission_control(agent, {"type": "permission_receipt", "id": report["id"], "status": "rejected"})
+            return
+        receipt = secrets.token_hex(16)
+        agent.permission_reports[receipt] = {"report": report, "deadline": time.monotonic() + REPORT_TTL}
 
     # ---- 工具 ----
     async def _hello(self, ws: ServerConnection) -> dict:
@@ -321,9 +382,28 @@ class Relay:
             return {"type": "tokens", "users": sorted(self.tokens), "revoked_jtis": len(self.revoked_jtis),
                     "public_key": bool(self.public_key_pem)}
         if kind == "agents":
+            self.expire_permission_reports()
             return {"type": "agents", "relay": RELAY_NAME,
-                    "agents": {u: {"codex": a.codex, "software": a.software, "since": int(a.since), "machine": a.machine}
+                    "agents": {u: {"codex": a.codex, "software": a.software, "since": int(a.since), "machine": a.machine,
+                                   **({"permission_reports": [{"receipt": r, "report": i["report"]} for r, i in a.permission_reports.items()]} if a.permission_reports else {})}
                                for u, a in sorted(self.agents.items())}}
+        if kind == "permission_receipts":
+            receipts = message.get("receipts")
+            if (set(message) != {"type", "receipts"} or not isinstance(receipts, list) or len(receipts) > MAX_REPORTS_TOTAL
+                    or any(not isinstance(r, dict) or set(r) != {"receipt", "status"}
+                           or not isinstance(r["receipt"], str) or not re.fullmatch(r"[0-9a-f]{32}", r["receipt"])
+                           or r["status"] not in ("recorded", "rejected") for r in receipts)):
+                return {"type": "error", "reason": "invalid permission receipts"}
+            self.expire_permission_reports()
+            by_receipt = {r["receipt"]: r["status"] for r in receipts}
+            for agent in self.agents.values():
+                for receipt, item in list(agent.permission_reports.items()):
+                    if receipt in by_receipt:
+                        del agent.permission_reports[receipt]
+                        asyncio.get_running_loop().create_task(self.send_permission_control(agent, {
+                            "type": "permission_receipt", "id": item["report"]["id"], "status": by_receipt[receipt],
+                        }))
+            return {"type": "ok"}
         if kind == "set_public_key":
             pem = message.get("pem")
             if not isinstance(pem, str) or "BEGIN PUBLIC KEY" not in pem:
