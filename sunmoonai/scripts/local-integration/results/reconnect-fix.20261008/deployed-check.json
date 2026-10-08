@@ -1,0 +1,134 @@
+{
+  "checked_at": "2026-10-08T11:11:27.044378+00:00",
+  "investment_pods": [
+    {
+      "name": "investment-api-84cdbd7bc6-vb8fr",
+      "uid": "eaa7efe2-3a02-4619-a500-4c907a537e64",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "api",
+          "ready": true,
+          "image": "sha256:76918ff2e930c5ef8402e0fb0af562c7f1811a19a2dfba86f037f16e224cfb41",
+          "imageID": "harbor.sunmoonai.com:30443/platform/investment-backend@sha256:d2e6ed5d20a3d9872170832f7efe29abab4a4d13785447b45ce98a648311d9c0",
+          "restartCount": 0
+        }
+      ]
+    },
+    {
+      "name": "investment-runner-6f94978f45-mbxrs",
+      "uid": "d53f2fbe-79ca-4ae7-9f54-6254fedc2bcc",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "runner",
+          "ready": true,
+          "image": "sha256:76918ff2e930c5ef8402e0fb0af562c7f1811a19a2dfba86f037f16e224cfb41",
+          "imageID": "harbor.sunmoonai.com:30443/platform/investment-backend@sha256:d2e6ed5d20a3d9872170832f7efe29abab4a4d13785447b45ce98a648311d9c0",
+          "restartCount": 0
+        }
+      ]
+    },
+    {
+      "name": "investment-scheduler-d484d5859-8ktm8",
+      "uid": "595ce6fc-f3cf-4cd6-8743-d5b8190749c4",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "scheduler",
+          "ready": true,
+          "image": "sha256:76918ff2e930c5ef8402e0fb0af562c7f1811a19a2dfba86f037f16e224cfb41",
+          "imageID": "harbor.sunmoonai.com:30443/platform/investment-backend@sha256:d2e6ed5d20a3d9872170832f7efe29abab4a4d13785447b45ce98a648311d9c0",
+          "restartCount": 0
+        }
+      ]
+    },
+    {
+      "name": "investment-web-695b75bcd9-894kv",
+      "uid": "f9716ccb-2710-497e-89a9-ff4e44c188e3",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "frontend",
+          "ready": true,
+          "image": "sha256:d167085358196dbf672aae4655a5e8db0ec39a97360f682a763f407dafbabab5",
+          "imageID": "harbor.sunmoonai.com:30443/platform/investment-web-frontend@sha256:f2e2e6a1d9b646b124751694fa5e6e89451527fa10c742b811ca016838f40581",
+          "restartCount": 0
+        }
+      ]
+    },
+    {
+      "name": "investment-worker-5ff4cfb568-66k2g",
+      "uid": "9b6d5714-f2a6-4a84-959a-4756c8febcbd",
+      "phase": "Running",
+      "containers": [
+        {
+          "name": "worker",
+          "ready": true,
+          "image": "sha256:76918ff2e930c5ef8402e0fb0af562c7f1811a19a2dfba86f037f16e224cfb41",
+          "imageID": "harbor.sunmoonai.com:30443/platform/investment-backend@sha256:d2e6ed5d20a3d9872170832f7efe29abab4a4d13785447b45ce98a648311d9c0",
+          "restartCount": 0
+        }
+      ]
+    }
+  ],
+  "redis_initializer": {
+    "redis_user": "investment_runtime",
+    "key_pattern": "investment:*",
+    "write_read": true,
+    "pubsub_channel_pattern": "investment:workbench:*",
+    "pubsub_roundtrip": true,
+    "foreign_channel_denied": true,
+    "foreign_key_denied": true,
+    "admin_command_denied": true,
+    "flushall_permission_denied": true,
+    "acl_saved": true
+  },
+  "flux": [
+    {
+      "name": "investment-admin",
+      "lastAppliedRevision": "sha256:e761175adf35e18eb525de2d977b637e8a80c2257069971fd3ee7918b1537b0e",
+      "ready": "True"
+    },
+    {
+      "name": "investment-database",
+      "lastAppliedRevision": "sha256:e761175adf35e18eb525de2d977b637e8a80c2257069971fd3ee7918b1537b0e",
+      "ready": "True"
+    },
+    {
+      "name": "investment-identity",
+      "lastAppliedRevision": "sha256:e761175adf35e18eb525de2d977b637e8a80c2257069971fd3ee7918b1537b0e",
+      "ready": "True"
+    },
+    {
+      "name": "investment-migration",
+      "lastAppliedRevision": "sha256:e761175adf35e18eb525de2d977b637e8a80c2257069971fd3ee7918b1537b0e",
+      "ready": "True"
+    },
+    {
+      "name": "investment-rabbitmq",
+      "lastAppliedRevision": "sha256:e761175adf35e18eb525de2d977b637e8a80c2257069971fd3ee7918b1537b0e",
+      "ready": "True"
+    },
+    {
+      "name": "investment-redis",
+      "lastAppliedRevision": "sha256:e761175adf35e18eb525de2d977b637e8a80c2257069971fd3ee7918b1537b0e",
+      "ready": "True"
+    },
+    {
+      "name": "investment-runtime",
+      "lastAppliedRevision": "sha256:e761175adf35e18eb525de2d977b637e8a80c2257069971fd3ee7918b1537b0e",
+      "ready": "True"
+    },
+    {
+      "name": "investment-service-identity",
+      "lastAppliedRevision": "sha256:e761175adf35e18eb525de2d977b637e8a80c2257069971fd3ee7918b1537b0e",
+      "ready": "True"
+    },
+    {
+      "name": "investment-web",
+      "lastAppliedRevision": "sha256:e761175adf35e18eb525de2d977b637e8a80c2257069971fd3ee7918b1537b0e",
+      "ready": "True"
+    }
+  ]
+}

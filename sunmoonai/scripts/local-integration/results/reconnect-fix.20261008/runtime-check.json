@@ -1,0 +1,34 @@
+{
+  "old_pods": 139,
+  "new_pods": 144,
+  "old_uids_still_present": 134,
+  "replaced_or_gone": [
+    {
+      "namespace": "app-platform-dev",
+      "name": "investment-api-b5cfcdb9b-qq7xw",
+      "app": "investment"
+    },
+    {
+      "namespace": "app-platform-dev",
+      "name": "investment-runner-86dcfcb859-xxpzw",
+      "app": "investment"
+    },
+    {
+      "namespace": "app-platform-dev",
+      "name": "investment-scheduler-78bcc5c4f9-cwk22",
+      "app": "investment"
+    },
+    {
+      "namespace": "app-platform-dev",
+      "name": "investment-web-6b4bfb8655-z28j6",
+      "app": "investment"
+    },
+    {
+      "namespace": "app-platform-dev",
+      "name": "investment-worker-7cf64947f4-q8trm",
+      "app": "investment"
+    }
+  ],
+  "api_subscribe_permission_errors": 0,
+  "runner_recovery_log_count": 1
+}

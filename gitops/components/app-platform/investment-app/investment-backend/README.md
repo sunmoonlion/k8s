@@ -19,6 +19,14 @@ private_dir与backup_dir由本config固定；首次生成root0600输入，再在
 
 ## 部署阶段与权限
 
+工作台实时事件使用 `redis_pubsub_channel_pattern: investment:workbench:*`。
+Redis 初始化仅增加该频道范围内的 `publish/subscribe/unsubscribe`，保留键前缀、
+外部频道与管理命令的拒绝规则，并写入持久 ACL。调整权限须提升
+`redis_identity_revision`，经 `platform-stage`、发布晋级执行新 Job；不能只改本地配置。
+初始化会实际订阅、发布并读取一条测试消息，再验证外部频道不可读写。
+网页实时流若报 `NoPermissionError: subscribe`，检查此 Job 的成功结果和当前账号 ACL，
+不要为排障开放 `+@all` 或全频道权限。
+
 database/创建独立库和账号，migration/用迁移身份执行固定镜像的迁移并检查expected_schema_revision。运行身份仅连接、schema使用、表CRUD/sequence，禁止DDL和写alembic元数据；初始化不接管外来同名库/角色。数据库扩展取database_extensions（若声明），迁移前核源码head，不能随意改预期版本以放过失败。
 
 redis/创建独立持久ACL，拒绝default和跨键前缀/管理；rabbitmq/创建独立vhost及持久任务拓扑，无平台管理权限；identity/注册Web/Admin精确回调。平台管理员只给所属命名空间一次性初始化Job，不复制到常驻业务Secret。

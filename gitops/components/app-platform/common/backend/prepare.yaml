@@ -61,6 +61,7 @@
       - browser_clients.web.name != browser_clients.admin.name
       - cfg.redis_user == application_name + '_runtime'
       - cfg.redis_key_pattern == application_name + ':*'
+      - cfg.redis_pubsub_channel_pattern | default('') in ['', application_name + ':workbench:*']
       - not provider_enabled | bool or (application_name == 'knowledge' and not storage_enabled | bool)
       - not service_enabled | bool or (application_name in ['info','investment'] and service_access_enabled | bool)
       - not receiver_enabled | bool or (application_name == 'knowledge' and provider_enabled | bool and service_access_enabled | bool)
