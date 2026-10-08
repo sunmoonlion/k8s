@@ -6,8 +6,8 @@ revision: b23ea80b24c0c3b866bb346277a870028ed58b42
 images:
   relay:
     object: relay-platform/relay
-    # a43473f1：记住在线代理的机器信息，管理通道加 agents 查询（账 49）
-    revision: a43473f162195a7be7202ec382b0b13b16985b6f
+    # 第 2 段：权限审计回执与版本错配通知；只有 relay 更新源码锁
+    revision: 4d0ff0433628b8e821ca6239eebd8cf46f0a4fe3
     context: sunmoonai/relay-platform/relay
     dockerfile: Dockerfile
     base: python
