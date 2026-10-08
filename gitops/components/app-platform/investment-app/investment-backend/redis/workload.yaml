@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'investment-redis-provision-v2', namespace: data-platform-dev}
+metadata: {name: 'investment-redis-provision-v3', namespace: data-platform-dev}
 data:
   provision.py: |
     """Provision one bounded Redis identity and verify its real access, without secret output."""
@@ -36,11 +36,42 @@ data:
                      '+get', '+getdel', '+set', '+del', '+exists', '+expire', '+pexpire',
                      '+ttl', '+pttl', '+mget', '+mset', '+incr', '+incrby', '+decr', '+decrby',
                      '+multi', '+exec', '+discard', '+watch', '+unwatch']
+            channel_pattern = 'investment:workbench:*'
+            if channel_pattern != 'investment:workbench:*':
+                raise RuntimeError('Unexpected channel boundary')
+            rules.extend(['&' + channel_pattern, '+publish', '+subscribe', '+unsubscribe'])
             assert admin.execute_command('ACL', 'SETUSER', username, *rules) == 'OK'
             assert admin.acl_save()
             assert client.ping()
             assert client.set(key, 'checked', ex=60)
             assert client.getdel(key) == 'checked'
+            # 实际订阅/发布，并核对外部频道和管理权限仍被拒绝。
+            channel = 'investment:workbench:acceptance:' + uuid.uuid4().hex
+            with client.pubsub() as subscription:
+                subscription.subscribe(channel)
+                ack = subscription.get_message(timeout=5)
+                if not ack or ack['type'] != 'subscribe':
+                    raise RuntimeError('Subscription not acknowledged')
+                assert client.publish(channel, 'checked') == 1
+                message = subscription.get_message(timeout=5)
+                if not message or message['type'] != 'message' or message['data'] != 'checked':
+                    raise RuntimeError('Event not received')
+                subscription.unsubscribe(channel)
+            try:
+                client.publish('other-app:workbench:acceptance', 'must-not-publish')
+            except redis.exceptions.NoPermissionError:
+                pass
+            else:
+                raise RuntimeError('Foreign channel unexpectedly writable')
+            for forbidden in ['other-app:workbench:acceptance', 'investment:outside-workbench']:
+                try:
+                    with client.pubsub() as subscription:
+                        subscription.subscribe(forbidden)
+                        subscription.get_message(timeout=5)
+                except redis.exceptions.NoPermissionError:
+                    pass
+                else:
+                    raise RuntimeError('Foreign channel unexpectedly readable')
             try:
                 client.set(foreign, 'must-not-write', ex=60)
             except redis.exceptions.NoPermissionError:
@@ -63,6 +94,8 @@ data:
             if decision != expected:
                 raise RuntimeError('Expected explicit destructive command denial')
             print(json.dumps({'redis_user': username, 'key_pattern': pattern, 'write_read': True,
+                              'pubsub_channel_pattern': channel_pattern, 'pubsub_roundtrip': True,
+                              'foreign_channel_denied': True,
                               'foreign_key_denied': True, 'admin_command_denied': True,
                               'flushall_permission_denied': True, 'acl_saved': True}))
         finally:
@@ -102,7 +135,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'investment-redis-ac5bdcd5ea53-v2', namespace: data-platform-dev}
+metadata: {name: 'investment-redis-d2e6ed5d20a3-v3', namespace: data-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -116,7 +149,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:ac5bdcd5ea531648b41b0248ce53fac2b17e1e1e90d427323b5bce34b5050b2e
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:d2e6ed5d20a3d9872170832f7efe29abab4a4d13785447b45ce98a648311d9c0
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:
@@ -131,7 +164,7 @@ spec:
             - {name: app, mountPath: /run/app, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: script, configMap: {name: 'investment-redis-provision-v2'}}
+        - {name: script, configMap: {name: 'investment-redis-provision-v3'}}
         - {name: admin, secret: {secretName: redis-auth, items: [{key: password, path: password}], defaultMode: 0440}}
         - {name: app, secret: {secretName: investment-redis-provision, defaultMode: 0440}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

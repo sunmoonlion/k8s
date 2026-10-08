@@ -1,0 +1,74 @@
+[
+  {
+    "path": "components/app-platform/common/backend/prepare.yaml",
+    "status": "different",
+    "live_bytes": 26410,
+    "local_bytes": 26508
+  },
+  {
+    "path": "components/app-platform/common/backend/redis/provision.py.j2",
+    "status": "different",
+    "live_bytes": 3493,
+    "local_bytes": 5585
+  },
+  {
+    "path": "components/app-platform/investment-app/investment-backend/config.yaml",
+    "status": "different",
+    "live_bytes": 4530,
+    "local_bytes": 4680
+  },
+  {
+    "path": "components/app-platform/investment-app/investment-backend/identity/workload.yaml",
+    "status": "different",
+    "live_bytes": 10825,
+    "local_bytes": 10825
+  },
+  {
+    "path": "components/app-platform/investment-app/investment-backend/image.lock.yaml",
+    "status": "different",
+    "live_bytes": 330,
+    "local_bytes": 330
+  },
+  {
+    "path": "components/app-platform/investment-app/investment-backend/migration/workload.yaml",
+    "status": "different",
+    "live_bytes": 5216,
+    "local_bytes": 5216
+  },
+  {
+    "path": "components/app-platform/investment-app/investment-backend/rabbitmq/workload.yaml",
+    "status": "different",
+    "live_bytes": 10861,
+    "local_bytes": 10861
+  },
+  {
+    "path": "components/app-platform/investment-app/investment-backend/redis/workload.yaml",
+    "status": "different",
+    "live_bytes": 6678,
+    "local_bytes": 8646
+  },
+  {
+    "path": "components/app-platform/investment-app/investment-backend/runtime/workload.yaml",
+    "status": "different",
+    "live_bytes": 20776,
+    "local_bytes": 20776
+  },
+  {
+    "path": "components/app-platform/investment-app/investment-backend/service-identity/workload.yaml",
+    "status": "different",
+    "live_bytes": 10404,
+    "local_bytes": 10404
+  },
+  {
+    "path": "components/app-platform/investment-app/investment-web-frontend/image.lock.yaml",
+    "status": "different",
+    "live_bytes": 340,
+    "local_bytes": 340
+  },
+  {
+    "path": "components/app-platform/investment-app/investment-web-frontend/workload.yaml",
+    "status": "different",
+    "live_bytes": 3847,
+    "local_bytes": 3847
+  }
+]

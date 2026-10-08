@@ -31,11 +31,46 @@ def run():
                  '+get', '+getdel', '+set', '+del', '+exists', '+expire', '+pexpire',
                  '+ttl', '+pttl', '+mget', '+mset', '+incr', '+incrby', '+decr', '+decrby',
                  '+multi', '+exec', '+discard', '+watch', '+unwatch']
+{% if cfg.redis_pubsub_channel_pattern | default('') %}
+        channel_pattern = '{{ cfg.redis_pubsub_channel_pattern }}'
+        if channel_pattern != '{{ application_name }}:workbench:*':
+            raise RuntimeError('Unexpected channel boundary')
+        rules.extend(['&' + channel_pattern, '+publish', '+subscribe', '+unsubscribe'])
+{% endif %}
         assert admin.execute_command('ACL', 'SETUSER', username, *rules) == 'OK'
         assert admin.acl_save()
         assert client.ping()
         assert client.set(key, 'checked', ex=60)
         assert client.getdel(key) == 'checked'
+{% if cfg.redis_pubsub_channel_pattern | default('') %}
+        # 实际订阅/发布，并核对外部频道和管理权限仍被拒绝。
+        channel = '{{ application_name }}:workbench:acceptance:' + uuid.uuid4().hex
+        with client.pubsub() as subscription:
+            subscription.subscribe(channel)
+            ack = subscription.get_message(timeout=5)
+            if not ack or ack['type'] != 'subscribe':
+                raise RuntimeError('Subscription not acknowledged')
+            assert client.publish(channel, 'checked') == 1
+            message = subscription.get_message(timeout=5)
+            if not message or message['type'] != 'message' or message['data'] != 'checked':
+                raise RuntimeError('Event not received')
+            subscription.unsubscribe(channel)
+        try:
+            client.publish('other-app:workbench:acceptance', 'must-not-publish')
+        except redis.exceptions.NoPermissionError:
+            pass
+        else:
+            raise RuntimeError('Foreign channel unexpectedly writable')
+        for forbidden in ['other-app:workbench:acceptance', '{{ application_name }}:outside-workbench']:
+            try:
+                with client.pubsub() as subscription:
+                    subscription.subscribe(forbidden)
+                    subscription.get_message(timeout=5)
+            except redis.exceptions.NoPermissionError:
+                pass
+            else:
+                raise RuntimeError('Foreign channel unexpectedly readable')
+{% endif %}
         try:
             client.set(foreign, 'must-not-write', ex=60)
         except redis.exceptions.NoPermissionError:
@@ -58,6 +93,10 @@ def run():
         if decision != expected:
             raise RuntimeError('Expected explicit destructive command denial')
         print(json.dumps({'redis_user': username, 'key_pattern': pattern, 'write_read': True,
+{% if cfg.redis_pubsub_channel_pattern | default('') %}
+                          'pubsub_channel_pattern': channel_pattern, 'pubsub_roundtrip': True,
+                          'foreign_channel_denied': True,
+{% endif %}
                           'foreign_key_denied': True, 'admin_command_denied': True,
                           'flushall_permission_denied': True, 'acl_saved': True}))
     finally:

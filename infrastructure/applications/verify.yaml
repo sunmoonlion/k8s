@@ -316,6 +316,14 @@
               - redis_acceptance.admin_command_denied is sameas true
               - redis_acceptance.flushall_permission_denied is sameas true
               - redis_acceptance.acl_saved is sameas true
+        - name: Require bounded workbench PubSub acceptance when enabled
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - redis_acceptance.pubsub_channel_pattern == cfg.redis_pubsub_channel_pattern
+              - redis_acceptance.pubsub_roundtrip is sameas true
+              - redis_acceptance.foreign_channel_denied is sameas true
+          when: cfg.redis_pubsub_channel_pattern | default('') | length > 0
         - name: Read application Redis input for current live authentication
           ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/redis.yaml'}
           register: live_redis_input
