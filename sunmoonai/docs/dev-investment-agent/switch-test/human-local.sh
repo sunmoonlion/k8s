@@ -20,6 +20,8 @@ echo "===== 0. 先看本地有没有没推回的东西"
 blocked=0
 for r in $FIVE investment-app/investment-backend knowledge-app/knowledge-backend runtime; do
   d="$HOME/worktrees/$WS/$r"; [ -e "$d/.git" ] || continue
+  # 先取远端：远程助手把本地提交合并进去后，旧的 origin/$WS 会把它们误报成「没推回」
+  git -C "$d" fetch -q origin "$WS" 2>/dev/null || true
   dirty=$(git -C "$d" status --porcelain --ignore-submodules=all | head -1)
   ahead=$(git -C "$d" rev-list --count "origin/$WS..HEAD" 2>/dev/null || echo 0)
   [ -n "$dirty" ] && { echo "  ✗ $r 有没提交的改动（本地助手还在做？）"; blocked=1; }
