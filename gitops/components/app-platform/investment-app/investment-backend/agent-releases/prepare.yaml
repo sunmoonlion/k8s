@@ -1,0 +1,120 @@
+---
+- name: Validate release hosting boundaries
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - application_name == 'investment'
+      - services_object_storage_enabled | bool
+      - investment_agent_releases.bucket == 'agent-releases'
+      - investment_agent_releases.reader == 'investment_release_reader'
+      - investment_agent_releases.writer == 'investment_release_writer'
+      - investment_agent_releases.mode in ['object-storage', 'external']
+      - investment_agent_releases.job_revision is match('^[a-z0-9-]{1,16}$')
+      - investment_agent_releases.mode != 'external' or investment_agent_releases.external_url is match('^https://[^?#@\s]+$')
+- name: Require a matching upload/readback receipt before announcing a forwarded download
+  when: investment_agent_releases.download_available | bool and investment_agent_releases.mode == 'object-storage'
+  block:
+    - name: Inspect the publication receipt without following redirects
+      ansible.builtin.stat: {path: '{{ services_config_dir }}/investment-agent-release-published.json', follow: false}
+      register: release_receipt_path
+    - name: Require an owned readback receipt
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - release_receipt_path.stat.isreg | default(false)
+          - not release_receipt_path.stat.islnk | default(false)
+          - release_receipt_path.stat.uid == 0
+          - release_receipt_path.stat.mode == '0600'
+        fail_msg: Upload and verify the installer before setting download_available=true.
+    - name: Read the credential-free publication receipt
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/investment-agent-release-published.json'}
+      register: release_receipt
+    - name: Bind publication to this exact release
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - receipt.readback_verified is sameas true
+          - receipt.bucket == investment_agent_releases.bucket
+          - receipt.key == investment_agent_releases.object_key
+          - receipt.zip_sha256 == investment_agent_releases.zip_sha256
+          - receipt.manifest_sha256 == investment_agent_releases.manifest_sha256
+          - receipt.size_bytes == investment_agent_releases.size_bytes
+      vars: {receipt: '{{ release_receipt.content | b64decode | from_json }}'}
+- name: Preserve separate reader and writer inputs through the shared private-input mechanism
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: investment-agent-releases
+    component_input_manifest: app-platform/investment-app/investment-backend/agent-releases/provision.sops.yaml
+    component_initial_input:
+      reader_secret: '{{ lookup("password", "/dev/null", length=40, chars=["ascii_letters", "digits"]) }}'
+      writer_secret: '{{ lookup("password", "/dev/null", length=40, chars=["ascii_letters", "digits"]) }}'
+  no_log: true
+- name: Bind release identities and metadata
+  ansible.builtin.set_fact:
+    agent_release_private: '{{ component_private_input }}'
+    agent_release_descriptor: >-
+      {{ dict(mode=investment_agent_releases.mode,
+          url=(cfg.web_origin + '/api/workbench/agent/package' if investment_agent_releases.mode == 'object-storage' else investment_agent_releases.external_url),
+          version=investment_agent_releases.version, zip_sha256=investment_agent_releases.zip_sha256,
+          manifest_sha256=investment_agent_releases.manifest_sha256,
+          codex_version=investment_agent_releases.codex_version, size_bytes=investment_agent_releases.size_bytes)
+         | combine({'object_key':investment_agent_releases.object_key} if investment_agent_releases.mode == 'object-storage' else {}) }}
+  no_log: true
+- name: Require distinct generated identities
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - agent_release_private.reader_secret is match('^[a-zA-Z0-9]{40}$')
+      - agent_release_private.writer_secret is match('^[a-zA-Z0-9]{40}$')
+      - agent_release_private.reader_secret != agent_release_private.writer_secret
+  no_log: true
+- name: Read root bootstrap input and TLS CA
+  ansible.builtin.slurp: {src: '{{ item }}'}
+  loop: ['{{ services_config_dir }}/object-storage.yaml', '{{ registry_config_dir }}/clients/ca.crt']
+  register: agent_release_bootstrap
+  no_log: true
+- name: Build API-only input with no writer or administrator credentials
+  ansible.builtin.set_fact:
+    agent_release_root: '{{ agent_release_bootstrap.results[0].content | b64decode | from_yaml }}'
+    agent_release_runtime:
+      WORKBENCH_AGENT_DOWNLOAD: '{{ (agent_release_descriptor if investment_agent_releases.download_available | bool else none) | to_json }}'
+      WORKBENCH_AGENT_RELEASE_STORAGE: '{{ dict(endpoint="https://object-storage." + data_namespace + ".svc.cluster.local:" + object_storage_port | string, region=object_storage_region, ca_file="/etc/sunmoon/agent-releases/ca.crt", access_key=investment_agent_releases.reader, secret_key=agent_release_private.reader_secret) | to_json }}'
+      ca.crt: '{{ agent_release_bootstrap.results[1].content | b64decode }}'
+  no_log: true
+- name: Prepare release candidate directory
+  ansible.builtin.file: {path: '{{ build }}/{{ application_object }}/agent-releases', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+- name: Encrypt API read-only configuration
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: '{{ application_object }}/runtime/agent-releases.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: investment-agent-releases-runtime, namespace: '{{ app_namespace }}'}
+        stringData: '{{ agent_release_runtime }}'
+  no_log: true
+- name: Encrypt bootstrap input only in the data namespace
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    release_url: 'https://object-storage.{{ data_namespace }}.svc.cluster.local:{{ object_storage_port }}'
+    secret_item:
+      file: '{{ application_object }}/agent-releases/provision.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: investment-agent-releases-provision, namespace: '{{ data_namespace }}'}
+        stringData:
+          config.json: '{{ {"version":"10", "aliases":{"owned":{"url":release_url,"accessKey":agent_release_root.root_user,"secretKey":agent_release_root.root_password,"api":"S3v4","path":"on"}}} | to_json }}'
+          reader-user: '{{ investment_agent_releases.reader }}'
+          reader-password: '{{ agent_release_private.reader_secret }}'
+          writer-user: '{{ investment_agent_releases.writer }}'
+          writer-password: '{{ agent_release_private.writer_secret }}'
+          ca.crt: '{{ agent_release_bootstrap.results[1].content | b64decode }}'
+  no_log: true
+- name: Render release bucket provisioning
+  ansible.builtin.template:
+    src: '{{ component_root }}/agent-releases/workload.yaml.j2'
+    dest: '{{ build }}/{{ application_object }}/agent-releases/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'

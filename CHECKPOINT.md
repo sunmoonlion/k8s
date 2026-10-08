@@ -1,3 +1,21 @@
+# 当前：安装包私有托管候选，停在发布前（2026-10-09，luna）
+
+依据 `sunmoonai/docs/dev-investment-agent/switch-test/luna-feedback.md` 最后一节，基线 `67e9fa97`。
+本轮由 Luna 实施、Fable 审读，所有者安排 Cursor 发布；助手不自行 push、建桶或晋级线上源。
+
+- 组件目录：`gitops/components/app-platform/investment-app/investment-backend/agent-releases/`。
+- Make 校验/上传入口，组件原生 prepare + SOPS + Flux 依赖；独立 reader/writer；只有 API 得到读身份。
+- `enabled: false`、`download_available: false` 保持；未生成真实 SOPS、桶或账号。
+  开放下载前须上传读回回执与当前摘要匹配。维护方法、发布顺序与回退见该目录 README。
+- 本地 10 项上传/策略/模板测试通过；三种托管状态的 Ansible 表达式检查通过（15 项任务，changed=0）；
+  Make 只读入口对真实 166 MiB ZIP（90 文件）校验通过、changed=0；语法检查通过。
+- 后端 `a01db6f`、网页 `2095c04`、父仓 `231f305` 已本地提交；未发布。
+- 下一步：所有者同步给 Fable 审读后，安排 Cursor 按固定源码构建/部署桶与身份、上传、开启下载，
+  实测条件写/权限/Range 及浏览器下载→安装→令牌→在线。不能把本地检查写成线上验收。
+- 完整输出、失败与重跑、原有真人待验在 runtime 本轮 `agent-release-hosting.20261009.md`。
+
+以下为此前基线携带的历史，不代表本轮另行授权。
+
 # 当前工作：按组件统一操作与账号维护（2026-10-05）
 
 所有者已批准上一轮完整方案并要求按任务表实施。基线53abb007e8960c53faea750ea6477f5c2e92a576，分支platform-kind-v1，仅修改新体系infrastructure/gitops/docs和本检查点；不push，不改旧sunmoonai/冻结Luna或四业务仓。日常Make→Ansible→Flux/SOPS，配置同组件放置。此次授权不自动延长上一单元08:25–10:25 UTC窗口，也不授权WSL关闭/删群；实际停服按具体范围另批2小时，容量10GiB及数据盘230GiB增长检查有效。

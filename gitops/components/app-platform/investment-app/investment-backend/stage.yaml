@@ -26,10 +26,16 @@ stages:
   resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
 - name: investment-runtime
   path: runtime
-  dependsOn: '{{ ["investment-identity"] + (["investment-service-identity"] if investment_backend_deployment.knowledge_service.enabled | default(false) else []) }}'
-  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["storage.sops.yaml"] if investment_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if investment_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if investment_backend_deployment.knowledge_service.enabled | default(false) else []) + (["domain.sops.yaml"] if investment_backend_deployment.domain_secrets | default({}) | length > 0 else []) }}'
+  dependsOn: '{{ ["investment-identity"] + (["investment-agent-releases"] if investment_agent_releases.enabled | default(false) else []) + (["investment-service-identity"] if investment_backend_deployment.knowledge_service.enabled | default(false) else []) }}'
+  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["agent-releases.sops.yaml"] if investment_agent_releases.enabled | default(false) else []) + (["storage.sops.yaml"] if investment_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if investment_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if investment_backend_deployment.knowledge_service.enabled | default(false) else []) + (["domain.sops.yaml"] if investment_backend_deployment.domain_secrets | default({}) | length > 0 else []) }}'
 - name: investment-service-identity
   path: service-identity
   dependsOn: [casdoor, postgresql]
   enabled: '{{ investment_deployment.enabled and investment_backend_deployment.knowledge_service.enabled | default(false) }}'
+  resources: [workload.yaml, provision.sops.yaml]
+- name: investment-agent-releases
+  path: agent-releases
+  dependsOn: [object-storage]
+  enabled: '{{ investment_deployment.enabled and investment_agent_releases.enabled | default(false) }}'
+  images: [aistor-mc]
   resources: [workload.yaml, provision.sops.yaml]

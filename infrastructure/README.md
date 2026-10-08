@@ -24,6 +24,10 @@ make -C infrastructure platform-check OBJECT=data-platform/postgresql
 
 物料按组件归属查看与准备见[artifacts](artifacts/README.md)，应用构建/部署见[applications](applications/README.md)；日常可先运行`make -C infrastructure material-inventory`定位所需文件与Harbor目标。
 
+Windows 代理安装包的校验、私有桶上传和下载开关见
+[investment-backend/agent-releases](../gitops/components/app-platform/investment-app/investment-backend/agent-releases/README.md)。
+`agent-release-verify/upload` 使用同目录的固定发行配置，不属于应用镜像发布。
+
 ## 运行前提
 
 在五仓并列的`platform-kind-v1/k8s`根目录执行本文命令。已有宿主需要WSL Ubuntu、Docker、systemd、OpenSSL、jq、uv、宿主Python及可用的非交互sudo；新数据盘的首次管理员附盘由Windows侧完成。当前没有从空Windows主机开始的完整一键引导。

@@ -1,0 +1,19 @@
+---
+# 唯一发行输入。开启后先准备桶/身份并上传校验，再晋级 API；本候选不发布。
+investment_agent_releases:
+  enabled: false
+  # 上传读回校验成功后才开启下载，避免网页提前出现不可用链接。
+  download_available: false
+  mode: object-storage
+  external_url: ''
+  bucket: agent-releases
+  reader: investment_release_reader
+  writer: investment_release_writer
+  job_revision: v1
+  version: 0.2.1
+  codex_version: 0.155.1
+  source_revision: 6de600279ffc1996e19409b1bd6c4ee1eb1eccbe
+  object_key: windows-x64/0.2.1/sunmoon-agent-0.2.1-6de6002-windows-x64.zip
+  zip_sha256: 2d5421627198b9cf2eccf15d88b726c80d46f4180e2db30606120f5bd52aea5a
+  manifest_sha256: d72f5443be1fa13895a92cb97f37b9cef6ce5fe27e7707705f3ee0e56a11f1b2
+  size_bytes: 174243923

@@ -37,6 +37,7 @@
     migration_job: '{{ application_name }}-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
     kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
     core_candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml, identity/workload.yaml, identity/provision.sops.yaml, identity/runtime.sops.yaml, identity/kustomization.yaml, runtime/workload.yaml, runtime/tls.sops.yaml, runtime/kustomization.yaml, '../{{ application_name }}-web-frontend/workload.yaml', '../{{ application_name }}-web-frontend/kustomization.yaml', '../{{ application_name }}-admin-frontend/workload.yaml', '../{{ application_name }}-admin-frontend/kustomization.yaml']
+    agent_releases_enabled: '{{ lookup("vars", application_name + "_agent_releases", default={}).enabled | default(false) | bool }}'
     storage_enabled: '{{ cfg.object_storage.enabled | default(false) | bool }}'
     provider_enabled: '{{ cfg.knowledge_provider.enabled | default(false) | bool }}'
     service_enabled: '{{ cfg.knowledge_service.enabled | default(false) | bool }}'
@@ -46,7 +47,7 @@
     service_bindings:
       ingest: '{{ (lookup("file", repo + "/gitops/components/app-platform/info-app/info-backend/config.yaml") | from_yaml).info_backend_deployment.knowledge_service }}'
       retrieve: '{{ (lookup("file", repo + "/gitops/components/app-platform/investment-app/investment-backend/config.yaml") | from_yaml).investment_backend_deployment.knowledge_service }}'
-    all_candidate_files: '{{ core_candidate_files + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) + (["service-identity/workload.yaml","service-identity/provision.sops.yaml","service-identity/kustomization.yaml","runtime/service.sops.yaml"] if service_enabled else []) }}'
+    all_candidate_files: '{{ core_candidate_files + (["agent-releases/workload.yaml","agent-releases/provision.sops.yaml","agent-releases/kustomization.yaml","runtime/agent-releases.sops.yaml"] if agent_releases_enabled else []) + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) + (["service-identity/workload.yaml","service-identity/provision.sops.yaml","service-identity/kustomization.yaml","runtime/service.sops.yaml"] if service_enabled else []) }}'
     selected_application_components: '{{ selection.applications[application_name] }}'
     selected_backend: '{{ application_name + "-backend" in selected_application_components }}'
     selected_web: '{{ application_name + "-web-frontend" in selected_application_components }}'
@@ -212,7 +213,7 @@
         - name: Wait for current generation Ready at the promoted digest
           ansible.builtin.command:
             argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
-          loop: '{{ [application_name + "-database",application_name + "-migration",application_name + "-redis",application_name + "-rabbitmq",application_name + "-identity",application_name + "-runtime",application_name + "-web",application_name + "-admin"] + ([application_name + "-storage"] if storage_enabled else []) + ([application_name + "-provider"] if provider_enabled else []) + ([application_name + "-service-identity"] if service_enabled else []) }}'
+          loop: '{{ [application_name + "-database",application_name + "-migration",application_name + "-redis",application_name + "-rabbitmq",application_name + "-identity",application_name + "-runtime",application_name + "-web",application_name + "-admin"] + (["investment-agent-releases"] if agent_releases_enabled else []) + ([application_name + "-storage"] if storage_enabled else []) + ([application_name + "-provider"] if provider_enabled else []) + ([application_name + "-service-identity"] if service_enabled else []) }}'
           register: stage
           changed_when: false
           until:

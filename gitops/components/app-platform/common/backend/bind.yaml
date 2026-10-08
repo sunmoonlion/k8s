@@ -32,6 +32,7 @@
       web: {name: '{{ web_cfg.casdoor_application }}', client_id: '{{ web_cfg.casdoor_client_id }}', origin: '{{ web_cfg.origin }}'}
       admin: {name: '{{ admin_cfg.casdoor_application }}', client_id: '{{ admin_cfg.casdoor_client_id }}', origin: '{{ admin_cfg.origin }}'}
     storage_enabled: '{{ (backend_cfg.object_storage.enabled | default(false)) | bool }}'
+    agent_releases_enabled: '{{ lookup("vars", prepare_vars.application_name + "_agent_releases", default={}).enabled | default(false) | bool }}'
     provider_enabled: '{{ (backend_cfg.knowledge_provider.enabled | default(false)) | bool }}'
     service_enabled: '{{ (backend_cfg.knowledge_service.enabled | default(false)) | bool }}'
     receiver_enabled: '{{ (backend_cfg.knowledge_service_receiver.enabled | default(false)) | bool }}'

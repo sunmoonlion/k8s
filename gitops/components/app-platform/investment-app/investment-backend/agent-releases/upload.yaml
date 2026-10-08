@@ -1,0 +1,81 @@
+---
+- name: Verify or publish the pinned installer, never deploy services
+  hosts: kind_hosts
+  gather_facts: false
+  vars:
+    archive_path: '{{ lookup("env", "AGENT_ZIP") }}'
+    public_input: '{{ {"release":investment_agent_releases,"region":object_storage_region} }}'
+  tasks:
+    - name: Require an explicit archive and action
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - agent_release_action in ['verify', 'upload']
+          - archive_path is match('^/')
+          - not ansible_check_mode
+          - cluster_name == 'sunmoon-kind'
+    - name: Verify ZIP, manifest and every bundle file before opening a network connection
+      ansible.builtin.command:
+        argv: ['{{ ansible_playbook_python }}', '{{ playbook_dir }}/upload.py', --zip, '{{ archive_path }}']
+        stdin: '{{ public_input | to_json }}'
+      register: local_verification
+      changed_when: false
+    - name: Show local verification
+      ansible.builtin.debug: {var: local_verification.stdout}
+    - name: Upload only after the independent bucket identities have been deployed
+      when: agent_release_action == 'upload'
+      become: true
+      block:
+        - name: Read the independent owned cluster identity
+          ansible.builtin.slurp:
+            src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'
+          register: release_cluster_identity
+        - name: Refuse uploading through a different cluster API
+          ansible.builtin.command:
+            argv: ['{{ inventory_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}',
+                   '--context=kind-{{ cluster_name }}', '--request-timeout=30s', get, ns, kube-system,
+                   -o, 'jsonpath={.metadata.uid}']
+          register: release_cluster_uid
+          changed_when: false
+          failed_when: release_cluster_uid.rc != 0 or release_cluster_uid.stdout != (release_cluster_identity.content | b64decode | from_json).kube_system_uid
+        - name: Enforce the normal site capacity floor for this object upload
+          ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/capacity.yaml'
+          vars:
+            capacity_operation: agent-release-upload
+            capacity_planned_bytes: '{{ investment_agent_releases.size_bytes + 67108864 }}'
+        - name: Check reader and writer private input ownership
+          ansible.builtin.stat: {path: '{{ services_config_dir }}/investment-agent-releases.yaml', follow: false}
+          register: credentials_file
+        - name: Require protected inputs and explicit hosting switch
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - investment_agent_releases.enabled | bool
+              - credentials_file.stat.isreg | default(false)
+              - not credentials_file.stat.islnk | default(false)
+              - credentials_file.stat.mode == '0600'
+              - credentials_file.stat.uid == 0
+        - name: Read independent identities privately
+          ansible.builtin.slurp: {src: '{{ services_config_dir }}/investment-agent-releases.yaml'}
+          register: release_credentials
+          no_log: true
+        - name: Conditional upload and independent streaming readback
+          ansible.builtin.command:
+            argv: ['{{ ansible_playbook_python }}', '{{ playbook_dir }}/upload.py', --zip, '{{ archive_path }}', --apply,
+                   --kubectl, '{{ inventory_dir }}/../.tools/bin/kubectl',
+                   --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ data_namespace }}',
+                   --ca, '{{ registry_config_dir }}/clients/ca.crt']
+            stdin: '{{ public_input | combine({"credentials":release_credentials.content | b64decode | from_yaml}) | to_json }}'
+          register: publication
+          no_log: true
+          changed_when: (publication.stdout | from_json).uploaded
+        - name: Show credential-free publication receipt
+          ansible.builtin.debug: {msg: '{{ publication.stdout | from_json }}'}
+        - name: Preserve a protected release receipt for the availability gate
+          ansible.builtin.copy:
+            dest: '{{ services_config_dir }}/investment-agent-release-published.json'
+            content: |
+              {{ publication.stdout }}
+            owner: root
+            group: root
+            mode: '0600'

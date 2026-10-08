@@ -98,7 +98,7 @@ spec:
         app.kubernetes.io/part-of: {{ application_name }}
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
-{% if storage_enabled %}
+{% if storage_enabled or (agent_releases_enabled | default(false) and role == "api") %}
         sunmoonai.com/object-storage-client: 'true'
 {% endif %}
 {% if provider_enabled and role in ['api','worker'] %}
@@ -170,9 +170,15 @@ spec:
 {% if service_enabled and role in ['api','worker'] %}
             - {secretRef: {name: {{ application_name }}-knowledge-service}}
 {% endif %}
+{% if agent_releases_enabled | default(false) and role == 'api' %}
+            - {secretRef: {name: {{ application_name }}-agent-releases-runtime}}
+{% endif %}
           resources: {{ cfg.resources[role] | to_json }}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
+{% if agent_releases_enabled | default(false) and role == 'api' %}
+            - {name: agent-releases-ca, mountPath: /etc/sunmoon/agent-releases, readOnly: true}
+{% endif %}
 {% if service_enabled %}
             - {name: service-ca, mountPath: /etc/sunmoon/service, readOnly: true}
 {% endif %}
@@ -185,6 +191,9 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
+{% if agent_releases_enabled | default(false) and role == 'api' %}
+        - {name: agent-releases-ca, secret: {secretName: {{ application_name }}-agent-releases-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+{% endif %}
 {% if service_enabled %}
         - {name: service-ca, configMap: {name: {{ application_name }}-service-ca}}
 {% endif %}
