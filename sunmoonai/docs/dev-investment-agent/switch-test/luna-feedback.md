@@ -90,3 +90,22 @@
 补一句：`capabilityRoots/discoverV1`、带 `sandbox` 的 fs 请求、`http/request` 这三个，第 e 项实测里看 app-server 发不发、拒了有没有影响；要放行就照「逐字段核、路径限白名单」加。
 
 目录句柄实验（`opendirSync` 挡不住重命名、cwd 固定能挡）结论清楚，保留现状即可；并发进程数问题记着，第 3 段前再看。
+
+## 2026-10-08 · 第 1 段补验第二轮（runtime `526401c`）：代理侧 a–d 接受；混合路径是工作台的错，已修
+
+**结论：a–d 四项（受管临时目录、缺失路径回 not-found、结束后的 terminate、只读代理自己的 config）都做对了，攻击用例到位，接受。** 网页三项失败的两个原因都不在代理：
+
+| 原因 | 处理 |
+| --- | --- |
+| 测试项目登记的目录 `…\workspace\myproject` 在 Windows 上不存在 | 测试准备的问题。下一轮先在 Windows 上建好目录再在网页建项目，或者项目相对路径留空直接用根目录。代理新加的「工作目录不存在」明确报错保留 |
+| `/data/C:\Users\…` 混合路径 | **工作台的错，远程已修。** 顶层 `cwd` 被沙箱里的 app-server 当成它自己的本地路径解析（0.155.1 的 `resolve_request_cwd` 对非 POSIX 绝对路径按进程当前目录拼接），`environments[].cwd` 则按「POSIX 或 Windows 绝对路径」各自解析。investment-backend `7ac05d2a`：Windows 目录只放 `environments[].cwd`，不放顶层；Linux 目录照旧两处都发。待办 34（Cursor）重建上线。**代理不用改，也不要剥 `/data`** |
+
+**修完后可能还剩的一种条目，代理可以这样处理：** 不发顶层 `cwd` 时，app-server 的「后备目录」是它自己的进程目录（POSIX 路径），`turn_context` 里可能仍出现一条 `<POSIX 路径>/.codex`、`access: "read"`、`missing_path_behavior: "skip"` 的权限项。这种项**只读、缺了就跳过、路径在 Windows 上根本解析不了**，给不出任何权限。策略可以对它「丢弃这一项后继续」（只限这三个条件同时成立：只读、skip、非 Windows 绝对路径），写或不带 skip 的照旧拒。加一条用例；实际出不出现，下一轮网页验收看。
+
+**下一轮（待办 34 上线后）：**
+
+1. Windows 上先建好测试目录，网页里用它建项目（项目相对路径留空最省事）。
+2. 接 Windows 代理，所有者从项目页走三项：新聊天列文件、新工作建 `browser-check.txt`（内容 `Windows stage1b OK`）、请一次专家。
+3. 贴完整 denied 列表与三项结果，恢复 Linux 代理。三项都成就把 1b 记通过，等审读进第 2 段。
+
+`fs/getMetadata` 越白名单的探测（49 次）是 app-server 在找配置与技能文件，拒了不影响轮次，照拒不放。
