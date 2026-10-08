@@ -8,7 +8,13 @@ WS="${WS:-fable}"
 WORKTREE_ROOT="${WORKTREE_ROOT:-$HOME/worktrees/$WS}"
 SYNC_SCRIPT="${SYNC_SCRIPT:-$HOME/five-repos-sync/sync-five-repos.sh}"
 FIVE="k8s info-app investment-app knowledge-app tpl-app"
-OTHERS="investment-app/investment-backend knowledge-app/knowledge-backend runtime"
+# 父仓下的全部子仓（前端也在内：2026-10-08 luna 的网页修复因只列了两个后端而没推上来）
+SUBS="info-app/info-backend info-app/info-web-frontend info-app/info-admin-frontend
+  investment-app/investment-backend investment-app/investment-web-frontend investment-app/investment-admin-frontend
+  knowledge-app/knowledge-backend knowledge-app/knowledge-web-frontend knowledge-app/knowledge-admin-frontend
+  tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend"
+OTHERS="$SUBS runtime"
+pushed=()
 changed=()
 
 check_repo() { # 仓目录 标签 是否允许 detached HEAD
@@ -45,7 +51,7 @@ commit_if_dirty() { # 仓目录 标签
 
 echo "===== 1. 检查本地仓库（工位 $WS）"
 for r in $FIVE runtime; do check_repo "$WORKTREE_ROOT/$r" "$r" || exit 1; done
-for r in investment-app/investment-backend knowledge-app/knowledge-backend; do
+for r in $SUBS; do
   check_repo "$WORKTREE_ROOT/$r" "$r" yes || exit 1
 done
 
@@ -53,10 +59,12 @@ echo "===== 2. 先提交并推送子仓与 runtime"
 for r in $OTHERS; do
   d="$WORKTREE_ROOT/$r"
   commit_if_dirty "$d" "$r" || { echo "✗ $r 提交失败"; exit 1; }
+  # 子仓没有新提交（当前提交已在远端某分支上）就不推，免得给每个子仓都建一个工位分支
+  if [ "$r" != runtime ] && [ -n "$(git -C "$d" branch -r --contains HEAD 2>/dev/null)" ]; then continue; fi
   rebase_on_origin "$d" "$r" || exit 1
   # 子模块 update 后通常 detached；推当前 HEAD，不能依赖可能不存在或过期的本地分支。
   git -C "$d" push -q origin "HEAD:refs/heads/$WS" || { echo "✗ $r push 失败，停止回传"; exit 1; }
-  echo "  已推 $r"
+  echo "  已推 $r"; pushed+=("$r")
 done
 
 echo "===== 3. 提交并同步父仓（子仓提交已推送）"
@@ -73,5 +81,5 @@ fi
 
 echo "===== 4. 告诉远程助手这一句："
 line="本地回来了"
-for r in $FIVE $OTHERS; do d="$WORKTREE_ROOT/$r"; line="$line；$r $(git -C "$d" rev-parse --short HEAD)"; done
+for r in $FIVE runtime ${pushed[@]+"${pushed[@]}"}; do d="$WORKTREE_ROOT/$r"; line="$line；$r $(git -C "$d" rev-parse --short HEAD)"; done
 echo "$line"

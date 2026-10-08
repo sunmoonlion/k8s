@@ -109,3 +109,34 @@
 3. 贴完整 denied 列表与三项结果，恢复 Linux 代理。三项都成就把 1b 记通过，等审读进第 2 段。
 
 `fs/getMetadata` 越白名单的探测（49 次）是 app-server 在找配置与技能文件，拒了不影响轮次，照拒不放。
+
+## 2026-10-08 · 断线恢复修复（所有者临时授权，已上现网）与 1b 收尾：接受，1b 通过，可以进第 2 段
+
+审读范围：investment-backend `ab4da30`+`0f0ae68`，investment-web-frontend `9c47e30`，k8s `dfe30caa`/`1fd485d3`/`0fd49141`，runtime `3bf4d3d`…`3e925e3`。远程已并入 fable：后端、网页的 fable 分支快进到你的提交，投资父仓指针跟上，k8s 合并（冲突只在镜像号与 flux 源，取你一侧——那就是现网；合并后 `gitops/`、`infrastructure/` 与你的发布树逐字节一致），晋级提交打 `release-20261008-2`。
+
+**远程复跑：** 后端全套 854 过 / 5 跳过（两个测试库都接上），ruff、import-linter 4 条过；网页 192 过 / 2 跳过，typecheck、lint、i18n 过。
+
+| 部分 | 结论 |
+| --- | --- |
+| 专家等环境的恢复 | 对。心跳只排探测、runner 用公开协议问 ready、账房在一个事务里查齐所有者/会话/环境/操作权/取消/活跃对象再 WAITING→QUEUED，重复与取消竞争只生效一次；保留失败 Attempt 走既有重试。没恢复 INPUT/RESOURCE 等待，范围收得对 |
+| 断线通知按 thread 隔离、短断恢复清标记 | 对。原来一台机器断了会把所有在等的 turn 都判丢 |
+| 网页：停止看任务状态、窄屏保留按钮、409 占用说明与入口、首句失败复用会话 | 对 |
+| Redis 只开 `investment:workbench:*` 的 publish/subscribe/unsubscribe | 对。prepare 里卡死只能是本应用的工作台频道，初始化实收实发再验越界被拒，verify 也接上了 |
+| runtime `3bf4d3d` 丢弃 POSIX 只读 skip 项 | 正是上轮允许的三条件，用例把写、非 skip、多字段、混合路径、UNC、`\\?\`、8.3 短名、ADS 都拒了，好 |
+| 报告的「不能扩大的结论」 | 写得清楚，保持：运行中断线原命令输出不恢复；真实取消点击未实测；专家 Profile 与问题不配，只证状态机 |
+
+**1b 记通过。** 三项都在 Windows 代理在线时由所有者从网页走过：新聊天列文件、新工作写文件（`browser-check.txt` 与重连后的追加）、专家（断线恢复后续完并交还）。可以进第 2 段。
+
+**流程上的两点（不是代码问题）：**
+
+1. 你的 k8s 提交基于旧的 `origin/luna`（少了远程 5 个提交），所有者回传时 rebase 冲突停下。以后**动 k8s 之前先 `fetch` 并对齐 `origin/luna`**；尤其要发布时，基线必须是现网那一版的提交。
+2. 回传脚本原来只推两个后端子仓，你的网页提交没推上来。`human-remote.sh` 已改成：父仓下所有子仓有新提交就推（没新提交的不推）。
+
+**留给后面的（记着，不阻塞第 2 段）：**
+
+- `sources.yaml` 里投资的 `backend_parent_revision`/`web_parent_revision` 还指旧父仓指针；下次投资发布时远程一并对齐到新父仓提交，现在不为它重发。
+- 真实网页「停止」点击取消，下次自然遇到时补一次实测。
+- `environmentConfig/read` 那两次投影拒绝，第 2 段做 MCP 合并时一起定。
+- 你本地的 `source-before.yaml` 回退锁已过时（现网就是新版本），不要再用它回退。
+
+**下一步：** 所有者跑 `WS=luna bash ~/switch-test/human-local.sh` 对齐后，按任务书进第 2 段。
