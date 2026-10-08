@@ -1,15 +1,16 @@
 # Cursor 发布卡：投资电脑代理安装包托管
 
-所有者已授权由 Cursor 执行本卡发布。按 A → B → C 顺序执行，**每段失败立即停并回传，不开始后续段**。
+这是发布执行卡，先供 Fable 审阅；**收到 Fable 审阅通过且所有者通知 Cursor 后再执行**。
+执行时按 A → B → C 顺序，**每段失败立即停并回传，不开始后续段**。
 只在 luna 工作树；本待办只本地提交结果，不 push、不合并 fable。不要更改应用 schema、代理包、其他应用或线上登录凭据。
 
 ```text
 被测仓：k8s，~/worktrees/luna/k8s；关联 investment-app 与其 backend/web 子仓
 跑：依次执行本卡 A、B、C；每段完成并核实后再开始下一段
 仓与提交：k8s 基线 723d637d47ec3b5690c26f59795c38e657e01cb8；investment 源锁提交 87f56ec2；investment-app 231f305de2e0b72edb3d7cdd7c880151f8e3aaaf；investment-backend a01db6f10f22d11116ba4421309ca676e2790f18；investment-web-frontend 2095c04927a1510efc54bef5ffd28e0c52d25558；固定代理包源码 6de600279ffc1996e19409b1bd6c4ee1eb1eccbe
-预计：由 Cursor 按当前站点发布/晋级窗口执行；需联网、Docker/KIND、Harbor、AIStor、Flux 与既有秘密恢复输入；不需要 Windows 管理员或真人浏览器操作
+预计：Cursor 按当前站点发布/晋级窗口执行；需联网、Docker/KIND、Harbor、AIStor、Flux 与既有秘密恢复输入；不需要 Windows 管理员或真人浏览器操作
 看什么：A 两镜像和 enabled=true/download_available=false 的托管配置通过原链部署；B 私有桶、最小权限、条件写/重复写与独立读回摘要通过；C 下载开关开启后未登录拒绝且 HEAD/下载元数据正确
-前提：确认工作树干净且各仓提交与本卡一致；按 k8s inbox README 的约定，满足当前集群状态、10 GiB容量底线、SOPS/私有输入可恢复；保存本次原 Flux source 与两个 investment image.lock 回退点。不得使用 source-before.yaml
+前提：先收到 Fable 审阅通过与所有者执行通知；确认工作树干净且各仓提交与本卡一致；按 k8s inbox README 的约定，满足当前集群状态、10 GiB容量底线、SOPS/私有输入可恢复；保存本次原 Flux source 与两个 investment image.lock 回退点。不得使用 source-before.yaml
 回传：k8s/sunmoonai/scripts/results/agent-release-hosting-cursor.<时间>.md；记录每段命令退出码、镜像摘要/source_revision、Pod imageID、Flux 摘要/Ready、读写拒绝结果及回退点；结果本地提交，不 push
 ```
 
