@@ -271,3 +271,12 @@ luna 今晚到点停手。所有者定：之后由 Fable 在 runtime 的 `luna` 
    - 回传路径、不 push、不并 fable，照旧。顺手把已执行完的 `2026-10-08-luna-stage2-cursor.md` 挪到 `done/`。
 
 做完提交，所有者同步回来，我先审卡，再交 Cursor。
+
+## 2026-10-09 · 发布卡 35（k8s `87f56ec2`…`70528a59`）：审阅通过，可交 Cursor
+
+- 版本锁：investment parent `231f305d`、backend/backend_parent `a01db6f1`、web/web_parent `2095c049`，admin 不动——与审过的提交一致，且都是现网版本的后代。
+- 命令都在 Makefile 里；`application-publish-*` 会接着跑 `application-lock-*` 写进 `image.lock.yaml`，不会出现「镜像推了、声明没换」。
+- A/B/C 三段、每段失败即停；回退点用本轮新存的 flux-source 与两个 image.lock，明写不用旧 `source-before.yaml`、不从 fable 发；B 失败不清桶；C 之后真人闭环留给所有者。对。
+- 补一句给执行者：C 里「已登录 HEAD/下载」如果没有不经真人的登录办法，就只做未登录拒绝、HEAD 未登录拒绝、`application-check-public`，把「已登录下载」明确记为未做，留给所有者在浏览器里验，不要为此造会话或改登录。
+
+所有者通知 Cursor 后按卡执行。回传后我核结果、给晋级提交打 tag。
