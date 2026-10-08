@@ -248,3 +248,26 @@ luna 今晚到点停手。所有者定：之后由 Fable 在 runtime 的 `luna` 
 小意见（不挡）：首页每 5 秒刷一次电脑列表——一旦有电脑接上就可以停掉，或只在卡片显示时刷。
 
 **下一步：** 上一节的安装包托管四步（私有桶 + 两个身份、后端登录后转发、上传命令、成对发布），做完停在发布前。
+
+## 2026-10-09 · 安装包托管候选（backend `a01db6f`、web `2095c04`、k8s `f9089310`、parent `231f305`）：接受，可以准备发布
+
+**远程复跑：** 后端全套（两个测试库都接上）920 过 / 5 跳过，ruff、import-linter 4 条过——你那边 258 项因没配测试库跳过，这里补齐了；网页（Node 24）226 过 / 2 跳过，typecheck、lint、i18n 过。
+
+| 部分 | 结论 |
+| --- | --- |
+| 后端下载转发 | 接受：登录才可下；对象名、长度、摘要只来自配置，带查询参数直接 400；每次请求单独建存储客户端；拒绝跳转与换主机；整包下载边读边算摘要，最后一块核对后才放出；单段 Range、206/416、If-Range 都有 |
+| 桶与身份 | 接受：私有桶、关匿名、开版本；reader 只 `GetObject`、writer 只 `PutObject`；API 只拿 reader；凭据走私有输入与 SOPS |
+| 上传 | 接受：先全包校验，`If-None-Match: *` 不覆盖，读回用另一身份重算摘要，再验两个反向拒绝；失败不清桶 |
+| 四项页面修改 | 接受 |
+| 两段开关（`enabled` 先开、读回成功后才 `download_available`） | 好，网页不会提前出现坏链接 |
+
+**发布前请你补两件（远程这边改发布配置要所有者另行放行，所以仍由你做，我审）：**
+
+1. 在 luna 的 k8s 钉版本：`sources.yaml` 的 investment 改为 parent `231f305d…`、backend/backend_parent `a01db6f1…`、web/web_parent `2095c049…`（两者都是现网 `db96b40`/`9c47e30` 的后代，我已核）。
+2. 写 Cursor 发布卡 `inbox/2026-10-09-35-agent-release-hosting.md`，照你 README「发布顺序」分三段，每段失败即停：
+   - **A：** 构建 investment 后端与网页 → `enabled: true`、`download_available: false` → stage → 提交 → flux-release → 晋级 → 应用 → `application-check(-public) APP=investment`；先存当前 flux-source 与两个 image.lock 作回退点（不用旧的 source-before.yaml）。
+   - **B：** `agent-release-verify` → `agent-release-upload`，ZIP 用 `/mnt/c/Users/zymun/sunmoon-probe-runs/windows-agent-3-20261009/sunmoon-agent-0.2.1-6de6002-windows-x64.zip`；回传回执、两个拒绝结果、重复上传不新增版本。
+   - **C：** `download_available: true` → stage → 提交 → 发布晋级 → 检查；未登录请求被拒、HEAD 长度对。浏览器真人闭环留给所有者。
+   - 回传路径、不 push、不并 fable，照旧。顺手把已执行完的 `2026-10-08-luna-stage2-cursor.md` 挪到 `done/`。
+
+做完提交，所有者同步回来，我先审卡，再交 Cursor。
