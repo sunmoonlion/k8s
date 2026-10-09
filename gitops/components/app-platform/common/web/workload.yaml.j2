@@ -13,6 +13,8 @@ spec:
     metadata:
       labels: {app.kubernetes.io/name: {{ application_name }}-web, app.kubernetes.io/part-of: {{ application_name }}}
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: {{ application_name }}-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30

@@ -190,9 +190,16 @@ registry-scan-check:
 registry-recovery-plan registry-recovery-check:
 	$(ANSIBLE) -i host/inventory.yaml registry/recovery.yaml $(CONFIG_ARGS) --extra-vars 'recovery_action=$(patsubst registry-recovery-%,%,$@) recovery_backup=$(BACKUP) recovery_backup_sha256=$(BACKUP_SHA256)'
 
-.PHONY: cluster-plan cluster-deploy cluster-status
-cluster-plan cluster-deploy cluster-status:
+.PHONY: cluster-plan cluster-deploy
+cluster-plan cluster-deploy:
 	$(ANSIBLE) -i host/inventory.yaml cluster/deploy.yaml $(CONFIG_ARGS) --extra-vars 'cluster_action=$(patsubst cluster-%,%,$@)'
+
+.PHONY: cluster-status cluster-dns-check
+cluster-status:
+	$(ANSIBLE) -i host/inventory.yaml cluster/deploy.yaml $(CONFIG_ARGS) --extra-vars cluster_action=status
+	$(MAKE) cluster-dns-check
+cluster-dns-check:
+	.venv/bin/python cluster/check-dns.py --site "$(SITE)" --cluster-config cluster/config.yaml
 
 .PHONY: cluster-pull-check
 cluster-pull-check: cluster-status

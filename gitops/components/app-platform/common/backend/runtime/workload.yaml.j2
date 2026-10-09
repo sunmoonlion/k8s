@@ -111,6 +111,8 @@ spec:
       annotations:
         sunmoonai.com/config-sha256: {{ runtime_config_digest }}
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: {{ application_name }}-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60

@@ -10,6 +10,8 @@ spec:
     metadata:
       labels: {app.kubernetes.io/name: casdoor, sunmoonai.com/postgresql-client: 'true'}
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: platform-runtime
       automountServiceAccountToken: false
       nodeSelector: {kubernetes.io/hostname: {{ cluster_name }}-worker}

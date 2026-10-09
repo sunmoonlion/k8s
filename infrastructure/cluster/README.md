@@ -32,6 +32,8 @@ make -C infrastructure cluster-status
 make -C infrastructure cluster-pull-check
 ```
 
+`cluster-status`还会检查三个KIND节点的`/etc/resolv.conf`搜索域是否合法，并从一个就绪的应用API Pod连续解析PostgreSQL服务FQDN；任一次超过200ms或宿主搜索域含CIDR/路径都会失败，并提示检查宿主DNS后缀与WSL DNS隧道。应用Pod模板将`ndots`设为2，减少短服务名解析时把宿主搜索域带入查询的影响；短服务名仍使用Kubernetes默认搜索域解析。此配置需随模板候选晋级后才会进入集群。
+
 plan检查现有环境并显示计划；deploy只创建/协调本集群，节点不存在时才创建。receipt在`cluster_data_root/cluster_name/bootstrap/identity.json`，保存节点容器身份及kube-system UID，同目录kind.yaml保存建群参数；已有对象缺receipt、节点或UID漂移时拒绝接管。create中断时保留现场，不能删除receipt绕过守卫。
 
 控制面基础镜像内置于节点镜像；Calico从归档导入三个节点，再原生apply对应配置。建群不依赖现场公网拉镜像；平台和应用镜像随后从Harbor取得。节点镜像生成与本机归档身份见[node.yaml](node.yaml)及[build-node.yaml](build-node.yaml)。

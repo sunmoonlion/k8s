@@ -38,6 +38,8 @@ spec:
     metadata:
       labels: {app.kubernetes.io/name: {{ application_name }}-rabbitmq-provision, app.kubernetes.io/part-of: {{ application_name }}}
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       restartPolicy: Never
       serviceAccountName: platform-runtime
       automountServiceAccountToken: false
