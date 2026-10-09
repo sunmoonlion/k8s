@@ -419,3 +419,11 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 **规矩：** 按卡 A → B/C/D → E 做，每张做完停下交审；实现中发现设计行不通，停下写证据交我改设计，不要自己改方案或另起做法。只本地提交；发布交 Cursor；不碰集群。
 
 **现在做卡 A（实验）。** 需要所有者用 Edge 下载一次现网安装包，你在开工时告诉他。
+
+## 2026-10-09 · 卡 A 审读：接受；入口改为「一行命令安装」（SDD 0012 第 2 节已改），下一步卡 A2
+
+卡 A 做得对：真实 Edge 下载、资源管理器解压、三种入口各一次、Code Integrity 事件和 Shell 原文都留了，命中停止条件就停，没碰系统设置；30 天核对因会换令牌而不做，也对。
+
+结论与改定：拦截的根因是「来自网络」标记，不是程序本身——所有者此前 PowerShell 解压的同一包能运行。所有者定**不买证书**，入口改为网页「复制安装命令」→ 终端粘贴 `irm '<…/api/agent-install/<一次性凭证>/script>' | iex` → 自动下载、校验、`Expand-Archive`、安装、弹设置窗口。细节（凭证接口、`install.ps1.tmpl`、升级保留配置、开发站点先导入 CA、ZIP+解除锁定作备用）看 SDD 0012 第 2 节与卡表。
+
+**现在做卡 A2**（SDD 卡表有步骤）：WSL 临时 HTTP 服务放 0.2.1 ZIP → 所有者 Windows 上 `Invoke-WebRequest` 下载 → 确认无 `Zone.Identifier` → `Expand-Archive` → 包内 `node\node.exe` 跑安装器**预览**、`desktop.ps1` 打开一个窗口；不安装、不换令牌；只读状态接口看 `agent_token_expires_at`。任何一步被拦就停。卡 A 的临时目录审完可以清理（按精确路径，不递归跟链接）。
