@@ -493,3 +493,11 @@ component-lock:
 .PHONY: platform-account-plan platform-account-import platform-account-view platform-account-check platform-account-stage platform-account-rotate platform-account-recover
 platform-account-plan platform-account-import platform-account-view platform-account-check platform-account-stage platform-account-rotate platform-account-recover:
 	$(ANSIBLE) -i host/inventory.yaml host/accounts.yaml $(CONFIG_ARGS) --extra-vars 'account_action=$(patsubst platform-account-%,%,$@) account_operation=$(ACCOUNT_OPERATION) account_maintenance_deadline=$(or $(ACCOUNT_DEADLINE),0)'
+
+# 公网边缘（SDD 0013）：只在边缘机（东京 VM）上运行。EDGE_EXTRA 可追加 --extra-vars，例如 edge_tls_mode=acme。
+EDGE_ARGS = -i edge/inventory.yaml edge/service.yaml --extra-vars '@edge/config.yaml'
+.PHONY: edge-plan edge-deploy edge-start edge-stop edge-status edge-firewall edge-smoke
+edge-plan edge-deploy edge-start edge-stop edge-status edge-firewall:
+	$(ANSIBLE) $(EDGE_ARGS) --extra-vars edge_action=$(patsubst edge-%,%,$@) $(EDGE_EXTRA) </dev/null
+edge-smoke:
+	edge/smoke/run.sh

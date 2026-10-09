@@ -1,0 +1,41 @@
+serverAddr = "127.0.0.1"
+serverPort = 7000
+auth.method = "token"
+auth.token = "{{ .Envs.FRP_AUTH_TOKEN }}"
+transport.tls.enable = true
+loginFailExit = true
+log.to = "console"
+log.level = "info"
+
+[[proxies]]
+name = "smoke-investment"
+type = "http"
+customDomains = ["investment.sunmoonai.com"]
+loadBalancer.group = "smoke-investment"
+loadBalancer.groupKey = "{{ .Envs.FRP_AUTH_TOKEN }}"
+[proxies.plugin]
+type = "http2https"
+localAddr = "127.0.0.1:18443"
+requestHeaders.set.x-forwarded-proto = "https"
+
+[[proxies]]
+name = "smoke-casdoor"
+type = "http"
+customDomains = ["casdoor.sunmoonai.com"]
+loadBalancer.group = "smoke-casdoor"
+loadBalancer.groupKey = "{{ .Envs.FRP_AUTH_TOKEN }}"
+[proxies.plugin]
+type = "http2https"
+localAddr = "127.0.0.1:18443"
+requestHeaders.set.x-forwarded-proto = "https"
+
+[[proxies]]
+name = "smoke-relay"
+type = "http"
+customDomains = ["relay.sunmoonai.com"]
+loadBalancer.group = "smoke-relay"
+loadBalancer.groupKey = "{{ .Envs.FRP_AUTH_TOKEN }}"
+[proxies.plugin]
+type = "http2https"
+localAddr = "127.0.0.1:18443"
+requestHeaders.set.x-forwarded-proto = "https"

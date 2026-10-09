@@ -1,0 +1,148 @@
+---
+# 公网边缘（SDD 0013）：在边缘机本机渲染配置、管理 sunmoon-edge 单元与防火墙。
+# 动作：plan（只显示）| deploy（渲染并启动）| start | stop | status | firewall（只加放行规则，启用需 edge_firewall_enable=true）
+- name: Configure and control the public edge
+  hosts: edge_hosts
+  gather_facts: false
+  become: true
+  vars:
+    edge_action: plan
+    edge_firewall_enable: false
+  tasks:
+    - name: Validate operation and parameters
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - edge_action in ['plan', 'deploy', 'start', 'stop', 'status', 'firewall']
+          - edge_tls_mode in ['acme-staging', 'acme', 'smoke']
+          - edge_domains | length > 0
+          - edge_domains | select('match', '^[a-z0-9-]+\.sunmoonai\.com$') | list | length == edge_domains | length
+          - edge_config_dir is match('^/etc/sunmoon/edge[a-z0-9-]*$')
+          - edge_token_file.startswith(edge_config_dir + '/')
+          - edge_images.traefik is search('@sha256:[0-9a-f]{64}$')
+          - edge_images.frps is search('@sha256:[0-9a-f]{64}$')
+          - edge_https_port | int != edge_frps_port | int
+          - edge_vhost_port | int not in [edge_http_port | int, edge_https_port | int, edge_frps_port | int]
+
+    - name: Show intended configuration without secrets
+      ansible.builtin.debug:
+        msg:
+          action: '{{ edge_action }}'
+          public: '{{ edge_public_ip }} → {{ edge_domains | join(", ") }} on :{{ edge_https_port }} (tls {{ edge_tls_mode }})'
+          frps: '0.0.0.0:{{ edge_frps_port }} (TLS forced, token), vhost 127.0.0.1:{{ edge_vhost_port }}'
+          firewall: 'allow {{ edge_ssh_port }}, {{ edge_http_port }}, {{ edge_https_port }}, {{ edge_frps_port }}'
+          config: '{{ edge_config_dir }}'
+
+    - name: Stop the edge
+      ansible.builtin.systemd: {name: sunmoon-edge.service, state: stopped}
+      when: edge_action == 'stop'
+
+    - name: Read edge state
+      ansible.builtin.command: {argv: [docker, compose, -f, '{{ edge_config_dir }}/compose.yaml', ps, --format, json]}
+      register: edge_ps
+      changed_when: false
+      failed_when: false
+      when: edge_action == 'status'
+
+    - name: Show edge state
+      ansible.builtin.debug: {var: edge_ps.stdout_lines}
+      when: edge_action == 'status'
+
+    - name: Render and start
+      when: edge_action in ['deploy', 'start']
+      block:
+        - name: Read the frp token file metadata
+          ansible.builtin.stat: {path: '{{ edge_token_file }}', follow: false}
+          register: token_stat
+
+        - name: Require a private token file
+          ansible.builtin.assert:
+            quiet: true
+            fail_msg: 'Missing or unsafe {{ edge_token_file }}: root 0600 regular file expected (SDD 0013 §4)'
+            that:
+              - token_stat.stat.exists
+              - token_stat.stat.isreg
+              - not token_stat.stat.islnk
+              - token_stat.stat.uid == 0
+              - token_stat.stat.mode == '0600'
+
+        - name: Read the frp token
+          ansible.builtin.slurp: {src: '{{ edge_token_file }}'}
+          register: token_raw
+          no_log: true
+
+        - name: Require a strong token
+          ansible.builtin.assert:
+            quiet: true
+            fail_msg: frp token must be at least 32 printable characters without quotes or whitespace
+            that:
+              - (token_raw.content | b64decode | from_yaml).token is string
+              - (token_raw.content | b64decode | from_yaml).token is match('^[A-Za-z0-9_.~+/=-]{32,256}$')
+          no_log: true
+
+        - name: Create private directories
+          ansible.builtin.file: {path: '{{ item }}', state: directory, owner: root, group: root, mode: '0700'}
+          loop: ['{{ edge_config_dir }}', '{{ edge_config_dir }}/acme']
+
+        - name: Write the frps environment file
+          ansible.builtin.copy:
+            dest: '{{ edge_config_dir }}/frp.env'
+            content: 'FRP_AUTH_TOKEN={{ (token_raw.content | b64decode | from_yaml).token }}'
+            owner: root
+            group: root
+            mode: '0600'
+          no_log: true
+          register: env_file
+
+        - name: Render configuration
+          ansible.builtin.template:
+            src: 'templates/{{ item.src }}'
+            dest: '{{ item.dest }}'
+            owner: root
+            group: root
+            mode: '{{ item.mode }}'
+          loop:
+            - {src: frps.toml.j2, dest: '{{ edge_config_dir }}/frps.toml', mode: '0644'}
+            - {src: traefik.yml.j2, dest: '{{ edge_config_dir }}/traefik.yml', mode: '0644'}
+            - {src: dynamic.yml.j2, dest: '{{ edge_config_dir }}/dynamic.yml', mode: '0644'}
+            - {src: compose.yaml.j2, dest: '{{ edge_config_dir }}/compose.yaml', mode: '0644'}
+            - {src: sunmoon-edge.service.j2, dest: /etc/systemd/system/sunmoon-edge.service, mode: '0644'}
+          register: rendered
+
+        - name: Reload systemd
+          ansible.builtin.systemd: {daemon_reload: true}
+          when: rendered.changed
+
+        - name: Start or restart the edge
+          ansible.builtin.systemd:
+            name: sunmoon-edge.service
+            enabled: '{{ edge_tls_mode != "smoke" }}'
+            state: '{{ "restarted" if (rendered.changed or env_file.changed) else "started" }}'
+
+        - name: Wait for Traefik
+          ansible.builtin.uri: {url: 'http://127.0.0.1:{{ edge_health_port }}/ping', status_code: 200}
+          register: ping
+          retries: 15
+          delay: 2
+          until: ping.status == 200
+
+    - name: Firewall
+      when: edge_action == 'firewall'
+      block:
+        - name: Allow SSH first, then the edge ports
+          ansible.builtin.command: {argv: [ufw, allow, '{{ item }}/tcp']}
+          loop: ['{{ edge_ssh_port }}', '{{ edge_http_port }}', '{{ edge_https_port }}', '{{ edge_frps_port }}']
+          register: ufw_allow
+          changed_when: "'Skipping' not in ufw_allow.stdout"
+
+        - name: Enable deny-by-default only when explicitly asked
+          ansible.builtin.command: {argv: [ufw, --force, enable]}
+          when: edge_firewall_enable | bool
+
+        - name: Show firewall
+          ansible.builtin.command: {argv: [ufw, status, verbose]}
+          register: ufw_status
+          changed_when: false
+
+        - name: Firewall state
+          ansible.builtin.debug: {var: ufw_status.stdout_lines}

@@ -1,0 +1,15 @@
+# 由 infrastructure/edge/service.yaml 渲染；令牌从环境变量读，不落在本文件里。
+bindAddr = "0.0.0.0"
+bindPort = {{ edge_frps_port }}
+proxyBindAddr = "127.0.0.1"
+vhostHTTPPort = {{ edge_vhost_port }}
+vhostHTTPTimeout = 120
+auth.method = "token"
+auth.token = "{{ '{{' }} .Envs.FRP_AUTH_TOKEN {{ '}}' }}"
+transport.tls.force = true
+transport.maxPoolCount = 10
+# 不开任何 tcp/udp 端口代理，只做按域名的 http 转发。
+allowPorts = []
+log.to = "console"
+log.level = "info"
+log.disablePrintColor = true
