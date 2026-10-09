@@ -3,7 +3,7 @@
 investment_agent_releases:
   enabled: true
   # 上传读回校验成功后才开启下载，避免网页提前出现不可用链接。
-  download_available: false
+  download_available: true
   mode: object-storage
   external_url: ''
   bucket: agent-releases
