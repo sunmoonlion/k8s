@@ -11,13 +11,31 @@ SPEC.loader.exec_module(check_dns)
 
 
 class CheckDnsTests(unittest.TestCase):
-    def test_all_app_platform_workload_templates_set_ndots_two(self):
-        templates = sorted(
-            (Path(__file__).parents[3] / "gitops/components/app-platform").rglob("workload.yaml.j2")
-        )
-        missing = [str(path) for path in templates if "options: [{name: ndots, value: '2'}]" not in path.read_text()]
-        self.assertTrue(templates, "no app-platform workload templates found")
-        self.assertEqual(missing, [])
+    def test_only_long_running_application_workloads_set_ndots_two(self):
+        root = Path(__file__).parents[3] / "gitops/components/app-platform"
+        expected = {
+            "common/backend/runtime/workload.yaml.j2",
+            "common/web/workload.yaml.j2",
+            "common/admin/workload.yaml.j2",
+            "auth-app/casdoor/workload.yaml.j2",
+        }
+        actual = {
+            path.relative_to(root).as_posix()
+            for path in root.rglob("workload.yaml.j2")
+            if "options: [{name: ndots, value: '2'}]" in path.read_text()
+        }
+        self.assertEqual(actual, expected)
+
+    def test_job_templates_do_not_override_dns_options(self):
+        root = Path(__file__).parents[3] / "gitops/components/app-platform"
+        jobs = [
+            path
+            for path in root.rglob("workload.yaml.j2")
+            if "kind: Job" in path.read_text()
+        ]
+        self.assertTrue(jobs, "no Job workload templates found")
+        offenders = [str(path) for path in jobs if "name: ndots" in path.read_text()]
+        self.assertEqual(offenders, [])
 
     def test_accepts_absent_search_and_valid_domains(self):
         self.assertEqual(

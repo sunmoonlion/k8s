@@ -8,8 +8,6 @@ spec:
     metadata:
       labels: {sunmoonai.com/postgresql-client: 'true'}
     spec:
-      dnsConfig:
-        options: [{name: ndots, value: '2'}]
       restartPolicy: Never
       serviceAccountName: platform-runtime
       automountServiceAccountToken: false

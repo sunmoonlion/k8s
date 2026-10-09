@@ -17,8 +17,6 @@ spec:
     metadata:
       labels: {app.kubernetes.io/name: investment-agent-releases-provision, sunmoonai.com/object-storage-client: 'true'}
     spec:
-      dnsConfig:
-        options: [{name: ndots, value: '2'}]
       restartPolicy: Never
       serviceAccountName: platform-runtime
       automountServiceAccountToken: false
