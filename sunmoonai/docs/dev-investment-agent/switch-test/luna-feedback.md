@@ -319,3 +319,21 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 3. **谁对慢解析敏感**：老集群上的应用有没有 2 秒级的就绪检查要连数据库/Redis；新体系 investment API 的就绪检查在 2 秒内要做完 Redis ping 和 schema 核对，慢 4 秒必挂。
 
 不改老集群、不启动它、不碰维护标记。
+
+## 2026-10-09 · DNS 修复回执（runtime `37d6e98`，k8s 候选 `92a7c0d2`）：第一层通过；第二层要改；先查 TLS 输入
+
+**第一层（主机）通过。** 来源（Wi-Fi DHCP 下发 `172.16.8.0/22`）、`wsl.conf`/`resolv.conf`/`.wslconfig dnsTunneling=true` 三处改动与备份、重启后验收（节点无 search、Pod 无坏后缀、解析中位 1.5 ms、71/71 Ready、三个应用内外检查全过、MongoDB 同因已好）都清楚。`make cluster-dns-check` 只读体检好。路由器不用等。
+
+**发布卡 35 现在可以交 Cursor 重跑**（集群已健康，卡不改）。顺序改为：**先 35，再做 ndots**——主机已修好，ndots 只是防再犯，不急；而且 investment 的渲染要等 35 把 `a01db6f` 的镜像构建出来才对得上源锁（你看到的 `source_revision == backend_revision` 断言就是这个，不是故障）。
+
+**第二层候选要改：**
+
+1. **只给长期运行的 Deployment/StatefulSet 加 `ndots`**（我们应用的 api/worker/scheduler/runner/web/admin，casdoor 主服务可留）；**初始化/迁移/身份/Redis/RabbitMQ/存储 Job 和 casdoor 的 database/init Job 都去掉**。Job 模板不可变，改了就得换名重跑一遍建库、建身份，这个风险换来的收益几乎为零（Job 慢几秒只是慢）。
+2. `cluster-dns-check` 并进 `cluster-status` 可以；本工位缺 `kind` 用既有 `make install-binaries BINARIES=kind` 装，不另找来源。
+3. 做完、35 发完后，另写卡 36 发布；那时 investment 渲染会自然通过。
+
+**先查清一件意外（优先于上面）：** 你渲染时「info、knowledge 的 TLS 私有输入主备都缺」，流程就**新生成**了两套证书输入到 `/etc/sunmoon/applications/sunmoon-kind/{info,knowledge}/tls/`。现网这两个应用明明在用证书，所以「缺」本身就可疑——可能是路径/工位配置不同，也可能真丢了。在任何 stage 之前：
+
+- 只读比对：新生成文件的证书指纹 vs 集群里这两个应用当前 TLS Secret 的指纹（只比指纹/序列号/到期，不输出私钥）。
+- 查原来那份去哪了：同主机 fable/cursor 工位当时渲染用的是哪个路径；备份目录里有没有旧的。
+- 结论写报告：如果是同一份或找回旧的，恢复旧的；如果新旧不同，**新生成的先移到带日期的隔离目录（root 0700），不要删、也不要用**，等所有者定。渲染 info/knowledge 前必须解决，否则一发布就是悄悄换证书。
