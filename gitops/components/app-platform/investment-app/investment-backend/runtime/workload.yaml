@@ -4,7 +4,7 @@ metadata: {name: investment-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: investment
-  DEPLOYMENT_ID: "investment-backend-0c75cb542efbe029"
+  DEPLOYMENT_ID: "investment-backend-4cf3a9391d0aad12"
   ALLOWED_HOSTS: "localhost,127.0.0.1,investment-api,investment-api.app-platform-dev.svc.cluster.local,investment.sunmoonai.com,investment-admin.sunmoonai.com"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -67,17 +67,20 @@ spec:
         app.kubernetes.io/part-of: investment
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
+        sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 06bdb2fa6f92916644c0497dd00b598d37b9c67cccb759dc8eb8058b20af92a9
+        sunmoonai.com/config-sha256: 5a72cd8d927b37d29079db26483d818cdd86308bb295d897bb1195efde1d63f6
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: investment-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:0c75cb542efbe02989f56e804c6a4452d601d2347fcdb0b510792dc0787b751d
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:4cf3a9391d0aad12a5a22da6ea07c9577de2904c68f3c8b9357114a2d9ea18f7
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -100,13 +103,16 @@ spec:
             - {secretRef: {name: investment-browser-secrets}}
             - {secretRef: {name: investment-domain-runtime}}
             - {secretRef: {name: investment-knowledge-service}}
+            - {secretRef: {name: investment-agent-releases-runtime}}
           resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "2", "memory": "768Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
+            - {name: agent-releases-ca, mountPath: /etc/sunmoon/agent-releases, readOnly: true}
             - {name: service-ca, mountPath: /etc/sunmoon/service, readOnly: true}
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
+        - {name: agent-releases-ca, secret: {secretName: investment-agent-releases-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: service-ca, configMap: {name: investment-service-ca}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
         - {name: celery-config, configMap: {name: investment-celery-config}}
@@ -129,15 +135,17 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 06bdb2fa6f92916644c0497dd00b598d37b9c67cccb759dc8eb8058b20af92a9
+        sunmoonai.com/config-sha256: 5a72cd8d927b37d29079db26483d818cdd86308bb295d897bb1195efde1d63f6
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: investment-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:0c75cb542efbe02989f56e804c6a4452d601d2347fcdb0b510792dc0787b751d
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:4cf3a9391d0aad12a5a22da6ea07c9577de2904c68f3c8b9357114a2d9ea18f7
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -184,15 +192,17 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 06bdb2fa6f92916644c0497dd00b598d37b9c67cccb759dc8eb8058b20af92a9
+        sunmoonai.com/config-sha256: 5a72cd8d927b37d29079db26483d818cdd86308bb295d897bb1195efde1d63f6
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: investment-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:0c75cb542efbe02989f56e804c6a4452d601d2347fcdb0b510792dc0787b751d
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:4cf3a9391d0aad12a5a22da6ea07c9577de2904c68f3c8b9357114a2d9ea18f7
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
@@ -239,15 +249,17 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 06bdb2fa6f92916644c0497dd00b598d37b9c67cccb759dc8eb8058b20af92a9
+        sunmoonai.com/config-sha256: 5a72cd8d927b37d29079db26483d818cdd86308bb295d897bb1195efde1d63f6
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: investment-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: runner
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:0c75cb542efbe02989f56e804c6a4452d601d2347fcdb0b510792dc0787b751d
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:4cf3a9391d0aad12a5a22da6ea07c9577de2904c68f3c8b9357114a2d9ea18f7
           imagePullPolicy: IfNotPresent
           # 0001-workbench：runner 是每个用户沙箱里 app-server 的唯一客户端；不开端口，靠进程存活
           command: [python]

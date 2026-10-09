@@ -371,6 +371,7 @@ spec:
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: investment-identity}
+    - {name: investment-agent-releases}
     - {name: investment-service-identity}
   prune: false
   deletionPolicy: Orphan
@@ -391,6 +392,24 @@ spec:
   dependsOn:
     - {name: casdoor}
     - {name: postgresql}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: investment-agent-releases, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/investment-app/investment-backend/agent-releases
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: object-storage}
   prune: false
   deletionPolicy: Orphan
   wait: true

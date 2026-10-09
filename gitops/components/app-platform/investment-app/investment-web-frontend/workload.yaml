@@ -12,13 +12,15 @@ spec:
     metadata:
       labels: {app.kubernetes.io/name: investment-web, app.kubernetes.io/part-of: investment}
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: investment-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/investment-web-frontend@sha256:f2e2e6a1d9b646b124751694fa5e6e89451527fa10c742b811ca016838f40581
+          image: harbor.sunmoonai.com:30443/platform/investment-web-frontend@sha256:15be7010c8d2a5fbbde714936418a76096e16b16cbdae9e279d80b3e7af326f9
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
@@ -27,7 +29,7 @@ spec:
             - {name: AUTH_APP, value: investment}
             - {name: APP_ORIGIN, value: "https://investment.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://investment-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "investment-web-frontend-f2e2e6a1d9b646b1"}
+            - {name: DEPLOYMENT_ID, value: "investment-web-frontend-15be7010c8d2a5fb"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}

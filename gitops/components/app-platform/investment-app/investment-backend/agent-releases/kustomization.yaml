@@ -2,7 +2,4 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - workload.yaml
-- tls.sops.yaml
-- agent-releases.sops.yaml
-- service.sops.yaml
-- domain.sops.yaml
+- provision.sops.yaml

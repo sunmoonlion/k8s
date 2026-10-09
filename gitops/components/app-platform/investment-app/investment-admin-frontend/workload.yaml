@@ -12,6 +12,8 @@ spec:
     metadata:
       labels: {app.kubernetes.io/name: investment-admin, app.kubernetes.io/part-of: investment}
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: investment-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30

@@ -1,7 +1,7 @@
 ---
 # 唯一发行输入。开启后先准备桶/身份并上传校验，再晋级 API；本候选不发布。
 investment_agent_releases:
-  enabled: false
+  enabled: true
   # 上传读回校验成功后才开启下载，避免网页提前出现不可用链接。
   download_available: false
   mode: object-storage
