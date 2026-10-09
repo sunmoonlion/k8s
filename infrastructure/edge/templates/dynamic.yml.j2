@@ -1,0 +1,35 @@
+# 只放行三个公开域名；其它 Host 没有路由，Traefik 回 404。
+http:
+  routers:
+    to-https:
+      entryPoints: [web]
+      rule: "PathPrefix(`/`)"
+      priority: 1
+      middlewares: [to-https]
+      service: noop@internal
+{% for host in edge_domains %}
+    {{ host.split('.')[0] }}:
+      entryPoints: [websecure]
+      rule: "Host(`{{ host }}`)"
+      middlewares: [per-ip-limit]
+      service: tunnel
+      tls:
+{% if edge_tls_mode in ['acme', 'acme-staging'] %}
+        certResolver: le
+{% else %}
+        {}
+{% endif %}
+{% endfor %}
+  middlewares:
+    to-https:
+      redirectScheme: {scheme: https, port: "{{ edge_https_port }}", permanent: true}
+    per-ip-limit:
+      rateLimit:
+        average: {{ edge_rate_limit.average }}
+        burst: {{ edge_rate_limit.burst }}
+        sourceCriterion: {ipStrategy: {depth: 0}}
+  services:
+    tunnel:
+      loadBalancer:
+        passHostHeader: true
+        servers: [{url: "http://127.0.0.1:{{ edge_vhost_port }}"}]

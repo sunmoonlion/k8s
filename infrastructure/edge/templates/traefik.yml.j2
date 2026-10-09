@@ -1,0 +1,25 @@
+# 边缘 Traefik 静态配置（SDD 0013 第三节）。不开面板与 API，不记访问日志（安装凭证在 URL 路径里）。
+global: {checkNewVersion: false, sendAnonymousUsage: false}
+log: {level: INFO, format: json}
+accessLog: null
+api: {dashboard: false, insecure: false}
+ping: {entryPoint: health}
+entryPoints:
+  web:
+    address: ":{{ edge_http_port }}"
+  websecure:
+    address: ":{{ edge_https_port }}"
+    transport:
+      respondingTimeouts: {readTimeout: 0s, writeTimeout: 0s, idleTimeout: 3600s}
+  health:
+    address: "127.0.0.1:{{ edge_health_port }}"
+providers:
+  file: {filename: /etc/traefik/dynamic.yml, watch: false}
+{% if edge_tls_mode in ['acme', 'acme-staging'] %}
+certificatesResolvers:
+  le:
+    acme:
+      storage: /etc/traefik/acme/acme.json
+      caServer: {{ 'https://acme-staging-v02.api.letsencrypt.org/directory' if edge_tls_mode == 'acme-staging' else 'https://acme-v02.api.letsencrypt.org/directory' }}
+      httpChallenge: {entryPoint: web}
+{% endif %}

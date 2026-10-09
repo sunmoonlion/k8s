@@ -1,0 +1,9 @@
+---
+# 边缘只部署在它自己这台机器上（东京 VM），与 kind_hosts 分开，互不误跑。
+all:
+  children:
+    edge_hosts:
+      hosts:
+        localhost:
+          ansible_connection: local
+          ansible_python_interpreter: /usr/bin/python3

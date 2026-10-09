@@ -1,0 +1,22 @@
+# 公网边缘第一期（SDD 0013）。只放公开参数；frp 令牌在私有文件里，不进 Git。
+---
+edge_public_ip: 43.153.135.74
+edge_domains: [investment.sunmoonai.com, casdoor.sunmoonai.com, relay.sunmoonai.com]
+# 沿用集群入口端口，应用里的 origin/回调不用改；改 443 另起一轮（SDD 0013 第七节）。
+edge_https_port: 30443
+edge_http_port: 80
+edge_frps_port: 7000
+edge_vhost_port: 8080
+edge_health_port: 8082
+edge_ssh_port: 1022
+# acme-staging → acme：先对 Let's Encrypt 测试环境跑通再切正式。smoke 只给本机冒烟（Traefik 自带默认证书）。
+edge_tls_mode: acme-staging
+edge_config_dir: /etc/sunmoon/edge
+# 令牌私有文件：YAML，单键 token，root 0600；由所有者从集群侧私有输入经 SSH 写入（SDD 0013 第四节）。
+edge_token_file: /etc/sunmoon/edge/frp-token.yaml
+edge_images:
+  traefik: docker.io/library/traefik:v3.7.13@sha256:24841fe2de7304c149343d877d2923b4c8800a38ba015dea9174c23b20e344a0
+  frps: docker.io/fatedier/frps:v0.71.0@sha256:cd8b947ba61678b200baa4f71ccc33f3c52e4e2cc0059700ba3b8354e36af7c3
+# 冒烟用的客户端，正式环境的 frpc 在集群里（SDD 0013 第五节）。
+edge_smoke_frpc_image: docker.io/fatedier/frpc:v0.71.0@sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee
+edge_rate_limit: {average: 50, burst: 100}

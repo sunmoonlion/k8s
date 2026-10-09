@@ -1,0 +1,25 @@
+# 两个容器都用宿主网络：frps 的 vhost 与 Traefik 后端都只在 127.0.0.1 上对接。
+name: sunmoon-edge
+x-hardening: &hardening
+  read_only: true
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  restart: unless-stopped
+  network_mode: host
+  logging: {driver: json-file, options: {max-size: 10m, max-file: "3"}}
+services:
+  frps:
+    <<: *hardening
+    image: {{ edge_images.frps }}
+    command: [-c, /etc/frp/frps.toml]
+    env_file: [{{ edge_config_dir }}/frp.env]
+    volumes: ["{{ edge_config_dir }}/frps.toml:/etc/frp/frps.toml:ro"]
+  traefik:
+    <<: *hardening
+    image: {{ edge_images.traefik }}
+    cap_add: [NET_BIND_SERVICE]
+    command: [--configFile=/etc/traefik/traefik.yml]
+    volumes:
+      - "{{ edge_config_dir }}/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "{{ edge_config_dir }}/dynamic.yml:/etc/traefik/dynamic.yml:ro"
+      - "{{ edge_config_dir }}/acme:/etc/traefik/acme"
