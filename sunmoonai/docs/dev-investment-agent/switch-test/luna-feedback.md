@@ -280,3 +280,32 @@ luna 今晚到点停手。所有者定：之后由 Fable 在 runtime 的 `luna` 
 - 补一句给执行者：C 里「已登录 HEAD/下载」如果没有不经真人的登录办法，就只做未登录拒绝、HEAD 未登录拒绝、`application-check-public`，把「已登录下载」明确记为未做，留给所有者在浏览器里验，不要为此造会话或改登录。
 
 所有者通知 Cursor 后按卡执行。回传后我核结果、给晋级提交打 tag。
+
+## 2026-10-09 · 待办：集群重启后 DNS 拖慢，彻底修好（所有者定「按彻底修好做」）
+
+Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是对的：23/71 个 Kustomization 不 Ready，investment API/Worker 不可用。你的诊断接受（WSL `resolv.conf` 的搜索后缀是网段 `172.16.8.0/22`，经 Docker → KIND 节点 → Pod；`ndots:5` 让完整服务名先拼后缀、被转发上游超时，约 4 s，而就绪预算 2 s）。**发布卡 35 暂停，等本待办验收后再交 Cursor 重跑（卡不用改）。**
+
+分三层，按顺序，每层验收过了再往下。
+
+### 一、主机：去掉坏后缀，并让 WSL 不再受它影响
+
+1. 查来源（只读）：Windows 上 `Get-DnsClientGlobalSetting`（SuffixSearchList）、`Get-DnsClient | Select InterfaceAlias,ConnectionSpecificSuffix`、VPN/虚拟网卡；WSL 的 `.wslconfig`（是否 `dnsTunneling`/mirrored）。在报告里写清是谁加的这条后缀。
+2. 能在来源处改就改（例如某网卡误填的 DNS 后缀）；VPN 每次连上都会加回来的，不改 VPN，改第 3 步。
+3. WSL 不再自动生成：`/etc/wsl.conf` 的 `[network] generateResolvConf = false`，自己写 `/etc/resolv.conf`：保留现在可用的 nameserver，`search` 只留合法域名或不写。改前备份原文件。
+4. 重启 WSL（会整机停一次集群，**先跟所有者约时间**），让 Docker、KIND 节点、Pod 都拿到新的解析配置。不重建集群、不 `docker prune`、不碰老 kind 集群和维护标记。
+
+验收：节点容器与任一 investment Pod 的 `/etc/resolv.conf` 里不再有 `172.16.8.0/22`；Pod 内解析 `postgresql.<data ns>.svc.cluster.local`、`redis.<data ns>.svc.cluster.local`（不带尾点）各 < 100 ms，连测 20 次贴分布；71 个 Kustomization 全 Ready；investment/info/knowledge API 与 Worker 可用；`application-check(-public)` 三个应用都过。
+
+### 二、集群：以后主机 DNS 再出怪事，也拖不垮我们
+
+1. 我们自己的工作负载（app-platform 下各应用的 api/worker/scheduler/runner/web/admin 及初始化 Job）统一加 `dnsConfig.options: [{name: ndots, value: "2"}]`，放在 common 模板里一处改；完整服务名（4 个点）就直接查，不再挨个拼后缀。确认集群内用到的短名（只写服务名的）在 `ndots:2` 下仍能解析，用到的都列出来核。
+2. 平台检查加一项 DNS 体检：节点 `resolv.conf` 的搜索项必须是合法域名（不能含 `/`、不能是 IP 段）；从一个 Pod 里解析一个数据服务全名，超过 200 ms 判失败并给出「查主机 DNS 搜索后缀」的提示。挂到 `platform-status` 或 `platform-check`，失败要醒目。
+3. 只做候选：render/stage、单测与 diff 交我审；**发布另写 Cursor 卡（36），在卡 35 之前发**，不与卡 35 合并。
+
+### 三、MongoDB 的就绪超时
+
+第一层做完再看：恢复了就记为同一原因；没恢复单独查（日志、探针、资源、卷），找到原因再提方案，不要先改探针阈值来「过」。
+
+### 交回
+
+报告写 runtime `scripts/results/cluster-dns-fix.<时间>.md`：来源、改了哪些主机文件（原文备份位置）、重启时间、每项验收的原始输出；第二层的候选提交号。只本地提交，所有者同步给我。主机文件不进 Git，私有内容不贴。
