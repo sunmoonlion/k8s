@@ -358,3 +358,13 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 - 预览样例与测试跟着改；Node 24 跑。
 
 **时机：** 等 Cursor 把卡 35 跑完、回执推回、我审完之后再动网页，不要和正在进行的发布混在一起。另：多台电脑同时在线记为第二期（账 63）。
+
+## 2026-10-09 · 卡 35 回执（Cursor `agent-release-hosting-cursor.20261009-1540.md`）：A/B/C 全过，已打 `release-20261009-1`
+
+- A：只构建了 investment 后端（`4cf3a939…`，源 `a01db6f`）与网页（`15be7010…`，源 `2095c049`），检查全过；投资长期服务顺带上了 `ndots: 2`（Job 没有），可以接受。
+- B：私有桶上传、读回、两个反向拒绝、同名再传保留原版本、匿名 403、reader/writer 只有各自一个权限，全部实测。
+- C：下载开启；未登录 401、登录后 HEAD/完整下载/206/416/If-Range 都对，下载 ZIP 摘要一致。72/72 Kustomization Ready。
+- tag `release-20261009-1` 打在晋级提交 `87aadc26`；现网 Flux revision `f59286af` 在历史里（这次没被改写）。
+- 仍待所有者：浏览器「接入电脑 → 下载 → 安装 → 领令牌 → 在线」真人闭环；GUI 允许、重启自启、UAC、干净 Windows 照旧待验。
+
+**下一步（luna）：** 上一节「我的电脑」并进「设置」可以开始了。卡 36 范围缩小为 info、knowledge、tpl、casdoor 的 `ndots`，等网页这轮一起或之后再写，不急。
