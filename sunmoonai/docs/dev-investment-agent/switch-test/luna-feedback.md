@@ -427,3 +427,13 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 结论与改定：拦截的根因是「来自网络」标记，不是程序本身——所有者此前 PowerShell 解压的同一包能运行。所有者定**不买证书**，入口改为网页「复制安装命令」→ 终端粘贴 `irm '<…/api/agent-install/<一次性凭证>/script>' | iex` → 自动下载、校验、`Expand-Archive`、安装、弹设置窗口。细节（凭证接口、`install.ps1.tmpl`、升级保留配置、开发站点先导入 CA、ZIP+解除锁定作备用）看 SDD 0012 第 2 节与卡表。
 
 **现在做卡 A2**（SDD 卡表有步骤）：WSL 临时 HTTP 服务放 0.2.1 ZIP → 所有者 Windows 上 `Invoke-WebRequest` 下载 → 确认无 `Zone.Identifier` → `Expand-Archive` → 包内 `node\node.exe` 跑安装器**预览**、`desktop.ps1` 打开一个窗口；不安装、不换令牌；只读状态接口看 `agent_token_expires_at`。任何一步被拦就停。卡 A 的临时目录审完可以清理（按精确路径，不递归跟链接）。
+
+## 2026-10-09 · 排队：卡 B 之后做「边缘集群侧」（SDD `0013-edge.md` 第五节）
+
+所有者定：东京 VM 做公网边缘（frps + Traefik + Let's Encrypt），开放 investment、casdoor、relay 三个域名，端口沿用 `:30443`，应用配置不改。边缘一侧远程自己做；**集群一侧由你实现**，Cursor 发布。**做完卡 B、交审之后再开始**，顺序：
+
+1. **先只读核实**三个名字在集群内怎么解析（Corefile + 从 investment API Pod `getent hosts`），把结果交我；需要固定时改 `infrastructure/cluster/deploy.yaml` 的 CoreDNS hosts 块为列表。**这一步发布并核实之前，所有者不加公网 DNS。**
+2. frpc 组件、令牌私有输入与 SOPS、三个 http 代理（`http2https` 插件指集群 Traefik websecure）、集群 Traefik `forwardedHeaders.trustedIPs`、NetworkPolicy——全照 SDD 0013 第五节。
+3. 两件事各写一张 Cursor 发布卡，先 1 后 2，交我审卡。
+
+不改任何应用 origin/回调/IngressRoute；设计行不通就停下交证据。
