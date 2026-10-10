@@ -758,3 +758,16 @@ B（后端配对）+ C（代理 0.2.4，包已在 `windows-agent-c2-20261010\sun
 **改法：** `openDesktop` 在 `child.stdin.end(data, callback)` 的回调（或 stdin `finish`）之后再 `unref()` + `resolve()`；加一条测试：注入假的 spawn，断言 stdin 写完之前 promise 不会 resolve。顺带检查别处有没有「spawn 后马上返回、再 process.exit」的同样写法。
 
 **版本与发行：** 出 **0.2.5**（三处），重新组包、`agent-release-verify` + `upload`，`agent-releases/config.yaml` 换成 0.2.5 的对象键 / 两个摘要 / 大小 / 源码提交；模板没变则不用动。**Windows 实测必须走真实入口**：`sunmoon-agent.cmd menu`（有令牌 → 托盘出现）和一个无令牌的临时状态目录跑 `menu`（→ 设置窗口出现），不能再用 `desktop.ps1` 直接起来代替。结果写进 E 第一段回执，一起停下给我看。
+
+## 2026-10-10 · E+U 第一段重做审读（k8s luna `df1aa4d7`）：候选认可，只差 0.2.5
+
+**认可：** 四个后端 U2 摘入无冲突、树与 fable 一致（investment 的 `core/config.py` 保留 luna 已有配置，对）；四仓全量 340 / 1158 / 967 / 958 通过；五个新镜像与源码提交对应、写进镜像锁；四个应用 identity v3 + `WEB_CASDOOR_ORGANIZATIONS=sunmoonai`；投资接线仍在；`expected_schema_revision` 跟到 `20261009_0014` 正确。
+
+**唯一缺：0.2.5（上一节「托盘与设置窗口在隐藏启动时打不开」）。** 你的回执写于那一节之前，runtime 里还没有。
+
+**为省一轮，这次放行条件写死，满足就直接进第二段，不必再停：**
+1. runtime 修 `openDesktop`（stdin 写完再 resolve）+ 注入假 spawn 的测试；版本 0.2.5 三处；`pnpm build && pnpm test`、`tsc`、`bundle.test.mjs` 全过。
+2. 组 0.2.5 包，`agent-release-verify` + `upload` 读回通过；`agent-releases/config.yaml` 换 0.2.5 五项；安装模板未变（SHA256 仍 `491035b6…6cfe`）。
+3. **所有者 Windows 真实入口实测**：现装 0.2.4 → 用手工生成的 0.2.5 `install.ps1` 升级 → 脚本最后一步弹出**托盘**（有令牌）；再用一个无令牌的临时 `SUNMOON_AGENT_HOME` 跑 `sunmoon-agent.cmd menu` → **设置窗口**弹出。两者都要所有者肉眼确认。
+4. 只重新 stage 投资应用；新候选相对 `df1aa4d7` 的差异**只能**在 `agent-releases`（config 与加密 runtime）和由此变动的 `config-sha256` 注解；多出别的就停。
+5. 四条都满足 → 直接按「卡 E 第一段审读」那一节的**第二段**做下去（发布四个应用 → identity Job → `application-check` → 通知所有者建 sunmoonai 账号 → 用新账号走 E 全程），全程结束停下交审。任何一条不满足就停下交审。
