@@ -487,3 +487,23 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 **另查一项：** `upstream-images.lock.json` 的 frpc 条目没有 `config_digest` / `compressed_layer_bytes`。查发布链（镜像中转、离线包）是否要这两项；要的话用其它镜像同样的工具从上游取实值，不要空着或编。
 
 **改完：** 本地提交后写一张 Cursor 发布卡（镜像中转到 Harbor `platform/frpc` → stage → flux-release → promote → apply → checks），验收写清：两个 frpc Pod Running；frps 日志三个代理组各两个成员；手机流量打开 `https://investment.sunmoonai.com:30443` 出现登录页。**发布前提：**所有者已把令牌拷到边缘、远程已确认 frps 换好令牌。写完停下交审。
+
+## 2026-10-10 · frpc 复审（k8s luna `2f0fabea` + 发布卡 `498adc00`）：同名修好；镜像锁按下面实值改后即可发布
+
+**修正对：** 每副本 `user = POD_NAME`、名单驱动三个代理（名/组取首段）、与 `edge_domains` 断言一致，都对。发布卡写得好：缺值就停、不编，Pod 镜像单独核对。
+
+**镜像锁的原因找到了：** 钉的 `sha256:99ece6a2…` 是**多架构索引**的摘要（边缘 docker 拉取用它没问题），而锁文件的约定是 **linux/amd64 平台清单**的摘要（如 traefik 锁里是 `3429c141…`，边缘配置钉的是它的索引 `24841fe2…`）。你看到「当前标签的 amd64 摘要不同」正是这个平台清单，上游没变。远程从上游按摘要取到原始清单并核对过其 sha256：
+
+| 字段 | 值 |
+| --- | --- |
+| `manifest_digest` | `sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191` |
+| `reference` | `docker.io/fatedier/frpc@sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191` |
+| `config_digest` | `sha256:33f4aecae1ecfa322004e3d88fcacf10538fe65b57ab94db1b196c0495c94c89` |
+| `compressed_layer_bytes` | `10463177`（3 层） |
+| 所属索引（记在 `selection_note`） | `sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee`，与边缘冒烟钉同一镜像 |
+
+**要改：** 锁里 frpc 条目按上表填（`config_digest` 也填上，与其它条目一致）；`frpc/prepare.yaml` 的摘要断言改成 `8dd029fa…`；README 与发布卡里「Harbor 上摘要必须仍是钉」一律指 `8dd029fa…`；重新 stage 让 `workload.yaml` 的镜像引用跟着变。发布前自己再用 `skopeo inspect --raw docker://docker.io/fatedier/frpc@sha256:8dd029fa…` 核一次（取不到就停）。
+
+**发布前提已满足：** 所有者已于 10:35 把本机 `edge-frp.yaml` 拷到边缘，远程已 `make edge-deploy` 让 frps 换上（frps 运行中，日志无令牌）。边缘正式证书已签，外部访问现在是 404（等 frpc）。
+
+**改完直接按发布卡 `inbox/2026-10-10-36-frpc-release.md` 执行**（本条即远程审读通过；所有者通知你开始）。发布卡第 1 步的「令牌交接已确认」以本条为准。回执交回后远程核 frps 日志里三个组各两个成员。
