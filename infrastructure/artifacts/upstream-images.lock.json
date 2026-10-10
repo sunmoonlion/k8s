@@ -722,10 +722,12 @@
       "source": "docker.io/fatedier/frpc:v0.71.0",
       "platform": "linux/amd64",
       "status": "resolved",
-      "manifest_digest": "sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee",
-      "reference": "docker.io/fatedier/frpc@sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee",
+      "manifest_digest": "sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191",
+      "reference": "docker.io/fatedier/frpc@sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191",
+      "config_digest": "sha256:33f4aecae1ecfa322004e3d88fcacf10538fe65b57ab94db1b196c0495c94c89",
+      "compressed_layer_bytes": 10463177,
       "material_owner": "components/ingress-platform/frpc",
-      "selection_note": "Manifest digest is the smoke-verified pin. Harbor prepare/publish reads compressed_layer_bytes for capacity and the skopeo tmpfs. config_digest is not read by that path or by the offline bootstrap/host archives. The pinned digest could not be re-inspected, and the current v0.71.0 tag resolves to a different amd64 digest, so neither field is filled."
+      "selection_note": "linux/amd64 platform manifest. Multi-arch index sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee is the edge smoke pin for the same image."
     }
   ],
   "offline_ready": false,

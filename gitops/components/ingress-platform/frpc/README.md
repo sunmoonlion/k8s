@@ -4,7 +4,7 @@
 
 配置照 `infrastructure/edge/smoke/frpc.toml.tmpl` 的字段。正式代理名和分组名是 `investment`、`casdoor`、`relay`。每个副本用自己的 Pod 名做 `user`，否则同名代理第二个副本会被 frps 拒绝。`loginFailExit` 保持 false；边缘 frps 未启动时客户端会一直重连。
 
-镜像 `fatedier/frpc:v0.71.0` 的摘要与边缘冒烟钉的是同一个，运行时从 Harbor `platform/frpc` 拉取。本次不发布镜像、不改集群。
+镜像 `fatedier/frpc:v0.71.0` 的运行摘要是 linux/amd64 平台清单 `sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191`。边缘冒烟钉的 `sha256:99ece6a2…` 是同一镜像的多架构索引。集群从 Harbor `platform/frpc` 拉取平台清单。
 
 私有输入是 `services_config_dir/edge-frp.yaml`（主备各一份，root 0600）。键只有 `token` 和 `group_key`，各 48 位。边缘只读 `token`。令牌不进 Git 明文。
 

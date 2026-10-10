@@ -11,7 +11,9 @@
       - frpc_traefik_port | int == 443
       - frpc_traefik_pod_port | int == 8443
       - frpc_local_addr == 'traefik.' + ingress_namespace + '.svc.cluster.local:443'
-      - image_map.frpc.manifest_digest == 'sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee'
+      - image_map.frpc.manifest_digest == 'sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191'
+      - image_map.frpc.config_digest == 'sha256:33f4aecae1ecfa322004e3d88fcacf10538fe65b57ab94db1b196c0495c94c89'
+      - image_map.frpc.compressed_layer_bytes | int == 10463177
       - image_map.frpc.reference.endswith('@' + image_map.frpc.manifest_digest)
       - cluster_pod_subnet is match('^[0-9.]+/[0-9]+$')
       - frpc_domains == (lookup('file', playbook_dir + '/../edge/config.yaml') | from_yaml).edge_domains

@@ -6,9 +6,9 @@
 ```text
 被测仓：k8s，~/worktrees/luna/k8s
 跑：按下面「发布」顺序执行；镜像中转失败或 compressed_layer_bytes 仍缺则立即停，不晋级
-仓与提交：k8s 2f0fabea2a2276a43eab422c777ec99f93177670（基线 804906fb）
+仓与提交：k8s 父提交 3ab76558；执行时 HEAD 须含平台清单 sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191
 预计：40–70 分钟；要联网、Docker/KIND、Harbor、Flux；不需要 Windows
-看什么：frpc 镜像进入 Harbor platform/frpc 且摘要不变；两个 frpc Pod Running；frps 上 investment、casdoor、relay 各有两个成员；不在所有者 hosts 里的网络打开 https://investment.sunmoonai.com:30443 出现登录页
+看什么：frpc 镜像进入 Harbor platform/frpc，摘要为 sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191；两个 frpc Pod Running；frps 上 investment、casdoor、relay 各有两个成员；不在所有者 hosts 里的网络打开 https://investment.sunmoonai.com:30443 出现登录页
 前提：所有者已把本机 /etc/sunmoon/services/sunmoon-kind/edge-frp.yaml 拷到边缘，远程已确认 frps 换的是这一份令牌。未确认则不要开始
 回传：k8s/sunmoonai/scripts/results/frpc-release-cursor.<时间>.md；记录每步退出码、镜像摘要、Pod 名与 imageID、Flux revision/digest/Ready、frps 日志里看到的组成员、登录页结果。最后一行 exit=<码>。结果只本地提交
 ```
@@ -17,15 +17,13 @@
 
 `compressed_layer_bytes` 发布链要用：`artifacts/publish.yaml` 的 skopeo 临时盘大小，以及 `tasks/publish-image.yaml` 在准备归档和目标标签还不存在时的容量预算，都会读它。没有这个正整数，`services-materials` / `services-publish` 不能跑。
 
-`config_digest` 这条中转链不读。离线引导包和宿主归档只选 bootstrap/host 镜像，不包括 frpc。不要为了填满锁而补这一项。
+Harbor 与 Pod imageID 使用的摘要是 linux/amd64 平台清单 `sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191`。`sha256:99ece6a2…` 是同一镜像的多架构索引，只记在锁的 `selection_note`，不作为集群拉取摘要。
 
-钉住的摘要仍是 `sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee`。按摘要再查上游时 registry 返回 EOF，没有拿到实值。当前标签 `v0.71.0` 的 linux/amd64 摘要是另一份，不能拿来填这项，也不能改钉。
-
-**开始镜像中转前：** 锁里的 frpc 条目必须已有从该钉摘要取出的 `compressed_layer_bytes`。还没有就停，不要编。
+锁里必须有 `config_digest` `sha256:33f4aecae1ecfa322004e3d88fcacf10538fe65b57ab94db1b196c0495c94c89` 和 `compressed_layer_bytes` `10463177`。缺了就停，不要编。
 
 ## 发布
 
-1. 核工作区干净、HEAD 含 `2f0fabea`、集群是 `kind-sunmoon-kind`、容量不低于 10 GiB、SOPS 主备身份都在。保存本次原 `infrastructure/environments/kind/flux-source.yaml`，不要覆盖更早的回退材料。前提里的令牌交接未确认则停。
+1. 核工作区干净、HEAD 含平台清单 `8dd029fa…`、集群是 `kind-sunmoon-kind`、容量不低于 10 GiB、SOPS 主备身份都在。保存本次原 `infrastructure/environments/kind/flux-source.yaml`，不要覆盖更早的回退材料。前提里的令牌交接未确认则停。发布前用 `skopeo inspect --raw docker://docker.io/fatedier/frpc@sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191` 核对原始清单的 sha256，取不到就停。
 2. 只中转 frpc，不发布其它镜像：
 
 ```bash
@@ -33,7 +31,7 @@ make -C infrastructure services-materials SERVICE_IMAGES=frpc
 make -C infrastructure services-publish SERVICE_IMAGES=frpc
 ```
 
-Harbor 上 `platform/frpc` 的摘要必须仍是上面的钉。
+Harbor 上 `platform/frpc` 的摘要必须是 `sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191`。
 3. 再跑一次 stage，确认声明不再变化，且没有重写私有输入：
 
 ```bash

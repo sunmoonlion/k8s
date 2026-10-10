@@ -62,7 +62,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: frpc}
-      annotations: {sunmoonai.com/input-sha256: '0e9727bff2d1a281042f961f671e1abde555c1cb7125c07b559e1423286ab702'}
+      annotations: {sunmoonai.com/input-sha256: '47be1038e2e2ece1c9fb3641687595f327dd253d72e1481de124349736409261'}
     spec:
       serviceAccountName: frpc
       enableServiceLinks: false
@@ -70,7 +70,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 10002, runAsGroup: 10002, fsGroup: 10002, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frpc
-          image: harbor.sunmoonai.com:30443/platform/frpc@sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee
+          image: harbor.sunmoonai.com:30443/platform/frpc@sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191
           imagePullPolicy: IfNotPresent
           args: ['-c', /etc/frp/frpc.toml]
           env:
