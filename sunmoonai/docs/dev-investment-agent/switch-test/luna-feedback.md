@@ -437,3 +437,17 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 3. 两件事各写一张 Cursor 发布卡，先 1 后 2，交我审卡。
 
 不改任何应用 origin/回调/IngressRoute；设计行不通就停下交证据。
+
+## 2026-10-10 · 卡 B 审读（后端 `9bcff86`）：方向对，三处必须改，改完即通过
+
+远程在独立工作树里用真实 PostgreSQL 跑了（`DELIVERY_TEST_DATABASE_URL=postgresql+asyncpg://…/delivery_tests`，`AGENT_TEST_DATABASE_URL=postgresql://…/agent_tests`，**后者不带驱动**）：全量 **931 过、2 败、5 跳过**；ruff、import-linter 过。你报的「HTTP 契约用例挂起」在这边**没复现**：`tests/test_agent_onboarding.py` 13 过、2.5 秒。是你那边环境的问题，不是代码；改完后在干净 shell 里按上面两个变量重跑，若仍挂，把 `env | grep -i -E 'redis|database|proxy|workbench'`（打码）交我，不要排除这个用例。
+
+**必须改：**
+
+1. **令牌交付会丢（真实缺陷，你写的数据库用例抓到了）。** `mark_agent_pairing_delivered` 的 `update … set token_ciphertext=null … returning token_ciphertext`：PostgreSQL 的 `RETURNING` 返回的是**更新后**的值，即 null。后果：代理那次轮询 `decrypt(None)` 报 500，而行已变 `delivered`、密文已清，令牌永久丢失，用户只能重新配对。改法：CTE 先 `select … for update` 取旧密文，再 `update … from old … returning old.token_ciphertext`（并发第二个会在锁后重新判 `status='approved'` 落空，返回空）。`poll` 里拿到空密文要按「已交付」返回，不要 500。`test_concurrent_delivery_is_one_time_and_clears_ciphertext` 必须过。
+2. **迁移链不变量没更新。** `tests/test_kernel_invariants.py::test_one_linear_canonical_migration_chain` 列着全部迁移文件，把 `20261009_0014_agent_onboarding.py` 加进去。
+3. **来源 IP 只取最右一个，过了边缘就错。** SDD 0013 第五节第 3 条（冒烟实测）：经东京边缘到后端时 `X-Forwarded-For` 形如「真实来源, 127.0.0.1, <frpc Pod IP>」，最右是 frpc。`source_ip` 改为：直连对端可信时，把所有 `X-Forwarded-For` 头（`request.headers.getlist`，按出现顺序拼起来）**从右往左跳过属于可信网段的地址**，取第一个不可信的；全都可信则取最左一个；有不合法项则 `unknown`。默认可信网段仍为空（卡 E 再填 `127.0.0.1/32` + Pod 网段）。补单测：上面这条链、伪造在最左的地址不被采信、多条 XFF 头、全可信、空配置。
+
+**不用改、记一下：** `deny` 不要求码（拿到 id 必须先 lookup，可接受）；批准时轮换会合点身份在数据库事务里调外部，事务若在轮换后失败，旧代理会断开需再配对——第一期接受，卡 E 验收时观察。限速、日志脱敏、安装凭证用量（脚本 1 次 + 包 1 次 + 续传 3 次 = 5）、包路由都对。
+
+**改完：** 重跑全量（两个数据库变量都设上）、ruff、pyright（改到的文件）、lint-imports，回执补到卡 B 那份结果文件里，停下交审。审过后按上一条「排队」做边缘集群侧第 1 步（只读核实集群内解析），卡 C/D 之后再排。
