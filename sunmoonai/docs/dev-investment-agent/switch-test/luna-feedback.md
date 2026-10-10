@@ -611,3 +611,5 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 **之后所有者做 U3**（SDD 0014 第三节）。注意：发布后 admin **登不进网页端**了（Casdoor 按应用所属组织找人），网页端要用 sunmoonai 账号；admin 只用于管理后台。所有者那台的电脑代理要用新账号重新接一次（C2 的配对正好用上）。
 
 **另记：** `infrastructure/applications/tests/test_build_selection.py` 在 fable 上有 9 条原有失败（断言发布命令里不出现 `tpl-`，而命令本来就加载 tpl 配置），与 U 无关，未处理。
+
+**补（同日）：U4 清理。** 所有者定 admin 网页端名下的试用数据清掉。U3 通过后当天做，步骤见 SDD 0014 第三节 U4：先回收 admin 的云端沙箱 → 列清单（各库各表行数 + 会合点代理记录）交远程审 → 各库先备份 → 一个事务删 → 再列一次为 0。只动 admin 网页端名下的数据。
