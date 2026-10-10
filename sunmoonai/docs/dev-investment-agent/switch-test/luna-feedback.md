@@ -532,3 +532,17 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 | `install.ps1.tmpl` 占位符 | 后端严格替换：`{{PACKAGE_URL}}`、`{{VERSION}}`、`{{SIZE_BYTES}}`、`{{ZIP_SHA256}}`、`{{MANIFEST_SHA256}}`、`{{CODEX_VERSION}}` **每个恰好出现一次**，模板里不得有其它 `{{大写}}` 形式，否则后端拒绝渲染（404）。包地址每次请求都消耗凭证次数（共 5 次：脚本 1 + 包 1 + 续传最多 3） |
 
 规矩照旧：只在本地提交到 luna 分支；不发布、不改集群；每段做完停下交审；设计行不通就停下写证据。Windows 上要所有者动手的步骤，开工时一次说清。
+
+## 2026-10-10 · 卡 C1 审读（runtime luna `3a4b88c`）：方向对，两处必改，改完可组 0.2.2
+
+**复现：** 临时工作树里 `pnpm build && pnpm test` 194 通过、32 跳过；`tsc --noEmit` 通过；`bundle.test.mjs` 28 通过。与回执一致（注意：不先 `pnpm build`，`cli.test.ts` 的 4 条会失败，因为它跑 `dist/cli.js`；回执的「已跑」里补一句先 build）。随包 CA：`CN=SunMoonAI Root CA`，到期 2036-05-07，DER SHA-256 `79562e07…e1ef`，不含私钥。它是不是集群真在用的那张，本机无副本可比，由 Windows 验收（去掉 `NODE_OPTIONS` 后能连上）来证明。
+
+**做对的（保留）：** `ca_sha256` 只在组包时算、配置里自带就拒；核验包时再比一次 DER；六个入口都清掉会话 `NODE_OPTIONS` 并加 `--use-system-ca`；CLI 启动时自检、不对就 fail-closed 且带 `SITE_LAUNCH` 码；源码目录与单测无站点文件时不介入；卸载器对 0.2.1（无站点文件）照旧；未知拒绝原因不回显；托盘悬停截 63 字；`.install-incomplete` 检查保留。
+
+**必改 1：证书类错误覆盖不全，会把「不信任证书」说成「连不上，检查网络」。** `humanizeTransport` 只认 `UNABLE_TO_VERIFY_*`、`SELF_SIGNED_*`、`DEPTH_ZERO_SELF_SIGNED`。实际还常见 `UNABLE_TO_GET_ISSUER_CERT` / `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`（缺中间证书或公司代理截 TLS 时最常见）、`CERT_HAS_EXPIRED`、`CERT_NOT_YET_VALID`、`ERR_TLS_CERT_ALTNAME_INVALID`。这些现在都落到「连不上 <主机>。检查网络或代理设置。」——恰好是 C1 要解决的那类故障，人话却指错方向。改法：前四个（`UNABLE_TO_GET_ISSUER_CERT*`、`CERT_*`）归入证书那句；`ERR_TLS_CERT_ALTNAME_INVALID` 也归证书那句。每个码一条测试。SDD 表我会按此补一行。
+
+**必改 2：`installedLaunchError` 用字符串全等比 `NODE_EXTRA_CA_CERTS` 与 `caPath`，大小写或短路径不同就拒绝启动。** `caPath` 来自 `import.meta.url`（Node 解析后的真实路径），环境变量来自 `.cmd` 的 `%~dp0` / vbs / ps1 拼出的路径。Windows 路径不区分大小写，`%~dp0` 也可能是 8.3 短名；两边写法一不同，代理就以 `SITE_LAUNCH` 拒绝启动，用户无路可走。改法：两边都 `fs.realpathSync.native()`（文件不存在就按不匹配处理），win32 上再统一小写后比较。加一条测试：同一文件用不同大小写写法设变量，应通过；指向别的文件，应拒绝。
+
+**建议（可一起改，不强求）：** 三个 `.cmd` 用 `call :launch … %*` 转参，`call` 会把参数里的 `^` 加倍、`%` 再展开一次，以前直接调用没有这个问题。可以把 `:launch` 里那几行直接内联在主体里（`setlocal` 已有），去掉 `call`。
+
+**改完：** 重跑上面三项，回执补上（含先 build），停下交审。审过后组 0.2.2 包，所有者照回执「审过之后」五步在 Windows 上验收。C2 仍等。
