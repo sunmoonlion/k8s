@@ -584,3 +584,11 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 5. 然后再做重启自启那项（若所有者已经按刚才的话重启过，结果照记，但以换包后的这一次为准）：`status` 0.2.2 connected、后台命令行带 `--use-system-ca`、`NODE_EXTRA_CA_CERTS` 指向安装目录 `site\ca.pem`、托盘能打开查看状态与设置。
 
 **顺带：** 卡 D 网页上「开发站点显示 CA 指纹」用的也是这张新 CA 的指纹，不是旧根。两个卸载缺陷仍留给 C2，C2 仍不开始。
+
+## 2026-10-10 · 卡 C1 验收通过（runtime luna `294aa1d` 代码 + `7d21a6d` 回执）；开始 C2
+
+**核对（逐条）：** ① 随包证书 `CN=SunMoon Registry Local CA`，自签、`CA:TRUE, pathlen:0`、无私钥，DER SHA-256 `76f90128…1b3c`，我在镜像里独立算过一致；relay、investment 两个名字 `Verify return code: 0`。② 代码与测试里不再有旧根（旧指纹只留在回执前面的历史段落，最新段落已写明被取代）。③ 临时工作树重跑：先 build，`pnpm test` 200 通过 / 32 跳过，`tsc` 通过，`bundle.test.mjs` 28 通过。④ 新包 0.2.2 / `294aa1d`，ZIP `007c9882…`、清单 `8e11fbbe…`、包内 `ca_sha256` 与证书一致。⑤ 甲（只信随包 CA）`authorized=true`、签发者 `SunMoon Registry Local CA`。⑥ 乙（都不信）`UNABLE_TO_VERIFY_LEAF_SIGNATURE`。⑦ 重启登录后自启拉起，`--use-system-ca`、`NODE_EXTRA_CA_CERTS` 指向安装目录、无 `NODE_OPTIONS`，托盘两个窗口能读状态；没碰 `ca.key`，没发布、没改集群。
+
+**一处观察（不算缺陷）：** 06:43 代理启动、06:47 才连上，约 5 分钟——重启后本地集群（WSL 里）要一会儿才起来，代理按退避重连，期间状态显示人话原因，符合设计。
+
+**C2 开始。** 内容照「卡 C（代理）交 Cursor」那节的 C2 一段和卡 B 契约表；另把 0.2.2 换包时撞到的两个缺陷一起修（「0.2.2 组包与本机替换审读」一节）：已安装目录以它自己的清单核验（`REQUIRED` 只管新包），带 0.2.1 形态清单的测试；残留 `tray-stop.json` 在记录的托盘进程已不在时清掉并视为已停，带测试。`install.ps1.tmpl` 的升级路径要能从 0.2.1 和 0.2.2 两种已装形态升上来。仍是只在本地提交到 luna 分支、不发布、不改集群；Windows 上要所有者动手的步骤开工时一次说清；做完停下交审。
