@@ -7,7 +7,7 @@ investment_backend_deployment:
   database_extensions: []
   database_bootstrap_revision: v1
   migration_job_revision: v4
-  expected_schema_revision: '20261007_0013'
+  expected_schema_revision: '20261009_0014'
   private_dir: /etc/sunmoon/applications/sunmoon-kind/investment
   backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/investment
   deploy_budget_bytes: 2147483648

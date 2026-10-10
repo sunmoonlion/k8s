@@ -1,6 +1,6 @@
 # Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
 repository: knowledge-backend
-digest: sha256:71aad8b47ada3ea90363f485850dc7153f7ad0cb075a255619e7a1f6916a7681
-source_revision: c2ba6ff020e89e3afaca2541976d1717d619d5fe
-deployment_id: knowledge-backend-71aad8b47ada3ea9
+digest: sha256:d88fee857408281a6d5188bd48e58d42f6662f6a5bf50a10b84703613a4b69a3
+source_revision: 85409177b85bfc51bb710a68f5be3740c7dbd3e4
+deployment_id: knowledge-backend-d88fee857408281a

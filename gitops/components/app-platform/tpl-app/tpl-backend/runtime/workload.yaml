@@ -4,7 +4,7 @@ metadata: {name: tpl-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: tpl
-  DEPLOYMENT_ID: "tpl-backend-e92a7bb62f06e8bc"
+  DEPLOYMENT_ID: "tpl-backend-b4b94f049f8414e9"
   ALLOWED_HOSTS: "localhost,127.0.0.1,tpl-api,tpl-api.app-platform-dev.svc.cluster.local,tpl.sunmoonai.com,tpl-admin.sunmoonai.com"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -46,15 +46,17 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 8e9595a2fdb5b81997b7ac28676045286cc71a874143922314acd503c5688bdc
+        sunmoonai.com/config-sha256: e8d82c7e3a942a0fb2afe21bab98dc9f7c205fc6993eba3bf63e78ac36cdf5c4
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: tpl-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:e92a7bb62f06e8bcee69f435922b16770cb7cfc1a84054130f3987b2b73d0b25
+          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:b4b94f049f8414e970e3e5d82057ae0bca2982ef41db5fc7744ffdf8866b7dee
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -102,15 +104,17 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 8e9595a2fdb5b81997b7ac28676045286cc71a874143922314acd503c5688bdc
+        sunmoonai.com/config-sha256: e8d82c7e3a942a0fb2afe21bab98dc9f7c205fc6993eba3bf63e78ac36cdf5c4
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: tpl-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:e92a7bb62f06e8bcee69f435922b16770cb7cfc1a84054130f3987b2b73d0b25
+          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:b4b94f049f8414e970e3e5d82057ae0bca2982ef41db5fc7744ffdf8866b7dee
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -154,15 +158,17 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 8e9595a2fdb5b81997b7ac28676045286cc71a874143922314acd503c5688bdc
+        sunmoonai.com/config-sha256: e8d82c7e3a942a0fb2afe21bab98dc9f7c205fc6993eba3bf63e78ac36cdf5c4
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: tpl-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:e92a7bb62f06e8bcee69f435922b16770cb7cfc1a84054130f3987b2b73d0b25
+          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:b4b94f049f8414e970e3e5d82057ae0bca2982ef41db5fc7744ffdf8866b7dee
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]

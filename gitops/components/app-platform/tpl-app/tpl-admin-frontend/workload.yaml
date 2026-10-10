@@ -12,6 +12,8 @@ spec:
     metadata:
       labels: {app.kubernetes.io/name: tpl-admin, app.kubernetes.io/part-of: tpl}
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: tpl-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30

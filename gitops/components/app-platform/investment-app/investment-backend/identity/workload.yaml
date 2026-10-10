@@ -159,7 +159,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'investment-identity-4cf3a9391d0a-v3', namespace: app-platform-dev}
+metadata: {name: 'investment-identity-09405580a3d6-v3', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -173,7 +173,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:4cf3a9391d0aad12a5a22da6ea07c9577de2904c68f3c8b9357114a2d9ea18f7
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:09405580a3d61058b0693b741c93ccf68fce29b9d6089f3e990f0a3e0472e615
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:

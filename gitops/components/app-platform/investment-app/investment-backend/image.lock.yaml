@@ -1,6 +1,6 @@
 # Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
 repository: investment-backend
-digest: sha256:4cf3a9391d0aad12a5a22da6ea07c9577de2904c68f3c8b9357114a2d9ea18f7
-source_revision: a01db6f10f22d11116ba4421309ca676e2790f18
-deployment_id: investment-backend-4cf3a9391d0aad12
+digest: sha256:09405580a3d61058b0693b741c93ccf68fce29b9d6089f3e990f0a3e0472e615
+source_revision: 1c9f99f56fa9c4b6789c6a9ab1afb759f26980ac
+deployment_id: investment-backend-09405580a3d61058

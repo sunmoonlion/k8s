@@ -12,6 +12,8 @@ spec:
     metadata:
       labels: {app.kubernetes.io/name: knowledge-admin, app.kubernetes.io/part-of: knowledge}
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30

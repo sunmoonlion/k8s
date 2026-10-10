@@ -4,34 +4,34 @@
 ---
 applications:
   tpl:
-    parent_revision: 6579f303b237c4b7d63245dd4774a8bf74476fb8
-    backend_parent_revision: 834dff5a8e0cbbc399d61f5f26c211f1283d4d1d
-    backend_revision: 834dff5a8e0cbbc399d61f5f26c211f1283d4d1d
+    parent_revision: a72ada70b618660468d2c9635a64a3b5348434da
+    backend_parent_revision: 6ff511cdc094560e8980f59e4b3ce44c775c93bf
+    backend_revision: 6ff511cdc094560e8980f59e4b3ce44c775c93bf
     web_parent_revision: a398a63b52af7e46d27a7d6837e00010434d4553
     web_revision: a398a63b52af7e46d27a7d6837e00010434d4553
     admin_parent_revision: 3a0c88fbe3475d2eaf38732c48f30ff53a5aa650
     admin_revision: 3a0c88fbe3475d2eaf38732c48f30ff53a5aa650
   info:
-    parent_revision: 33f5622f5d785956aa8bf7ef9e43a08c7ce944ec
-    backend_parent_revision: 89d6598ebdc964d0b26548713331c2fd8d92e6ef
-    backend_revision: 89d6598ebdc964d0b26548713331c2fd8d92e6ef
+    parent_revision: 38c6d0a90f432f7584644d080c9ae0694a79b154
+    backend_parent_revision: 87062b7a673a1fbc21b34122013f5cdebede08a6
+    backend_revision: 87062b7a673a1fbc21b34122013f5cdebede08a6
     web_parent_revision: 0ac00faf431adb6d7a31ad41f11168bbf144a65b
     web_revision: 0ac00faf431adb6d7a31ad41f11168bbf144a65b
     admin_parent_revision: 27bc4c9af7aa0563f4573571e7e8c81a31d6efce
     admin_revision: 27bc4c9af7aa0563f4573571e7e8c81a31d6efce
   knowledge:
-    parent_revision: 58df28bbdc2aaed49ca2a1a91ca4e8a8a10be83f
-    backend_parent_revision: c2ba6ff020e89e3afaca2541976d1717d619d5fe
-    backend_revision: c2ba6ff020e89e3afaca2541976d1717d619d5fe
+    parent_revision: ee6ad50db3076b73de733c98691eda2580b66c48
+    backend_parent_revision: 85409177b85bfc51bb710a68f5be3740c7dbd3e4
+    backend_revision: 85409177b85bfc51bb710a68f5be3740c7dbd3e4
     web_parent_revision: 71e5b2e3d5a46b097a9666149c473363253d0bd3
     web_revision: 71e5b2e3d5a46b097a9666149c473363253d0bd3
     admin_parent_revision: df64aa5d6781c22404697eedab943792f3ddfc80
     admin_revision: df64aa5d6781c22404697eedab943792f3ddfc80
   investment:
-    parent_revision: 231f305de2e0b72edb3d7cdd7c880151f8e3aaaf
-    backend_parent_revision: a01db6f10f22d11116ba4421309ca676e2790f18
-    backend_revision: a01db6f10f22d11116ba4421309ca676e2790f18
-    web_parent_revision: 2095c04927a1510efc54bef5ffd28e0c52d25558
-    web_revision: 2095c04927a1510efc54bef5ffd28e0c52d25558
+    parent_revision: 0e494527b6ec79880cd4c1543c1dc93714798775
+    backend_parent_revision: 1c9f99f56fa9c4b6789c6a9ab1afb759f26980ac
+    backend_revision: 1c9f99f56fa9c4b6789c6a9ab1afb759f26980ac
+    web_parent_revision: 18e4268b25d1eb4e7fc70f285d517f762309b932
+    web_revision: 18e4268b25d1eb4e7fc70f285d517f762309b932
     admin_parent_revision: b0f4c5de8450e6e17bb8d5ef846dcb76f4d01093
     admin_revision: b0f4c5de8450e6e17bb8d5ef846dcb76f4d01093

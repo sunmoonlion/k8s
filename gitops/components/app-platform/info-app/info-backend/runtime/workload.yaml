@@ -4,7 +4,7 @@ metadata: {name: info-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: info
-  DEPLOYMENT_ID: "info-backend-9e536b0ad5e4d35e"
+  DEPLOYMENT_ID: "info-backend-b470e2fd4f17a65c"
   ALLOWED_HOSTS: "localhost,127.0.0.1,info-api,info-api.app-platform-dev.svc.cluster.local,info.sunmoonai.com,info-admin.sunmoonai.com"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -65,15 +65,17 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 2a8f91ae496ac172efc4c52e412798ef69d8029d675f458733a9b430b36ff990
+        sunmoonai.com/config-sha256: 8d19ae43b7abc8df5fbfc1b2742b22603fda69d41ba89b5fdc56fc00e2e6665c
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:9e536b0ad5e4d35e1070a0cdcad724c0a669d6e09aac7de8653803701633ffb5
+          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:b470e2fd4f17a65c038bd9547626dc6a822675c3d2ad47e1fbbad62f3268546c
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -128,15 +130,17 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 2a8f91ae496ac172efc4c52e412798ef69d8029d675f458733a9b430b36ff990
+        sunmoonai.com/config-sha256: 8d19ae43b7abc8df5fbfc1b2742b22603fda69d41ba89b5fdc56fc00e2e6665c
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:9e536b0ad5e4d35e1070a0cdcad724c0a669d6e09aac7de8653803701633ffb5
+          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:b470e2fd4f17a65c038bd9547626dc6a822675c3d2ad47e1fbbad62f3268546c
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -187,15 +191,17 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 2a8f91ae496ac172efc4c52e412798ef69d8029d675f458733a9b430b36ff990
+        sunmoonai.com/config-sha256: 8d19ae43b7abc8df5fbfc1b2742b22603fda69d41ba89b5fdc56fc00e2e6665c
     spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:9e536b0ad5e4d35e1070a0cdcad724c0a669d6e09aac7de8653803701633ffb5
+          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:b470e2fd4f17a65c038bd9547626dc6a822675c3d2ad47e1fbbad62f3268546c
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
