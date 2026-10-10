@@ -103,6 +103,7 @@
             mode: '{{ item.mode }}'
           loop:
             - {src: frps.toml.j2, dest: '{{ edge_config_dir }}/frps.toml', mode: '0644'}
+            - {src: 404.html.j2, dest: '{{ edge_config_dir }}/404.html', mode: '0644'}
             - {src: traefik.yml.j2, dest: '{{ edge_config_dir }}/traefik.yml', mode: '0644'}
             - {src: dynamic.yml.j2, dest: '{{ edge_config_dir }}/dynamic.yml', mode: '0644'}
             - {src: compose.yaml.j2, dest: '{{ edge_config_dir }}/compose.yaml', mode: '0644'}
