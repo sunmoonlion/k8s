@@ -37,8 +37,8 @@
 Casdoor 的 `JWT` 格式令牌带用户对象，含 `owner`（= 用户所属组织，`object/token_jwt.go` `Claims` 内嵌 `*User`）。在模板后端（tpl → 三个应用同步）的 `_load_or_create_user` 之前加：
 
 - `admin` 面：`claims.owner` 必须等于配置的 `identity_organization_admin`（built-in），否则 403 `organization_not_allowed`。
-- `web` 面：`claims.owner` 必须是 `identity_organization_web`（sunmoon）或 `identity_organization_admin`（built-in，允许所有者用管理员看网页），否则 403。
-- 后端新增两个环境变量，由 GitOps 从上面的配置写入；缺了就启动失败。
+- `web` 面：`claims.owner` 必须在**允许组织列表**里（现在 = `[sunmoon, built-in]`；built-in 是为了让所有者用管理员看网页），否则 403。**做成列表而不是单值**，以后多一个组织只改配置（见第 7 条）。
+- 后端新增两个环境变量（admin 单值、web 逗号分隔列表），由 GitOps 从配置写入；缺了或为空就启动失败。
 - 这样就算哪天有人把 admin 应用的组织改错，sunmoon 的人也拿不到管理权限。
 
 ### 4. 用户在后端怎么落库：不变
@@ -55,12 +55,24 @@ Casdoor 管理界面 →「用户」→ 组织选 **sunmoon** →「添加」→
 - 服务身份（`service-identity`，机器对机器）不动，仍在 built-in。
 - 不开注册、不开邀请码、不接第三方登录。
 
+### 7. 以后再开一个组织怎么办（2026-10-10 所有者问）
+
+先分清 Casdoor「组织」是什么：它是**一套登录规则**（谁来管账号、密码策略、能不能接对方公司自己的统一登录），不是「一个客户 / 一个团队」。
+
+- **客户、团队、部门**：放在 `sunmoon` 里用 Casdoor 的「群组」区分（令牌里带 `groups`），应用里要分隔数据时按群组或应用自己的工作区做。**不为每个客户开组织。**
+- **真要开新组织的情况**：对方要自己管账号（自己的管理员）、要不同密码规则、或要接他们公司自己的统一登录（企业微信 / 飞书 / AD 等）。这时：
+  1. 建组织 `<新组织>`（同第 1 条的写法，进 GitOps）；
+  2. 把各应用的 `web` 应用设为**共享应用**（Casdoor `isShared`；`IsUserOfApplication` 对共享应用放行其它组织的用户）。共享应用给其它组织登录时的客户端写法与回调要按 Casdoor 当时版本的文档和源码核实后再定，**到时另写一页设计，不在本卡做**；
+  3. 后端只需把新组织加进 web 允许列表（第 3 条），代码不改；
+  4. admin 应用永远只在 built-in，不共享。
+- 所以本卡要做的只有一件为以后留口子的事：**web 允许组织做成列表**（第 3 条已改）。
+
 ## 三、卡与验收
 
 | 卡 | 内容 | 验收 |
 | --- | --- | --- |
 | **U1 GitOps**（Cursor） | 建 `sunmoon` 组织的幂等任务；四个应用配置拆两组织；provision 按 surface 取组织 + 只改 `organization` 一个字段的受控迁移；四处断言改写；`verify.yaml` 增加只读核对（四个 web 应用属 sunmoon、四个 admin 应用属 built-in、组织字段如上表） | 渲染与门禁测试；在本地集群发布后核对脚本全绿；重复发布无变化 |
-| **U2 后端**（Cursor，tpl 先改再同步三应用） | 第二节第 3 条的 `owner` 检查与两个环境变量；单测覆盖：admin 面 sunmoon 令牌 403、built-in 令牌通过；web 面两种都通过、其它组织 403；缺 `owner` 403 | 各应用全量测试、ruff、pyright（改到的文件）、lint-imports |
+| **U2 后端**（Cursor，tpl 先改再同步三应用） | 第二节第 3 条的 `owner` 检查与两个环境变量；单测覆盖：admin 面 sunmoon 令牌 403、built-in 令牌通过；web 面列表内两种都通过、列表外组织 403、列表配两个以上组织也正确；缺 `owner` 403 | 各应用全量测试、ruff、pyright（改到的文件）、lint-imports |
 | **U3 所有者验收** | 照第二节第 5 条建自己的 sunmoon 账号（强制改密）→ 用它登录投资网页成功、是空工作区 → 用它打开投资管理后台被拒（登录页就拒或后端 403）→ admin 登录网页仍看到旧数据 | 所有者走完；结果记回执 |
 
 U1、U2 一起发布（同一轮）。顺序：卡 E 发行验收之后，第一批外部用户之前。
