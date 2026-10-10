@@ -13,5 +13,6 @@ transport.maxPoolCount = 10
 # 不开任何 tcp/udp 端口代理，只做按域名的 http 转发。
 allowPorts = []
 log.to = "console"
-log.level = "info"
+# 只记错误：「无路由」等警告会带完整请求路径，安装凭证在路径里（SDD 0013：不记请求路径）。
+log.level = "error"
 log.disablePrintColor = true
