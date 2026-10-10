@@ -552,3 +552,20 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 **复现：** 临时工作树 `pnpm build && pnpm test` 200 通过、32 跳过；`tsc --noEmit` 通过；`bundle.test.mjs` 28 通过。两处必改都按要求改了：证书类五个码各一条测试；启动自检两边 `realpathSync.native`、win32 统一小写、打不开算不匹配，有同文件异写法通过、异文件拒绝的测试。`.cmd` 已去掉 `call`。
 
 **下一步：** 照 0.2.1 的组包流程（官方 `node.exe` + Windows 依赖目录），加 `--site agent/distribution/sites/dev-kind.json --ca-pem agent/distribution/sites/dev-kind-ca.pem` 组 0.2.2 包；记下 ZIP 与清单摘要，核对包里 `site/site.json` 的 `ca_sha256` = `79562e07…e1ef`。然后所有者照回执「审过之后」五步验收：停旧代理 → 保留配置卸载 0.2.1 → 装 0.2.2 → 去掉会话 `NODE_OPTIONS`（以及只为开发 CA 设的 `NODE_EXTRA_CA_CERTS`）→ 重启 → 代理自己连上。不发布到网页、不改集群。验收结果写进 C1 回执，停下交审。C2 等验收过再做。
+
+## 2026-10-10 · 0.2.2 组包与本机替换审读（runtime luna `8066961`）：包可用，验收还差两项；两个升级缺陷记给 C2
+
+**包：** 源码 `dcb3a10`、官方 node 摘要、ZIP `43dc2e2c…`、清单 `53d27a66…`、包内 `ca_sha256` = `79562e07…` 都对得上；隔离安装检查通过。可以。
+
+**验收还差两项（补做后回执写原文，停下交审）：**
+
+1. **「连上」还不能证明随包 CA 起了作用。** 所有者这台早已把开发 CA 导入 Windows 证书库，`--use-system-ca` 单靠系统库就能连上。要隔离验证，用安装目录里的 `node\node.exe` 跑一条只做 TLS 握手的命令（不带令牌，不改任何东西），连 `relay.sunmoonai.com:30443`（本机经 hosts 到本地集群），分两次：
+   - 甲：**不带** `--use-system-ca`，只设 `NODE_EXTRA_CA_CERTS=<安装目录>\site\ca.pem` → 应握手成功、`authorized=true`。这证明随包 CA 就是集群在用的那张，且单靠它就够。
+   - 乙：两者都不带（清掉这两个变量）→ 应失败，错误码 `UNABLE_TO_VERIFY_LEAF_SIGNATURE` / `SELF_SIGNED_CERT_IN_CHAIN` 一类。这证明甲的成功不是来自 Node 自带库。
+   两次都记下错误码或 `authorized`，并记服务端证书的签发者 CN。
+2. **自启入口（`run-hidden.vbs`）在 Windows 上还没真跑过。** 现在没有自启任务，所以没重启。请 `sunmoon-agent.cmd autostart enable` → 重启 → 登录后不手动启动，确认 `status.json` 为 0.2.2、`connected`，后台进程命令行带 `--use-system-ca`、环境里 `NODE_EXTRA_CA_CERTS` 指向安装目录 `site\ca.pem`（可用 `Get-CimInstance Win32_Process` 看命令行）。再从托盘打开一次「查看状态」/设置窗口，确认能读到状态（`desktop.ps1` 入口）。验完自启保持开着即可（C2 也要默认开）。
+
+**两个缺陷，C1 不改，C2 必须修（升级路径就是 C2 的内容）：**
+
+- **新卸载器认不出旧安装。** `bundle.mjs` 的 `REQUIRED` 是写死的当前版本文件表，0.2.2 卸载器核验 0.2.1 安装目录就因缺 `installer/launch.mjs` 报 `Incomplete or oversized bundle`。核验已安装目录应以**该目录自己的清单**为准（清单摘要已保护完整性），`REQUIRED` 只用于组包和首次安装的新包。加测试：用 0.2.1 形态的清单（无 `launch.mjs`、无 `site/`）走保留配置卸载，应成功。
+- **残留的托盘控制文件挡住第二次卸载。** 托盘进程已不在时 `tray-stop.json` 留着，下次 `tray stop` 被拒，只能手删。`tray stop` 应在确认记录的托盘进程已不存在时清掉残留文件并视为已停。加测试。
