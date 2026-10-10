@@ -66,6 +66,7 @@ plan只读；check会创建限定随机数据库/消息/业务探针并精确清
 | `knowledge_backend_deployment.rabbitmq_queue` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
 | `knowledge_backend_deployment.rabbitmq_identity_revision` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
 | `knowledge_backend_deployment.identity_organization` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `knowledge_backend_deployment.identity_user_organization` | 文本 | 网页端用户所在 Casdoor 组织，固定 `sunmoonai`（决策 D21、SDD 0014）；管理端仍在 `identity_organization`（built-in）。改动须同时迁移已注册的网页端应用。 |
 | `knowledge_backend_deployment.identity_revision` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
 | `knowledge_backend_deployment.api_port` | 整数 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
 | `knowledge_backend_deployment.api_replicas` | 整数 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |

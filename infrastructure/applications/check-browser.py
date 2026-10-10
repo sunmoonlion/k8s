@@ -1,7 +1,9 @@
 """Verify browser protocol and SSR against an explicit TLS entry; never print secrets."""
 import http.client
 from http.cookies import SimpleCookie
+from datetime import datetime, timezone
 import json
+import secrets
 import socket
 import ssl
 import sys
@@ -66,6 +68,42 @@ def run(settings):
 
     outcomes = {}
     require(bool(settings['clients']) and set(settings['clients']) <= {'web', 'admin'}, 'Invalid selected frontend surfaces')
+    require(settings['user_organization'] == 'sunmoonai' and settings['organization'] == 'built-in',
+            'Unexpected identity organizations')
+    provider_headers = {'Origin': settings['provider']}
+    operator = Browser()
+
+    def provider_api(path, data):
+        status, _, body = operator.request(settings['provider'] + path, method='POST', data=data,
+                                           headers=provider_headers)
+        require(status == 200, 'Provider administration HTTP failure')
+        return json.loads(body)
+
+    # Web clients belong to the user organization, where the administrator cannot sign in
+    # (SDD 0014). A throwaway member with a random password is created for this run only
+    # and always deleted afterwards; nothing about it is printed or stored.
+    member = None
+    if 'web' in settings['clients']:
+        signed_in = provider_api('/api/login', {'application': 'app-built-in', 'organization': 'built-in',
+            'username': settings['username'], 'password': settings['password'], 'type': 'login'})
+        require(signed_in.get('status') == 'ok', 'Provider administrator login failed')
+        member = {'owner': settings['user_organization'], 'name': 'verify-' + secrets.token_hex(6),
+                  'password': secrets.token_urlsafe(24)}
+        added = provider_api('/api/add-user', {**member, 'type': 'normal-user', 'displayName': 'verification',
+            'createdTime': datetime.now(timezone.utc).isoformat()})
+        require(added.get('status') == 'ok' and added.get('data') == 'Affected', 'Verification member not created')
+    try:
+        _check_surfaces(settings, Browser, member, outcomes)
+    finally:
+        if member is not None:
+            removed = provider_api('/api/delete-user', {'owner': member['owner'], 'name': member['name']})
+            require(removed.get('status') == 'ok', 'Verification member not removed')
+    print(json.dumps({'entry_port': settings['entry_port'], 'protocol_checks': outcomes,
+        'web_member_organization': settings['user_organization'] if member else None,
+        'browser_ui_clicks_verified': False, 'business_provider_configured': False}))
+
+
+def _check_surfaces(settings, Browser, member, outcomes):
     for surface in settings['clients']:
         client = settings['clients'][surface]
         origin = client['origin']
@@ -86,9 +124,18 @@ def run(settings):
                 surface + ': unexpected authorization identity')
         aliases = {'client_id': 'clientId', 'response_type': 'responseType', 'redirect_uri': 'redirectUri'}
         login_query = {aliases.get(key, key): value for key, value in query.items()}
+        if surface == 'admin' and member is not None:
+            # The user organization must not obtain an authorization code from an admin client.
+            status, _, body = Browser().request(settings['provider'] + '/api/login?' + urlencode(login_query),
+                method='POST', data={'application': client['name'], 'organization': member['owner'],
+                'username': member['name'], 'password': member['password'], 'type': 'code'},
+                headers={'Origin': settings['provider']})
+            require(status == 200 and json.loads(body).get('status') != 'ok', 'User organization reached admin client')
+        account = ({'organization': member['owner'], 'username': member['name'], 'password': member['password']}
+                   if surface == 'web' else {'organization': settings['organization'],
+                   'username': settings['username'], 'password': settings['password']})
         status, _, body = browser.request(settings['provider'] + '/api/login?' + urlencode(login_query),
-            method='POST', data={'application': client['name'], 'organization': settings['organization'],
-            'username': settings['username'], 'password': settings['password'], 'type': 'code'},
+            method='POST', data={'application': client['name'], 'type': 'code', **account},
             headers={'Origin': settings['provider']})
         require(status == 200, surface + ': provider login HTTP failure')
         response = json.loads(body)
@@ -127,9 +174,8 @@ def run(settings):
         require(status == 401, surface + ': logged-out session accepted')
         outcomes[surface] = {'pkce_callback': True, 'authenticated_ssr': True,
             'secure_cookie': True, 'cross_surface_denied': True, 'csrf_required': True,
-            'logout_revoked': True, 'unprivileged_admin_diagnostic_denied': permission_denied}
-    print(json.dumps({'entry_port': settings['entry_port'], 'protocol_checks': outcomes,
-        'browser_ui_clicks_verified': False, 'business_provider_configured': False}))
+            'logout_revoked': True, 'unprivileged_admin_diagnostic_denied': permission_denied,
+            'user_organization_denied': True if surface == 'admin' and member is not None else None}
 
 
 if __name__ == '__main__':

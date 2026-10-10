@@ -21,7 +21,9 @@ investment_backend_deployment:
   rabbitmq_queue: investment.default
   rabbitmq_identity_revision: v2
   identity_organization: built-in
-  identity_revision: v2
+  # 普通用户所在组织（决策 D21、SDD 0014）：网页端应用挂这里；管理端仍在 built-in。
+  identity_user_organization: sunmoonai
+  identity_revision: v3
   api_port: 8000
   api_replicas: 1
   worker_replicas: 1
