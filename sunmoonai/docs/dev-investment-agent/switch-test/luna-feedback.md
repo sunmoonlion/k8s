@@ -771,3 +771,13 @@ B（后端配对）+ C（代理 0.2.4，包已在 `windows-agent-c2-20261010\sun
 3. **所有者 Windows 真实入口实测**：现装 0.2.4 → 用手工生成的 0.2.5 `install.ps1` 升级 → 脚本最后一步弹出**托盘**（有令牌）；再用一个无令牌的临时 `SUNMOON_AGENT_HOME` 跑 `sunmoon-agent.cmd menu` → **设置窗口**弹出。两者都要所有者肉眼确认。
 4. 只重新 stage 投资应用；新候选相对 `df1aa4d7` 的差异**只能**在 `agent-releases`（config 与加密 runtime）和由此变动的 `config-sha256` 注解；多出别的就停。
 5. 四条都满足 → 直接按「卡 E 第一段审读」那一节的**第二段**做下去（发布四个应用 → identity Job → `application-check` → 通知所有者建 sunmoonai 账号 → 用新账号走 E 全程），全程结束停下交审。任何一条不满足就停下交审。
+
+## 2026-10-11 · 0.2.5 审读（runtime luna `c0c185f`）：托盘与设置窗口改走 wscript，通过；先修好安装目录再放行
+
+**复现：** 先 build，`pnpm test` 212 通过 / 32 跳过，`bundle.test.mjs` 32 通过，版本三处 0.2.5。思路对：`menu` 用 detached 起 `wscript open-desktop.vbs`（GUI 进程，不受 node 作业对象牵连，也不需要控制台），VBS 照 `run-hidden.vbs` 处理站点启动参数后不等待地拉起 `cli tray` / `cli onboard-window`，`menu` 轮询 `tray.json` / `onboard-ready.json`（15 秒）。托盘「重新连接账号」也走同一个 VBS。所有者已在 Windows 上看到三处窗口（开始菜单托盘、无令牌设置窗口、重新连接）。
+
+**一处小改：** `openDesktop` 的 `ready()` 里 `readTrayControl` 遇到写了一半的 `tray.json` 会抛异常，而它在 `setTimeout` 回调里，异常会打崩 `menu`。包一层 try/catch，异常当「还没就绪」。
+
+**放行前必须先做：安装目录恢复成与清单一致。** 你上一轮把新程序直接覆盖进了安装目录，现在目录和它自带的清单对不上——外部卸载器和升级都会先核验清单，E 全程第一步「`--remove-config` 卸干净」会被拒。做法：用 0.2.5 正式包核验一遍现装目录（`verifyBundle` 按它自己的清单）；不一致就把正式包（含其清单）的文件按清单逐个放回、使目录与新清单逐文件一致，再核验通过并贴结果。之后不要再直接覆盖安装目录。
+
+**然后**按放行条件 2、4、5 继续：小改后重新组包 → `agent-release-verify` + `upload` → `agent-releases/config.yaml` 换 0.2.5 → 只重新 stage 投资（差异只能在 agent-releases 与 `config-sha256`）→ 直接进第二段（发布四个应用 → identity Job → `application-check` → 通知所有者建 sunmoonai 账号 → 用新账号走 E 全程），全程结束停下交审。
