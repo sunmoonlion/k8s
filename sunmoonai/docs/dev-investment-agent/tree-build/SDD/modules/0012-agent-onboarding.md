@@ -135,7 +135,7 @@ irm 'https://investment.sunmoonai.com:30443/api/agent-install/<一次性凭证>/
 
 | 原始 | 人话 |
 | --- | --- |
-| TLS `UNABLE_TO_VERIFY_*`、`SELF_SIGNED_*` | 「这台电脑不信任站点证书。请重新从网页下载安装包；若仍出现，联系管理员。」 |
+| TLS `UNABLE_TO_VERIFY_*`、`UNABLE_TO_GET_ISSUER_CERT*`、`SELF_SIGNED_*`、`DEPTH_ZERO_SELF_SIGNED_CERT`、`CERT_*`、`ERR_TLS_CERT_ALTNAME_INVALID`（2026-10-10 C1 审读补） | 「这台电脑不信任站点证书。请重新从网页下载安装包；若仍出现，联系管理员。」 |
 | `ENOTFOUND` / `ECONNREFUSED` / 超时 | 「连不上 <主机>。检查网络或代理设置。」 |
 | 401/吊销（4003） | 「这台电脑的连接已失效，请点『重新连接账号』。」 |
 | 4000 被替换 | 「你的账号已在另一台电脑上连接，这台已断开。」 |
