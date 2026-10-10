@@ -695,3 +695,35 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 **配对 404 不是代理的问题，是我上一节的验收步骤写错了：** 配对接口在卡 B 的后端里，B/C/D 约定在 **E 一起发布**，现网投资后端还没有这条路径——你用同一 Node 直接 POST 得到 404、而 `/api/auth/web/login` 是 405，证明站点在应答、只是路径没挂。代理在这种情况下窗口显示「连接没有完成，请重新获取。」，令牌未动，正是 C2 要的失败行为。**真实配对整段（拿码 → 网页输码 → 允许 → 已在线）移到 E。**
 
 **卡 C 到此结束（C1 + C2 通过）。现在做卡 D**（上面「卡 D（网页）交 Cursor」一节）。验收结束请确认 `127.0.0.1:8765` 的临时下载服务已按进程号停掉。
+
+## 2026-10-10 · 卡 D 审读（web `ac3ebf8`、backend `12fe94a`）：通过，三处小改后直接进 E
+
+**复现：** web 临时工作树 Node 24：`vitest` 234 通过 / 2 跳过、`tsc` 过、`eslint` 过。backend：全量（两个数据库变量都设）942 通过 / 5 跳过，lint-imports 过。六个接口路径与后端路由逐字对上；预览样例由后端打真路由录制、批准结果不含令牌；旧 machines 地址跳到 `#computer`。好。
+
+**三处小改（改完不必单独停，接着做 E 第一段）：**
+1. `pairingLookupSchema.source_ip` 改 `z.string().nullable()`——后端 `_peer()` 在 `request.client` 为空时给 `None`，现在严格 schema 会把这种正常结果报成「码不对或已过期」。卡片上显示「未知」。补一条测试。
+2. 用户看到的文字里有开发者口吻：引导下的「做完由这台电脑的实际状态打勾，不用自己勾『我已下载』。」改成「有电脑在线，这三步就算完成。」（只留后半句）；空状态下「当前电脑」卡片是空白，改成显示「还没有电脑接入」。
+3. `tests/test_preview_agent_pairing.py` 的 import 排序（ruff I001），只格式化这一个文件。
+
+## 2026-10-10 · 卡 E（发行验收）交 Cursor：分两段，第一段做完停下给我看候选
+
+B（后端配对）+ C（代理 0.2.4，包已在 `windows-agent-c2-20261010\sunmoon-agent-a878d14`）+ D（网页）一起发。投资应用一个应用发布。
+
+**第一段：接线 + 生成候选，不发布。**
+
+| 项 | 怎么接 |
+| --- | --- |
+| 代理包 | `agent-releases/config.yaml` 改为 0.2.4：`version`、`source_revision a878d145…`、`object_key windows-x64/0.2.4/sunmoon-agent-0.2.4-a878d14-windows-x64.zip`、`zip_sha256 d00c1392…`、`manifest_sha256 e133f26f…`、`size_bytes 175305493`。先 `make agent-release-verify` 再 `agent-release-upload AGENT_ZIP=…`，回执读回通过才保留 `download_available: true` |
+| 安装脚本模板 | 把 runtime `a878d14` 的 `agent/distribution/install.ps1.tmpl` **原样**复制到 `agent-releases/install.ps1.tmpl`（保持 UTF-8 BOM，逐字节相同，回执记两边 SHA256）；在 `agent-releases/prepare.yaml` 的 `agent_release_runtime` 里加 `WORKBENCH_AGENT_INSTALL_SCRIPT_TEMPLATE: "{{ lookup('file', <这个文件>) }}"`。**注意 Jinja：** 模板里的 `{{PACKAGE_URL}}` 等不能被 Ansible 当变量展开——生成候选后解密核对：六个占位符各恰好一次、文件与原件逐字节相同；不对就停 |
+| 配对密钥 | `investment-backend/config.yaml` 的 `domain_secrets` 加 `WORKBENCH_AGENT_PAIRING_HMAC_KEY: {source: random}`（与现有随机项同机制，已有值必须保留，不能每次发布换） |
+| 可信代理网段 | `domain_env` 加 `WORKBENCH_TRUSTED_PROXY_CIDRS: '127.0.0.1/32,10.247.0.0/16'`（集群 pod 网段，SDD 0013） |
+| 代码 | 投资应用 backend `12fe94a` 之后 + web（含上面三处小改）的提交；按常规 `application-stage APP=investment` |
+
+**停点 1：** 把候选 diff（明文部分）、模板逐字节核对、六个占位符计数、agent-release 上传回执贴进回执，本地提交，停下给我看。**不要 flux-release / 晋级。**
+
+**第二段（我回「可以发」之后）：** 发布 → 晋级 → `application-check APP=investment` → 看一眼 Traefik 访问日志里配对请求的来源是东京还是本机、后端记的 `source_ip` 是否像真实客户端。然后陪所有者走一遍（Windows 上要所有者动手的步骤开工时一次说清）：
+1. 所有者那台先用 0.2.4 卸载器 `--remove-config` 卸干净（配置里的令牌是旧的，配对会重发）。
+2. admin 登录投资网页 → 设置 →「我的电脑」→「复制安装命令」→ PowerShell 粘贴回车 → 装好后自动弹设置窗口 → 「连接我的账号」→ 浏览器打开 `#computer` → 输入 8 位码 → 确认卡片（机器名、来源）→「允许」→ 窗口显示「已连接」→ 选文件夹 → 自启 → 「已在线」。
+3. 网页上发一句对话，确认工作 / 专家能碰到选中的文件夹。
+4. 再验三件：重启后自己在线；拿一个码不批准等它过期、窗口显示过期人话；拿一个码点「拒绝」、窗口显示拒绝人话。
+5. 结果原文进回执，停下交审。之后才轮到 U（用户组织）。
