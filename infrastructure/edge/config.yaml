@@ -10,7 +10,7 @@ edge_vhost_port: 8080
 edge_health_port: 8082
 edge_ssh_port: 1022
 # acme-staging → acme：先对 Let's Encrypt 测试环境跑通再切正式。smoke 只给本机冒烟（Traefik 自带默认证书）。
-edge_tls_mode: acme-staging
+edge_tls_mode: acme
 edge_config_dir: /etc/sunmoon/edge
 # 令牌私有文件：YAML，单键 token，root 0600；由所有者从集群侧私有输入经 SSH 写入（SDD 0013 第四节）。
 edge_token_file: /etc/sunmoon/edge/frp-token.yaml
