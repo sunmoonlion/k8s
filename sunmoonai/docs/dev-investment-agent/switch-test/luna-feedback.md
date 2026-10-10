@@ -613,3 +613,23 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 **另记：** `infrastructure/applications/tests/test_build_selection.py` 在 fable 上有 9 条原有失败（断言发布命令里不出现 `tpl-`，而命令本来就加载 tpl 配置），与 U 无关，未处理。
 
 **补（同日）：U4 清理。** 所有者定 admin 网页端名下的试用数据清掉。U3 通过后当天做，步骤见 SDD 0014 第三节 U4：先回收 admin 的云端沙箱 → 列清单（各库各表行数 + 会合点代理记录）交远程审 → 各库先备份 → 一个事务删 → 再列一次为 0。只动 admin 网页端名下的数据。
+
+## 2026-10-10 · 卡 C2 审读（runtime luna `c511689`）：结构对，三处必改，改完组包验收
+
+**复现：** 临时工作树先 build：`pnpm test` 206 通过 / 32 跳过，`tsc` 通过，`bundle.test.mjs` 31 通过，与回执一致。
+
+**做对的（保留）：** `pair` 按契约五项提交、秘密与令牌不出 stdout/日志、429 不算失败、各结局有退出码；`menu` 按有无令牌分流；安装脚本六个占位符各一次、最多 4 次请求、长度 + ZIP + 清单三重核对、不打印带凭证的地址、无 `-ExecutionPolicy Bypass`；升级先判版本，同版只开窗、旧版保留配置卸载再装、新版拒绝、卸后目录还在就停；已装目录按自己清单核验（`requireLayout: false`）；残留 `tray-stop.json` 在进程已退时清掉；模板存 UTF-8 BOM 的理由对。
+
+**必改 1：版本号还是 0.2.2——所有者那台装的就是 0.2.2，新包走「同版本只打开窗口」，根本装不上去。** 改 **0.2.3**（`cli.ts` 的 `VERSION`、`agent/package.json`、`windows-x64.json`），CHECKPOINT/回执/README 跟着改。
+
+**必改 2：从旧版升级时，停托盘用的是旧版自己的 CLI，残留 `tray-stop.json` 的老毛病还会撞上。** `uninstall.mjs` 的 `invoke(['tray','stop'])` 调的是已安装（0.2.1/0.2.2）的 `cli.js`，新代码里的 `discardDeadTrayStop` 管不到——今天 0.2.2 换包时正是在这一步卡住的。改法：外部安装包里的 `uninstall.mjs` 在调旧 CLI 之前，自己先按同样规则（记录的托盘 pid 已不在、普通文件、非链接）清掉状态目录里残留的 `tray-stop.json` / `tray.json`；进程还在就照旧交给 CLI。加测试：0.2.1 形态 + 残留且进程已退的 `tray-stop.json`，卸载能走完。
+
+**必改 3：配对失败时窗口没反应。** `pair` 里抛出的错误（如「连不上站点。检查网络或代理设置。」、站点文件问题）走 stderr、进程退出码 1、没有 `result` 事件；`desktop.ps1` 只读 stdout，stderr 被重定向却没人读（量大时还会卡住子进程）。改法：异步读 stderr；`pair` 进程退出且没收到 `result` 时，在窗口显示 stderr 最后一行（这些都是我们自己写的人话，不含秘密）或「连接没有完成，请重新获取。」，并让「重新获取连接码」可点。加一个 PowerShell 解析级检查或在回执里写明手测过。
+
+**建议（一起改，成本低）：**
+- `verify_url` 只在以 `site.json` 的 `web_origin` 开头时才打开浏览器；`approved` 回的 `relay_url` 必须等于 `site.json` 的 `relay_url`，不等就拒收令牌（防后端配错把电脑接到别处）。各加一条测试。
+- 收到 429 后下一次多等一个间隔（契约写的是「退避」）。
+
+**给卡 D 的提醒：** 后端的 `verify_url` = `web 前端地址 + /settings#computer`，不带语言前缀；D 要保证这个地址能落到「设置 → 我的电脑」（重定向到 `/zh-CN/settings#computer` 也行）。
+
+**改完：** 重跑三项，回执补上，**本地提交、停下交审**。审过后组 **0.2.3** 包，所有者按回执的四步在 Windows 上验：同版本重跑只开窗；从现装的 0.2.2 升级（配置保留、自启开着、开始菜单有入口）；0.2.1 形态那步可用临时目录模拟，不必真装回 0.2.1；最后一次真实配对（会换令牌，这台会断开后重连）。
