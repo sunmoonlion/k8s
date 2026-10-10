@@ -9,41 +9,22 @@ data:
     auth.token = "{{ '{{' }} .Envs.FRP_AUTH_TOKEN {{ '}}' }}"
     transport.tls.enable = true
     loginFailExit = false
+    user = "{{ '{{' }} .Envs.POD_NAME {{ '}}' }}"
     log.to = "console"
     log.level = "info"
+{% for domain in frpc_domains %}
 
     [[proxies]]
-    name = "smoke-investment"
+    name = "{{ domain.split('.')[0] }}"
     type = "http"
-    customDomains = ["investment.sunmoonai.com"]
-    loadBalancer.group = "smoke-investment"
+    customDomains = ["{{ domain }}"]
+    loadBalancer.group = "{{ domain.split('.')[0] }}"
     loadBalancer.groupKey = "{{ '{{' }} .Envs.FRP_GROUP_KEY {{ '}}' }}"
     [proxies.plugin]
     type = "http2https"
     localAddr = "{{ frpc_local_addr }}"
     requestHeaders.set.x-forwarded-proto = "https"
-
-    [[proxies]]
-    name = "smoke-casdoor"
-    type = "http"
-    customDomains = ["casdoor.sunmoonai.com"]
-    loadBalancer.group = "smoke-casdoor"
-    loadBalancer.groupKey = "{{ '{{' }} .Envs.FRP_GROUP_KEY {{ '}}' }}"
-    [proxies.plugin]
-    type = "http2https"
-    localAddr = "{{ frpc_local_addr }}"
-    requestHeaders.set.x-forwarded-proto = "https"
-
-    [[proxies]]
-    name = "smoke-relay"
-    type = "http"
-    customDomains = ["relay.sunmoonai.com"]
-    loadBalancer.group = "smoke-relay"
-    loadBalancer.groupKey = "{{ '{{' }} .Envs.FRP_GROUP_KEY {{ '}}' }}"
-    [proxies.plugin]
-    type = "http2https"
-    localAddr = "{{ frpc_local_addr }}"
-    requestHeaders.set.x-forwarded-proto = "https"
+{% endfor %}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -73,6 +54,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args: ['-c', /etc/frp/frpc.toml]
           env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
             - {name: FRP_AUTH_TOKEN, valueFrom: {secretKeyRef: {name: frpc-auth, key: FRP_AUTH_TOKEN}}}
             - {name: FRP_GROUP_KEY, valueFrom: {secretKeyRef: {name: frpc-auth, key: FRP_GROUP_KEY}}}
           resources: {{ frpc_resources | to_json }}

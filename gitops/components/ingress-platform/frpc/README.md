@@ -2,7 +2,7 @@
 
 设计见 SDD `0013-edge.md` 第五节。只出站连接边缘 frps，再由 `http2https` 转到本集群 Traefik 的 websecure Service。不改应用 origin、回调和 IngressRoute。
 
-配置照 `infrastructure/edge/smoke/frpc.toml.tmpl`。和冒烟文件不同的只有卡片写明的几处：`serverAddr`、`loginFailExit = false`、`localAddr` 指向集群 Traefik，`groupKey` 用私有输入里单独的 `group_key`。代理名和分组名保持冒烟文件里的写法。`loginFailExit` 保持 false；边缘 frps 未启动时客户端会一直重连。
+配置照 `infrastructure/edge/smoke/frpc.toml.tmpl` 的字段。正式代理名和分组名是 `investment`、`casdoor`、`relay`。每个副本用自己的 Pod 名做 `user`，否则同名代理第二个副本会被 frps 拒绝。`loginFailExit` 保持 false；边缘 frps 未启动时客户端会一直重连。
 
 镜像 `fatedier/frpc:v0.71.0` 的摘要与边缘冒烟钉的是同一个，运行时从 Harbor `platform/frpc` 拉取。本次不发布镜像、不改集群。
 
@@ -14,4 +14,5 @@
 | `frpc_server_addr` / `frpc_server_port` | 边缘 frps |
 | `frpc_traefik_port` / `frpc_local_addr` | 集群 Traefik websecure Service，给 frpc 的 `localAddr` |
 | `frpc_traefik_pod_port` | 同一入口的容器监听端口，给出站 NetworkPolicy |
-| `frpc_replicas` | 两副本，同一 `loadBalancer.group` 互备 |
+| `frpc_replicas` | 两副本，同一分组互备；每个副本的 `user` 是自己的 Pod 名 |
+| `frpc_domains` | 与边缘 `edge_domains` 同一份名单；代理名和组名取域名第一段 |

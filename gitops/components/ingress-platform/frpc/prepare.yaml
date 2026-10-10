@@ -14,6 +14,8 @@
       - image_map.frpc.manifest_digest == 'sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee'
       - image_map.frpc.reference.endswith('@' + image_map.frpc.manifest_digest)
       - cluster_pod_subnet is match('^[0-9.]+/[0-9]+$')
+      - frpc_domains == (lookup('file', playbook_dir + '/../edge/config.yaml') | from_yaml).edge_domains
+      - frpc_domains | map('regex_replace', '\\..*$', '') | list == ['investment', 'casdoor', 'relay']
 - name: Prepare the recoverable frp token and a separate group key
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
   vars:

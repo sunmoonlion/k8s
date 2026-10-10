@@ -9,6 +9,8 @@ frpc_replicas: 2
 frpc_traefik_port: 443
 frpc_traefik_pod_port: 8443
 frpc_local_addr: 'traefik.{{ ingress_namespace }}.svc.cluster.local:{{ frpc_traefik_port }}'
+# 与 infrastructure/edge/config.yaml 的 edge_domains 同一份名单。代理名和组名取第一段。
+frpc_domains: [investment.sunmoonai.com, casdoor.sunmoonai.com, relay.sunmoonai.com]
 frpc_resources:
   requests: {cpu: 50m, memory: 64Mi}
   limits: {cpu: 500m, memory: 256Mi}
