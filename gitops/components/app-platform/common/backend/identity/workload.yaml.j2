@@ -51,6 +51,7 @@ spec:
             - {name: CASDOOR_INTERNAL_ENDPOINT, value: 'http://casdoor.{{ app_namespace }}.svc.cluster.local:8000'}
             - {name: CASDOOR_ORIGIN, value: 'https://{{ casdoor_hostname }}:30443'}
             - {name: CASDOOR_ORGANIZATION, value: '{{ cfg.identity_organization }}'}
+            - {name: CASDOOR_USER_ORGANIZATION, value: '{{ cfg.identity_user_organization }}'}
             - name: BROWSER_CLIENTS
               value: {{ browser_clients | to_json | to_json }}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
@@ -72,6 +73,7 @@ metadata: {name: {{ application_name }}-browser-identity, namespace: {{ app_name
 data:
   CASDOOR_ENDPOINT: 'https://{{ casdoor_hostname }}:30443'
   CASDOOR_ORGANIZATION: '{{ cfg.identity_organization }}'
+  WEB_CASDOOR_ORGANIZATIONS: '{{ cfg.identity_user_organization }}'
 {% for surface, client in browser_clients.items() %}
   {{ surface | upper }}_CASDOOR_APPLICATION: '{{ client.name }}'
   {{ surface | upper }}_CASDOOR_CLIENT_ID: '{{ client.client_id }}'

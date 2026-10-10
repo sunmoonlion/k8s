@@ -110,6 +110,7 @@
           - cfg.rabbitmq_queue == application_name + '.default'
           - cfg.rabbitmq_identity_revision is match('^[a-z0-9-]{1,16}$')
           - cfg.identity_organization == 'built-in'
+          - cfg.identity_user_organization == 'sunmoonai'
           - cfg.identity_revision is match('^[a-z0-9-]{1,16}$')
           - browser_clients.web.client_id != browser_clients.admin.client_id
           - browser_clients.web.name != browser_clients.admin.name
@@ -199,7 +200,7 @@
         - name: Verify actual login and session boundaries through only selected frontend routes
           ansible.builtin.command:
             argv: [/usr/bin/python3, '{{ playbook_dir }}/check-browser.py']
-            stdin: '{{ {"clients":selected_browser_clients,"provider":"https://" + casdoor_hostname + ":30443","organization":cfg.identity_organization,"username":"admin","password":(selected_browser_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password,"application":application_name,"ca_file":registry_config_dir + "/tls/ca.crt","entry_port":application_check_port | int} | to_json }}'
+            stdin: '{{ {"clients":selected_browser_clients,"provider":"https://" + casdoor_hostname + ":30443","organization":cfg.identity_organization,"user_organization":cfg.identity_user_organization,"username":"admin","password":(selected_browser_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password,"application":application_name,"ca_file":registry_config_dir + "/tls/ca.crt","entry_port":application_check_port | int} | to_json }}'
           register: selected_browser_result
           changed_when: false
           no_log: true
@@ -557,7 +558,7 @@
         - name: Verify real authorization callback SSR and security boundaries through the selected entry
           ansible.builtin.command:
             argv: [/usr/bin/python3, '{{ playbook_dir }}/check-browser.py']
-            stdin: '{{ {"clients":browser_clients, "provider":"https://" + casdoor_hostname + ":30443", "organization":cfg.identity_organization, "username":"admin", "password":(browser_acceptance_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password, "application":application_name, "ca_file":registry_config_dir + "/tls/ca.crt", "entry_port":application_check_port | int} | to_json }}'
+            stdin: '{{ {"clients":browser_clients, "provider":"https://" + casdoor_hostname + ":30443", "organization":cfg.identity_organization,"user_organization":cfg.identity_user_organization, "username":"admin", "password":(browser_acceptance_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password, "application":application_name, "ca_file":registry_config_dir + "/tls/ca.crt", "entry_port":application_check_port | int} | to_json }}'
           register: browser_acceptance
           changed_when: false
           no_log: true
