@@ -451,3 +451,20 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 **不用改、记一下：** `deny` 不要求码（拿到 id 必须先 lookup，可接受）；批准时轮换会合点身份在数据库事务里调外部，事务若在轮换后失败，旧代理会断开需再配对——第一期接受，卡 E 验收时观察。限速、日志脱敏、安装凭证用量（脚本 1 次 + 包 1 次 + 续传 3 次 = 5）、包路由都对。
 
 **改完：** 重跑全量（两个数据库变量都设上）、ruff、pyright（改到的文件）、lint-imports，回执补到卡 B 那份结果文件里，停下交审。审过后按上一条「排队」做边缘集群侧第 1 步（只读核实集群内解析），卡 C/D 之后再排。
+
+## 2026-10-10 · 卡 B 复审（后端 `304f8a3`）：通过；边缘第 1 步结论：不改 CoreDNS
+
+**卡 B 通过。** 远程独立工作树、真实 PostgreSQL（两个变量按上条设）：全量 **938 过、5 跳过、0 败**，数据库三例（并发一次性交付、待批上限、安装凭证次数）全过；ruff、import-linter 过。三处修正都对。你那边 HTTP 用例挂起：你的 shell 有 `HTTP(S)_PROXY`，测试客户端很可能被代理接走——以后在本机跑测试先 `env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy`，或照远程的结果为准。投资父仓指针 `98417b3` 已跟上。
+
+**边缘第 1 步（只读核实）结论：不需要固定集群解析。** 你的证据（三个名字在 Pod 里是 `127.0.0.1`）加远程查配置：集群内没有组件按这三个公网名连接——后端到 Casdoor 走 `*_BACKCHANNEL_ENDPOINT`（集群内 Service，公网名只当 Host 头），会合点走 `WORKBENCH_RELAY_ADMIN_URL` / 分配器 `RELAY_URL`，网页服务端走 `BACKEND_INTERNAL_URL`。SDD 0013 第五节第 1 条已改为这个结论；**不改 CoreDNS**。
+
+**下一张（交 Cursor 实现，在 luna 本地工作区、luna 分支）：边缘集群侧 frpc，SDD 0013 第五节第 2–5 条。**
+
+1. 组件 `gitops/components/ingress-platform/frpc/`（照 `traefik` 兄弟目录的写法：config/stage/workload.j2 + 渲染件）：Deployment 2 副本，`fatedier/frpc:v0.71.0` 按摘要钉住、经 Harbor 中转（同现有镜像中转做法）；只读根、非 root、drop ALL。
+2. 私有输入 `edge-frp.yaml`（键 `token`、`group_key`，部署链首次各生成 ≥48 字符随机，root 0600，格式与远程边缘读取一致：边缘只读 `token`）→ SOPS Secret。令牌不进日志、不进 Git 明文。
+3. frpc 配置照抄 `infrastructure/edge/smoke/frpc.toml.tmpl`（远程冒烟已验证）：`serverAddr=43.153.135.74`、`serverPort=7000`、`transport.tls.enable=true`、`loginFailExit=false`；三个 `http` 代理各一个 `customDomains`，同一 `loadBalancer.group` + `groupKey`；插件 `http2https`，`localAddr` = 集群 Traefik websecure Service 的集群内 DNS 名:端口，`requestHeaders.set.x-forwarded-proto="https"`，不设 `hostHeaderRewrite`。
+4. 集群 Traefik `websecure` 加 `forwardedHeaders.trustedIPs: [10.247.0.0/16]`（`infrastructure/cluster/config.yaml` 的 `cluster_pod_subnet`，从配置取，不硬写）。
+5. NetworkPolicy：frpc 只出站 `43.153.135.74/32:7000`、集群 Traefik、kube-dns；无入站。
+6. 不改任何应用 origin、回调、IngressRoute；不填后端 `WORKBENCH_TRUSTED_PROXY_CIDRS`（卡 E 一起做）。
+
+边缘 frps 还没启（等所有者令牌），frpc 发布后会一直重连，属预期；不得因此改成 `loginFailExit=true`。验收：渲染/门禁过、`make` 的 stage 检查过；本地提交后**停下交审**，审过再写发布卡。设计行不通就停下写证据。
