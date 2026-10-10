@@ -645,3 +645,29 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 4. 不发布到网页、不改集群。
 
 **交审前自查（以后每张卡都照这个对一遍）：** 版本号是否需要升、升了几处；从哪些旧版本升级、各自测了没有；失败时界面是否显示原因；用到的证书/文件/地址具体从哪取、是否与服务端逐字一致；回执里「已做 / 未做」写全。
+
+## 2026-10-10 · 卡 D（网页）交 Cursor：C2 验收完就接着做
+
+设计以 SDD 0012 第二节第 5 条和第三节卡 D 为准，下面是落到这个代码库的具体说法和两处设计更正。在 luna 本地工作区、luna 分支；investment-web-frontend 为主，investment-backend 有一处小改。
+
+**两处设计更正（以本节为准）：**
+1. **不做「先导入开发证书」那一步，也不显示 CA 指纹。** 理由：公网边缘中午已上线，外部用户经东京拿 Let's Encrypt 证书，`irm` 与浏览器都直接信任；只有所有者本机经 hosts 走本地集群，而那台早已导入。代理那头的随包 CA 已在 C1 解决。
+2. **核对页地址改对。** 后端 `agent_onboarding_routes.py` 现在拼 `web 前端地址 + /settings#computer`，但网页实际路径是 `/[locale]/workbench/settings`，且 `proxy.ts` 只对 `/` 和带语言前缀的路径做语言跳转——现在这个地址会 404。改成 `web 前端地址 + /zh-CN/workbench/settings#computer`（默认语言），后端测试跟着改；C2 的 `openableVerifyUrl` 只校验同源，无需改。
+
+**要做的（照现有 feature-sliced 结构，`features/machines` 并进 `features/settings`）：**
+
+| 项 | 落点与契约 |
+| --- | --- |
+| 「我的电脑」并进设置页，锚点 `#computer` | `workbench/settings/page.tsx` + `features/settings/ui/settings-screen.tsx`；原 `workbench/machines` 页改为跳到 `settings#computer`（保留旧链接不 404）；侧栏只留在线小点链接过去（`features/shell/ui/sidebar.tsx` 已有 `machineLight`）；各处「接入电脑」按钮（`components/workbench/connect-computer.tsx` 等）都指向这里 |
+| 这一节自上而下 | 在线状态与当前电脑 →「下载安装」→「连接一台电脑」→ 已接入电脑列表 →「高级」 |
+| 下载安装 | 显示版本、大小（`GET /api/workbench/agent/download` 的 `download`；为 null 时显示「下载暂未开放」）；主按钮**「复制安装命令」**：`POST /api/workbench/agent/install-command` → `{command, expires_at}`，复制到剪贴板并提示「在 PowerShell 里粘贴回车；10 分钟内有效、只能用一次」（以 `expires_at` 算剩余）；429 显示「点得太快了，稍等再试」 |
+| 连接一台电脑 | 输入 8 位码（自动大写、自动补 `-`，只收 `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`）→ `POST /api/workbench/agent-pairing/lookup` `{user_code}` → 确认卡片显示 `machine_name`、`os`、`agent_version`、`source_ip`、「N 秒前发起」，以及 `replaces_machine` 非空时的醒目提示「允许后，<旧电脑> 会断开」→「允许」`POST …/{id}/approve` `{user_code}` /「拒绝」`POST …/{id}/deny`；码不对或过期统一显示「码不对或已过期」；429 同上 |
+| 高级 | 折叠区：ZIP 备用下载（现有 `agent-download.tsx` 的直链与 SHA256）与「解除锁定」说明；「重新连接电脑」= 原「换代理令牌」移到这里并改名，旁边写清「会同时换掉电脑和云端沙箱的令牌：旧电脑断开，在跑的沙箱重启几十秒」，完成后按后端回的 `sandbox_rolled` 提示「云端沙箱已换用新令牌，正在重启」 |
+| 引导改三步 | `features/machines/model/onboarding.ts` / `guide.ts`：下载安装 → 在电脑上点「连接我的账号」并在这里输入码 → 选文件夹完成；完成状态由后端事实决定（有在线电脑即完成），去掉「我已下载」勾选 |
+| 沙箱块 | 只留「拉起 / 更新 / 回收」，不再有换令牌按钮 |
+
+**预览样例：** 由后端录制（照 `preview-mode` 的做法），补 `agent-download`、`install-command`、`lookup`（含有 / 无 `replaces_machine` 两种）、`approve` 的样例；三种预览场景（empty / full / offline）都要能看。
+
+**测试：** 组件测试覆盖：码输入规整与非法字符、lookup 失败统一句、替换提示出现与否、复制命令与剩余时间、下载为 null、429 文案、`#computer` 锚点滚动、旧 machines 路径跳转。Node 24。后端那处地址改动跑投资后端全量（两个数据库变量都设）。
+
+**交审前自查：** 版本 / 接口路径与后端逐字对过（列出你实际调用的 6 个路径）；失败时界面都有人话；旧链接不 404；三种预览场景截图各一张写进回执；「已做 / 未做」写全。只在本地提交到 luna 分支，不发布、不改集群，停下交审。
