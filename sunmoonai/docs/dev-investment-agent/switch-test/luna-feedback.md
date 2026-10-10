@@ -546,3 +546,9 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 **建议（可一起改，不强求）：** 三个 `.cmd` 用 `call :launch … %*` 转参，`call` 会把参数里的 `^` 加倍、`%` 再展开一次，以前直接调用没有这个问题。可以把 `:launch` 里那几行直接内联在主体里（`setlocal` 已有），去掉 `call`。
 
 **改完：** 重跑上面三项，回执补上（含先 build），停下交审。审过后组 0.2.2 包，所有者照回执「审过之后」五步在 Windows 上验收。C2 仍等。
+
+## 2026-10-10 · 卡 C1 复审（runtime luna `dcb3a10`）：通过，组 0.2.2
+
+**复现：** 临时工作树 `pnpm build && pnpm test` 200 通过、32 跳过；`tsc --noEmit` 通过；`bundle.test.mjs` 28 通过。两处必改都按要求改了：证书类五个码各一条测试；启动自检两边 `realpathSync.native`、win32 统一小写、打不开算不匹配，有同文件异写法通过、异文件拒绝的测试。`.cmd` 已去掉 `call`。
+
+**下一步：** 照 0.2.1 的组包流程（官方 `node.exe` + Windows 依赖目录），加 `--site agent/distribution/sites/dev-kind.json --ca-pem agent/distribution/sites/dev-kind-ca.pem` 组 0.2.2 包；记下 ZIP 与清单摘要，核对包里 `site/site.json` 的 `ca_sha256` = `79562e07…e1ef`。然后所有者照回执「审过之后」五步验收：停旧代理 → 保留配置卸载 0.2.1 → 装 0.2.2 → 去掉会话 `NODE_OPTIONS`（以及只为开发 CA 设的 `NODE_EXTRA_CA_CERTS`）→ 重启 → 代理自己连上。不发布到网页、不改集群。验收结果写进 C1 回执，停下交审。C2 等验收过再做。
