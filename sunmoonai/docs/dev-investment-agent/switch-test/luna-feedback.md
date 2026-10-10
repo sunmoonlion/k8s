@@ -468,3 +468,7 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 6. 不改任何应用 origin、回调、IngressRoute；不填后端 `WORKBENCH_TRUSTED_PROXY_CIDRS`（卡 E 一起做）。
 
 边缘 frps 还没启（等所有者令牌），frpc 发布后会一直重连，属预期；不得因此改成 `loginFailExit=true`。验收：渲染/门禁过、`make` 的 stage 检查过；本地提交后**停下交审**，审过再写发布卡。设计行不通就停下写证据。
+
+## 2026-10-10 · frpc 卡补充：令牌改由边缘生成（给 Cursor）
+
+东京边缘已启动（frps + Traefik），令牌文件由远程在边缘生成，所有者按 SDD 0013 第四节第 3 条拷到本机私有输入 `/etc/sunmoon/services/sunmoon-kind/edge-frp.yaml`（键 `token`、`group_key`）。所以 frpc 组件的私有输入处理改为：**文件已存在就原样使用，不得重新生成或改写**；只在文件不存在时才生成（开发重建用）。其余照「下一张」不变。
