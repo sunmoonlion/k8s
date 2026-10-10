@@ -592,3 +592,22 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 **一处观察（不算缺陷）：** 06:43 代理启动、06:47 才连上，约 5 分钟——重启后本地集群（WSL 里）要一会儿才起来，代理按退避重连，期间状态显示人话原因，符合设计。
 
 **C2 开始。** 内容照「卡 C（代理）交 Cursor」那节的 C2 一段和卡 B 契约表；另把 0.2.2 换包时撞到的两个缺陷一起修（「0.2.2 组包与本机替换审读」一节）：已安装目录以它自己的清单核验（`REQUIRED` 只管新包），带 0.2.1 形态清单的测试；残留 `tray-stop.json` 在记录的托盘进程已不在时清掉并视为已停，带测试。`install.ps1.tmpl` 的升级路径要能从 0.2.1 和 0.2.2 两种已装形态升上来。仍是只在本地提交到 luna 分支、不发布、不改集群；Windows 上要所有者动手的步骤开工时一次说清；做完停下交审。
+
+## 2026-10-10 · U1/U2（用户组织，SDD 0014）已由远程写好在 fable；**卡 E 验收后**由 Cursor 发布
+
+所有者要求今天全部做完，分工：Cursor 做 C2→D→E；远程并行写 U1、U2。**现在不要动 U，先做完 C2/D/E。**
+
+| 部分 | 位置 | 已验 |
+| --- | --- | --- |
+| U2 后端（组织把关） | 四个后端 fable：tpl `375b38e`、investment `7a28123`、info `5bdd4b2`、knowledge `77c643b`（父仓 gitlink 已同步） | 各自全量测试过（tpl 340、另三个 968 / 1158 / 870，均 0 失败）；ruff、lint-imports 过；pyright 只剩原有的 `_env_file` 一条 |
+| U1 GitOps | k8s fable `85920fea` | 模板与脚本语法过；**未在集群跑过**——第一次真跑就是你的发布 |
+
+**E 验收通过后，U 的发布步骤：**
+1. 把 fable 的这四个后端提交合进 luna 的对应后端（investment 那边 luna 上有卡 B，合并只碰 `auth_service.py`、`core/config.py`、`tests/test_auth_service.py` 三个文件，应无冲突；有冲突就停下）。合完各跑一次全量。
+2. 按常规 `application-stage` 四个应用（`identity_revision` 已升到 v3，identity Job 会新建）→ 提交 → 发布 → 晋级 → `application-check`。
+3. 核对点：identity Job 输出里 `user_organization: sunmoonai`、web 的 `migrated` 第一次为 `["web"]`、第二次为 `[]`；`application-check` 的浏览器检查输出 `web_member_organization: sunmoonai`、admin 的 `user_organization_denied: true`；检查结束后 Casdoor 的 sunmoonai 组织里**没有** `verify-` 开头的残留成员。
+4. 任何一步失败就停，带输出交审，不要手改 Casdoor。
+
+**之后所有者做 U3**（SDD 0014 第三节）。注意：发布后 admin **登不进网页端**了（Casdoor 按应用所属组织找人），网页端要用 sunmoonai 账号；admin 只用于管理后台。所有者那台的电脑代理要用新账号重新接一次（C2 的配对正好用上）。
+
+**另记：** `infrastructure/applications/tests/test_build_selection.py` 在 fable 上有 9 条原有失败（断言发布命令里不出现 `tpl-`，而命令本来就加载 tpl 配置），与 U 无关，未处理。
