@@ -727,3 +727,24 @@ B（后端配对）+ C（代理 0.2.4，包已在 `windows-agent-c2-20261010\sun
 3. 网页上发一句对话，确认工作 / 专家能碰到选中的文件夹。
 4. 再验三件：重启后自己在线；拿一个码不批准等它过期、窗口显示过期人话；拿一个码点「拒绝」、窗口显示拒绝人话。
 5. 结果原文进回执，停下交审。之后才轮到 U（用户组织）。
+
+## 2026-10-10 · 卡 E 第一段审读（k8s luna `7bae84c6`）：接线对，但缺镜像；所有者定 **E 与 U 合成一次发**
+
+**认可：** 0.2.4 包上传并读回（读写身份互相拒绝）；模板与 runtime `a878d14` 原件逐字节相同（我也核了：两边 SHA256 都是 `491035b6…6cfe`），`rstrip=False` 抓得好；六个占位符各一次、未被 Ansible 展开；HMAC 随机且原有四项不变；可信网段明文进 ConfigMap；你主动指出 identity v3 混进候选——对。
+
+**问题 1：候选里没有新镜像。** 运行镜像仍是 backend `a01db6f`、web `2095c04`——卡 B 的配对接口、卡 D 的网页都不在里面，这样发出去只有配置没有代码。必须先 `platform-build` 出新镜像、写进镜像锁，再 stage。
+
+**问题 2（所有者已定）：E 与 U 合成一次发。** U1 已在 luna 上（identity v3、网页挪进 `sunmoonai`），拆开反而要来回改。合发后所有者直接用自己的 sunmoonai 账号走 E 全程，代理一次就配在新账号下。
+
+**合发步骤（第一段重做，做完再停）：**
+1. **把 U2 摘进 luna 的四个后端**：在各后端 luna 分支 `git cherry-pick` fable 上的这一个提交——tpl `375b38e`、investment `7a28123`、info `5bdd4b2`、knowledge `77c643b`（各只改 `auth_service.py`、`core/config.py`、`tests/test_auth_service.py`）。有冲突就停。各跑全量（两个数据库变量都设）+ ruff（改到的文件）+ lint-imports。父仓 gitlink 跟上。
+2. **构建镜像**：投资 backend（含 B、D 小改、U2）与 web（`18e4268`）、资讯 backend、知识 backend、模板 backend（都含 U2）。按常规 `platform-build`，镜像锁更新。
+3. **stage 四个应用**：investment（含刚才的 0.2.4 / 模板 / HMAC / 网段接线，保留）、info、knowledge、tpl。每个应用的 identity 都会是 v3、`WEB_CASDOOR_ORGANIZATIONS=sunmoonai`。
+4. **停点 1（重做）**：回执里列出四个应用候选中的镜像摘要（对应的源码提交）、identity v3 与 `WEB_CASDOOR_ORGANIZATIONS` 是否齐、投资那几项接线是否还在。本地提交，停下给我看。
+
+**第二段（我回「可以发」之后）**按这个顺序：
+1. 发布 → 晋级四个应用 → 等 identity Job 完成：输出里 `user_organization: sunmoonai`，`migrated` 第一次为 `["web"]`。
+2. `application-check` 四个应用：浏览器检查应有 `web_member_organization: sunmoonai`、admin 的 `user_organization_denied: true`；结束后 sunmoonai 组织里没有 `verify-` 残留成员。
+3. **所有者建账号**（U3 前半）：Casdoor 管理界面 →「用户」→ 组织选 `sunmoonai` →「添加」→ 改名称 → 设初始密码 → 打开「需要更新密码」→ 保存。用它登录投资网页，按提示改密，进来是空工作区；用它打开投资管理后台应被拒；admin 仍能进管理后台。
+4. **E 全程用这个新账号**：所有者那台先用 0.2.4 卸载器 `--remove-config` 卸干净 → 网页「复制安装命令」→ PowerShell → 设置窗口「连接我的账号」→ 浏览器 `#computer` 输码 → 确认卡片 →「允许」→ 选文件夹 → 自启 →「已在线」→ 网页上拉起云端沙箱 → 发一句对话确认能碰到选中文件夹 → 重启后自己在线 → 一个码等过期、一个码点拒绝，各看窗口人话。顺带看 Traefik 访问日志与后端记的 `source_ip`。
+5. 结果原文进回执，停下交审。**U4（清 admin 试用数据）在我审过这份回执之后做。**
