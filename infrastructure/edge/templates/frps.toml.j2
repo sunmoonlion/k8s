@@ -4,6 +4,8 @@ bindPort = {{ edge_frps_port }}
 proxyBindAddr = "127.0.0.1"
 vhostHTTPPort = {{ edge_vhost_port }}
 vhostHTTPTimeout = 120
+# 隧道未接通或域名未注册时的页面：不暴露 frp 字样与版本。
+custom404Page = "/etc/frp/404.html"
 auth.method = "token"
 auth.token = "{{ '{{' }} .Envs.FRP_AUTH_TOKEN {{ '}}' }}"
 transport.tls.force = true

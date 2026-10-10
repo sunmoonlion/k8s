@@ -468,3 +468,22 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 6. 不改任何应用 origin、回调、IngressRoute；不填后端 `WORKBENCH_TRUSTED_PROXY_CIDRS`（卡 E 一起做）。
 
 边缘 frps 还没启（等所有者令牌），frpc 发布后会一直重连，属预期；不得因此改成 `loginFailExit=true`。验收：渲染/门禁过、`make` 的 stage 检查过；本地提交后**停下交审**，审过再写发布卡。设计行不通就停下写证据。
+
+## 2026-10-10 · frpc 卡补充：令牌改由边缘生成（给 Cursor）
+
+东京边缘已启动（frps + Traefik），令牌文件由远程在边缘生成，所有者按 SDD 0013 第四节第 3 条拷到本机私有输入 `/etc/sunmoon/services/sunmoon-kind/edge-frp.yaml`（键 `token`、`group_key`）。所以 frpc 组件的私有输入处理改为：**文件已存在就原样使用，不得重新生成或改写**；只在文件不存在时才生成（开发重建用）。其余照「下一张」不变。
+
+## 2026-10-10 · frpc 审读（k8s luna `94e7967d`，Cursor）：结构对，一处必须改，改完写发布卡
+
+组件结构、SOPS 私有输入、镜像钉摘要、Traefik `trustedIPs` 取 `cluster_pod_subnet`、NetworkPolicy（无入站；出站只到边缘 7000、Traefik 8443、kube-dns）都对。
+
+**必须改：两个副本代理同名，第二个会被 frps 拒绝。** 两副本用同一份配置，三个代理名完全相同。远程在东京用临时 frps 实测（frp 0.71.0）：第二个客户端 `start error: proxy [investment] already exists`，即只有一个副本真正在工作，互备是假的；给每个客户端加 `user = "<不同值>"` 后两个都 `start proxy success`。改法：
+- 容器加 `POD_NAME`（`valueFrom.fieldRef.fieldPath: metadata.name`）；frpc.toml 顶部加 `user = "{{ .Envs.POD_NAME }}"`（j2 里照 `auth.token` 那样转义）。
+- 代理名与组名去掉 `smoke-` 前缀：`investment` / `casdoor` / `relay`（冒烟名不进正式配置）。
+- 卡片写「代理名照冒烟」是远程没写清，责任在我；SDD 0013 第五节第 3 条已补。
+
+**令牌：不用改代码。** 你的部署链 02:06Z 已在所有者机器生成私有输入并进了 SOPS；远程 02:10Z 在边缘另生成了一份，两份不同。**以所有者机器的为准**：所有者把它拷到边缘（SDD 0013 第四节第 3 条），远程重启 frps。上一条「令牌改由边缘生成」作废。
+
+**另查一项：** `upstream-images.lock.json` 的 frpc 条目没有 `config_digest` / `compressed_layer_bytes`。查发布链（镜像中转、离线包）是否要这两项；要的话用其它镜像同样的工具从上游取实值，不要空着或编。
+
+**改完：** 本地提交后写一张 Cursor 发布卡（镜像中转到 Harbor `platform/frpc` → stage → flux-release → promote → apply → checks），验收写清：两个 frpc Pod Running；frps 日志三个代理组各两个成员；手机流量打开 `https://investment.sunmoonai.com:30443` 出现登录页。**发布前提：**所有者已把令牌拷到边缘、远程已确认 frps 换好令牌。写完停下交审。

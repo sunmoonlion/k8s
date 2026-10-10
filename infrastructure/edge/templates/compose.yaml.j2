@@ -13,7 +13,9 @@ services:
     image: {{ edge_images.frps }}
     command: [-c, /etc/frp/frps.toml]
     env_file: [{{ edge_config_dir }}/frp.env]
-    volumes: ["{{ edge_config_dir }}/frps.toml:/etc/frp/frps.toml:ro"]
+    volumes:
+      - "{{ edge_config_dir }}/frps.toml:/etc/frp/frps.toml:ro"
+      - "{{ edge_config_dir }}/404.html:/etc/frp/404.html:ro"
   traefik:
     <<: *hardening
     image: {{ edge_images.traefik }}
