@@ -748,3 +748,13 @@ B（后端配对）+ C（代理 0.2.4，包已在 `windows-agent-c2-20261010\sun
 3. **所有者建账号**（U3 前半）：Casdoor 管理界面 →「用户」→ 组织选 `sunmoonai` →「添加」→ 改名称 → 设初始密码 → 打开「需要更新密码」→ 保存。用它登录投资网页，按提示改密，进来是空工作区；用它打开投资管理后台应被拒；admin 仍能进管理后台。
 4. **E 全程用这个新账号**：所有者那台先用 0.2.4 卸载器 `--remove-config` 卸干净 → 网页「复制安装命令」→ PowerShell → 设置窗口「连接我的账号」→ 浏览器 `#computer` 输码 → 确认卡片 →「允许」→ 选文件夹 → 自启 →「已在线」→ 网页上拉起云端沙箱 → 发一句对话确认能碰到选中文件夹 → 重启后自己在线 → 一个码等过期、一个码点拒绝，各看窗口人话。顺带看 Traefik 访问日志与后端记的 `source_ip`。
 5. 结果原文进回执，停下交审。**U4（清 admin 试用数据）在我审过这份回执之后做。**
+
+## 2026-10-10 · 追加（E 第一段一起做）：托盘与设置窗口在隐藏启动时打不开 → 出 0.2.5
+
+**所有者实测：** 0.2.4 上 `sunmoon-agent.cmd menu` 回 `{"action":"tray","started":false}`，但没有托盘、也查不到 `desktop.ps1 -Action tray` 进程；同一脚本用 PowerShell 前台喂同样的 stdin JSON 跑，托盘正常出现。
+
+**根因（`resident.ts` `openDesktop`）：** 子进程 `spawn` 一触发就 `resolve()`，`main()` 随即返回，`cli.ts` 末尾 `process.exit(code)` 立刻退出——写给 PowerShell 的 stdin JSON 还没写完就被丢掉。`desktop.ps1` 读到空输入就退出。`runTray` 等子进程退出所以没事；`openDesktop` 是 C2 新加的，**`menu` 的托盘与「连接我的账号」设置窗口（`onboard`）都走它**——也就是安装脚本最后一步弹窗、开始菜单入口、托盘「重新连接账号」以外的入口全受影响；新用户装完会什么窗口都没有，E 全程第一步就卡住。0.2.3/0.2.4 验收时窗口都是用 `desktop.ps1` 直接起的，所以没测到。
+
+**改法：** `openDesktop` 在 `child.stdin.end(data, callback)` 的回调（或 stdin `finish`）之后再 `unref()` + `resolve()`；加一条测试：注入假的 spawn，断言 stdin 写完之前 promise 不会 resolve。顺带检查别处有没有「spawn 后马上返回、再 process.exit」的同样写法。
+
+**版本与发行：** 出 **0.2.5**（三处），重新组包、`agent-release-verify` + `upload`，`agent-releases/config.yaml` 换成 0.2.5 的对象键 / 两个摘要 / 大小 / 源码提交；模板没变则不用动。**Windows 实测必须走真实入口**：`sunmoon-agent.cmd menu`（有令牌 → 托盘出现）和一个无令牌的临时状态目录跑 `menu`（→ 设置窗口出现），不能再用 `desktop.ps1` 直接起来代替。结果写进 E 第一段回执，一起停下给我看。
