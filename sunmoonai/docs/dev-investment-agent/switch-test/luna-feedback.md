@@ -507,3 +507,28 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 **发布前提已满足：** 所有者已于 10:35 把本机 `edge-frp.yaml` 拷到边缘，远程已 `make edge-deploy` 让 frps 换上（frps 运行中，日志无令牌）。边缘正式证书已签，外部访问现在是 404（等 frpc）。
 
 **改完直接按发布卡 `inbox/2026-10-10-36-frpc-release.md` 执行**（本条即远程审读通过；所有者通知你开始）。发布卡第 1 步的「令牌交接已确认」以本条为准。回执交回后远程核 frps 日志里三个组各两个成员。
+
+## 2026-10-10 · 卡 C（代理）交 Cursor：分两段，各停一次
+
+公网边缘中午已上线（外部用户经东京拿 Let's Encrypt 证书；所有者本机经 hosts 直连本地集群拿开发 CA 证书——**同一域名两种证书**）。所以开发站点的包仍是 `trust.mode = bundled-ca`：系统库（`--use-system-ca`）+ 随包开发 CA（`NODE_EXTRA_CA_CERTS`）同时信任，两条路都能连。不导入 Windows 证书库。设计以 SDD 0012 第二节第 1、2、4 节和第三节卡 C 为准。在 luna 本地工作区、luna 分支；先读 runtime `CHECKPOINT.md`。
+
+**C1（先做，做完停下交审；审过可单独出 0.2.2 让所有者那台先稳定）：**
+- 包内 `site/site.json` + `site/ca.pem`（组包按环境写入，进清单受摘要保护；`ca_sha256` 为 DER 的 SHA-256 全长）。
+- 所有 Node 入口（托盘、设置窗口、后台、开始菜单、自启、`install`）统一一种启动方式：`node.exe --use-system-ca`，`NODE_EXTRA_CA_CERTS` 指安装目录 `site\ca.pem`（`bundled-ca` 时），不依赖用户会话里的 `NODE_OPTIONS`。
+- 错误说人话：SDD 第 4 节映射表逐条实现并逐条有测试；日志、`status.lastError`、托盘、设置窗口一致，带原始错误码，不带令牌。
+- 验收：Linux 全测；Windows 上所有者那台去掉会话里的 `NODE_OPTIONS` 后重启电脑，代理自己连上（开发 CA 经随包 CA 信任）。
+
+**C2（C1 审过再做）：** `pair` 命令、设置窗口四步、开始菜单与自启默认开、`install.ps1.tmpl`（含升级：旧版 stop → 保留配置卸载 → 装新版；同版本只打开托盘/设置；不得绕过「已安装不能覆盖」保护）。
+
+**与卡 B 后端（`304f8a3`）的契约，照这个对接，不要猜：**
+
+| 项 | 契约 |
+| --- | --- |
+| 建请求 `POST /api/agent-pairing/requests` | 体（严格，多字段 422）：`machine_name`、`os`、`agent_version`、`codex_version`（各 1–128/64 可打印字符）、`device_secret_sha256`（小写 hex 64）。回 `request_id`、`user_code`（`XXXX-XXXX`）、`expires_in`=300、`interval`=3、`verify_url`（= 网页 `/settings#computer`，不带码） |
+| `device_secret` | 32–128 位 `[A-Za-z0-9_-]`；`device_secret_sha256` = 它的 ASCII 的 SHA-256 |
+| 轮询 `POST …/requests/{id}/poll` | 体 `{"device_secret": …}`。回 `{"status":"pending"}`；`approved` 时同时回 `relay_url`、`relay_user`、`agent_token`、`agent_token_expires_at`（**只这一次**，之后回 `delivered`）；`denied` / `cancelled` / `expired`；快于 3 秒回 **429** `slow_down`（退避后再轮询，不算失败）；秘密不对或不存在 **404**；未配置 **503** |
+| 取消 `POST …/requests/{id}/cancel` | 体同轮询；pending 才取消，否则回当前状态 |
+| 写配置 | 拿到后写 `config.json`（`relayUrl`、`userId`=`relay_user`、`token`），格式与 `init` 相同；令牌不进日志、不进退出输出 |
+| `install.ps1.tmpl` 占位符 | 后端严格替换：`{{PACKAGE_URL}}`、`{{VERSION}}`、`{{SIZE_BYTES}}`、`{{ZIP_SHA256}}`、`{{MANIFEST_SHA256}}`、`{{CODEX_VERSION}}` **每个恰好出现一次**，模板里不得有其它 `{{大写}}` 形式，否则后端拒绝渲染（404）。包地址每次请求都消耗凭证次数（共 5 次：脚本 1 + 包 1 + 续传最多 3） |
+
+规矩照旧：只在本地提交到 luna 分支；不发布、不改集群；每段做完停下交审；设计行不通就停下写证据。Windows 上要所有者动手的步骤，开工时一次说清。
