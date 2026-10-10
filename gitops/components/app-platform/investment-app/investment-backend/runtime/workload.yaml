@@ -38,6 +38,7 @@ data:
   WORKBENCH_SANDBOX_PROVIDER_BASE_URL: "https://api.moonshot.cn/v1"
   WORKBENCH_RECORDS_MCP_ENABLED: "true"
   WORKBENCH_RECORDS_MCP_URL: "http://investment-api.app-platform-dev.svc.cluster.local:8000/api/mcp/workbench"
+  WORKBENCH_TRUSTED_PROXY_CIDRS: "127.0.0.1/32,10.247.0.0/16"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -70,7 +71,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 77da779461b1829c7b22fe774886a55a422022c61d9ee44b26925992700b1b76
+        sunmoonai.com/config-sha256: 19a72229cb6deefc873a07cca21fd3b4f20a1a521ce84b94e9df7c19bf22393e
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -135,7 +136,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 77da779461b1829c7b22fe774886a55a422022c61d9ee44b26925992700b1b76
+        sunmoonai.com/config-sha256: 19a72229cb6deefc873a07cca21fd3b4f20a1a521ce84b94e9df7c19bf22393e
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -192,7 +193,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 77da779461b1829c7b22fe774886a55a422022c61d9ee44b26925992700b1b76
+        sunmoonai.com/config-sha256: 19a72229cb6deefc873a07cca21fd3b4f20a1a521ce84b94e9df7c19bf22393e
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -249,7 +250,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 77da779461b1829c7b22fe774886a55a422022c61d9ee44b26925992700b1b76
+        sunmoonai.com/config-sha256: 19a72229cb6deefc873a07cca21fd3b4f20a1a521ce84b94e9df7c19bf22393e
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]

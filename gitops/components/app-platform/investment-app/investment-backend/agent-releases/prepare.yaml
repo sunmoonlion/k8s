@@ -78,6 +78,7 @@
     agent_release_root: '{{ agent_release_bootstrap.results[0].content | b64decode | from_yaml }}'
     agent_release_runtime:
       WORKBENCH_AGENT_DOWNLOAD: '{{ (agent_release_descriptor if investment_agent_releases.download_available | bool else none) | to_json }}'
+      WORKBENCH_AGENT_INSTALL_SCRIPT_TEMPLATE: "{{ lookup('file', component_root + '/agent-releases/install.ps1.tmpl', rstrip=False) }}"
       WORKBENCH_AGENT_RELEASE_STORAGE: '{{ dict(endpoint="https://object-storage." + data_namespace + ".svc.cluster.local:" + object_storage_port | string, region=object_storage_region, ca_file="/etc/sunmoon/agent-releases/ca.crt", access_key=investment_agent_releases.reader, secret_key=agent_release_private.reader_secret) | to_json }}'
       ca.crt: '{{ agent_release_bootstrap.results[1].content | b64decode }}'
   no_log: true

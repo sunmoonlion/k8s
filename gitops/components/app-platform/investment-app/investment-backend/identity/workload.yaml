@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'investment-identity-provision-v2', namespace: app-platform-dev}
+metadata: {name: 'investment-identity-provision-v3', namespace: app-platform-dev}
 data:
   provision.py: |
     """Register the two browser clients through Casdoor's supported API."""
@@ -23,16 +23,22 @@ data:
         origin = os.environ['CASDOOR_ORIGIN']
         endpoint = os.environ['CASDOOR_INTERNAL_ENDPOINT']
         organization = os.environ['CASDOOR_ORGANIZATION']
+        # Decision D21 / SDD 0014: people sign in to web clients from one user organization;
+        # admin clients stay in built-in, whose every member is a Casdoor global administrator.
+        user_organization = os.environ['CASDOOR_USER_ORGANIZATION']
         definitions = json.loads(os.environ['BROWSER_CLIENTS'])
         secrets = json.loads(Path('/run/app/clients.json').read_text())
         initialization = json.loads(Path('/run/admin/init_data.json').read_text())
         admins = [u for u in initialization['users'] if u['owner'] == 'built-in' and u['name'] == 'admin']
         require(len(admins) == 1 and organization == 'built-in', 'Unexpected administrator or organization')
+        require(user_organization == 'sunmoonai', 'Unexpected user organization')
+        surface_organization = {'admin': organization, 'web': user_organization}
         require(set(definitions) == {'web', 'admin'}, 'Both browser surfaces are required')
         require(definitions['web']['client_id'] != definitions['admin']['client_id'], 'Browser clients must differ')
         require(secrets['web_secret'] != secrets['admin_secret'], 'Browser secrets must differ')
         created = []
         checked = []
+        migrated = []
         with httpx.Client(base_url=endpoint, headers={'Origin': origin}, trust_env=False, timeout=15) as client:
             def api(method, path, payload=None, params=None):
                 response = client.request(method, path, json=payload, params=params)
@@ -45,6 +51,22 @@ data:
                                      'username': 'admin', 'password': admins[0]['password'], 'type': 'login'})
             baseline = api('GET', '/api/get-application', params={'id': 'admin/app-built-in'})
             require(baseline and baseline['cert'], 'Existing Casdoor signing certificate missing')
+            # Every application provisions the same user organization; concurrent jobs may race
+            # on creation, so a failed add is accepted only when a re-read shows the exact org.
+            desired_org = {'owner': 'admin', 'name': user_organization, 'displayName': 'SunMoonAI',
+                           'passwordType': 'bcrypt', 'passwordOptions': ['AtLeast8'],
+                           'enableSoftDeletion': False}
+            org = api('GET', '/api/get-organization', params={'id': 'admin/' + user_organization})
+            if org is None:
+                try:
+                    api('POST', '/api/add-organization',
+                        dict(desired_org, createdTime=datetime.now(timezone.utc).isoformat()))
+                    created.append('user_organization')
+                except RuntimeError:
+                    pass
+                org = api('GET', '/api/get-organization', params={'id': 'admin/' + user_organization})
+            require(org and all(org.get(k) == v for k, v in desired_org.items()),
+                    'Existing user organization differs; explicit migration required')
             for surface, config in definitions.items():
                 for name in ('name', 'client_id'):
                     require(re.fullmatch(r'[a-z][a-z0-9-]{2,79}', config[name]), 'Invalid browser identity')
@@ -53,7 +75,7 @@ data:
                         not frontend.password and not frontend.query and not frontend.fragment and frontend.path in ('', '/'),
                         'Frontend origin must be an exact HTTPS origin')
                 desired = {
-                    'owner': 'admin', 'name': config['name'], 'organization': organization,
+                    'owner': 'admin', 'name': config['name'], 'organization': surface_organization[surface],
                     'description': 'sunmoon:investment:' + surface + ':managed-by-gitops',
                     'displayName': 'SunMoon template ' + surface, 'category': 'Default', 'type': 'Web',
                     'clientId': config['client_id'], 'clientSecret': secrets[surface + '_secret'],
@@ -74,6 +96,15 @@ data:
                     require(added == 'Affected', 'Application was not created')
                     created.append(surface)
                     existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
+                drift = {k for k, v in desired.items() if existing.get(k) != v}
+                if drift == {'organization'} and surface == 'web' and existing.get('organization') == organization:
+                    # The only migration allowed here: a web client registered before SDD 0014
+                    # moves from built-in to the user organization. Anything else still stops.
+                    moved = api('POST', '/api/update-application', dict(existing, organization=user_organization),
+                                params={'id': 'admin/' + config['name'], 'columns': 'organization'})
+                    require(moved == 'Affected', 'Web application was not moved')
+                    migrated.append(surface)
+                    existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
                 require(existing and all(existing.get(k) == v for k, v in desired.items()),
                         'Existing browser application differs; explicit migration required')
                 checked.append(surface)
@@ -87,7 +118,8 @@ data:
                 require(value.scheme + '://' + value.netloc == origin, 'OIDC endpoint origin mismatch')
             response = client.get(urlsplit(discovery['jwks_uri']).path)
             require(response.status_code == 200 and response.json().get('keys'), 'OIDC verification keys missing')
-        print(json.dumps({'browser_clients': sorted(checked), 'created': created,
+        print(json.dumps({'browser_clients': sorted(checked), 'created': created, 'migrated': migrated,
+                          'user_organization': user_organization, 'admin_organization': organization,
                           'distinct_identities': True, 'exact_redirects': True, 'client_secrets_match': True,
                           'authorization_code_only': True, 'signup_disabled': True,
                           'issuer': origin, 'pkce_s256': True, 'jwks_available': True,
@@ -127,7 +159,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'investment-identity-4cf3a9391d0a-v2', namespace: app-platform-dev}
+metadata: {name: 'investment-identity-4cf3a9391d0a-v3', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -148,6 +180,7 @@ spec:
             - {name: CASDOOR_INTERNAL_ENDPOINT, value: 'http://casdoor.app-platform-dev.svc.cluster.local:8000'}
             - {name: CASDOOR_ORIGIN, value: 'https://casdoor.sunmoonai.com:30443'}
             - {name: CASDOOR_ORGANIZATION, value: 'built-in'}
+            - {name: CASDOOR_USER_ORGANIZATION, value: 'sunmoonai'}
             - name: BROWSER_CLIENTS
               value: "{\"web\": {\"name\": \"sunmoonai-investment-web\", \"client_id\": \"sunmoon-kind-investment-web\", \"origin\": \"https://investment.sunmoonai.com:30443\"}, \"admin\": {\"name\": \"sunmoonai-investment-admin\", \"client_id\": \"sunmoon-kind-investment-admin\", \"origin\": \"https://investment-admin.sunmoonai.com:30443\"}}"
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
@@ -158,7 +191,7 @@ spec:
             - {name: app, mountPath: /run/app, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: script, configMap: {name: 'investment-identity-provision-v2'}}
+        - {name: script, configMap: {name: 'investment-identity-provision-v3'}}
         - {name: admin, secret: {secretName: casdoor-initial-identity, items: [{key: init_data.json, path: init_data.json}], defaultMode: 0440}}
         - {name: app, secret: {secretName: investment-identity-provision, defaultMode: 0440}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}
@@ -169,6 +202,7 @@ metadata: {name: investment-browser-identity, namespace: app-platform-dev}
 data:
   CASDOOR_ENDPOINT: 'https://casdoor.sunmoonai.com:30443'
   CASDOOR_ORGANIZATION: 'built-in'
+  WEB_CASDOOR_ORGANIZATIONS: 'sunmoonai'
   WEB_CASDOOR_APPLICATION: 'sunmoonai-investment-web'
   WEB_CASDOOR_CLIENT_ID: 'sunmoon-kind-investment-web'
   WEB_CASDOOR_REDIRECT_URI: 'https://investment.sunmoonai.com:30443/api/auth/web/callback'
