@@ -569,3 +569,18 @@ Cursor 回执 `agent-release-hosting-cursor.20261009-1358.md` 停在 A 之前是
 
 - **新卸载器认不出旧安装。** `bundle.mjs` 的 `REQUIRED` 是写死的当前版本文件表，0.2.2 卸载器核验 0.2.1 安装目录就因缺 `installer/launch.mjs` 报 `Incomplete or oversized bundle`。核验已安装目录应以**该目录自己的清单**为准（清单摘要已保护完整性），`REQUIRED` 只用于组包和首次安装的新包。加测试：用 0.2.1 形态的清单（无 `launch.mjs`、无 `site/`）走保留配置卸载，应成功。
 - **残留的托盘控制文件挡住第二次卸载。** 托盘进程已不在时 `tray-stop.json` 留着，下次 `tray stop` 被拒，只能手删。`tray stop` 应在确认记录的托盘进程已不存在时清掉残留文件并视为已停。加测试。
+
+## 2026-10-10 · C1 隔离验证没过：随包的是旧系统的 CA，换成新集群的「SunMoon Registry Local CA」
+
+**结论：** 隔离验证起了作用。甲（只信随包 CA）失败 `UNABLE_TO_VERIFY_LEAF_SIGNATURE`，证书链读出来叶子 `CN=relay.sunmoonai.com` 的签发者是 `CN=SunMoon Registry Local CA`；包里的 `CN=SunMoonAI Root CA`（2026-05 签发）是**旧 sunmoonai 系统**的根，与新集群无关。之前连得上全靠 `--use-system-ca` 读到 Windows 证书库里所有者早已导入的新 CA。代码没问题，**错的是 `dev-kind-ca.pem` 这个文件**（交卡时我没写明取哪个文件，有我的责任）。
+
+**新集群的 CA 是哪张：** 由 `infrastructure/registry/tasks/secrets.yaml`「Create a private local CA once」生成：自签、`CN=SunMoon Registry Local CA`、`CA:TRUE, pathlen:0`，证书在所有者机器（跑集群的那台）`/etc/sunmoon/registry/tls/ca.crt`。**只取 `ca.crt`；同目录的 `ca.key` 是私钥，不读、不复制、不进任何地方。**
+
+**改法（C1 补丁，仍是本地提交、停下交审）：**
+1. 在所有者机器上用 sudo 只读 `/etc/sunmoon/registry/tls/ca.crt`，先核：`openssl x509 -noout -subject -issuer -ext basicConstraints` 主题=签发者=`SunMoon Registry Local CA`、`CA:TRUE`；文件里没有 `PRIVATE KEY`。再核它确实签了现网叶子：`openssl s_client -connect 127.0.0.1:30443 -servername relay.sunmoonai.com -CAfile <这张> </dev/null` 看到 `Verify return code: 0 (ok)`。`investment.sunmoonai.com` 同样核一次。
+2. 用它替换 `agent/distribution/sites/dev-kind-ca.pem`；测试里写死的 DER 指纹改成新值，回执记新指纹。仓库里不再留旧根。
+3. 版本仍是 **0.2.2**（未发布，只在所有者这台装过），用新源码提交重新组包，记新 ZIP / 清单摘要。
+4. 所有者这台：停代理 → 用 0.2.2 卸载器保留配置卸载（两版都有 `launch.mjs`，这次能认）→ 装新包 → **重做甲 / 乙**：甲必须成功 `authorized=true`、签发者 `SunMoon Registry Local CA`；乙必须失败。
+5. 然后再做重启自启那项（若所有者已经按刚才的话重启过，结果照记，但以换包后的这一次为准）：`status` 0.2.2 connected、后台命令行带 `--use-system-ca`、`NODE_EXTRA_CA_CERTS` 指向安装目录 `site\ca.pem`、托盘能打开查看状态与设置。
+
+**顺带：** 卡 D 网页上「开发站点显示 CA 指纹」用的也是这张新 CA 的指纹，不是旧根。两个卸载缺陷仍留给 C2，C2 仍不开始。
