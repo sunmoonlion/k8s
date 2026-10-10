@@ -1178,6 +1178,24 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
+metadata: {name: frpc, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/ingress-platform/frpc
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: traefik}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
 metadata: {name: traefik, namespace: flux-system}
 spec:
   interval: 5m

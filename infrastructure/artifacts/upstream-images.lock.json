@@ -715,6 +715,17 @@
       "config_digest": "sha256:38255b6f6ce728ddf73d8238dfa939a3d98ed7e3d1436b7bc94ea2bbca7950b9",
       "compressed_layer_bytes": 53916089,
       "material_owner": "components/data-platform/elk"
+    },
+    {
+      "id": "frpc",
+      "group": "ingress",
+      "source": "docker.io/fatedier/frpc:v0.71.0",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee",
+      "reference": "docker.io/fatedier/frpc@sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee",
+      "material_owner": "components/ingress-platform/frpc",
+      "selection_note": "Manifest digest is the smoke-verified pin in infrastructure/edge/config.yaml. config_digest and compressed_layer_bytes are not in that pin and are not invented here."
     }
   ],
   "offline_ready": false,

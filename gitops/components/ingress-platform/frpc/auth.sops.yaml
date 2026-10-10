@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: frpc-auth
+    namespace: ingress-platform-dev
+stringData:
+    FRP_AUTH_TOKEN: ENC[AES256_GCM,data:nCgoLUPzX5N2uUJvyZeTbTBndQHiiJMmU6Vu7Z6x6UUReD+4mUw6SsTbOohWNSeQ,iv:nd0h3ZoUcftsDM9VayjJN1z/Q2DNpKr54oMt6bJPdB4=,tag:5inu6aDEKOPmLe1u88s+IQ==,type:str]
+    FRP_GROUP_KEY: ENC[AES256_GCM,data:3nc39LvUUdsAJ+kaKB0NN4u3W+fyq0iNQ3XHXwJfGvthrXOyMVrj+pZtUUbQrxHa,iv:425YUzeDdf7TsT9xQSh21piYjii9FRjaUYmbR7o+zic=,tag:3gLSvjuDciMZO2SX34KazA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBSbE1yZTVlUDRqQTlTaEla
+            b2VxeVdaV240UnRGY1c5RmhrYy9OM1A0cFRBCmVmYTN4c0dmTmt2UXN6NjdZYkkx
+            Mjc1bUFtaVdJYnFoZUVYWnlOZTk5bGMKLS0tIEs2Tmlzck1PbzdMNFlvWjhRMGFm
+            SGdmbWhpM0p1VWdqdVBHTnUzSVNSSFEKcvJAzF5FAbyDqT1JzGPhcLSGsZp2p3dk
+            OriISmWQx0LqwaCpnKhwZyyhb6bVwM6vZEFXYGS3y18WH9Vv7uwbZg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-10T02:06:42Z"
+    mac: ENC[AES256_GCM,data:8LrxAf/WddjAiEFkomm6eXo9i5fjitV+mGcq8c8GU82H6vZFWQPR3hzgazhwwu8fGJAUR4ZeYgyYW+wjltM3DMJfBCLSVbT6xsydif0bwnHJydCBU5b37RlKWU0F6eQuXwKDckp8xbOaW6S9YIEV9r3aT9HGGQUI4zVDyo9J1M0=,iv:VGVyzS0dsQ+RqFW1oaOCzrlbolAehVUYSGX22IsqQDA=,tag:6k/e+xQHaJr5051I+HimCw==,type:str]
+    version: 3.13.3

@@ -1,0 +1,54 @@
+---
+- name: Validate the pinned frpc identity and edge address
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_ingress_enabled | bool
+      - services_frpc_enabled | bool
+      - frpc_replicas | int == 2
+      - frpc_server_addr == '43.153.135.74'
+      - frpc_server_port | int == 7000
+      - frpc_traefik_port | int == 443
+      - frpc_traefik_pod_port | int == 8443
+      - frpc_local_addr == 'traefik.' + ingress_namespace + '.svc.cluster.local:443'
+      - image_map.frpc.manifest_digest == 'sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee'
+      - image_map.frpc.reference.endswith('@' + image_map.frpc.manifest_digest)
+      - cluster_pod_subnet is match('^[0-9.]+/[0-9]+$')
+- name: Prepare the recoverable frp token and a separate group key
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: edge-frp
+    component_input_manifest: ingress-platform/frpc/auth.sops.yaml
+    component_initial_input:
+      token: '{{ lookup("password","/dev/null",length=48,chars=["ascii_letters","digits"]) }}'
+      group_key: '{{ lookup("password","/dev/null",length=48,chars=["ascii_letters","digits"]) }}'
+  no_log: true
+- name: Keep frp credentials only in memory
+  ansible.builtin.set_fact: {frpc_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Require separate strong frp secrets
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - frpc_credentials.token is match('^[A-Za-z0-9]{48}$')
+      - frpc_credentials.group_key is match('^[A-Za-z0-9]{48}$')
+      - frpc_credentials.token != frpc_credentials.group_key
+      - frpc_credentials.keys() | list | sort == ['group_key', 'token']
+  no_log: true
+- name: Encrypt the frp token without writing plaintext into Git
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: ingress-platform/frpc/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: frpc-auth, namespace: '{{ ingress_namespace }}'}
+        stringData:
+          FRP_AUTH_TOKEN: '{{ frpc_credentials.token }}'
+          FRP_GROUP_KEY: '{{ frpc_credentials.group_key }}'
+  no_log: true
+- name: Derive the frpc rollout identity
+  ansible.builtin.set_fact:
+    frpc_input_digest: '{{ [frpc_credentials.token, frpc_credentials.group_key, image_map.frpc.manifest_digest] | to_json | hash("sha256") }}'
+  no_log: true

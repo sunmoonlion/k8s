@@ -86,6 +86,7 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/messaging-platform/rabbitmq/config.yaml \
 	../gitops/components/messaging-platform/rabbitmq/ui/config.yaml \
 	../gitops/components/ingress-platform/traefik/config.yaml \
+	../gitops/components/ingress-platform/frpc/config.yaml \
 	../gitops/components/ingress-platform/traefik/service-access/config.yaml \
 	../gitops/components/app-platform/auth-app/casdoor/config.yaml \
 	../gitops/components/ops-platform/pgadmin/config.yaml \

@@ -61,7 +61,7 @@ spec:
       spec: {externalTrafficPolicy: Cluster}
     ports:
       web: {expose: {default: false}}
-      websecure: {nodePort: 30443}
+      websecure: {nodePort: 30443, forwardedHeaders: {trustedIPs: ['10.247.0.0/16']}}
     resources:
       requests: {cpu: 100m, memory: 128Mi}
       limits: {cpu: '1', memory: 512Mi}

@@ -1,0 +1,14 @@
+# 集群侧 frpc（SDD 0013 第五节）。令牌与 groupKey 在私有输入 edge-frp.yaml，不在这里。
+---
+services_frpc_enabled: true
+frpc_server_addr: 43.153.135.74
+frpc_server_port: 7000
+frpc_replicas: 2
+# Service 端口是 chart 的 exposedPort。现场 Service websecure=443，容器监听是 8443。
+# 出站策略打到 Traefik Pod，端口用容器监听端口。
+frpc_traefik_port: 443
+frpc_traefik_pod_port: 8443
+frpc_local_addr: 'traefik.{{ ingress_namespace }}.svc.cluster.local:{{ frpc_traefik_port }}'
+frpc_resources:
+  requests: {cpu: 50m, memory: 64Mi}
+  limits: {cpu: 500m, memory: 256Mi}

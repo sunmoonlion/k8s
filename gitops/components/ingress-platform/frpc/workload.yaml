@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: frpc, namespace: ingress-platform-dev}
+data:
+  frpc.toml: |
+    serverAddr = "43.153.135.74"
+    serverPort = 7000
+    auth.method = "token"
+    auth.token = "{{ .Envs.FRP_AUTH_TOKEN }}"
+    transport.tls.enable = true
+    loginFailExit = false
+    log.to = "console"
+    log.level = "info"
+
+    [[proxies]]
+    name = "smoke-investment"
+    type = "http"
+    customDomains = ["investment.sunmoonai.com"]
+    loadBalancer.group = "smoke-investment"
+    loadBalancer.groupKey = "{{ .Envs.FRP_GROUP_KEY }}"
+    [proxies.plugin]
+    type = "http2https"
+    localAddr = "traefik.ingress-platform-dev.svc.cluster.local:443"
+    requestHeaders.set.x-forwarded-proto = "https"
+
+    [[proxies]]
+    name = "smoke-casdoor"
+    type = "http"
+    customDomains = ["casdoor.sunmoonai.com"]
+    loadBalancer.group = "smoke-casdoor"
+    loadBalancer.groupKey = "{{ .Envs.FRP_GROUP_KEY }}"
+    [proxies.plugin]
+    type = "http2https"
+    localAddr = "traefik.ingress-platform-dev.svc.cluster.local:443"
+    requestHeaders.set.x-forwarded-proto = "https"
+
+    [[proxies]]
+    name = "smoke-relay"
+    type = "http"
+    customDomains = ["relay.sunmoonai.com"]
+    loadBalancer.group = "smoke-relay"
+    loadBalancer.groupKey = "{{ .Envs.FRP_GROUP_KEY }}"
+    [proxies.plugin]
+    type = "http2https"
+    localAddr = "traefik.ingress-platform-dev.svc.cluster.local:443"
+    requestHeaders.set.x-forwarded-proto = "https"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: frpc, namespace: ingress-platform-dev}
+automountServiceAccountToken: false
+imagePullSecrets: [{name: registry-puller}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: frpc, namespace: ingress-platform-dev}
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector: {matchLabels: {app.kubernetes.io/name: frpc}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: frpc}
+      annotations: {sunmoonai.com/input-sha256: '0e9727bff2d1a281042f961f671e1abde555c1cb7125c07b559e1423286ab702'}
+    spec:
+      serviceAccountName: frpc
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 10002, runAsGroup: 10002, fsGroup: 10002, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: frpc
+          image: harbor.sunmoonai.com:30443/platform/frpc@sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee
+          imagePullPolicy: IfNotPresent
+          args: ['-c', /etc/frp/frpc.toml]
+          env:
+            - {name: FRP_AUTH_TOKEN, valueFrom: {secretKeyRef: {name: frpc-auth, key: FRP_AUTH_TOKEN}}}
+            - {name: FRP_GROUP_KEY, valueFrom: {secretKeyRef: {name: frpc-auth, key: FRP_GROUP_KEY}}}
+          resources: {"requests": {"cpu": "50m", "memory": "64Mi"}, "limits": {"cpu": "500m", "memory": "256Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: config, mountPath: /etc/frp, readOnly: true}
+      volumes:
+        - {name: config, configMap: {name: frpc, defaultMode: 0444}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: frpc, namespace: ingress-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: frpc}}
+  policyTypes: [Ingress, Egress]
+  egress:
+    - to:
+        - ipBlock: {cidr: '43.153.135.74/32'}
+      ports: [{protocol: TCP, port: 7000}]
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: 8443}]
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
