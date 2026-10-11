@@ -93,17 +93,21 @@ def run(settings):
             'createdTime': datetime.now(timezone.utc).isoformat()})
         require(added.get('status') == 'ok' and added.get('data') == 'Affected', 'Verification member not created')
     try:
-        _check_surfaces(settings, Browser, member, outcomes)
+        install_issued = _check_surfaces(settings, Browser, member, outcomes)
     finally:
         if member is not None:
             removed = provider_api('/api/delete-user', {'owner': member['owner'], 'name': member['name']})
             require(removed.get('status') == 'ok', 'Verification member not removed')
-    print(json.dumps({'entry_port': settings['entry_port'], 'protocol_checks': outcomes,
+    report = {'entry_port': settings['entry_port'], 'protocol_checks': outcomes,
         'web_member_organization': settings['user_organization'] if member else None,
-        'browser_ui_clicks_verified': False, 'business_provider_configured': False}))
+        'browser_ui_clicks_verified': False, 'business_provider_configured': False}
+    if settings['application'] == 'investment':
+        report['install_command_issued'] = install_issued is True
+    print(json.dumps(report))
 
 
 def _check_surfaces(settings, Browser, member, outcomes):
+    install_issued = None
     for surface in settings['clients']:
         client = settings['clients'][surface]
         origin = client['origin']
@@ -165,6 +169,20 @@ def _check_surfaces(settings, Browser, member, outcomes):
             status, _, body = browser.request(origin + '/api/web/v1/runs/00000000-0000-5000-8000-000000000001')
             require(status == 503 and json.loads(body).get('error', {}).get('code') == 'provider_unavailable',
                     'Production template unexpectedly exposes a reference business fixture')
+        if surface == 'web' and settings['application'] == 'investment':
+            status, _, body = browser.request(origin + '/api/workbench/agent/install-command',
+                                              method='POST', headers=headers)
+            require(status == 200, 'Install command was not issued')
+            issued = json.loads(body)
+            command = issued.get('command')
+            require(isinstance(command, str) and command.startswith("irm '"),
+                    'Install command was not issued')
+            try:
+                expiry = datetime.fromisoformat(issued['expires_at'])
+            except (KeyError, TypeError, ValueError):
+                expiry = None
+            require(isinstance(expiry, datetime), 'Install command expiry was not parseable')
+            install_issued = True
         status, _, _ = browser.request(origin + '/api/auth/' + surface + '/logout',
                                        method='POST', headers={'Origin': origin})
         require(status == 403, surface + ': missing CSRF accepted')
@@ -176,6 +194,7 @@ def _check_surfaces(settings, Browser, member, outcomes):
             'secure_cookie': True, 'cross_surface_denied': True, 'csrf_required': True,
             'logout_revoked': True, 'unprivileged_admin_diagnostic_denied': permission_denied,
             'user_organization_denied': True if surface == 'admin' and member is not None else None}
+    return install_issued
 
 
 if __name__ == '__main__':
