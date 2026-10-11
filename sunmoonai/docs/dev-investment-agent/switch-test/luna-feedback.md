@@ -944,3 +944,16 @@ return int(count) <= limit
 **不要做**：`taskkill /IM node.exe` 之类按名字杀；不动用户别的 node 进程。
 
 **顺序**：等所有者 E 复验结果出来再动手；E 若过，这六条合成 0.2.8 一轮；E 若不过，先修 E。
+
+## 2026-10-11 · 分工调整：桌面链交 astra 一把改到 0.2.8；Qwen 不再碰代理代码
+
+所有者 2026-10-11 晚定「直接让 astra 改吧，把问题彻底改好」。原因：0.2.3–0.2.7 的设置窗口问题都只有真机才暴露，Qwen 与远程都没有真机；astra 在所有者机器的 WSL 里，能用 interop 开窗、查进程、截图。
+
+| 谁 | 做什么 |
+| --- | --- |
+| astra | runtime luna 分支：0.2.7 设置窗口「建了但看不见」的根因与修复；上面 0.2.8 六条；真机验证写进回执；版本 0.2.8；停在发布前，发布卡仍交 Cursor |
+| Qwen | 不再改 `runtime/agent`。等远程按路线图批 1（账 77、79）派卡 |
+| Cursor | 照旧跑发布卡（zip 与回退目录放仓外） |
+| 远程 | 审 astra 的提交与回执；之后出「窗口做薄」的设计给所有者定 |
+
+**桌面链的验收新规（从 0.2.8 起）**：凡改 `desktop.ps1`、`open-desktop.vbs`、`resident.ts` 的 `runDesktopScript`/`openDesktop`、`install.ps1.tmpl`、`uninstall.mjs`，回执必须有真机证据：从托盘菜单那条链开出窗、`Get-Process powershell` 能看到 `MainWindowTitle`、截图、按钮点一遍的结果原文；单测与语法解析不算验过。
