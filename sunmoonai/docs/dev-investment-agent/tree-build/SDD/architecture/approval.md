@@ -110,6 +110,33 @@ Codex 没有「被拒后不得绕路」的内置规则（查过 `core/prompt.md`
 - 步骤视图里按时间插在该步骤下；审查页列出整个 Task 的审批；交回物里带未获准清单。
 - 策略放行的也显示，但折叠；用户答的和拒绝的展开。
 
+## Codex 反过来问用户：澄清，不是审批
+
+审批是工具已经决定要做某件事、来要许可；澄清是模型缺信息、来问该怎么办。前者答是否，后者答内容。前者关安全，后者关质量。在三条路里，澄清属于 Task 级（表里第一项），不走工具级。
+
+| | 审批 | 澄清 |
+| --- | --- | --- |
+| 谁发起 | 工具（命令、补丁、联网） | 模型 |
+| 答什么 | 允许 / 拒绝 / 停下 | 选项或一段话 |
+| 不答会怎样 | 这一步不做 | 模型按自己的假设做 |
+| 我们的归类 | 工具级 | Task 级「澄清」 |
+
+**Codex 给了什么（0.155.1 实机核过）：** 工具 `request_user_input`，一次 1–3 个短问题，每题带选项并允许自由作答，可标 `isSecret`；app-server 以 `item/tool/requestUserInput` 向客户端发请求，这一轮一直等到有答案（`isBlocking` 只是给界面的提示）。客户端答不了或这一轮被中断，模型收到「提问被取消」。**默认只在 Plan 模式开放**；Default 模式要开 `default_mode_request_user_input`（0.155.1 里标「开发中」、默认关，`codex features list` 可见）。
+
+**现状：** 我们没设协作模式（即 Default），开关没开，所以模型**没有任何办法在一轮中间问人**，只能用文字问、同时结束这一轮。顾问驾驶下这等于这一步没有产出，验收过不了，白白返工一次：想问的模型反而吃亏。就算 Codex 发了请求，`runner.on_server_request` 也只会回「不处理」。另有 MCP 的 elicitation，现在按默认值自动答，只对我们自己的知识 MCP 成立。
+
+**设计：**
+
+1. 开工具：`THREAD_CONFIG` 加 `features.default_mode_request_user_input = true`。它是开发中开关，每次升 Codex 版本都要重验还在不在；不在了退回文字提问。
+2. 接请求：`runner.on_server_request` 处理 `item/tool/requestUserInput`，开 Task 级 `question` Interaction：标题、问题、选项加「其他」自由输入。自驾时是网页上的提问卡，这一轮等着；顾问驾驶时 Task 进 `WAITING(INPUT)`，用户在审查面答。答了就按 `answers` 映射回给 Codex。
+3. `isSecret`：自驾时输入框遮挡、答案只透传不落库不进日志；顾问驾驶时**一律不接**，立即回空并记一行——顾问不能向用户收口令。
+4. 配额：专家包 / 步骤策略 `questions: allow | deny`，默认 allow，每步最多 3 问；超出或 deny 时立即回空答案，模型按 `advisor.compose` 里的规则「问不到就写明假设继续」。
+5. 等不到人：1 小时后 `turn/interrupt`，Task 进 `WAITING(USER)`，与工具级超时同一处理；用户点继续后模型可以再问。
+6. 记录：每问每答都是 Interaction，步骤视图里按时间显示，答案进这一步的记录与交回物。
+7. elicitation：我们自己的知识 MCP 维持自动答；连接器（待办 66）接入后，第三方 MCP 的 elicitation 走同一张提问卡，不再自动答。
+
+实施记在待办 79。
+
 ## Task 级审查必须表达
 
 | 要素 | 内容 |
