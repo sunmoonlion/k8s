@@ -10,6 +10,10 @@
 2. `desktop.ps1`：`Shown` 里可见性检查失败时，除了改标签，要 `$Form.Close()` 让进程退出，不留隐形窗口。
 3. `Add-Type` 挪到文件顶部与其它 `Add-Type` 一起，只编译一次；`-Action tray` 的窗口以后也能用。
 
+4. **（2026-10-12 审读加）权限确认窗同样处理**：`-Action confirm` 由 `src/windowsDesktop.ts` 的 `desktopRequest` 以 `windowsHide: true` 起 powershell，它是该进程的第一个窗口，和设置窗一样会被隐藏启动压住，压住即 65 秒超时等于自动拒绝。给它同样的 `Shown` 显式显示 + 失败 `Close()` + `New-FormWatchdog`；`watchdog.test.mjs` 加 confirm 一组。
+
+> 2026-10-12 远程审读：第三节 1–7 条与第一节 1–3 全部通过（记录在 `luna-feedback.md`），只剩上面这第 4 条。做完直接进第六节的 0020。
+
 ## 二、在哪改
 
 `runtime` 仓 luna 分支，基线 `d90cef3`（现网 0.2.7），你的 WIP 在 `f5809f1` 之上继续。本地提交，不 push，不合并别的分支。版本三处 0.2.8 已改。每条一个提交，提交说明写清改了什么、怎么验的。
