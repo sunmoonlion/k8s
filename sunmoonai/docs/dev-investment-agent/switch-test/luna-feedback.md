@@ -846,3 +846,23 @@ return int(count) <= limit
 **版本与发行：** 0.2.6（三处）；重新组包、`agent-release-verify` + `upload`；`agent-releases/config.yaml` 换 0.2.6 五项、模板文件换无 BOM 版；只 stage / 发布 / 晋级投资；`application-check`。
 
 **所有者机器现状正好就是「全新用户」：** 装着 0.2.5、没有 `config.json`。0.2.6 发布后，所有者直接从网页「复制安装命令」再来一次：升级器会卸 0.2.5（无配置、跳过停进程）→ 装 0.2.6 → 弹设置窗口 → 连接我的账号 → 输码允许 → 选文件夹 → 自启（第三步勾上）→ 完成 → 已在线。**这一遍就是待办 73 要的首次路径，务必每步原文进回执。** 之后继续重启 / 过期码 / 拒绝码。
+
+## 2026-10-11 · 0.2.6 审读（runtime `08f8f9d`，k8s `eed658b2`）：首次安装路径通过；剩「设置窗口点按钮即死」一处 + 一条纪律
+
+**从这一节起，luna 工位的实施者是 Qwen。** 工位、分支、交接文件、同步方式都不变。
+
+**认可：** 模板去 BOM（runtime 与 k8s 副本同为 `c797221d…`，`bundle.test` 反向断言）；`autostart enable` 只在升级时执行；`checkControlDirectory` 无配置时按空白名单；`ensureWindowsSandbox` 首次 start 自动探测；全新状态用例；217 测试过；只发投资；`application-check` 过。**所有者首次路径实测：** 安装 → 设置窗口弹出 → （绕路）配对 → 在线 → 工作「列出文件」碰到 Desktop 真实内容 → 重启后自启连上。这几项通过。
+
+**纪律（必须说）：** 验「拒绝」时直接改了生产库里 pending 行的状态。**以后任何情况下不得手改生产数据库**——拒绝就在网页点「拒绝」，验不了就写「未验」。E 的过期 / 拒绝两项按 UI 口径仍是**未验**，CLI 输出只证明文案存在。
+
+**`source_ip = 10.247.34.192` 不是代码缺陷，是测试路径所致：** 所有者机器 hosts 把域名指向本机，代理的配对请求直接进本地集群，链上根本没有公网一跳；后端 `client_ip.source_ip` 在「全链可信」时按设计退回最左地址（见代码注释）。要验真实来源只能走东京——待办 73 的干净 Windows 会自然覆盖；本机不再追这项。
+
+**唯一阻断：设置窗口点「连接我的账号」后数秒整窗消失，`pair` 变孤儿。** 给 Qwen 的第一张活：
+
+1. **取证（先做，半小时内能完）**：a) 所有者 Windows「事件查看器 → Windows 日志 → 应用程序」，找窗口消失时刻 `powershell.exe` 的 `Application Error`（事件 1000）或 `.NET Runtime`（事件 1026）记录，原文抄进回执——重点看有没有 `There is no Runspace available to run scripts in this thread`；b) 前台跑一次：PowerShell 控制台里喂同样的 stdin JSON 执行 `desktop.ps1 -Action onboard`，所有者点按钮，抄控制台红字。
+2. **改法（不管取证结果如何都要改成这样）**：`Show-Onboard` 不再给 `pair` 子进程挂 `add_OutputDataReceived` / `add_ErrorDataReceived`（脚本块会在无 runspace 的线程池线程上执行，这是 PowerShell 的已知坑）。改为**文件轮询**：`pair` 每有进展就把 `{event, user_code, expires_at, status, message}` 原子写到 `SUNMOON_AGENT_HOME\pair-status.json`（写临时文件再改名；不含 device_secret、不含令牌；照 `tray.json` 的权限与校验），stderr 末行也写进 `message`；窗口的 Timer（UI 线程）每秒读该文件更新界面；取消仍走 stdin `cancel`；子进程 stdout/stderr 直接 `ignore`。点击前先删旧文件；`pair` 退出后文件保留到下次点击。`uninstall.mjs` 的 `inspectConfig` 允许清单补 `pair-status.json` 与 `onboard-ready.json`（待办 70 里那条一并做掉）。
+3. **测试**：`pair.test.ts` 断言每个事件都落到文件且无秘密；`bundle.test.mjs` 断言 `desktop.ps1` 不再含 `add_OutputDataReceived`；PowerShell 解析通过。
+4. **0.2.7**：三处版本、组包、verify+upload、`agent-releases` 换版本、只发投资、`application-check`。
+5. **所有者只走 UI 重验**：托盘「重新连接账号」→ 窗内出码与倒计时 → 浏览器打开核对页 → 网页「允许」→ 窗显示「已连接到 …」→ 选文件夹 → 完成「已在线」；再拿一个码干等到过期、一个码在**网页点「拒绝」**，各抄窗内原文。这两条过了，E 才算全程 UI 结束，然后 U4 + 待办 74。
+
+**同样适用的规矩：** 不用界面自动化脚本替所有者点按钮；不 `Stop-Process` 杀进程「清现场」；不手改安装目录；证据先于猜测。
