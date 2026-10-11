@@ -794,3 +794,11 @@ B（后端配对）+ C（代理 0.2.4，包已在 `windows-agent-c2-20261010\sun
 - 70：`tray.json` / `tray-stop.json` 只记 pid，Windows 回收 pid 很快；托盘被硬杀后残留文件里的 pid 若被别的进程占用，`menu` 会误判「托盘已在」而不再弹托盘，`tray stop` 也会一直 pending。改为同时记进程创建时间（或校验命令行含 `desktop.ps1`），对不上就当已退出。
 - 71：设计提醒而非缺陷——Windows 内层沙箱里远端启动的命令对全盘可读（`special root read`），守住外泄的只有本机 `ceiling.network=false`（默认关）。设置窗口里「允许联网」那一行要把这句话写明白：「打开后，云端下发的命令能读到这台电脑上你能读的任何文件并发出去」。
 - 覆盖面说明：32 条 Windows 实机测试（windowsNative / Lifecycle / Resident / Http / Followup）在 Linux 上一律跳过，只有在所有者 Windows 上手跑过才算数；上线前在 Windows 上跑一次 `pnpm test` 并把数字记进回执。
+
+## 2026-10-11 · E+U 发布完成，U3 账号段通过；E 全程进行中
+
+**发布（Cursor 回执）：** 摘要 `sha256:2d69dd36…`，修订 `3ac0def8`，晋级 `0e10b7fc`。四个 identity Job：`user_organization: sunmoonai`，`migrated: ["web"]`，投资那次新建了组织。四个 `application-check` 通过：`web_member_organization: sunmoonai`、admin `user_organization_denied: true`。sunmoonai 组织无 `verify-` 残留。
+
+**U3 账号段（所有者实测）：** 在 sunmoonai 建账号、首登强制改密；登录投资网页进入**空工作区**（「还没有工作区 / 还没有对话 / 还没有登记电脑」，看不到 admin 旧数据）；用它打开管理后台被要求管理员登录；admin 仍能进管理后台（治理控制台）。**通过。**
+
+**接下来：** 所有者用新账号走 E 全程（卸载 `--remove-config` 前先清可能残留的 `onboard-ready.json` → 网页复制安装命令装 0.2.5 → 输码允许 → 选文件夹 → 自启 → 在线 → 碰所选文件夹 → 重启 → 过期码 → 拒绝码），Cursor 看 Traefik 来源与后端 `source_ip`，原文进回执。之后 U4。
