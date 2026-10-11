@@ -29,7 +29,7 @@ Windows 侧干净克隆 `C:\Users\zymun\sunmoon-probe-runs\windows-agent-027-202
 
 | 项 | 值 |
 | --- | --- |
-| 路径 | `…\sunmoon-agent-0.2.7-d90cef3-windows-x64.zip` |
+| 路径 | `~/sunmoon-probe-runs/windows-agent-027/sunmoon-agent-0.2.7-d90cef3-windows-x64.zip` |
 | ZIP SHA256 | `c17d10d0f7359c626e27028c8217119fa845858bfffa281db1011b3d8044f437` |
 | size_bytes | 174263794 |
 
