@@ -893,3 +893,15 @@ return int(count) <= limit
 4. Qwen 补完三处后换新提交号；Cursor 执行前我再看一眼新提交（十分钟），然后所有者通知 Cursor。
 
 **所有者 UI 重验清单不变**（上一节第 5 条）：托盘「重新连接账号」→ 窗内出码倒计时 → 浏览器核对页 → 网页「允许」→「已连接到 …」→ 选文件夹 → 完成「已在线」；再各拿一个码：干等过期、网页点「拒绝」，抄窗内原文。
+
+## 2026-10-11 · 0.2.7 复核通过（runtime luna `d90cef3`，k8s luna `1f317361`）：三处小洞已补、发布卡已对齐，可以交 Cursor 跑卡 37
+
+| 查什么 | 核到什么 | 判定 |
+| --- | --- | --- |
+| 洞 1 pid | `writeStatusFile` 每条记录带 `pid: process.pid`；窗口 Timer 只认 `[int]$Msg.pid -eq $script:Pair.Id`。核过 `New-AgentProcess` 是 `ProcessStartInfo.FileName=$Node` 直接起 node，没有中间壳，所以两边的 pid 是同一个进程。每次点「连接」`$script:LastSeq=0` 重置，上一次残留的失败记录（seq 1000000）不会压住新一轮 | 通过 |
+| 洞 2 失败 seq | `emitPairFailure` seq 1000000，单测核内容与 pid | 通过 |
+| 洞 3 rename 重试 | 5 × 20 ms（`Atomics.wait` 同步睡），仍失败直接覆盖写目标并清临时文件；三条单测：一直失败走兜底、前两次 EPERM 第三次成功不走兜底、临时文件被消费。兜底那条是非原子写，窗口侧 `Read-PairStatus` 对半截 JSON 返回 `$null`、下一秒再读，可接受 | 通过 |
+| 远程复跑 | 临时工作树 `d90cef3`，`tsc` 通过；先 `build` 再 `vitest run`：**221 过、32 跳过**（跳过的四个文件都是 Windows 专用，与 Qwen 在 Windows 上报的 220 + 新增 1 = 221 一致）。不先 build 时 `cli.test.ts` 6 条因缺 `dist/cli.js` 失败，是跑法问题不是代码问题，备案 | 通过 |
+| 发布卡 `1f317361` | sha 全换 `d90cef3`（无残留 `4bb07f3`）；A 段 98 个文件；前提补 PID 1 挂载命名空间与 zip 绝对路径；C.2 写明 stage 只动三份文件、负载只四处 `config-sha256`、不手改 sops；`install.ps1.tmpl` sha 不变 | 通过 |
+
+**下一步**：所有者通知 Cursor 跑 `inbox/2026-10-11-37-agent-release-027.md`（前提里的「Fable 审阅通过」即本条）。Cursor 跑完回执后，所有者做 E 的真人复验（重连 → 出码 → 允许 → 在线；过期；网页拒绝）。Qwen 这一轮到此为止，不要再动 0.2.7 的代码；下一项工作等路线图批 0 收口后由远程派卡。
