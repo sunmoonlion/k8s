@@ -802,3 +802,29 @@ B（后端配对）+ C（代理 0.2.4，包已在 `windows-agent-c2-20261010\sun
 **U3 账号段（所有者实测）：** 在 sunmoonai 建账号、首登强制改密；登录投资网页进入**空工作区**（「还没有工作区 / 还没有对话 / 还没有登记电脑」，看不到 admin 旧数据）；用它打开管理后台被要求管理员登录；admin 仍能进管理后台（治理控制台）。**通过。**
 
 **接下来：** 所有者用新账号走 E 全程（卸载 `--remove-config` 前先清可能残留的 `onboard-ready.json` → 网页复制安装命令装 0.2.5 → 输码允许 → 选文件夹 → 自启 → 在线 → 碰所选文件夹 → 重启 → 过期码 → 拒绝码），Cursor 看 Traefik 来源与后端 `source_ip`，原文进回执。之后 U4。
+
+## 2026-10-11 · E 卡在「复制安装命令」：限速器用 EVAL，运行身份 ACL 不允许 → 改后端，不放宽 ACL
+
+**现象（所有者实测 + Cursor 日志）：** 网页点「复制安装命令」显示「下载信息暂时读取失败」；后端 `agent_onboarding_result … status=500`；Redis 报 `NoPermissionError: User investment_runtime has no permissions to run the 'eval' command`。下载描述符本身读到了（`download_ready 0.2.5 object-storage`）。
+
+**根因：** `app/infrastructure/workbench/agent_limiter.py` 的 `consume_window` 用 `redis.eval` 跑一段 Lua（INCR + 首次 EXPIRE）。而 `common/backend/redis/provision.py.j2` 给运行身份的 ACL 是显式命令白名单（`-@all` 再逐条 `+get +set +incr +expire +multi +exec …`），没有 `eval`。这段限速器没有单测，`application-check` 的浏览器检查也没碰过 `install-command`，所以两边都没拦住。**同一个限速器也给配对的建请求 / 轮询 / 查码 / 允许用，E 全程现在走不下去。**
+
+**修法（改后端，ACL 不动）：** 限速器不用 Lua——键里已经带了窗口编号（`…:{seconds}:{digest}:{bucket}`），不需要「首次才设过期」的条件：
+
+```python
+async with redis.pipeline(transaction=True) as pipe:
+    pipe.incr(key)
+    pipe.expire(key, seconds, nx=True)   # Redis ≥7 的 NX：只在没有过期时间时设；现网 8.10
+    count, _ = await pipe.execute()
+return int(count) <= limit
+```
+
+`INCR`、`EXPIRE`、`MULTI`/`EXEC` 都在白名单里。
+
+**同时补两道防线，免得再漏：**
+1. `tests/test_agent_limiter.py`：用记录命令的假 Redis 断言限速器只发出 `INCR` / `EXPIRE`（以及 MULTI/EXEC），窗口内第 N+1 次返回 False，换窗口后恢复；另加一条读 `provision.py.j2` 白名单、断言限速器用到的命令都在其中（文件在 k8s 仓，测试里按相对路径找不到就跳过并标明）。
+2. `infrastructure/applications/check-browser.py` 的 web 面在登录后 `POST /api/workbench/agent/install-command`（带 CSRF），要求 200 且返回 `command` 以 `irm '` 开头、`expires_at` 可解析；输出里加 `install_command_issued: true`。它消耗该临时成员的一次配额，成员验完即删，无影响。
+
+**然后：** 投资后端全量 + ruff + lint-imports → 只构建 investment-backend 镜像 → stage 投资 → 发布 → 晋级 → `application-check APP=investment`（新检查项必须为 true）→ 所有者从「复制安装命令」继续 E 全程。回执里记这次 500 的原文和修后的检查输出。
+
+**网页侧顺带（不阻塞，记给下一轮 web 改动）：** 现在所有非 429 的失败都显示「下载信息暂时读取失败」，500 也混在里面；至少把「服务端出错，请稍后再试并联系管理员」和「读取失败」分开。
