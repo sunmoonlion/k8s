@@ -905,3 +905,18 @@ return int(count) <= limit
 | 发布卡 `1f317361` | sha 全换 `d90cef3`（无残留 `4bb07f3`）；A 段 98 个文件；前提补 PID 1 挂载命名空间与 zip 绝对路径；C.2 写明 stage 只动三份文件、负载只四处 `config-sha256`、不手改 sops；`install.ps1.tmpl` sha 不变 | 通过 |
 
 **下一步**：所有者通知 Cursor 跑 `inbox/2026-10-11-37-agent-release-027.md`（前提里的「Fable 审阅通过」即本条）。Cursor 跑完回执后，所有者做 E 的真人复验（重连 → 出码 → 允许 → 在线；过期；网页拒绝）。Qwen 这一轮到此为止，不要再动 0.2.7 的代码；下一项工作等路线图批 0 收口后由远程派卡。
+
+## 2026-10-11 · 卡 37 回执审过：0.2.7 已发布（k8s luna `006eb981`），等所有者 E 真人复验
+
+| 查什么 | 核到什么 | 判定 |
+| --- | --- | --- |
+| A 组包 | 干净克隆 `d90cef3`，98 文件，candidate pass；首个 `Compress-Archive` 包因反斜杠路径没过 verify，用 Python zipfile 重打后过，没上传错包 | 通过 |
+| B 上传 | `uploaded-and-verified`，readback true，writer 读被拒 / reader 写被拒都为 true | 通过 |
+| C 发布 | `config.yaml` 六项与 A 一致；stage 只动三份文件，负载只四处 `config-sha256`（`7b945dfa…`）；后端镜像锁未换；flux 晋级 / apply / status / check 都退出 0 | 通过 |
+| 仓的干净 | zip 已从历史抹掉（重写后 0 处引用），`.gitignore` 加 `results/*.zip`；回退目录 `_rollback-027-*` 被同步脚本自动提交进了 results，看过内容是 playbook 与配置副本，没有密钥，留着不动 | 通过 |
+
+卡 35、36、37 已移到 `done/`。
+
+**给下一张发布卡的两条**（Qwen 写卡时带上）：① zip 与回退目录一律放仓外 `~/sunmoon-probe-runs/<版本>/`，`results/` 只收文本回执，两边远端都拒 100 MB 以上的文件；② Windows 上打 zip 用 Python `zipfile`（正斜杠），不用 `Compress-Archive`。
+
+**下一步在所有者**：E 真人复验（重新连接 → 设置窗口出码且不消失 → 网页输码允许 → 网页见在线；等码过期看倒计时与提示；再来一次在网页点拒绝看窗口提示）。过了之后进账 74（U4 清试用数据，先列后删）。
