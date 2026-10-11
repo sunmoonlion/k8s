@@ -920,3 +920,26 @@ return int(count) <= limit
 **给下一张发布卡的两条**（Qwen 写卡时带上）：① zip 与回退目录一律放仓外 `~/sunmoon-probe-runs/<版本>/`，`results/` 只收文本回执，两边远端都拒 100 MB 以上的文件；② Windows 上打 zip 用 Python `zipfile`（正斜杠），不用 `Compress-Archive`。
 
 **下一步在所有者**：E 真人复验（重新连接 → 设置窗口出码且不消失 → 网页输码允许 → 网页见在线；等码过期看倒计时与提示；再来一次在网页点拒绝看窗口提示）。过了之后进账 74（U4 清试用数据，先列后删）。
+
+## 2026-10-11 · 所有者升 0.2.7 时卸旧版失败：三个上午崩窗留下的孤儿进程占着 `node.exe`——两处新缺陷，Qwen 下一轮做
+
+**现场**（所有者 Windows 机，2026-10-11 晚）：一行命令升级 0.2.6 → 0.2.7，`uninstall.mjs` 停代理、关托盘都成功，删 `node\node.exe` 时 `EPERM`，脚本按设计停下（配置与旧版都保留）。`Get-CimInstance Win32_Process` 列出三个 `node.exe … cli.js onboard-window`（11:11:59、11:12:27、11:13:50，正是上午三次点出 0.2.6 设置窗口的时间）和它们各自的子进程 `powershell.exe -File …\desktop.ps1 -Action onboard`，六个进程活了十个小时，窗口早没了。所有者按 PID 结束后重装。
+
+**这说明两件事**
+
+1. **0.2.6 的「整窗消失」在真机上不是进程退出码 2，而是窗口没了、`powershell` 进程还活着**，所以等它退出的 `onboard-window` node 也永远不退。Qwen 的最小复现得到的是退出码 2，和现场不完全一样；0.2.7 把回调整个去掉了，大概率两种表现都治，E 复验会证实。取证文件补一段现场证据，不要改结论。
+2. **升级没有防「自己人占文件」**：`uninstall.mjs` 只做 `autostart disable → tray stop → stop`，不看安装目录下还有没有自己的进程；`removeVerifiedBundle` 删文件遇到占用不重试、不说是谁占的。
+
+**要做的（不升大版，可记 0.2.8）**
+
+| # | 改什么 | 验收 |
+| --- | --- | --- |
+| 1 | `desktop.ps1` 两个窗口（onboard、tray/本机设置）加看门狗：Timer 每秒查 `$Form.IsDisposed -or -not $Form.IsHandleCreated`，窗体没了就 `[Windows.Forms.Application]::Exit()`，`finally` 照旧收尾；脚本整体用 `try/finally` 保证退出 | 手动 `Dispose` 窗体后 2 秒内 powershell 退出、`onboard-window` node 随之退出，`onboard-ready.json` 被清 |
+| 2 | `onboard-window`（`runDesktopScript`）加兜底：子进程 powershell 的窗口标记 `onboard-ready.json` 消失或其中 pid 已死超过 10 秒，就结束该子进程并退出；最长寿命 30 分钟 | 杀掉 powershell 后 node 自己退；30 分钟到自动退 |
+| 3 | `uninstall.mjs` 在 `stop` 之后、删文件之前：枚举本用户进程里可执行路径在安装目录下的（`node.exe`）与命令行含 `desktop.ps1` 的 powershell；命令行含我们 `cli.js` / `desktop.ps1` 的视为自己人，按 PID 结束并等退出；其它的不动，列出 PID 与命令行后停下报「有进程占着安装目录」 | 预置一个孤儿 `onboard-window` 再升级：自动收掉、升级成功；预置一个无关进程打开安装目录下文件：停下并点名 |
+| 4 | `removeVerifiedBundle` 删文件 `EPERM`/`EBUSY` 重试 10 × 500 ms，仍失败报错里带文件名 | 单测 |
+| 5 | 安装脚本失败文案加一句：「可能有旧窗口的进程还开着，先在托盘退出、关掉所有 SunMoon 窗口再试」 | 文案 |
+
+**不要做**：`taskkill /IM node.exe` 之类按名字杀；不动用户别的 node 进程。
+
+**顺序**：等所有者 E 复验结果出来再动手；E 若过，这五条合成 0.2.8 一轮；E 若不过，先修 E。
