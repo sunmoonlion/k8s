@@ -972,3 +972,25 @@ return int(count) <= limit
 **顺带记一笔**：上午 0.2.6 的「先出现再消失、进程活十小时」astra 明说不能归成同一原因，同意；0.2.7 去掉回调 + 0.2.8 显式显示 + 看门狗，三样叠起来之后再看它还出不出现。
 
 给 astra 的完整任务页：[`astra-028.md`](astra-028.md)（第一节是上面三处要补的，第三节 1–7 条，第四节怎么验）。
+
+## 2026-10-12 · astra 0.2.8 审读（runtime luna `da5fb0b`，k8s luna `46e931cc`）：七条通过，补一条权限确认窗，然后接 0020
+
+| 查什么 | 核到什么 | 判定 |
+| --- | --- | --- |
+| 1 显式显示 | P/Invoke 顶部一次编译；`Shown` 里 `ShowWindow(SW_SHOW)` + `Activate`，可见才写就绪，失败 `Close()`。真机：托盘链开窗 `visible=true`、截图、点「连接我的账号」码/倒计时/浏览器/窗口都在（所有者答「都出现了」） | 通过 |
+| 2 看门狗 | `New-FormWatchdog` 三处共用（onboard、本机设置、托盘私有窗体）；外层 `try/finally` 只清本 PID 的两个标记。真机 Dispose 后 onboard 44 ms、托盘 727 ms 退出 | 通过 |
+| 3 `onboard-window` 兜底 | `onboardLifetime` 纯函数：首次就绪 15 s 宽限、就绪消失立即收、pid 死 10 s、上限 30 min；只杀自己 spawn 的那个子进程；只清 pid 匹配的标记。注意一点：同时开第二个设置窗会覆盖标记，老窗 10 s 后被收掉——可接受，等于只允许一个设置窗 | 通过 |
+| 4 卸载前收自己人 | 按 SID + 可执行路径在安装目录下 + 命令行含我们 `cli.js`/`desktop.ps1` 识别；`Stop-Process` 前按创建时间、路径、命令行复核防 PID 复用；未知占用者点名拒绝；不按名杀。`--stop-only` 给修复路径用，不运行损坏安装里的代码 | 通过 |
+| 5 删文件重试 | `EPERM`/`EBUSY` 10 × 500 ms，报错带路径 | 通过 |
+| 6 半卸修复 | 删前写 `.uninstall-incomplete`；`inspectInstalled` 见标记或清单核不过 → `repair`；安装脚本 `--stop-only` 后 `Directory.Move` 到 `.broken-<时间>-<随机>`，全新装，配置不动。真机两种半卸都走通（标记型、清单损坏型） | 通过 |
+| 7 文案 | `catch` 里 `Write-Warning` 后 `throw`，原错不吞 | 通过 |
+| 模板同步 | runtime 与 k8s 的 `install.ps1.tmpl` sha 一致（`ae3dc493…`），无 BOM | 通过 |
+| 测试改动 | `cli.test` 改成验 0.2.6 起的自动探测行为；`siteTrust` Windows 忽略大小写；`trayStop`、`bundle.test` Windows 用联接代替文件符号链接——都是让测试符合现实，不是放水 | 通过 |
+| 取证报告第 1 节 | 补回 22:34:20 的原始枚举（三个 powershell 各一个 `SunMoon - 设置` 窗、`visible=false`），并注明后一次快照是进程已退 | 通过 |
+| 远程复跑 | `da5fb0b` 临时工作树：build、typecheck 过；vitest 224 过 32 跳过（Windows 专用）；distribution 47 中 45 过 2 跳过（对 k8s 模板比对通过） | 通过 |
+
+**补一条（第 8 条）**：`-Action confirm` 的「本机权限确认」窗由 `windowsDesktop.ts` 的 `desktopRequest` 同样以 `windowsHide: true` 起 powershell，它是那个进程的第一个窗口，和设置窗一样会被压住；一旦压住，65 秒超时等于自动拒绝。给它同样的 `Shown` 显式显示 + 失败 `Close()` + `New-FormWatchdog`。单测照 `watchdog.test.mjs` 的注入法加 confirm 一组。
+
+**待验**：控制台有没有闪出，所有者明天 E 时顺便看一眼。
+
+**下一步**：astra 做第 8 条后直接按 `astra-028.md` 第六节接 0020（P1–P4），合成 0.3.0 一次交审。
