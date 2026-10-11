@@ -781,3 +781,16 @@ B（后端配对）+ C（代理 0.2.4，包已在 `windows-agent-c2-20261010\sun
 **放行前必须先做：安装目录恢复成与清单一致。** 你上一轮把新程序直接覆盖进了安装目录，现在目录和它自带的清单对不上——外部卸载器和升级都会先核验清单，E 全程第一步「`--remove-config` 卸干净」会被拒。做法：用 0.2.5 正式包核验一遍现装目录（`verifyBundle` 按它自己的清单）；不一致就把正式包（含其清单）的文件按清单逐个放回、使目录与新清单逐文件一致，再核验通过并贴结果。之后不要再直接覆盖安装目录。
 
 **然后**按放行条件 2、4、5 继续：小改后重新组包 → `agent-release-verify` + `upload` → `agent-releases/config.yaml` 换 0.2.5 → 只重新 stage 投资（差异只能在 agent-releases 与 `config-sha256`）→ 直接进第二段（发布四个应用 → identity Job → `application-check` → 通知所有者建 sunmoonai 账号 → 用新账号走 E 全程），全程结束停下交审。
+
+## 2026-10-11 · Windows 代理全量审读（luna `c0c185f`，相对 fable `bdcdddd` 的 56 个提交）：结构可发；并入 0.2.5 的一处小改，两条记账
+
+**窗口修法确认：** `menu` → detached 起 `wscript open-desktop.vbs`（GUI 进程，不进 node 的作业对象、不需要控制台）→ VBS 不等待地拉起 `node cli tray` / `cli onboard-window` → 该 node 以普通子进程方式起 `desktop.ps1` 并等它退出（和 C1 验过的开机自启 `run-hidden.vbs` 同一条路）→ `menu` 轮询 `tray.json` / `onboard-ready.json` 后退出。链路成立，前几轮失败的两个原因（非 detached 被作业对象连带杀、detached 的 PowerShell 不执行脚本）都绕开了。上一节那处 `ready()` 的 try/catch 仍要改。
+
+**安全核心（filter / windowsPolicy / windowsBridge / helper.mjs / permissions）审读结论：** 方法白名单 + 逐字段校验、读只放 roots+codexHome（排除 auth.json 与 .sandbox-secrets）、写只放 roots、`http/request` 只放本机逐条确认过的精确 URL 且禁跳转、保留环境变量不可覆盖、沙箱等级由本机定、目录用「当前目录句柄」钉住防改名、helper 在沙箱内再查一遍身份（拒绝链接 / 8.3 短名 / 设备名 / ADS）、本机权限提升只对带 threadId 的 process/start、30 分钟、须会合点回执。没有发现越界路径。分发侧：清单逐文件摘要、拒绝链接与特殊文件、安装目录独占、卸载不递归删。令牌不进 stdout / 日志 / argv，日志有脱敏。
+
+**并入 0.2.5 一起改（小）：** `uninstall.mjs` 的 `inspectConfig` 允许清单缺 `onboard-ready.json`（0.2.5 新加的就绪标记；设置窗口异常退出会留下它），届时 `--remove-config` 会以「Unexpected user data」拒绝——E 全程第一步正是 `--remove-config`。把它加进 `allowed`。
+
+**记账（上线后做，不阻塞 E）：**
+- 70：`tray.json` / `tray-stop.json` 只记 pid，Windows 回收 pid 很快；托盘被硬杀后残留文件里的 pid 若被别的进程占用，`menu` 会误判「托盘已在」而不再弹托盘，`tray stop` 也会一直 pending。改为同时记进程创建时间（或校验命令行含 `desktop.ps1`），对不上就当已退出。
+- 71：设计提醒而非缺陷——Windows 内层沙箱里远端启动的命令对全盘可读（`special root read`），守住外泄的只有本机 `ceiling.network=false`（默认关）。设置窗口里「允许联网」那一行要把这句话写明白：「打开后，云端下发的命令能读到这台电脑上你能读的任何文件并发出去」。
+- 覆盖面说明：32 条 Windows 实机测试（windowsNative / Lifecycle / Resident / Http / Followup）在 Linux 上一律跳过，只有在所有者 Windows 上手跑过才算数；上线前在 Windows 上跑一次 `pnpm test` 并把数字记进回执。
