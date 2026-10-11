@@ -957,3 +957,16 @@ return int(count) <= limit
 | 远程 | 审 astra 的提交与回执；之后出「窗口做薄」的设计给所有者定 |
 
 **桌面链的验收新规（从 0.2.8 起）**：凡改 `desktop.ps1`、`open-desktop.vbs`、`resident.ts` 的 `runDesktopScript`/`openDesktop`、`install.ps1.tmpl`、`uninstall.mjs`，回执必须有真机证据：从托盘菜单那条链开出窗、`Get-Process powershell` 能看到 `MainWindowTitle`、截图、按钮点一遍的结果原文；单测与语法解析不算验过。
+
+## 2026-10-11 · astra 取证与 0.2.8 WIP（runtime luna `3d8f8e7`、`f5809f1`）审读：根因成立，改法方向对，三处要补，然后接着做 2–7 条
+
+| 项 | 判定 |
+| --- | --- |
+| 根因 | **成立**。第 3 节对照最硬：同一脚本、同一 stdin 结构，只差 `windowsHide`，true → Form 存在但 `IsWindowVisible=false`、位置在屏内；false → 可见。Node 这一层就能独立复现 |
+| 第 1 节「原三个进程各有一个不可见窗口」 | **证据没对上**：正文说枚举到了标题、句柄、700×480，但表格是空的、`initial-inspection.json` 里三个 pid 都是 `exists:false`（所有者在 22:3x 已按我的话结束了它们）。要么把 22:34:20 那次枚举的原始输出补进来，要么把结论第 1 条改成「原进程已不在，未取到；由第 3 节对照代替」。不许正文比证据多说 |
+| 改法（候选 B，`Shown` 里 `ShowWindow(SW_SHOW)` + `Activate`，可见后才写就绪文件） | **方向对，未验**。astra 自己写了「整链验证未完成」。两处要补：① 可见性检查失败时不要只改一行标签（没人看得见），要 `$Form.Close()` 让进程退出，别再留隐形孤儿；② `Add-Type` 挪到文件顶部和其它 `Add-Type` 一起，一次编译，`-Action tray` 的窗口以后也能用 |
+| 版本三处改 0.2.8 | 可以 |
+
+**接着做**：按所有者转去的 0.2.8 那段的 2–7 条（看门狗、`onboard-window` 兜底、卸载前收自己人、删文件重试、半卸可修复、文案）和「怎么验」全部条目。真机证据按该段：托盘链开窗、`EnumWindows` 见 `visible=true`、截图、按钮点一遍；输码 / 允许 / 拒绝留给所有者。
+
+**顺带记一笔**：上午 0.2.6 的「先出现再消失、进程活十小时」astra 明说不能归成同一原因，同意；0.2.7 去掉回调 + 0.2.8 显式显示 + 看门狗，三样叠起来之后再看它还出不出现。
