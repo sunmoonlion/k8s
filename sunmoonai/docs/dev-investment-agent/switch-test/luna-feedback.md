@@ -866,3 +866,30 @@ return int(count) <= limit
 5. **所有者只走 UI 重验**：托盘「重新连接账号」→ 窗内出码与倒计时 → 浏览器打开核对页 → 网页「允许」→ 窗显示「已连接到 …」→ 选文件夹 → 完成「已在线」；再拿一个码干等到过期、一个码在**网页点「拒绝」**，各抄窗内原文。这两条过了，E 才算全程 UI 结束，然后 U4 + 待办 74。
 
 **同样适用的规矩：** 不用界面自动化脚本替所有者点按钮；不 `Stop-Process` 杀进程「清现场」；不手改安装目录；证据先于猜测。
+
+## 2026-10-11 · 0.2.7 审读（runtime luna `4bb07f3`，k8s luna `f2059c5c`）：取证确证、改法通过；组包前补三处小洞；发布卡可用，改两处
+
+**取证（认可，做得比要求好）：** a 段如实写「事件日志里没有崩溃记录、没有 Runspace 明文」；b 段没有停在前台复现（stderr 0 字节、`onboard-ready.json` 残留），而是做了最小复现 + 对照实验，唯一变量是「挂不挂脚本块回调」，一个 exit 2、一个 exit 0。这就是根因确证的标准做法。结论：PowerShell 5.1 在无 runspace 的线程池线程上执行脚本块后**以 exit 2 有序终止整个进程**，所以既不进事件 1000/1026，也不留红字——我原先的「Runspace」判断和所有者的「有序退出」判断各对一半，合起来正是这个。
+
+**改法（主体通过）：** `pair` 原子写 `pair-status.json`（临时名 + rename、0600、不含秘密、seq 单调）；窗口 Timer 在 UI 线程轮询，`seq` 去重，`expires_at` 自算倒计时；`Read-PairStatus` 照 `tray.json` 校验；`Timer.Add_Tick` / `Connect.Add_Click` 整体 try/catch 只写 `$Connected`；子进程输出改 `ReadToEndAsync` 读掉丢弃（无脚本块，防管道满）；`cli.ts` 准备阶段失败也写人话；卸载允许清单补两项；`pair.test` 断言无秘密、`bundle.test` 反向断言四个回调名；218 过、typecheck 干净。版本三处 0.2.7。
+
+**组包前必补三处（都在 0.2.7 内，不升版号，因为还没发任何东西）：**
+
+| # | 洞 | 怎么踩到 | 补法 |
+| --- | --- | --- | --- |
+| 1 | 旧 `pair` 的尾巴盖掉新 `pair` 的进展 | 点「取消连接」后 3 秒内再点「连接我的账号」：旧 `pair` 要等下一轮 poll 才看到 `cancel`，然后写 `cancelled`（它自己的 seq=2）；新 `pair` 的 `code` 是 seq=1。不论先后，窗口要么没显示新码就报「已取消」，要么新的 `approved`（seq=2）被去重丢掉 | 状态记录加 `pid: process.pid`（`emitStatus` 与 `emitPairFailure` 都加）；窗口只处理 `$Msg.pid -eq $script:Pair.Id` 的记录，其余忽略。pid 不是秘密 |
+| 2 | `emitPairFailure` 写死 `seq: 1`，可能被去重丢掉 | `runPair` 里两处 `opts.post` 没有 try/catch；出码之后网络一断，异常落到 `cli.ts` 的 catch，写出的失败记录 seq=1，而窗口 `LastSeq` 已是 1 → 人话丢失，只剩 `HasExited` 兜底的「连接没有完成」 | `emitPairFailure` 用一个必定最大的 seq（如 `1000000`，`[int]` 装得下） |
+| 3 | rename 撞上窗口正在读文件 | `Get-Content` 打开文件时不带 FILE_SHARE_DELETE；`renameSync` 若正好落在那几毫秒内会抛 EPERM，`writeStatusFile` 把它吞掉，这一步就丢了。丢的若是 `approved`，令牌已存、代理能上线，窗口却一直说「连接没有完成」。每次配对约千分之几，但真发生了用户没法自己解释 | rename 失败重试 5 次、每次等 20 ms（同步等法：`Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20)`）；仍失败就直接 `writeFileSync` 覆盖写（窗口把半截 JSON 当「没有」，下一秒重读） |
+
+测试：`pair.test` 加断言「每条记录有 `pid` 且等于 `process.pid`」；`emitPairFailure` 单测看 seq；第 3 项不用模拟 Windows 共享冲突，只要重试分支有单测（注入一个前两次抛 EPERM 的假 rename）。改完 `npm run build`、全量测试、重新本地提交——**新提交号要换进发布卡的每一处**（`4bb07f3` 全文替换，zip 名与对象键里的短号同换）。
+
+**不改的两点，说明一下：** `Read-PairStatus` / `Test-SiteUrl` 是 `Show-Onboard` 的嵌套函数，Tick 在 `ShowDialog` 的调用栈内执行，看得到；就算哪天看不到，现在也只是 `$Connected` 显示「窗口内部错误」而不是整窗消失，所有者 UI 重验会直接暴露。回执里「config.yaml 五项」实际列了六项，发布卡写的六项是对的。
+
+**发布卡（`inbox/2026-10-11-37-agent-release-027.md`）：格式照 35 卡、A→B→C 门控、失败即停、不 push、UI 重验明确留给所有者——这些都对；提交号、zip 名、对象键、config 六项、模板摘要 `c797221d…`、node.exe 摘要都和仓库与 0.2.6 回执对得上；make 目标都存在；C 段流程与 0.2.6 的 stage→plan→提交→flux-release→晋级→apply→status→check 一致。改两处、补两句：**
+
+1. **C.2 写法会误导**：「`agent-releases.sops.yaml` 用 SOPS 重新加密；更新四处 `config-sha256`」读起来像手工步骤。这两样是 `application-stage` 渲染出来的（0.2.5 回执：stage 只改了 `config.yaml`、`agent-releases.sops.yaml`、`workload.yaml` 三份），**手改是错的**。改成：「这两处由 `application-stage` 自动改，不手动碰；审 diff 时核对 stage 恰好只动了这三份文件、负载 diff 只有四处 `config-sha256`」。
+2. **前提补一句操作坑**（E 卡一段回执里 Cursor 自己记的）：`agent-release-verify` / `upload` / `application-stage` 要先进 PID 1 的挂载命名空间再跑，否则 Makefile 的 `sudo env` 会丢掉 `AGENT_ZIP`；zip 从 Windows 侧复制到 k8s 工位可读的绝对路径后再 verify。
+3. 「看什么」A 段补：`windows-candidate` 文件数应仍为 98（本次没有增减包内文件）。
+4. Qwen 补完三处后换新提交号；Cursor 执行前我再看一眼新提交（十分钟），然后所有者通知 Cursor。
+
+**所有者 UI 重验清单不变**（上一节第 5 条）：托盘「重新连接账号」→ 窗内出码倒计时 → 浏览器核对页 → 网页「允许」→「已连接到 …」→ 选文件夹 → 完成「已在线」；再各拿一个码：干等过期、网页点「拒绝」，抄窗内原文。
