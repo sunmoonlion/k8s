@@ -126,6 +126,8 @@ irm 'https://investment.sunmoonai.com:30443/api/agent-install/<一次性凭证>/
 
 ### 4. 代理与设置窗口
 
+> 2026-10-11：设置窗口这一节拟按 [`0020`](0020-agent-setup-in-browser.md) 改成浏览器页（码与结果在浏览器，选目录留托盘），所有者未定；0.2.8 前仍按本节。
+
 - 新命令 `sunmoon-agent pair`：读 `site.json` → 建请求 → 输出码与到期时间（JSON 给界面用）→ 每 3 秒轮询 → 拿到后写 `config.json`（`relayUrl`、`userId`、`token`；与 `init` 写的格式相同）→ 退出码 0。超时/拒绝/取消各有退出码与人话。`init --token-prompt` 保留作备用。
 - 设置窗口（`desktop.ps1` 新增 `setup` 视图）四步：
   1. **连接账号**：按钮「连接我的账号」→ 调 `pair` → 大字显示 `XXXX-XXXX` 和倒计时 → 自动打开 `verify_url` → 成功后显示「已连接到 <账号>」。可「取消」「重新获取连接码」。
