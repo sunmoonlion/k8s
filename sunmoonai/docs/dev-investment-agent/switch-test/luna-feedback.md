@@ -939,7 +939,8 @@ return int(count) <= limit
 | 3 | `uninstall.mjs` 在 `stop` 之后、删文件之前：枚举本用户进程里可执行路径在安装目录下的（`node.exe`）与命令行含 `desktop.ps1` 的 powershell；命令行含我们 `cli.js` / `desktop.ps1` 的视为自己人，按 PID 结束并等退出；其它的不动，列出 PID 与命令行后停下报「有进程占着安装目录」 | 预置一个孤儿 `onboard-window` 再升级：自动收掉、升级成功；预置一个无关进程打开安装目录下文件：停下并点名 |
 | 4 | `removeVerifiedBundle` 删文件 `EPERM`/`EBUSY` 重试 10 × 500 ms，仍失败报错里带文件名 | 单测 |
 | 5 | 安装脚本失败文案加一句：「可能有旧窗口的进程还开着，先在托盘退出、关掉所有 SunMoon 窗口再试」 | 文案 |
+| 6 | **半卸状态要能认出来、能走下去**。现场第二次重装报 `Bundle content mismatch`：第一次卸载删到 `node.exe` 才被挡，安装目录已少了一批文件，`upgrade.mjs` 的 `inspectInstalled` 按清单核对不过就整个拒绝，用户没有出路。改法：`uninstall.mjs` 删文件前先写 `<目录>\.uninstall-incomplete`（删完再去掉）；`upgrade.mjs` 见到这个标记、或清单在但核对不过时，返回 `action: "repair"`，安装脚本据此在确认没有自己人进程后把残目录整个移走（改名为 `sunmoon-agent.broken-<时间>`，不直接删），再按全新安装走，配置照旧保留；文案说清「上次升级没做完，已清理残留」 | 预置半卸目录（随手删掉 `app\` 下几个文件）再升级：自动修复并装成；配置 sha 不变 |
 
 **不要做**：`taskkill /IM node.exe` 之类按名字杀；不动用户别的 node 进程。
 
-**顺序**：等所有者 E 复验结果出来再动手；E 若过，这五条合成 0.2.8 一轮；E 若不过，先修 E。
+**顺序**：等所有者 E 复验结果出来再动手；E 若过，这六条合成 0.2.8 一轮；E 若不过，先修 E。
