@@ -71,7 +71,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 350848b9c36eed84f4042cbff6426346c0e57c4e783b14ac007a2f8ae8caa8ed
+        sunmoonai.com/config-sha256: 381a0bcb1857225bb49023df0e68ab80404abc58c4b6d326685617ed7bfe2dd2
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -136,7 +136,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 350848b9c36eed84f4042cbff6426346c0e57c4e783b14ac007a2f8ae8caa8ed
+        sunmoonai.com/config-sha256: 381a0bcb1857225bb49023df0e68ab80404abc58c4b6d326685617ed7bfe2dd2
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -193,7 +193,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 350848b9c36eed84f4042cbff6426346c0e57c4e783b14ac007a2f8ae8caa8ed
+        sunmoonai.com/config-sha256: 381a0bcb1857225bb49023df0e68ab80404abc58c4b6d326685617ed7bfe2dd2
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -250,7 +250,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 350848b9c36eed84f4042cbff6426346c0e57c4e783b14ac007a2f8ae8caa8ed
+        sunmoonai.com/config-sha256: 381a0bcb1857225bb49023df0e68ab80404abc58c4b6d326685617ed7bfe2dd2
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
