@@ -828,3 +828,21 @@ return int(count) <= limit
 **然后：** 投资后端全量 + ruff + lint-imports → 只构建 investment-backend 镜像 → stage 投资 → 发布 → 晋级 → `application-check APP=investment`（新检查项必须为 true）→ 所有者从「复制安装命令」继续 E 全程。回执里记这次 500 的原文和修后的检查输出。
 
 **网页侧顺带（不阻塞，记给下一轮 web 改动）：** 现在所有非 429 的失败都显示「下载信息暂时读取失败」，500 也混在里面；至少把「服务端出错，请稍后再试并联系管理员」和「读取失败」分开。
+
+## 2026-10-11 · E 第二次卡住：首次安装（无 config.json）这条路从没走过——出 0.2.6，三处必改 + 模板去 BOM
+
+**限速器修法（backend `982b216`）认可**：INCR + EXPIRE NX、单测 104 行、全量 960 过、`application-check` 新项 `install_command_issued: true`。
+
+**这次卡住的根因只有一个：** 所有者机器以前一直有 `config.json`（init 时代留下的），所以「全新机器、没有任何配置」这条路从来没真跑过。`--remove-config` 卸干净后第一次走它，三个地方同时倒：
+
+| # | 现象 | 根因 | 改法 |
+| --- | --- | --- | --- |
+| 1 | 粘贴安装命令第一行报 `﻿$ErrorActionPreference 无法识别`，`Stop` 没设上，脚本带病继续 | `install.ps1.tmpl` 以 UTF-8 BOM 开头；BOM 是为 `-File` 方式下 PS 5.1 的中文加的，但一行命令是 `irm \| iex`——`irm` 把 BOM 当成字符留在字符串里 | **去掉模板 BOM**。后端 `PlainTextResponse` 已带 `charset=utf-8`，`irm` 会按它解码，中文不受影响。k8s `agent-releases/install.ps1.tmpl` 同步换成无 BOM 版本（仍要求与 runtime 原件逐字节相同）；`bundle.test.mjs` 若有「以 BOM 开头」的断言改为「不以 BOM 开头」。顺带在模板第一行加 `Set-StrictMode -Off` 之前先 `$ErrorActionPreference='Stop'` 的注释说明为何不能有 BOM |
+| 2 | 装完 `autostart enable` 失败「程序已安装，但登录自启没有打开」，窗口没弹、开始菜单没建；`menu` 也报「没有配置……先跑 init」 | `resident.ts` `checkControlDirectory()` 无条件 `loadConfig()`；`cli.ts` 的 `autostart` 又排在 `const cfg = loadConfig()` 之后。配对流程下 `config.json` 要到网页「允许」之后才由 `pair` 写出，之前这些入口全部不可用 | `checkControlDirectory`：`config.json` 不存在时按空白名单处理（`mkdirSync(CONFIG_DIR, 0o700)` 后 `assertWindowsHome(CONFIG_DIR, [])`），存在才 `loadConfig().roots`。`cli.ts`：`autostart` 移到 `loadConfig()` 之前。`install.ps1.tmpl`：`autostart enable` **只在升级（`config.json` 已存在）时执行**——因为升级的卸载步会 `autostart disable`，要补回来；全新安装不执行，交给设置窗口第三步（默认勾上）去开 |
+| 3 | （还没走到，但一定会撞）配对成功后「完成」会报「Background agent could not start」 | `cli.ts` `start()` 第 195 行：`if (!cfg.windowsSandbox) throw "Run init …"`。配对替代了 `init`，`windowsSandbox` 能力从来没人探测 | `start()` 在 win32 且 `cfg.windowsSandbox` 缺失时，先 `detectWindowsSandbox(cfg.codexHome, cfg.roots)` 并 `saveConfig`（就是 `init` 原来做的那一步），再往下走；日志记一行「首次探测 Windows 沙箱」。探测要起一次 exec-server 和一个探针进程，约几秒 |
+
+**测试：** Linux 上加「全新状态」用例：临时空 `SUNMOON_AGENT_HOME` 下 `menuPlan` 走 onboard、`checkControlDirectory` 不抛；`start()` 的能力探测分支用注入的假 `detectWindowsSandbox` 断言被调用并写回配置。Windows 上由所有者走真流程验。
+
+**版本与发行：** 0.2.6（三处）；重新组包、`agent-release-verify` + `upload`；`agent-releases/config.yaml` 换 0.2.6 五项、模板文件换无 BOM 版；只 stage / 发布 / 晋级投资；`application-check`。
+
+**所有者机器现状正好就是「全新用户」：** 装着 0.2.5、没有 `config.json`。0.2.6 发布后，所有者直接从网页「复制安装命令」再来一次：升级器会卸 0.2.5（无配置、跳过停进程）→ 装 0.2.6 → 弹设置窗口 → 连接我的账号 → 输码允许 → 选文件夹 → 自启（第三步勾上）→ 完成 → 已在线。**这一遍就是待办 73 要的首次路径，务必每步原文进回执。** 之后继续重启 / 过期码 / 拒绝码。
