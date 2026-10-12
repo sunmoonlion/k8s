@@ -38,3 +38,16 @@
 `inbox/cursor/`（发布与测试卡）、`inbox/astra/`（代理任务页），各看各的；`done/` 仍共用。`human-local.sh` 分别列出两箱；卡 41 已在 `inbox/cursor/`，`inbox/astra/` 现在是空的。
 
 补：所有者同日定「一次性为各工位都建上自己的 inbox」——再加 `inbox/kimi/`、`inbox/qwen/`（现在都空）；luna 照样设（`inbox/luna/`）；fable 也设（`inbox/fable/`，所有者定「方便以后在其它工位向 fable 派活」），远程读到就做。`human-local.sh` 改成自动列出 `inbox/` 下所有箱子。
+
+## 2026-10-12 · 卡 41 回执核对：通过，归档；现网 = 应用批 3 + 代理 0.3.1
+
+| 部分 | 核到 | 判定 |
+| --- | --- | --- |
+| 应用批 3 | 五处钉 = 父仓 `b27ed92e`、后端 `3a702802`、网页 `80d68331`；`v7` / `'20261012_0018'`；迁移 Job `investment-migrate-f47ea47f23f7-v7`；后端镜像 `sha256:f47ea47f…`、网页 `sha256:9f97bfbe…`；`application-check` 0；16:28 上线 | 通过 |
+| 代理 0.3.1 | zip `sunmoon-agent-0.3.1-5ccca65-windows-x64.zip` sha `8542e315…`、manifest `ce7a0ded…`、102 文件、size 175320303；windows-candidate pass；upload `readback_verified`；config 六项与仓里一致；晋级 digest `sha256:594583a4…`；后端镜像未换；`application-check` 0；16:38 上线 | 通过 |
+| 仓 | 无私钥；回执里的提交号（`4602b53d`、`7f908cce` 等）是回传时 rebase 前的，fable 上现在是 `2f7d2877`、`34198129`、`fe16b8ff`、`a237aa74`；Flux 按 OCI 摘要取，不受影响 | 通过 |
+
+Cursor 顺手记了一条：Windows 侧组包首次 tsc 缺 `smol-toml`，从 0.3.0 的完整 `node_modules` 复制后通过——以后组包前提里要写「依赖目录须完整（含 smol-toml）」。
+
+**所有者真机验**（上线后）：① 中文目录里第一条 `Get-ChildItem` 不乱码；② 托盘「重新连接账号」开出的页有「去网站允许」和「复制连接码」；③ 投资网页控制台 `fetch('http://127.0.0.1:47811/presence')` 四个键，`curl` 无 Origin 403；④ 设置页三栏、项目页「专家交回」、时间线里本机上限那一行（要触发一次本机权限弹窗才有）；⑤ 之前没试完的：侧边栏删除、审批四个按钮、专家排队、长期记忆。
+
