@@ -35,6 +35,11 @@ rebase_on_origin() { # 仓目录 标签：先把远程助手期间推上来的�
   [ "$behind" = 0 ] && return 0
   echo "    $tag 落后远程 $behind 个提交，rebase 到 origin/$WS"
   git -C "$d" rebase -q "origin/$WS" || { git -C "$d" rebase --abort 2>/dev/null; echo "✗ $tag rebase 冲突，停止回传；把上面的输出贴给远程助手"; return 1; }
+  # 父仓 rebase 跨过了远程改子模块指针的提交时，子模块目录还停在旧提交，会被同步脚本判成「有未提交内容」（2026-10-12 踩到）。
+  # 子仓的本地改动在第 2 步已经提交并推送，这里只是把检出对到新指针上，不丢东西。
+  if [ -f "$d/.gitmodules" ]; then
+    git -C "$d" submodule -q sync --recursive && git -C "$d" submodule -q update --init --recursive || { echo "✗ $tag 子模块没对上新指针；把上面的输出贴给远程助手"; return 1; }
+  fi
 }
 
 commit_if_dirty() { # 仓目录 标签
