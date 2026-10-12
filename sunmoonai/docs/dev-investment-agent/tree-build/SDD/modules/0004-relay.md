@@ -22,6 +22,8 @@
 
 配对规则：沙箱 `hello` 里的 `sub` 与代理 `hello` 里的 `sub` 一致，且两者版本成对（`AT-28`）；一个代理同一时刻只被一个沙箱绑定。
 
+2026-10-12 加第三种客户（0022，账 87）：工作台出站到 `/service`，`hello.role=workbench`，令牌同样就地验签；按 `sub` 配到该用户的代理，代理控制通道 hello 须带 `capabilities` 含 `service-v1`，否则拒绝（`agent has no service channel`）；会合点向代理发 `{"type":"open","conn":ID,"kind":"service"}`，之后透传；每用户服务流 ≤ 2（`RELAY_MAX_SERVICE_STREAMS_PER_USER`）；单帧 ≤ 1 MiB；不检查 Codex 版本成对。`RELAY_PROTOCOL` 不变。
+
 ## 功能义务
 
 | ID | 义务 |

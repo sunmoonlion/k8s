@@ -28,6 +28,8 @@
 
 弹窗的触发、答法、记录与回执见 [审批](approval.md)「三条路」；代理侧实现在 `runtime/agent/src/permissions.ts`（astra，0.2.x）。
 
+**从网页改白名单与上限（0022，账 87）**：网页只是把「用户想改成什么」经会合点送到他自己的电脑；代理收到后，凡是放宽的（加目录、抬沙箱、开网络、设知识库目录、开自启）仍在本机弹确认窗，用户在电脑上点了才写；收窄的直接写。所以「只能在本机抬高」这条不破。
+
 **由谁挡已定（探针 2026-09-23，`runtime/probe/REPORT-2026-09-23-local-ceiling.md`）：exec-server 自己不挡，本地代理必须挡。**
 执行端的 `config.toml`（`sandbox_mode="read-only"`）与 `requirements.toml`（`allowed_sandbox_modes=["read-only"]`）对编排端的要求毫无作用：
 编排端要 `danger-full-access` 就能写 `$HOME`，要 `workspace-write` 就能写 cwd，cwd 放在声明根之外照样执行。沙箱策略、cwd、workspace roots 全部由编排端随每个 `process/start` 下发，执行端只负责实施。
