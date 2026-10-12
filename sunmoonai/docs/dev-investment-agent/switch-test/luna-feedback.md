@@ -1045,3 +1045,23 @@ Cursor 顺手指出卡 38 里我给的 Python 截块用 `\n  ` 会误匹配四�
 
 **规矩补一条**：Cursor / luna 工作区的助手只跑 inbox 里的卡，**不从账本里自己领活**；账本上「卡 40 之后做」是给远程排期的，不是派工。
 
+## 2026-10-12 · astra 0.3.1 审读（runtime luna `5ccca65`，四个提交）：通过；六仓已对齐，工位切到 fable，发布卡 41
+
+| 条 | 做出来的样子 | 核到 | 判定 |
+| --- | --- | --- | --- |
+| 1 乱码根治（账 88） | `windowsEncoding.ts` 纯函数：PowerShell/pwsh 的 `-Command`/`-c` 脚本前加 Codex 同一句前缀（已带不重复），cmd 的 `/c`、`/d /c`、`/c /d` 命令前加 `chcp 65001>nul & `，其它可执行不动；env 补 `PYTHONUTF8=1`、`PYTHONIOENCODING=utf-8`（大小写不敏感地不覆盖）。`windowsBridge.ts` 在 `windowsDecision` 判完原 argv 之后、转发前才改写 | 改写点在判定之后（看了 diff 的位置）；`process/start` 真实帧字段里确有 `env`；两个新 env 键不在保留键里；表驱动单测 9 组 + 桥转发 1 组 | 通过 |
+| 2 配对页收尾（账 89） | 「去网站允许」、复制连接码（点码也复制，失败退到选中，「已复制」两秒）、三处文案、托盘状态窗加一句；CSP 没动 | 页面合同测试 6 项 | 通过 |
+| 3 本机探测小口（账 92） | `presence.ts`：只绑 `127.0.0.1`，47811 占则 47812，都占只记日志；`Origin` 恰等于 `site.json` 的 `web_origin`（https、无 userinfo、`url.origin === value`）否则 403 无 CORS 头；只 `/presence`（带查询串也 404）、GET 与 GET 预检（`Access-Control-Allow-Private-Network: true`，不发 credentials）；四个键；同秒 >20 回 429，日志只记次数；只在常驻进程里开，退出时关 | 与 astra-031 合同逐项对；gitops 校验 `web_origin` 必须是 `^https://[a-z0-9.-]+:30443$`，与小口的严格比对一致；单测 6 项含两口都占、限速、错来源 | 通过 |
+| 顺手 | `siteTrust.test` 子进程退出 9 时 skip | 本机 Node 24.21 上该项已 skip | 通过 |
+| 版本三处 | `package.json`、`cli.ts`、`windows-x64.json` 都 0.3.1 | — | 通过 |
+
+**本机重跑**（scratch worktree，`pnpm install --frozen-lockfile`）：`tsc` 0；vitest 23 文件 244 过 / 34 跳（第一遍 6 个 `cli.test` 失败是没编译 `dist/`，`tsc -p .` 之后全过）；发行包三套 48 项 46 过 2 跳。
+
+**没验的**（astra 自己写明，它在 Linux 壳里做的；放到发布后由所有者亲自验）：真机第一条命令中文；本机页按钮与复制；浏览器 `fetch` 回环与 `curl` 403；干净候选组包（Windows 物料不在它手边，发布卡里由 Cursor 组）。
+
+**两点备忘，不挡发布**：① Chrome 新版正在把「私有网络访问」换成「本地网络访问」权限提示，网页探测那半（远程做）要用 `fetch(url, { targetAddressSpace: 'loopback' })` 并把被拒当「探不到」；② 小口对无 `Origin` 的本机请求一律 403，所以 `curl` 看到 403 是对的，不是坏了。
+
+**六仓对齐（15:20）**：按 10-11 夜的约定，审读过后把 luna 与 fable 对齐——runtime fable 快进到 `5ccca65`；其余九个仓（三个 app 父仓、三个后端、投资后端/网页/父仓）各做一次「树取 fable、两个父」的合并提交推到 luna 与 fable，内容一行不变，只是把 luna 上多出的提交（U2 摘抄、设置页第 1 步的 `-s ours`、以及 15:10 同步脚本自动提交的 `592fe03`——它把投资父仓指针指回了被弃用的 `7afe64b`/`ea8d6d3`）收进历史。k8s 本来就相同。现在十一个仓 luna == fable：runtime `5ccca65`、投资父仓 `0bb0b72`、后端 `3a70280`（树 = `30a89d2`）、网页 `80d6833`（树 = `a972023`）、info `dc02a53`、knowledge `f79b43b`、tpl `631316b`、k8s `6f488ddf`。
+
+**工位切换**：从现在起所有者两个同步脚本不带 `WS=`（默认就是 fable）；Cursor 在 `~/worktrees/fable/k8s` 跑卡；astra 在 runtime 的 fable 分支上做；luna 分支冻结，不再推。发布卡 41（应用批 3 + 代理 0.3.1）已写在 inbox，按 fable 工作树写的。
+
