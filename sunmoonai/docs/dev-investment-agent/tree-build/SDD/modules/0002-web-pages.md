@@ -173,6 +173,8 @@ contracts/      接口的写法（zod）
 
 ### 设置 `/workbench/settings`
 
+> 2026-10-12：设置页改分三类（个人偏好 / 云端与模型 / 我的电脑），见 [`0021`](0021-settings-three-kinds.md)；下面是第 6 段当时的样子。
+
 三块没有变：模型 key、我的沙箱、新对话的默认。做的是：挪进 `features/settings`（取数、界面分开，契约单放一份 `contracts/workbench-settings.ts`）；放进新框架，一栏排下来；给用户看的字里「会话」都改成「对话」；审批策略四项的说法改成白话。旧的接口客户端（`lib/workbench/client.ts`）与旧契约（`contracts/workbench.ts`）删掉了。
 
 沙箱那一块的行为（拉起、更新、回收、换代理令牌、只显示一次的接入命令）是在测试集群上和所有者一起磨过的，这次没有动它的逻辑。
