@@ -4,6 +4,9 @@
   /agent               代理控制通道。第一帧 hello；通过则 welcome，之后会合点用 {"type":"open","conn":ID} 让代理开数据流
   /agent-data?conn=ID  代理数据流。第一帧 hello（带 conn）
   /sandbox             沙箱数据流。第一帧 hello；配对到同一 user 的代理，之后逐消息透传
+  /service             工作台的服务流（0022，账 87）。第一帧 hello role=workbench；配到同一 user 的代理（其控制通道 hello 须带
+                       capabilities 含 service-v1），会合点向代理发 {"type":"open","conn":ID,"kind":"service"}，之后逐消息透传。
+                       只读文件与设置读写的 JSON-RPC 走这里；不检查 Codex 版本；每用户 ≤ RELAY_MAX_SERVICE_STREAMS_PER_USER（默认 2）；单帧 ≤ 1 MiB
   /admin               工作台的管理通道（内网出站到边缘）。第一帧 hello role=admin + RELAY_ADMIN_TOKEN；之后
                        {"type":"set_tokens","user":U,"agent":A,"sandbox":S} / {"type":"revoke","user":U} / {"type":"list"}
                        / {"type":"set_public_key","pem":PEM} / {"type":"revoke_jti","jtis":[...]}
@@ -42,6 +45,9 @@ RELAY_NAME = os.environ.get("RELAY_NAME", "relay-v1")
 HELLO_TIMEOUT = float(os.environ.get("RELAY_HELLO_TIMEOUT", "10"))
 OPEN_TIMEOUT = float(os.environ.get("RELAY_OPEN_TIMEOUT", "15"))
 MAX_STREAMS_PER_USER = int(os.environ.get("RELAY_MAX_STREAMS_PER_USER", "8"))
+MAX_SERVICE_STREAMS_PER_USER = int(os.environ.get("RELAY_MAX_SERVICE_STREAMS_PER_USER", "2"))
+SERVICE_CAPABILITY = "service-v1"           # 代理控制通道 hello.capabilities 里要有它，工作台才配得上
+SERVICE_MAX_FRAME = 1024 * 1024            # 服务流单帧上限（字节）；超了关流，不透传
 ADMIN_TOKEN = os.environ.get("RELAY_ADMIN_TOKEN", "")
 TOKENS_STATE = os.environ.get("RELAY_TOKENS_STATE", "")
 JWT_PUBLIC_KEY = os.environ.get("RELAY_JWT_PUBLIC_KEY", "")
@@ -144,12 +150,28 @@ def machine_of(hello: dict) -> dict:
     }
 
 
+def capabilities_of(hello: dict) -> list[str]:
+    """代理 hello 里自报的能力名（如 service-v1）。只留短字符串，去重，最多 16 个；老代理不报，返回空。"""
+    raw = hello.get("capabilities")
+    if not isinstance(raw, list):
+        return []
+    out: list[str] = []
+    for c in raw:
+        if isinstance(c, str) and 0 < len(c) <= 32 and re.fullmatch(r"[a-z0-9][a-z0-9-]*", c) and c not in out:
+            out.append(c)
+        if len(out) >= 16:
+            break
+    return out
+
+
 @dataclass
 class Agent:
     ws: ServerConnection
     codex: str
     software: str
     streams: int = 0
+    service_streams: int = 0  # 工作台服务流（/service）计数，与沙箱流分开限
+    capabilities: list[str] = field(default_factory=list)
     jti: str = ""  # JWT 令牌的 jti（静态表令牌为空）；按 jti 吊销时据此断开在线代理
     machine: dict = field(default_factory=dict)  # hello 里报的机器信息（machine_of）
     since: float = field(default_factory=time.time)
@@ -200,7 +222,7 @@ class Relay:
             expected = self.tokens.get(user, {}).get(role)
             if not expected or not secrets.compare_digest(expected, token):
                 raise Reject("bad token")
-        if not hello.get("codex"):
+        if role != "workbench" and not hello.get("codex"):
             raise Reject("missing codex version")
         return user
 
@@ -218,7 +240,7 @@ class Relay:
             except Exception: pass
         agent = Agent(ws=ws, codex=str(hello["codex"]), software=str(hello.get("software", ""))[:64],
                       jti=jwt_jti(str(hello.get("token") or "")) if self.public_key() is not None else "",
-                      machine=machine_of(hello))
+                      machine=machine_of(hello), capabilities=capabilities_of(hello))
         self.agents[user] = agent
         self.stats["agent_up"] += 1
         await ws.send(json.dumps({"type": "welcome", "relay": RELAY_NAME, "proto": RELAY_PROTOCOL,
@@ -299,6 +321,44 @@ class Relay:
                     del agent.permission_reports[receipt]
             log.info("closed user=%s conn=%s after %.1fs", user, conn, time.monotonic() - t0)
 
+    async def service(self, ws: ServerConnection):
+        """工作台的服务流（0022）：像 /sandbox 一样配到该用户的代理，但 open 带 kind=service，代理那头接服务处理器而不是 exec-server。"""
+        hello = await self._hello(ws)
+        try:
+            user = self.check(hello, "workbench")
+        except Reject as e:
+            await self._reject(ws, str(e)); return
+        agent = self.agents.get(user)
+        if agent is None:
+            await self._reject(ws, "agent offline"); return
+        if SERVICE_CAPABILITY not in agent.capabilities:
+            await self._reject(ws, "agent has no service channel"); return
+        if agent.service_streams >= MAX_SERVICE_STREAMS_PER_USER:
+            await self._reject(ws, "too many service streams"); return
+        conn = secrets.token_hex(4)
+        fut: asyncio.Future = asyncio.get_running_loop().create_future()
+        self.waiting[conn] = (user, fut)
+        try:
+            await agent.ws.send(json.dumps({"type": "open", "conn": conn, "kind": "service"}))
+            try:
+                agent_ws: ServerConnection = await asyncio.wait_for(fut, OPEN_TIMEOUT)
+            except asyncio.TimeoutError:
+                await self._reject(ws, "agent did not open the stream"); return
+        finally:
+            self.waiting.pop(conn, None)
+        agent.service_streams += 1
+        agent.connections.add(conn)
+        self.stats["service_paired"] = self.stats.get("service_paired", 0) + 1
+        await ws.send(json.dumps({"type": "welcome", "relay": RELAY_NAME, "proto": RELAY_PROTOCOL, "conn": conn, "kind": "service"}))
+        log.info("service paired user=%s conn=%s", user, conn)
+        t0 = time.monotonic()
+        try:
+            await asyncio.gather(self._pipe(ws, agent_ws, SERVICE_MAX_FRAME), self._pipe(agent_ws, ws, SERVICE_MAX_FRAME))
+        finally:
+            agent.service_streams -= 1
+            agent.connections.discard(conn)
+            log.info("service closed user=%s conn=%s after %.1fs", user, conn, time.monotonic() - t0)
+
     @staticmethod
     async def send_permission_control(agent: Agent, message: dict):
         try:
@@ -350,9 +410,14 @@ class Relay:
             pass
 
     @staticmethod
-    async def _pipe(src: ServerConnection, dst: ServerConnection):
+    async def _pipe(src: ServerConnection, dst: ServerConnection, max_frame: int | None = None):
         try:
             async for msg in src:
+                if max_frame is not None and len(msg) > max_frame:
+                    # 服务流不该有这么大的帧（0022：单帧 ≤ 1 MiB）；关掉两头，不透传
+                    try: await src.close(code=1009, reason="frame too large")
+                    except Exception: pass
+                    break
                 await dst.send(msg)
         except websockets.ConnectionClosed:
             pass
@@ -370,6 +435,8 @@ class Relay:
             await self.agent_data(ws, conn)
         elif u.path == "/sandbox":
             await self.sandbox(ws)
+        elif u.path == "/service":
+            await self.service(ws)
         elif u.path == "/admin":
             await self.handle_admin(ws)
         else:
@@ -385,6 +452,7 @@ class Relay:
             self.expire_permission_reports()
             return {"type": "agents", "relay": RELAY_NAME,
                     "agents": {u: {"codex": a.codex, "software": a.software, "since": int(a.since), "machine": a.machine,
+                                   "capabilities": a.capabilities,
                                    **({"permission_reports": [{"receipt": r, "report": i["report"]} for r, i in a.permission_reports.items()]} if a.permission_reports else {})}
                                for u, a in sorted(self.agents.items())}}
         if kind == "permission_receipts":

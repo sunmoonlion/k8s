@@ -34,7 +34,7 @@
 
 ## 二、段 0（远程做，不用等）
 
-会合点 `/service` 路径与 `open.kind` 由远程改 `relay.py`（k8s 仓 `relay-platform/relay/`），今天提交到 fable；你的单测用假会合点即可，真机联调时 `git -C ~/worktrees/fable/k8s pull` 拿最新 `relay.py` 在本机起（`python relay.py`，环境变量见其文件头），不必等发布。
+会合点 `/service` 路径与 `open.kind` 远程**已改好**（k8s fable，`sunmoonai/relay-platform/relay/relay.py`，说明在同目录 `service-v1.md`，测试 `tests/test_service.py`）；你的单测用假会合点即可，真机联调时 `git -C ~/worktrees/fable/k8s pull` 拿最新 `relay.py` 在本机起（`python relay.py`，环境变量见其文件头），不必等发布。
 
 ## 三、规矩
 
