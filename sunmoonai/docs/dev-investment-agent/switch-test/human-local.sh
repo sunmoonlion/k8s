@@ -53,13 +53,14 @@ fi
 echo "===== 2. 刷新副本 ~/switch-test（用仓里的最新版覆盖）"
 rm -rf "$HOME/switch-test" && cp -r "$ST" "$HOME/switch-test"
 
-for who in cursor astra; do
+for box in "$ST"/inbox/*/; do
+  who=$(basename "$box")
   echo "===== 3. 待办：$who（$ST/inbox/$who）"
   n=0
-  for f in "$ST"/inbox/$who/2*.md "$ST"/inbox/$who/astra-*.md; do
+  for f in "$box"2*.md "$box"astra-*.md; do
     [ -e "$f" ] || continue
     n=$((n+1)); echo "  - $(basename "$f")：$(sed -n '1s/^# //p' "$f")"
   done
   [ $n -eq 0 ] && echo "  （空）"
 done
-echo; echo "===== 同步完成。对 Cursor 说：请看 inbox/cursor；对 astra 说：请看 inbox/astra。（各自只看自己的；每条做完自己本地提交；推回用 human-remote.sh）"
+echo; echo "===== 同步完成。对哪个助手说「请看 inbox/<它的名字>」，它就只看那个箱子。（每条做完自己本地提交；推回用 human-remote.sh）"

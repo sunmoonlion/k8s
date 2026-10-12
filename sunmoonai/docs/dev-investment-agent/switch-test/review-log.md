@@ -36,3 +36,5 @@
 ## 2026-10-12 · 两个本地助手各一个收件箱（所有者定「给它们各自的 inbox，否则容易乱」）
 
 `inbox/cursor/`（发布与测试卡）、`inbox/astra/`（代理任务页），各看各的；`done/` 仍共用。`human-local.sh` 分别列出两箱；卡 41 已在 `inbox/cursor/`，`inbox/astra/` 现在是空的。
+
+补：所有者同日定「一次性为各工位都建上自己的 inbox」——再加 `inbox/kimi/`、`inbox/qwen/`（现在都空）；fable 是远程工位、luna 冻结，不设。`human-local.sh` 改成自动列出 `inbox/` 下所有箱子。
