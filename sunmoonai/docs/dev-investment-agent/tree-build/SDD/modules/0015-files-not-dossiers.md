@@ -72,6 +72,19 @@
 
 `I6`（成功前证据已持久化）、验收条、`AT-25` 交回物契约的内容要求、`workspace.md`「谁能改文件」、方向盘。`workspace.md`「结果落两处」改为：**项目目录那份是给用户的唯一一份；工作台那份只是证据，不成页面。**
 
+## 三之二、做出来的样子（2026-10-12 下午，fable；卡 F2/F3）
+
+| 项 | 做法 | 与 §三的出入 |
+| --- | --- | --- |
+| `output_file` | `StepContract.output_file`；SMOKE `底稿/烟测-回答.md`、DATA_QUERY `底稿/数据查询-成稿.md`、FIN_REVIEW `底稿/财报体检-成稿.md`；`ExpertPack.deliverable_files()` | 无 |
+| compose | 「Deliverable file」一节：路径、用补丁工具写（不要重定向）、写法要求 `DELIVERABLE_RULES`（回答 / 数据带角标 / 专家验过什么 / 局限 / 出处；不给评级与买卖建议；不贴 JSON）；最后一步另加「Handback file」写 `交回.md` | `交回.md` 由模型写：工作台到不了用户电脑，自己写不了 |
+| 存在性检查 | 只认这一轮 Codex 报的 `fileChange` 路径（runner 在 turn 内收集进 `TurnResult.files`）；写了就在 `workbench_artifacts.workspace_path` 记路径并发 `step/deliverable` 事件，没写也只记事件 | **软检查，不按验收不过走 `on_reject`**：`fs/getMetadata` 到不了用户电脑（§五），命令行写的又看不见，硬判会误伤；硬检查等账 87 |
+| 证据副本 | 只记路径，不复制内容 | 同上，等 87 |
+| handback | 加 `files`（各步 `workspace_path`）；`workspace_restore` 列出成稿路径 | 无 |
+| 撤掉 | `GET /tasks/{id}/dossier`、`/dossier/export`、`PUT /tasks/{id}/conclusion`；MCP `list_project_dossiers` / `read_project_dossier`；网页底稿页与路由、`dossier-parts`、专家页 `results.tsx`、聊天页 `results.tsx`、`ResultsPanel`、`useAutoOpen`；文案里的「底稿」 | `ExpertDesk.dossier()` / `dossier_export()` 与 `DossierBlock` **暂留**：知识库页（0011）读它们；0011 作废后随账 85 N1 一起撤 |
+| 专家页右边栏 | 与工作页同一个 `WorkSidePanel`（搬到 `components/workbench/`，时间线模型搬到 `lib/workbench/timeline.ts`） | 无 |
+| 项目页 | 「底稿」列表改「专家交回」：专家、终态、费用、时间，点开回到那段对话 | 无 |
+
 ## 四、知识库（0011）怎么办——已定
 
 2026-10-11 晚：0011 的用户私有云端库作废（0018，「用户已经不会上传资料了」），底稿与交回物不再自动归入任何库；侧边栏那一项改为「本地知识库」（0019）。A/B 两案不用选。
