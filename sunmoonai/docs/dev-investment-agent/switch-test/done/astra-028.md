@@ -51,7 +51,7 @@
 
 ## 六、接着做 0020，合成 0.3.0 一次发（所有者 2026-10-11 夜定「做好后直接做」）
 
-第三节 1–7 条做完、第四节验过之后**不停、不发 0.2.8**，直接按 [`tree-build/SDD/modules/0020-agent-setup-in-browser.md`](../tree-build/SDD/modules/0020-agent-setup-in-browser.md) 做卡 P1–P4，最后版本三处改 **0.3.0**（你已改的 0.2.8 到时覆盖），一起交审、一起发。
+第三节 1–7 条做完、第四节验过之后**不停、不发 0.2.8**，直接按 [`tree-build/SDD/modules/0020-agent-setup-in-browser.md`](../../tree-build/SDD/modules/0020-agent-setup-in-browser.md) 做卡 P1–P4，最后版本三处改 **0.3.0**（你已改的 0.2.8 到时覆盖），一起交审、一起发。
 
 要点：
 - 第三节第 1 条（`Shown` 显式显示）和第 2 条（看门狗）在 0020 之后仍然要：向导窗撤了，本机设置、连接状态、权限确认三个窗还是 WinForms，同样走隐藏启动。写成通用的，不要只给向导窗。
