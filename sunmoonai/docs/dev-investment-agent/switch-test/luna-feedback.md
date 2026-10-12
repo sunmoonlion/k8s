@@ -996,3 +996,22 @@ return int(count) <= limit
 **下一步**：astra 做第 8 条后直接按 `astra-028.md` 第六节接 0020（P1–P4），合成 0.3.0 一次交审。
 
 2026-10-12 早报：[`morning-2026-10-12.md`](morning-2026-10-12.md)。
+
+## 2026-10-12 · astra 0.3.0 审读（runtime luna `dbe5d01`，生产源码 `834e4e9`；web `6fc8bb4`；k8s luna `70b77c08`）：通过，发布卡 39
+
+| 查什么 | 核到什么 | 判定 |
+| --- | --- | --- |
+| 第 8 条权限确认窗 | `Initialize-VisibleForm` 通用：`Shown` 里 `ShowWindow(5)` + `Activate`，不可见就 `Close()`（confirm 关窗即未批准，安全默认）；confirm 加 `New-FormWatchdog`，`finally` 停两个 Timer、释放窗体、`Application.Exit`。本机设置、连接状态同样套上 | 通过 |
+| P1 本机页 | 只绑 `127.0.0.1` 随机端口，路径 `/setup/<64 位十六进制>`；Host/Origin/Referer 三检；CSP 带 nonce、`frame-ancestors 'none'`、`no-store`、`no-referrer`；五个精确路径，其余 404；POST 不收任何正文，`done` 未在线 409；状态投影只放七个字段，令牌与设备秘密进不来；刷新先取消旧一轮；完成/取消/30 分钟关端口。允许后：`autostart enable` → `startResident` → 最多 30 秒等 `connected`，`rejected` 当即报人话 | 通过 |
+| P2 入口与撤旧 | `menu` 无令牌时起 `pair --page`（detached node，等发现文件最多 10 秒）；托盘「重新连接账号」直接 `New-AgentProcess @('pair','--page')`，不再经 wscript；`Show-Onboard`、`onboard-window`、`onboard-ready.json`、`pair-status.json`、`emitPairFailure` 全撤；`open-desktop.vbs` 只剩 tray；卸载允许清单留旧标记一版。`pair-page.json` 只存 pid + 本机地址，0600，lstat 校验，pid 不活即作废；命名管道只做单实例锁 | 通过 |
+| P3 兜底 | 控制台与日志打印页面地址；托盘「连接状态」改成可滚动窗体，附页面地址与码（经 `pair-page-status`，不含令牌）。真机只做了「注入打不开」的故障，**没有真清默认浏览器关联**；astra 自己写明，不记通过 | 保留缺口 |
+| P4 文案 | 安装模板一句完成提示，runtime 与 k8s 两份 sha 同（`4e761924…`，无 BOM）；0012 §4 改按 0.3.0；0020 头部改状态；网页三步引导第二步改「电脑上会自动打开一页显示连接码」，中英文 + 测试 | 通过 |
+| `postPair` 顺手改 | 加 `redirect:"error"` 和 10 秒超时，错误经 `humanizeTransport` 变人话——比原来更严，好 | 通过 |
+| 远程复跑（`dbe5d01` 隔离工作树） | build、typecheck 过；vitest 225 过 33 跳过 1 失败；distribution 46 过 2 跳过（先补上旁边的 k8s 树，否则 `bundle.test` 读不到模板）。那 1 条失败是 `siteTrust.test`「rejects the wrong CA path」：这台机器 Node 24.21 直接拒绝同时给 `--use-system-ca` 与 `NODE_OPTIONS=--use-openssl-ca`（退出 9，标准输出空），测试期望子进程跑起来并打印 `SITE_LAUNCH`。文件自 0.2.8 起没改，包里的 Node 24.19 不受影响，与 0.3.0 无关 | 通过（1 条是环境） |
+| 真机 | 所有者亲手：登录 → 输码 → 允许 → 页面「已在线」，后台 `relayStatus=connected`，自启 Limited；关闭页面后台仍在线（独立回归通过）。控制台闪出答「好像有，看不清」，未验；重启登录、干净机器、UAC 未验 | 主路径通过 |
+
+**一点小提醒给 astra（不挡发布）**：`siteTrust.test` 那条在 Node ≥ 24.20 上会假失败，加一句「子进程因两个 CA 旗子冲突退出 9 时跳过」即可，下次顺手。
+
+**合并与分支**（所有者 2026-10-11 夜定「之后只在 fable 做」）：runtime fable 快进到 `dbe5d01`（cursor/kimi/qwen 镜像同步）；网页文案摘到 fable `91f9f9f`，父仓合 luna 后指向它（`fbfa61a`）；k8s fable 快进到 luna `70b77c08`（含 0.2.5–0.2.7 的发布声明）。luna 继续作 Cursor 跑卡的工位，每次文档提交后照旧合过去。
+
+**下一步**：卡 38（应用批 1，网页提交号已换成含新文案的 `91f9f9f`、父仓 `fbfa61a`）先跑，再跑卡 39（代理 0.3.0 组包 + 上传 + 只发投资，`inbox/2026-10-12-39-agent-release-030.md`）。然后所有者走全新安装路径做 E。astra 接下来是账 87（代理文件通道），等所有者开工。
