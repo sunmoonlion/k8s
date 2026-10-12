@@ -8,6 +8,11 @@ set -uo pipefail
 WS="${WS:-fable}"
 K8S="$HOME/worktrees/$WS/k8s"; ST="$K8S/sunmoonai/docs/dev-investment-agent/switch-test"
 FIVE="k8s info-app investment-app knowledge-app tpl-app"
+# 父仓下的全部子仓（与 human-remote.sh 同一份）
+SUBS="info-app/info-backend info-app/info-web-frontend info-app/info-admin-frontend
+  investment-app/investment-backend investment-app/investment-web-frontend investment-app/investment-admin-frontend
+  knowledge-app/knowledge-backend knowledge-app/knowledge-web-frontend knowledge-app/knowledge-admin-frontend
+  tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend"
 
 pull() { # 仓目录 标签
   [ -e "$1/.git" ] || { echo "⚠ $2 不存在：$1"; return 1; }
@@ -18,7 +23,7 @@ if [ "${1:-}" != "--after-sync" ]; then
 echo "===== 0. 先看本地有没有没推回的东西"
 # 本地助手的提交还没推回、或者还在做（有未提交改动）时，拉取只会报 git 的分叉错误；这里先说人话再停
 blocked=0
-for r in $FIVE investment-app/investment-backend knowledge-app/knowledge-backend runtime; do
+for r in $FIVE $SUBS runtime; do
   d="$HOME/worktrees/$WS/$r"; [ -e "$d/.git" ] || continue
   # 先取远端：远程助手把本地提交合并进去后，旧的 origin/$WS 会把它们误报成「没推回」
   git -C "$d" fetch -q origin "$WS" 2>/dev/null || true
@@ -42,6 +47,23 @@ fi
 pull "$HOME/worktrees/$WS/investment-app/investment-backend" "investment-app/investment-backend" || exit 1
 pull "$HOME/worktrees/$WS/knowledge-app/knowledge-backend" "knowledge-app/knowledge-backend" || exit 1
 pull "$HOME/worktrees/$WS/runtime" runtime || exit 1
+
+# 1b. 子仓接回工位分支。five-repos-sync 的 submodule update 按父仓指针检出，子仓必然游离（detached）；
+# 游离状态下本地助手要先自己建分支才能提交，容易出错。这里把每个子仓接到本地 <工位> 分支：
+#   - 子仓当前提交等于、或领先于本地已有的 <工位> 分支：在当前提交上建/移到该分支（内容不动）；
+#   - 本地 <工位> 分支有没推回的提交（领先于当前提交）：不动，提示先回传。
+echo "===== 1b. 子仓接回 $WS 分支"
+for r in $SUBS; do
+  d="$HOME/worktrees/$WS/$r"; [ -e "$d/.git" ] || continue
+  [ "$(git -C "$d" branch --show-current)" = "$WS" ] && continue
+  head=$(git -C "$d" rev-parse HEAD)
+  if git -C "$d" show-ref --verify --quiet "refs/heads/$WS" && ! git -C "$d" merge-base --is-ancestor "refs/heads/$WS" "$head"; then
+    echo "  ⚠ $r 本地 $WS 分支有没推回的提交，没动；先跑 human-remote.sh 回传"; continue
+  fi
+  git -C "$d" checkout -q -B "$WS" "$head" || { echo "  ⚠ $r 接不回 $WS 分支"; continue; }
+  git -C "$d" fetch -q origin "$WS" 2>/dev/null && git -C "$d" branch -q --set-upstream-to="origin/$WS" "$WS" 2>/dev/null
+  printf "  %-44s %s\n" "$r" "$(git -C "$d" rev-parse --short HEAD)"
+done
 fi
 
 # 同步完成后，把控制权交给仓里的最新版（自己可能是旧副本）
