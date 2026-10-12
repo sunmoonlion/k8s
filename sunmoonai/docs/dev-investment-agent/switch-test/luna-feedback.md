@@ -1030,3 +1030,7 @@ Cursor 顺手指出卡 38 里我给的 Python 截块用 `\n  ` 会误匹配四�
 ## 2026-10-12 · 实测第一条：Windows 命令输出乱码（账 88）
 
 所有者在工作对话里让它列文件，第一次输出都是乱码，模型自己再切 UTF-8 重列。查实：中文 Windows 的 PowerShell/cmd 往管道写 GBK；Codex 自带的 UTF-8 前缀只在会话 shell 是 PowerShell 时加（`unified_exec.rs` 的 `req.shell_type` 取自 app-server 本机 shell），我们的 app-server 在 Linux 沙箱里，所以不加。两头治：后端模式说明加一句（fable 后端，随下次发布），代理在 `windowsBridge.ts` 转发 `process/start` 时给 PowerShell/cmd 加前缀（账 88，astra，0.3.1）。登录那条「与身份服务交换令牌失败」是一次性事务过期或重复回调，重登即好，文案另改。
+
+## 2026-10-12 · 给 astra 的 0.3.1 任务页
+
+所有者「开工」后写 [`astra-031.md`](astra-031.md)：账 88 乱码根治（过滤判定之后改写 argv，PowerShell 加 Codex 同一句前缀、cmd 加 `chcp 65001>nul &`、env 补 `PYTHONUTF8`）；账 89 本机页收尾（「去网站允许」、复制连接码、文案）；账 92 回环小口（`127.0.0.1:47811/presence`，只认站点 Origin，四个键，`Access-Control-Allow-Private-Network`）。网页探测那半等 astra 回执再做。
