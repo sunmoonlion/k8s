@@ -59,3 +59,16 @@ Cursor 顺手记了一条：Windows 侧组包首次 tsc 缺 `smol-toml`，从 0.
 
 卡 42（`inbox/cursor/2026-10-12-42-web-batch4-agent-032.md`）：网页批 4（账 94 + 95 ②③，网页 `8ccc52c`，后端不变、无迁移）+ 代理 0.3.2。临时绕法：PowerShell 里 `& "$env:LOCALAPPDATA\Programs\sunmoon-agent\sunmoon-agent.cmd" pair --page`。
 
+## 2026-10-12 · astra 0.4.0 服务流段 1 审读（runtime fable `9d96980`）：通过，收作「服务流代理侧」；接着按乙案做回环口
+
+astra 在我改乙案之前（它手里是 512 KiB 那版合同）把**服务流**的段 1 做完了：`service.ts`（JSON-RPC 只开 `service/hello` 与三个只读 `fs/*`，令牌桶 50/s、4 并发，白名单 + 配置目录 / codex-home / `auth.json` / `.sandbox-secrets` 排除，Linux 路径逐级查符号链接与打开后身份），`relayClient.ts` 按 `open.kind=service` 分流（服务流独立计数、上限 2、控制断开即关），`helper.mjs` 加私有投影 `service/getMetadata|readDirectory|readFile`（复用目录钉住与身份检查，没有写方法），`windowsRuntime.ts` 管道 `setEncoding("utf8")` 修中文目录名跨块损坏。Linux 258 过、发行包 46/2；**Windows 真机 + 真实 `relay.py` 配对**：中文文件读取、5 MiB 十段重组、2001 项中文目录截断、junction / 硬链接 / 别名 / `.codex` / 代理 home 全拒、无令牌 reject。沙箱流与 `filter.ts`、`windowsPolicy.ts`、`windowsBridge.ts` 逐字节未动。
+
+| 看了 | 看到 | 判定 |
+| --- | --- | --- |
+| 只读、白名单、受保护目录、链接逃逸 | Windows 走现有沙箱内 helper，Linux 路径只为单测 | 过 |
+| 限额 | 512 KiB 原文、目录按条数与字节双重截断、回包 > 1 MiB 直接断流而不是硬发 | 过 |
+| 流管理 | 第 3 条服务流发 hello 后 1008 关；控制通道断开关掉全部服务流 | 过 |
+| 日志 | 只有方法名与错误码 | 过 |
+
+**这段活没白做**：乙案（0022 重写）里服务流留给云端自用（成稿硬检查、以后 `采集/` 写回），这正是它。收下，记为 0022 段 4 的代理侧已成。接下来 astra 按重写后的 `astra-032.md` 做乙案：段 1 回环口四个只读接口 + 验票，段 2 设置读写。它那条 17:38 的合同阻塞回执也对：当时 1 MiB 原文确实超帧。
+
