@@ -72,3 +72,17 @@ astra 在我改乙案之前（它手里是 512 KiB 那版合同）把**服务流
 
 **这段活没白做**：乙案（0022 重写）里服务流留给云端自用（成稿硬检查、以后 `采集/` 写回），这正是它。收下，记为 0022 段 4 的代理侧已成。接下来 astra 按重写后的 `astra-032.md` 做乙案：段 1 回环口四个只读接口 + 验票，段 2 设置读写。它那条 17:38 的合同阻塞回执也对：当时 1 MiB 原文确实超帧。
 
+## 2026-10-12 · astra 0.4.0 乙案段 1 审读（runtime fable `5403c06`）：通过，进段 2
+
+| 看了 | 看到 | 判定 |
+| --- | --- | --- |
+| `ticket.ts` | 只认 `Bearer` 三段 JWT；`alg` 只许 ES256、`kid` 必填、拒 `crit`；`aud=local-agent`、`sub` 等于自己的 `userId`、`iss` 非空、`exp` 未过、`iat` 不超前 30 秒、票期 ≤ 600 秒、签名 64 字节；JWKS 只从固定站点 `/api/workbench/token-keys` 取（不认票里的 `jku`），≤ 64 KiB、≤ 64 把钥、只收 P-256 公钥、缓存 10 分钟、并发合并；取不到 503 `keys_unavailable`。Node 自带 crypto，没加依赖 | 过。一处小毛病：遇到没见过的 `kid` 直接 401，不重取 JWKS——工作台换钥后最长 10 分钟内票都会被拒。段 2 顺手改：未知 `kid` 且上次取钥超过 60 秒就重取一次 |
+| `localApi.ts` | `/presence` 与 `/local/v1/*` 同一个监听；Origin 不对 403 无 CORS 头；同秒 > 20 回 429；预检三个头齐、不发 credentials；业务路径先验票再路由；`fs/file` 回原始字节 + `X-File-Size/Mtime/Eof` 并 `Access-Control-Expose-Headers`（我网页那头正好靠这三个头，它想到了）；错误固定 JSON | 过 |
+| `localFiles.ts` | 白名单 + 配置目录 / codex-home / `auth.json` / `.sandbox-secrets` 排除；Windows 经现有沙箱助手（`local/readFile` 投影，1 MiB），Linux 路径逐级查链接与打开后身份；> 64 MiB 413；目录 2000 项截断 | 过 |
+| 不动的 | `service.ts` 等已过审文件与三个安全文件逐字节相同；`presence.ts` 只剩转发 | 过 |
+| 测试 | Linux 274 过、发行包 46/2；Windows 原生 + **隔离 Edge 在真实站点 Origin 下带自签票跨源读到本机文件**，缺票 401、缺 Origin 403、错 Origin 无 CORS、链接 / 别名 / 受保护目录全拒、5 MiB 五段重组、2001 项中文目录截断 | 过。没验的它写明：现网发票→本机验、真实网页文件树（等发布）、Chrome、elevated |
+
+顺带：它在真机上发现 47811 被 Cursor.exe 占、47812 被另一个 node.exe 占（没动它们，改随机口测）。**这是个真问题**：Cursor 编辑器会占 47811？要查清是巧合还是 Cursor 固定用这个口；若固定，正式版的端口要换或多备几个。记账 95 ⑤，所有者机器上看一眼 `netstat -ano | findstr 4781`。
+
+**段 2 开工**：`GET/PUT /local/v1/settings`、`libraryDir`、放宽确认、重启重报，按 032。
+
