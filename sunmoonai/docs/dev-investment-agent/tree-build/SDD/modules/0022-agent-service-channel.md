@@ -104,3 +104,5 @@ channels.md「没有工作台 → 本地代理下发任务」仍成立：回环�
 | 0 会合点 | 2026-10-12 下午 | `relay.py` `/service`、`open.kind`、`capabilities`，8 项测试 | 无；按乙案它留给云端自用 |
 | 3 骨架（甲案） | 2026-10-12 晚 | 后端五端点 + `WsAgentService`；网页文件树经工作台 | **已按乙案改**：`/fs/*`、`/settings` 撤，留 `/service` 与票端点；网页改直连回环（见下一行） |
 | 合同改一处 | 2026-10-12 17:38 | astra 实测 1 MiB 原文 base64 超会合点帧上限 | 乙案下回环口回原始字节，不再有这个问题；服务流那边仍是 512 KiB |
+| 3 骨架（乙案） | 2026-10-12 夜 | 后端：撤 `/fs/*`、`/settings`，加 `GET /environments/{id}/local-ticket`（`aud=local-agent`、10 分钟，只给环境主人且已配对），`/service` 留给云端自用；网页：`lib/workbench/local-agent.ts`（探口 → 要票 → `info`，`userId` 核对账号；`fs/dir`、`fs/file` 原始字节、`settings` 读写），右边栏文件树与文件内容改直连；测试里核了工作台只被要一张票。后端 `22f8247`、网页本提交 | 账 92 网页那半（侧边栏「这台电脑还没接入」）与「我的电脑」可编辑、本地知识库页还没接，等 astra 段 1/2 真流 |
+
