@@ -1015,3 +1015,14 @@ return int(count) <= limit
 **合并与分支**（所有者 2026-10-11 夜定「之后只在 fable 做」）：runtime fable 快进到 `dbe5d01`（cursor/kimi/qwen 镜像同步）；网页文案摘到 fable `91f9f9f`，父仓合 luna 后指向它（`fbfa61a`）；k8s fable 快进到 luna `70b77c08`（含 0.2.5–0.2.7 的发布声明）。luna 继续作 Cursor 跑卡的工位，每次文档提交后照旧合过去。
 
 **下一步**：卡 38（应用批 1，网页提交号已换成含新文案的 `91f9f9f`、父仓 `fbfa61a`）先跑，再跑卡 39（代理 0.3.0 组包 + 上传 + 只发投资，`inbox/2026-10-12-39-agent-release-030.md`）。然后所有者走全新安装路径做 E。astra 接下来是账 87（代理文件通道），等所有者开工。
+
+## 2026-10-12 · 卡 38、39 回执核对（k8s luna `0c8453db`）：都通过，归档到 `done/`
+
+| 卡 | 核到 | 判定 |
+| --- | --- | --- |
+| 38 应用批 1 | `sources.yaml` 五处钉 = 父仓 `fbfa61af`、后端 `9174af2f`、网页 `91f9f9f7`，管理端未动；`config.yaml` `v5` / `'20261012_0016'`；两个 `image.lock` 的 `source_revision` 对上；迁移 Job `investment-migrate-9282cde9c6f7-v5` Completed；`application-check` 0；stage `44cd7b1d`、晋级 `ca439e5d` | 通过 |
+| 39 代理 0.3.0 | A：`sourceRevision=dbe5d01…`、files/bytes 100 / 501034516 与 astra 候选相同、windows-candidate pass；B：verify 过、upload `readback_verified=true`、读写隔离两项 denied；C：六项换 0.3.0，stage `28527b9f` 只动三份文件、负载四处 `config-sha256`，后端镜像仍是卡 38 的 `9282cde9…`，晋级 `a7bac4c0` 的 revision = stage 提交，`application-check` 0 | 通过 |
+
+Cursor 顺手指出卡 38 里我给的 Python 截块用 `\n  ` 会误匹配四空格缩进，它改用正则只改 investment 块——以后卡里改 `sources.yaml` 直接说「改 investment 块这五个键」，不给脚本。
+
+**现在等所有者**：E（全新安装 0.3.0 真人配对）与批 1 的网页实测，清单在 `morning-2026-10-12.md` 第四节。
