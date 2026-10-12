@@ -96,3 +96,13 @@ channels.md 里那句「没有工作台 → 本地代理下发任务这条通道
 | 4 | 远程 | 0015 硬检查、0019 N1 Codex `reads` 加知识库目录 | — |
 
 版本：代理 **0.4.0**（协议能力 `service-v1`）；会合点 `RELAY_PROTOCOL` 不变（新路径、新 `open` 字段向后兼容）。
+
+## 九、做出来的样子（滚动记）
+
+| 段 | 时间 | 做了 | 和上面的出入 |
+| --- | --- | --- | --- |
+| 0 会合点 | 2026-10-12 下午 | `relay.py` `/service`、`open.kind`、`capabilities`，8 项测试 | 无 |
+| 3 骨架 | 2026-10-12 晚 | 后端：`agent_service.py`（`WsAgentService` 一问一答、拒绝与错误码照搬成 HTTP、`validate_path`）、`tokens.workbench_token`（10 分钟）、五个端点 `GET /environments/{id}/service`、`/fs/dir`、`/fs/file`、`GET/PUT /settings`；归属看环境主人，连谁看该账号的会合点身份；没配即 503 `agent_service_unconfigured`，没配对即 503 `agent_offline`。网页：`lib/workbench/file-tree.ts`（路径算术、树根、排序、文本判定）、`components/workbench/file-tree.tsx` + `file-view.tsx`，右边栏「文件」接上：根 = 白名单 + 本地知识库，当前项目默认展开，目录懒加载，点文件看内容（Markdown 渲染，二进制只给大小），代理离线 / 版本旧 / 通道没配各说一句。测试：后端 12、网页 9 | ① 端点挂在 `/environments/{id}/…` 而不是 `/machines/{env}/…`（网页里电脑就叫 environment）；② 后端不复用连接，一问开一条流，省连接以后再做；③ 「我的电脑」可编辑与本地知识库页还没做，等 astra 段 2 回执 |
+
+真流联调（Windows 代理 0.4.0 + 本机 relay）等 astra 段 1 回执；骨架的对接点是 `WsAgentService.call`，形状按第三节，不改。
+
