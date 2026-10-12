@@ -11,7 +11,7 @@
 | astra（本地） | 本地机 `~/worktrees/fable/runtime`，分支 `fable` | **只改 `runtime/agent`**，而且只按 `inbox/astra/` 里的 `astra-NNN.md` 做；箱子空就没有任务；不碰别的仓 |
 | 所有者 | 两边 | `human-local.sh` 拉、`human-remote.sh` 推（都不带 `WS=`，默认 fable）；传话；真机验收；决定合并 |
 
-**工位只有一个：`fable`。**`luna` 分支 2026-10-12 15:20 与 `fable` 对齐后冻结，只作历史，不再推、不再在上面做事。
+**五个工位地位一样**（`fable`、`cursor`、`kimi`、`luna`、`qwen`；所有者 2026-10-12 定「luna 没必要冻结，它的地位和其它一样」）。2026-10-12 15:20 起六个仓在五个分支上对齐到同一提交；远程每次推都推五个分支，所有者 `sync-five-repos.sh … -all` 一次同步全部。本地助手各用自己名字的工位。
 
 ## 2026-10-12 · astra 0.3.1 审读（runtime luna `5ccca65`，四个提交）：通过；六仓已对齐，工位切到 fable，发布卡 41
 
@@ -31,10 +31,10 @@
 
 **六仓对齐（15:20）**：按 10-11 夜的约定，审读过后把 luna 与 fable 对齐——runtime fable 快进到 `5ccca65`；其余九个仓（三个 app 父仓、三个后端、投资后端/网页/父仓）各做一次「树取 fable、两个父」的合并提交推到 luna 与 fable，内容一行不变，只是把 luna 上多出的提交（U2 摘抄、设置页第 1 步的 `-s ours`、以及 15:10 同步脚本自动提交的 `592fe03`——它把投资父仓指针指回了被弃用的 `7afe64b`/`ea8d6d3`）收进历史。k8s 本来就相同。现在十一个仓 luna == fable：runtime `5ccca65`、投资父仓 `0bb0b72`、后端 `3a70280`（树 = `30a89d2`）、网页 `80d6833`（树 = `a972023`）、info `dc02a53`、knowledge `f79b43b`、tpl `631316b`、k8s `6f488ddf`。
 
-**工位切换**：从现在起所有者两个同步脚本不带 `WS=`（默认就是 fable）；Cursor 在 `~/worktrees/fable/k8s` 跑卡；astra 在 runtime 的 fable 分支上做；luna 分支冻结，不再推。发布卡 41（应用批 3 + 代理 0.3.1）已写在 inbox，按 fable 工作树写的。
+**工位切换**：从现在起所有者两个同步脚本不带 `WS=`（默认就是 fable）；Cursor 在 `~/worktrees/fable/k8s` 跑卡；astra 在 runtime 的 fable 分支上做；五个工位一样，每次推五个分支。发布卡 41（应用批 3 + 代理 0.3.1）已写在 inbox，按 fable 工作树写的。
 
 ## 2026-10-12 · 两个本地助手各一个收件箱（所有者定「给它们各自的 inbox，否则容易乱」）
 
 `inbox/cursor/`（发布与测试卡）、`inbox/astra/`（代理任务页），各看各的；`done/` 仍共用。`human-local.sh` 分别列出两箱；卡 41 已在 `inbox/cursor/`，`inbox/astra/` 现在是空的。
 
-补：所有者同日定「一次性为各工位都建上自己的 inbox」——再加 `inbox/kimi/`、`inbox/qwen/`（现在都空）；fable 是远程工位、luna 冻结，不设。`human-local.sh` 改成自动列出 `inbox/` 下所有箱子。
+补：所有者同日定「一次性为各工位都建上自己的 inbox」——再加 `inbox/kimi/`、`inbox/qwen/`（现在都空）；fable 是远程工位，不设；luna 照样设（`inbox/luna/`）。`human-local.sh` 改成自动列出 `inbox/` 下所有箱子。
