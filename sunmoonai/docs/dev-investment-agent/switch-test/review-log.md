@@ -37,4 +37,4 @@
 
 `inbox/cursor/`（发布与测试卡）、`inbox/astra/`（代理任务页），各看各的；`done/` 仍共用。`human-local.sh` 分别列出两箱；卡 41 已在 `inbox/cursor/`，`inbox/astra/` 现在是空的。
 
-补：所有者同日定「一次性为各工位都建上自己的 inbox」——再加 `inbox/kimi/`、`inbox/qwen/`（现在都空）；fable 是远程工位，不设；luna 照样设（`inbox/luna/`）。`human-local.sh` 改成自动列出 `inbox/` 下所有箱子。
+补：所有者同日定「一次性为各工位都建上自己的 inbox」——再加 `inbox/kimi/`、`inbox/qwen/`（现在都空）；luna 照样设（`inbox/luna/`）；fable 也设（`inbox/fable/`，所有者定「方便以后在其它工位向 fable 派活」），远程读到就做。`human-local.sh` 改成自动列出 `inbox/` 下所有箱子。
