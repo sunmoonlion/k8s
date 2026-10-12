@@ -51,3 +51,11 @@ Cursor 顺手记了一条：Windows 侧组包首次 tsc 缺 `smol-toml`，从 0.
 
 **所有者真机验**（上线后）：① 中文目录里第一条 `Get-ChildItem` 不乱码；② 托盘「重新连接账号」开出的页有「去网站允许」和「复制连接码」；③ 投资网页控制台 `fetch('http://127.0.0.1:47811/presence')` 四个键，`curl` 无 Origin 403；④ 设置页三栏、项目页「专家交回」、时间线里本机上限那一行（要触发一次本机权限弹窗才有）；⑤ 之前没试完的：侧边栏删除、审批四个按钮、专家排队、长期记忆。
 
+## 2026-10-12 · 0.3.1 真机：托盘「重新连接账号」起不来接入页 → 0.3.2 修了；卡 42
+
+所有者升 0.3.1 后：装完提示「请在自动打开的浏览器页面继续」但没开页（已接入的电脑装完本来只开托盘，那句话误导）；托盘「重新连接账号」报「本机接入页未打开」。astra 只读排查定位：`desktop.ps1` 的 `New-AgentProcess` 在 `Detached` 分支关掉了 stdout 重定向却留着 `StandardOutputEncoding`，.NET `Process.Start` 抛异常；它在内存里试改验证过（隐藏启动 `--version` 退出 0），没动源码，交远程。远程改一行、安装提示改文案、版本 0.3.2、发行包测试加回归断言（runtime fable `ef6f33f`；vitest 243 过、tsc 过、发行包 46/2）。**这个毛病 0.3.0 起就有**（托盘重连是 0.3.0 加的，当时真机只验了安装器那条路）。
+
+顺带记一笔：astra 这次会话在 Codex 的 Default 沙箱里，WSL 到 Windows 的 vsock 通道被隔开，起不了 `powershell.exe`；之前能做真机实测是会话开着 Full Access。已告诉所有者在 `/permissions` 里切，或用 `!` 前缀跑命令。
+
+卡 42（`inbox/cursor/2026-10-12-42-web-batch4-agent-032.md`）：网页批 4（账 94 + 95 ②③，网页 `8ccc52c`，后端不变、无迁移）+ 代理 0.3.2。临时绕法：PowerShell 里 `& "$env:LOCALAPPDATA\Programs\sunmoon-agent\sunmoon-agent.cmd" pair --page`。
+
