@@ -1,46 +1,51 @@
-# 代理的服务流：文件只读 + 设置写入（0022，账 87）
+# 代理的两条路：回环口（文件只读 + 设置）与服务流（云端自用）（0022，账 87）
 
-> 状态：所有者 2026-10-12 「开工 87」，远程写设计；astra 实施代理侧，远程实施会合点、后端、网页。前提事实：Codex app-server 的 `fs/*` 只读云端沙箱自己的文件系统，到不了用户电脑（0015 §五，2026-10-12 读源码核实）。所以网页要看用户电脑上的目录与文件、要从网页改代理侧设置，都得代理自己开一条路。
+> 状态：所有者 2026-10-12 「开工 87」，远程写第一版（全部经会合点）；同日晚所有者问「要读用户的文件不是要传到云上吗」，远程给出甲（经云端过一下）/ 乙（回环直连，一个字节不出电脑）两案，**所有者选乙**。本篇按乙重写；第一版的会合点服务流保留给云端自己要用的两件事。astra 实施代理侧，远程实施后端、网页。
+>
+> 前提事实：Codex 干活时读写项目文件是经会合点把**命令**送到用户电脑执行，只有命令输出回云端（0015 §五）；app-server 自己的 `fs/*` 只读云端沙箱。所以「网页上看用户电脑的文件」要另开路。
 
 ## 一、决定
 
 | 问 | 定 |
 | --- | --- |
-| 会合点要不要第三种客户 | **要**。工作台作为第三种出站客户连会合点（路径 `/service`，角色 `workbench`），会合点像配沙箱一样把它配到该用户的代理，之后逐帧透传。会合点仍无状态、不解析正文 |
-| 协议 | JSON-RPC 2.0 文本帧，方法名沿用 exec-server 的 `fs/*` 形状（`fs/readDirectory`、`fs/readFile`、`fs/getMetadata`），加 `settings/*`。字段按本篇第三节，不照搬 exec-server 的全部参数 |
-| 鉴权 | 工作台自己签 `aud=relay`、`sub=<会合点用户名>`、`role=workbench`、`exp ≤ 10 分钟` 的 JWT，会合点用现有公钥就地验（`F-RELAY-01`）。代理那头不再验令牌（它只认会合点配过来的流），但**每个请求都过白名单与只读检查** |
-| 能做什么 | **读**白名单目录与本地知识库目录下的目录与文件；**读写**代理侧设置（白名单、上限、自启、本地知识库目录）。**不能**起进程、不能写文件（0019 N2 的 `采集/` 写入与 0017 K5 拉取仓库另记，见第七节） |
-| 「云端不能改本地上限」怎么守 | 守住。设置写入里**凡是放宽的**（加目录、抬沙箱、开网络、换知识库目录）代理都在本机弹确认窗（与本机权限弹窗同一套：随机码、60 秒、无 TTY/超时/断线即拒），用户点了才写；**收窄的**（去目录、降沙箱、关网络、关自启）直接写。网页只是把「用户想改成什么」送到他自己的电脑上，最后一步仍是他在电脑上点 |
-| 限速与大小 | 每用户同时至多 2 条服务流；每流同时 4 个未完成请求、每秒 50 个；单帧 ≤ 1 MiB；`fs/readFile` 一次 ≤ **512 KiB 原文**（base64 后约 683 KiB，连 JSON 外壳一起稳在 1 MiB 帧内；astra 2026-10-12 实测 1 MiB 原文 base64 后 1.33 MiB 会被 1009 断流，是远程算错），大文件分段读；目录一次 ≤ 2000 项 |
-| 不碰的 | `codex-home`、代理配置目录、`.sandbox-secrets`、`auth.json`、任何白名单外的路径；符号链接 / junction / 8.3 短名 / 设备名 / ADS 一律按现有 helper 的身份检查拒绝 |
+| **用户文件走哪** | **不出用户电脑**。网页（在装着代理的那台电脑上打开）直接问代理在本机回环口 `127.0.0.1:47811`（占则 47812，账 92 已为「这台电脑在不在」开的那个口）读目录与文件。工作台、会合点都不经手文件内容 |
+| 谁能敲回环口 | 两道门：① 请求头 `Origin` 恰好等于站点 `web_origin`（已有）；② 请求带工作台签的**本机访问票**（`Authorization: Bearer <JWT>`，`aud=local-agent`、`sub=<会合点用户名>`、10 分钟）。代理用站点公钥（`GET {web_origin}/api/workbench/token-keys`，JWKS，缓存 10 分钟）就地验签，`sub` 必须等于它自己的 `userId`。票由网页向工作台要（`GET /api/workbench/environments/{id}/local-ticket`，只给环境主人） |
+| 别的设备上开网页 | 探不到回环口，网页说「你现在用的这台电脑上没有在运行的代理」（账 92 的那句），文件树不显示。一个账号同一时刻一台电脑（91 甲），这正好 |
+| 设置写入 | 同样走回环口（`PUT /local/v1/settings`）；凡是放宽的（加目录、抬沙箱、开网络、设知识库目录、开自启）代理在本机弹确认窗，用户点了才写；收窄直接写（第四节不变） |
+| 会合点服务流（第一版的路）留给什么 | **云端自己要用的**、量小的两件：成稿「写了没有」的硬检查（`fs/getMetadata`）、以后信息采集往本地知识库 `采集/` 写回（0019 N2）。会合点 `/service` 段 0 已做，代理侧放到后面的任务页，不在 0.4.0 |
+| 限额 | 回环口：同秒 > 20 次回 429（已有）；`fs/readFile` 一次 ≤ 1 MiB 原文（HTTP 没有帧上限，回原始字节不 base64）；目录一次 ≤ 2000 项；文件 > 64 MiB 拒绝 |
+| 不碰的 | `codex-home`、代理配置目录、`.sandbox-secrets`、`auth.json`、白名单外任何路径；符号链接 / junction / 8.3 短名 / 设备名 / ADS 按现有 helper 身份检查拒 |
 
-channels.md 里那句「没有工作台 → 本地代理下发任务这条通道」仍成立：这条流**不下发任务**，不起进程；它是「看一眼、改设置」。
+channels.md「没有工作台 → 本地代理下发任务」仍成立：回环口是浏览器到代理的本机请求，不起进程、不写用户文件；服务流只做云端那两件小事。
 
 ## 二、形状
 
 ```text
-浏览器 ──HTTPS──▶ 工作台 ──WSS 出站 /service（role=workbench）──▶ 会合点 ◀──WSS 出站── 本地代理（控制通道收到 open{kind:"service"} 后开 /agent-data）
-                                                                   │ 配对后逐帧透传（JSON-RPC 2.0 文本帧）
-                                                                   ▼
-                                                        代理内的服务处理器（不是 exec-server）：白名单检查 → 读文件 / 读写设置
+同一台电脑：
+  浏览器（网页来自 web_origin） ──HTTP 127.0.0.1:47811──▶ 代理回环口：Origin 检查 → 验票 → 白名单检查 → 读文件 / 读写设置
+  浏览器 ──HTTPS──▶ 工作台：只要一张票（GET …/local-ticket），工作台不碰文件
+
+云端自用（少）：
+  工作台 ──WSS /service──▶ 会合点 ──▶ 代理服务流（fs/getMetadata、以后的 采集/ 写入）
 ```
 
-与现有数据流的差别只有两处：会合点的 `open` 多一个 `kind`（没有 `kind` = 沙箱流，照旧接 exec-server；`kind:"service"` = 接服务处理器）；工作台这一端的角色是 `workbench`，不是 `sandbox`，不检查 Codex 版本成对，但检查**代理能力**：代理控制通道 hello 的 `capabilities` 里要有 `service-v1`，没有就拒绝工作台（`agent has no service channel`），网页据此说「这台电脑的代理要升级」。
+## 三、回环口的接口（浏览器 → 代理）
 
-## 三、方法（工作台 → 代理）
+所有接口：只绑 `127.0.0.1`；`Origin` 必须等于 `web_origin`，否则 403 且不带 CORS 头；预检 `OPTIONS` 回 `Access-Control-Allow-Methods: GET, POST, PUT`、`Access-Control-Allow-Headers: Authorization, Content-Type`、`Access-Control-Allow-Private-Network: true`；除 `/presence` 外都要票，票不对 401。路径是用户电脑上的绝对路径，代理 `canonicalPath` 规整后判在不在白名单（`roots` ∪ 本地知识库目录）。错误一律 JSON `{ "code": "...", "message": "..." }`，`message` 固定英文短句不带路径。
 
-所有路径都是用户电脑上的绝对路径（Windows 原样 `C:\...`），不是 URI；代理按 `canonicalPath` 规整后再判在不在白名单（白名单 = `roots` ∪ 本地知识库目录）。
-
-| 方法 | 参数 | 结果 | 规矩 |
+| 方法与路径 | 参数 | 回 | 规矩 |
 | --- | --- | --- | --- |
-| `service/hello` | — | `{ agent, version, roots, libraryDir, capabilities }` | 流建好后工作台先发这一条；代理回它此刻的白名单，网页据此画树根 |
-| `fs/readDirectory` | `{ path }` | `{ entries: [{ name, type: "file"\|"dir"\|"link"\|"other", size, mtime }], truncated }` | 只列一层；≤ 2000 项，多了 `truncated:true`；`link` 不解析目标；`path` 不在白名单回 `-32010 outside_whitelist` |
-| `fs/getMetadata` | `{ path }` | `{ type, size, mtime }` | 同上 |
-| `fs/readFile` | `{ path, offset?, length? }` | `{ content: base64, size, mtime, eof }` | `length` 默认与上限都是 **512 KiB**（`524288`），超过回 `-32602`；超过 64 MiB 的文件拒绝（`-32011 too_large`）；代理不判文本还是二进制，网页按前 8 KiB 判 |
-| `settings/read` | — | `{ machineName, roots, rootChoices, ceiling, autostart, libraryDir, version }` | 与托盘「设置」窗显示的同一份 |
-| `settings/write` | `{ roots?, rootChoices?, ceiling?, autostart?, libraryDir? }` | `{ applied: true, restart: boolean }` 或 `{ applied: false, reason: "local_denied"\|"invalid"\|"busy" }` | 校验同 `preferences set`（目录存在、≤ 32、选项 ⊆ 候选、沙箱只在 `read-only`/`workspace-write`）；**放宽项先本机确认**（见第四节）；写 `config.json` 后代理自己重启常驻进程，控制通道重连时 hello 重报 roots 与 ceiling；一条流上同时只处理一个 `settings/write`，第二个回 `busy` |
+| `GET /presence` | — | `{ agent, version, machine_name, connected }` | 已有（账 92），不要票 |
+| `GET /local/v1/info` | — | `{ agent, version, userId, roots, libraryDir, capabilities: ["local-fs-v1", …] }` | 网页据此画树根；`userId` 让网页核对是不是自己账号的电脑 |
+| `GET /local/v1/fs/dir?path=` | `path` | `{ path, entries: [{ name, type: "file"\|"dir"\|"link"\|"other", size, mtime }], truncated }` | 只列一层；≤ 2000 项；白名单外 403 `outside_whitelist`；不存在 404 `not_found` |
+| `GET /local/v1/fs/meta?path=` | `path` | `{ type, size, mtime }` | 同上 |
+| `GET /local/v1/fs/file?path=&offset=&length=` | `length` 默认与上限 1 MiB | **原始字节**，`Content-Type: application/octet-stream`，头 `X-File-Size`（总长）、`X-File-Mtime`、`X-File-Eof: true\|false` | 文件 > 64 MiB 回 413 `too_large`；`length` 超上限 400 `invalid_params`；代理不判文本二进制，网页按前 8 KiB 判 |
+| `GET /local/v1/settings` | — | `{ machineName, roots, rootChoices, ceiling, autostart, libraryDir, version }` | 与托盘「设置」窗同一份 |
+| `PUT /local/v1/settings` | JSON `{ roots?, rootChoices?, ceiling?, autostart?, libraryDir? }` | `{ applied: true, restart }` 或 409 `local_denied` / 400 `invalid` / 409 `busy` | 校验同 `preferences set`；放宽先本机确认（第四节）；写完回包再重启常驻进程 |
 
-错误码：`-32010 outside_whitelist`、`-32011 too_large`、`-32012 not_found`、`-32013 rate_limited`、`-32014 local_denied`、`-32600`/`-32601`/`-32602` 照 JSON-RPC。错误 `message` 固定英文短句，不带路径。
+错误码：`401 ticket_invalid`、`403 origin_rejected` / `outside_whitelist` / `local_denied`、`404 not_found`、`413 too_large`、`429 rate_limited`、`400 invalid_params`、`409 busy`。
+
+**票的形状**：ES256 JWT，`iss` = 工作台、`aud = "local-agent"`、`sub` = 会合点用户名、`jti`、`iat`、`exp ≤ 10 分钟`。代理验：签名（JWKS 按 `kid` 选钥，取不到钥就 503 `keys_unavailable`）、`aud`、`sub == config.userId`、`exp`。不查吊销（10 分钟够短）。网页在票过期前 1 分钟重取。
 
 ## 四、设置写入的「放宽」判定
 
@@ -53,56 +58,49 @@ channels.md 里那句「没有工作台 → 本地代理下发任务这条通道
 | `autostart` | 开 | 关 |
 | `rootChoices`、`machineName` | 不算放宽，直接写 | — |
 
-确认窗文案（与本机权限弹窗同一套机制，随机码、60 秒）：「网页要把这台电脑的设置改成：加目录 D:\资料；允许联网。只有你自己刚在网页上点了保存才输入下面的码。」一次 `settings/write` 里有多项放宽，合成一窗问一次。拒绝或超时整条不写（不做一半）。
+确认窗文案（与本机权限弹窗同一套机制，随机码、60 秒）：「网页要把这台电脑的设置改成：加目录 D:\资料；允许联网。只有你自己刚在网页上点了保存才输入下面的码。」多项放宽合成一窗问一次；拒绝或超时整条不写。记录：代理本地日志一条（不含路径）；网页「我的电脑」显示「上次从网页改：时间」（代理在 `info` 里带 `lastSettingsChange`）。
 
-记录：代理本地日志一条（不含路径）；工作台在 `workbench_environments` 上记 `last_settings_change_at`，网页「我的电脑」显示「上次从网页改：时间」。不走 `permission_report` 那条审计路（那条是针对 thread 的）。
-
-## 五、代理侧实现要点（astra）
+## 五、代理侧实现要点（astra，0.4.0）
 
 | 处 | 要点 |
 | --- | --- |
-| `relayProtocol.ts` | `ControlMessage.open` 加可选 `kind?: "service"`；hello `capabilities: ["service-v1"]`（控制通道 hello 新增字段，旧会合点忽略） |
-| `relayClient.ts` | `openStream(conn, kind)`：`kind === "service"` 时不连 exec-server，把上行帧交给 `ServiceHandler`；统计分开（`stats.service`）；最多 2 条服务流，第 3 条直接关 |
-| `service.ts`（新） | JSON-RPC 分发、限速（令牌桶 50/s，4 并发）、路径规整与白名单检查、`fs/*` 读；Windows 上读文件经**现有的沙箱内文件助手**（`WindowsFiles.call`，它已经有目录钉住与身份检查），Linux 上直接 `fs`（只为测试）；一次 ≤ 512 KiB 原文；`settings/*` 复用 `preferences()` 的校验与写入，放宽判定 + `windowsConfirm`/`localConfirm` |
-| 重启 | `settings/write` 应用后回包，再触发常驻进程重启（现有 `stop-request` + 自启任务 / `startResident`）；重启期间服务流断，网页重连即可 |
-| 不改 | `filter.ts`、`windowsPolicy.ts`、`windowsBridge.ts`（沙箱流一个字节不动）；配对协议；令牌处理 |
-| 测试 | `service.test.ts`：白名单外路径、符号链接逃逸、超大文件、分段读、目录截断、限速、并发上限、`settings/write` 放宽需确认 / 收窄直写 / 拒绝不写一半 / busy；`relayClient.test.ts` 加 `open{kind:"service"}` 分流；真机：在网页文件树里打开白名单下的中文文件名文件、读一个 5 MiB 文件、从网页加一个目录看到确认窗、拒绝后配置不变、同意后托盘设置窗里出现新目录 |
+| `presence.ts` → `localApi.ts` | 同一个回环服务器上加 `/local/v1/*`；Origin 检查与限速共用；票验证单独一个 `ticket.ts`（JWKS 取自 `${webOrigin}/api/workbench/token-keys`，10 分钟缓存，Node 自带 `crypto.verify` + `createPublicKey({ key: jwk, format: "jwk" })`，不加依赖） |
+| 文件读取 | Windows 经现有沙箱内文件助手（`WindowsFiles.call`：目录钉住、身份检查都在）；Linux 直接 `fs`（只为单测）；`fs/file` 回原始字节流 |
+| `settings` | 复用 `preferences()` 的校验与写入；放宽判定 + `windowsConfirm`/`localConfirm`；一次只处理一个写，第二个 409 `busy`；写完回包再触发常驻进程重启 |
+| `libraryDir` | `config.json` 新字段（可空），`validate` 校验；加入白名单检查的集合，**不**加进 `roots`；托盘「设置」窗加「本地知识库目录」一项 |
+| 不改 | `filter.ts`、`windowsPolicy.ts`、`windowsBridge.ts`、沙箱流、配对协议、令牌处理；会合点服务流的代理侧（`open.kind=service`）**本轮不做** |
+| 测试 | `localApi.test.ts`：无票 401、错 `sub` 401、过期 401、Origin 错 403 无 CORS 头、白名单外 403、符号链接逃逸、超大文件 413、分段读拼回、目录截断、限速 429、预检头；`settings` 放宽需确认 / 收窄直写 / 拒绝不写一半 / busy。真机：在投资网页「文件」里打开白名单下中文文件名的文件、读 5 MiB 文件分 5 段、从网页加目录看到确认窗、拒绝后配置不变 |
 
-## 六、会合点、后端、网页（远程）
+## 六、后端与网页（远程）
 
 | 侧 | 改什么 |
 | --- | --- |
-| 会合点 `relay.py` | 新路径 `/service`：hello `role=workbench`，验签同前；找该用户代理，无则 `agent offline`；代理 hello 的 `capabilities` 不含 `service-v1` 则 `agent has no service channel`；每用户服务流 ≤ 2（`RELAY_MAX_SERVICE_STREAMS_PER_USER`）；向代理发 `{"type":"open","conn":ID,"kind":"service"}`；其余与 `/sandbox` 相同（透传、关闭计数）。单帧 ≤ 1 MiB。`/admin` 的 `agents` 回包加 `capabilities` |
-| 后端 | `tokens.workbench_token(relay_user)`（`role=workbench`，10 分钟）；`ServiceClient`：按用户懒建一条到会合点 `/service` 的 WS，空闲 60 秒关，请求带 id、30 秒超时；HTTP：`GET /api/workbench/machines/{env}/fs/dir?path=`、`GET …/fs/file?path=&offset=&length=`、`GET …/settings`、`PUT …/settings`；只允许环境的主人；代理离线 503 `agent_offline`，能力不够 409 `agent_outdated`，白名单外 403 `outside_whitelist`；不缓存文件内容 |
-| 网页 | 右边栏「文件」：树根 = `service/hello` 的 roots + libraryDir，当前项目默认展开，目录懒加载，点文件看内容（文本分段取、Markdown 渲染；二进制只给大小、太大的只看开头）；本地知识库页（0019 N1）同一棵树组件，根 = libraryDir；「我的电脑」块可编辑：目录勾选（候选来自 `rootChoices`，可加新目录——输入绝对路径）、沙箱模式、联网、自启、知识库目录；保存后显示「等你在电脑上确认」直到回包；代理离线或版本旧时只显示并说明 |
+| 后端 | `tokens.local_agent_ticket(relay_user)`（`aud=local-agent`，10 分钟）；`GET /api/workbench/environments/{id}/local-ticket` → `{ ticket, expires_at, relay_user }`（只给环境主人；没签名私钥 503）。第一版做的 `/fs/*`、`/settings` 端点**撤掉**（文件不经工作台）；`WsAgentService` 与 `/environments/{id}/service` 留着给硬检查用 |
+| 网页 | `lib/workbench/local-agent.ts`：探回环口（47811 → 47812，`fetch(url, { targetAddressSpace: "loopback" })`，2 秒超时）、取票并缓存、`info / dir / file / settings` 五个调用；文件树与文件内容组件改用它；探不到 → 「你现在用的这台电脑上没有在运行的代理」（账 92 那半顺带做了：侧边栏电脑行旁的提示、`machine_name` 对得上标「就是这台」）；票 401 → 重取一次；`info.userId` 与账号的会合点名对不上 → 「这台电脑接的是别的账号」 |
 
 ## 七、不在这一篇里的
 
 | 事 | 去哪 |
 | --- | --- |
-| `fs/writeFile` 只写本地知识库 `采集/` 子目录 | 0019 N2，服务流上加一个写方法，白名单加「只许写该子目录」一种权限；本篇通了再加 |
-| 拉取仓库（`git clone`） | 0017 K5：要起进程、要凭据，和本篇「不起进程」相抵，另写；所有者先定凭据怎么给 |
-| `fs/watch` | 第一期网页在面板打开时每 5 秒重读当前目录，不要 watch；代价摸清再加 |
-| 成稿「写了没有」的硬检查（0015） | 本篇通了后，后端在验收时经服务流 `fs/getMetadata` 核实文件存在，把软检查改硬 |
+| 云端写本地知识库 `采集/` | 0019 N2，服务流上加写方法 |
+| 拉取仓库（`git clone`） | 0017 K5，另写 |
+| `fs/watch` | 面板打开时每 5 秒重读当前目录 |
+| 成稿硬检查 | 服务流 `fs/getMetadata`，代理侧放后面的任务页 |
 
 ## 八、顺序与停点
 
 | 段 | 谁 | 做什么 | 停点 |
 | --- | --- | --- | --- |
-| 0 | 远程 | 会合点 `/service` + `open.kind`；本地可跑的会合点供 astra 测 | 会合点单测过、k8s fable 有提交号 |
-| 1 | astra | 服务流 + `service/hello` + `fs/*` 三个只读方法 | Linux 单测 + Windows 真机读到文件；回执 |
-| 2 | astra | `settings/read`、`settings/write`（放宽确认、收窄直写、重启重报） | 真机：网页加目录 → 确认窗 → 托盘里看到；拒绝不变 |
-| 3 | 远程 | 后端四个端点 + 网页文件树、本地知识库页、我的电脑可编辑 | 预览与测试；真机由所有者验 |
-| 4 | 远程 | 0015 硬检查、0019 N1 Codex `reads` 加知识库目录 | — |
-
-版本：代理 **0.4.0**（协议能力 `service-v1`）；会合点 `RELAY_PROTOCOL` 不变（新路径、新 `open` 字段向后兼容）。
+| 0 | 远程 | 会合点 `/service`（已做，留给云端自用） | 已过 |
+| 1 | astra | 回环口 `/local/v1/info`、`fs/dir`、`fs/meta`、`fs/file` + 验票 | Linux 单测 + Windows 真机在网页里读到文件；回执 |
+| 2 | astra | `GET/PUT /local/v1/settings`（放宽确认、收窄直写、重启重报）+ `libraryDir` | 真机：网页加目录 → 确认窗 → 托盘里看到；拒绝不变 |
+| 3 | 远程 | 票端点；网页回环客户端、文件树改直连、账 92 网页那半、「我的电脑」可编辑、本地知识库页 | 预览与测试；真机由所有者验 |
+| 4 | 远程 + astra | 服务流代理侧（`fs/getMetadata`）+ 成稿硬检查 + Codex `reads` 加知识库目录 | 另开任务页 |
 
 ## 九、做出来的样子（滚动记）
 
 | 段 | 时间 | 做了 | 和上面的出入 |
 | --- | --- | --- | --- |
-| 0 会合点 | 2026-10-12 下午 | `relay.py` `/service`、`open.kind`、`capabilities`，8 项测试 | 无 |
-| 3 骨架 | 2026-10-12 晚 | 后端：`agent_service.py`（`WsAgentService` 一问一答、拒绝与错误码照搬成 HTTP、`validate_path`）、`tokens.workbench_token`（10 分钟）、五个端点 `GET /environments/{id}/service`、`/fs/dir`、`/fs/file`、`GET/PUT /settings`；归属看环境主人，连谁看该账号的会合点身份；没配即 503 `agent_service_unconfigured`，没配对即 503 `agent_offline`。网页：`lib/workbench/file-tree.ts`（路径算术、树根、排序、文本判定）、`components/workbench/file-tree.tsx` + `file-view.tsx`，右边栏「文件」接上：根 = 白名单 + 本地知识库，当前项目默认展开，目录懒加载，点文件看内容（Markdown 渲染，二进制只给大小），代理离线 / 版本旧 / 通道没配各说一句。测试：后端 12、网页 9 | ① 端点挂在 `/environments/{id}/…` 而不是 `/machines/{env}/…`（网页里电脑就叫 environment）；② 后端不复用连接，一问开一条流，省连接以后再做；③ 「我的电脑」可编辑与本地知识库页还没做，等 astra 段 2 回执 |
-
-真流联调（Windows 代理 0.4.0 + 本机 relay）等 astra 段 1 回执；骨架的对接点是 `WsAgentService.call`，形状按第三节，不改。
-| 合同改一处 | 2026-10-12 17:38 | astra 实测：1 MiB 原文 base64 后 1.33 MiB 超帧上限，被 1009 断流。改 `fs/readFile` 一次 ≤ 512 KiB 原文，帧上限不动；后端 `MAX_READ_BYTES` 与网页文案同步 | 远程算错，astra 按「走不通先停」交回，对 |
+| 0 会合点 | 2026-10-12 下午 | `relay.py` `/service`、`open.kind`、`capabilities`，8 项测试 | 无；按乙案它留给云端自用 |
+| 3 骨架（甲案） | 2026-10-12 晚 | 后端五端点 + `WsAgentService`；网页文件树经工作台 | **已按乙案改**：`/fs/*`、`/settings` 撤，留 `/service` 与票端点；网页改直连回环（见下一行） |
+| 合同改一处 | 2026-10-12 17:38 | astra 实测 1 MiB 原文 base64 超会合点帧上限 | 乙案下回环口回原始字节，不再有这个问题；服务流那边仍是 512 KiB |
