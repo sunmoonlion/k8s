@@ -63,6 +63,13 @@
 - 站点、Casdoor、会合点这类地址：是部署配置，归管理后台，不进用户设置。
 - 多台电脑并存的切换（一账号一电脑，0012 账 91）。
 
+## 四之二、做出来的样子（2026-10-12 下午，fable）
+
+- 地址：`/workbench/settings/{preferences|cloud|computer}`；旧 `/workbench/settings` 由网页按 `#computer` 有无转到对应类，查询串（配对码）原样带着；后端回给代理的核对地址直接改成 `/settings/computer`。
+- 个人偏好存 `localStorage` 键 `sunmoon.preferences`，根布局里一段带 CSP nonce 的内联脚本在首帧前套到 `<html>`（`.dark`、`data-accent`、`data-sidebar`），不闪；主题色四个预设在 `globals.css`，只换 `--primary` 与 `--ring`。侧边栏宽度三档、默认展开到哪一级由侧边栏读同一份偏好。
+- 云端与模型：key 表单多一格「接入地址」，后端 `validate_provider_base_url` 只收公网 https（拒本机、内网、链路本地、带账号或查询串），供给沙箱时用户地址优先于部署默认；MCP 连接第一期只有「公共数据」一个开关（`mcp_sources.knowledge`，默认开），关了供给时不再给沙箱发知识 MCP 令牌，改后要「更新沙箱」；「选定专家的知识库」一行灰着，等 0018。
+- 我的电脑：接入电脑整节 + 「这台电脑上的设置」只读块（代理 hello 带的白名单目录、沙箱模式、联网），文案指去托盘改。
+
 ## 五、顺序与账
 
 | 步 | 内容 | 账 |
