@@ -1034,3 +1034,14 @@ Cursor 顺手指出卡 38 里我给的 Python 截块用 `\n  ` 会误匹配四�
 ## 2026-10-12 · 给 astra 的 0.3.1 任务页
 
 所有者「开工」后写 [`astra-031.md`](astra-031.md)：账 88 乱码根治（过滤判定之后改写 argv，PowerShell 加 Codex 同一句前缀、cmd 加 `chcp 65001>nul &`、env 补 `PYTHONUTF8`）；账 89 本机页收尾（「去网站允许」、复制连接码、文案）；账 92 回环小口（`127.0.0.1:47811/presence`，只认站点 Origin，四个键，`Access-Control-Allow-Private-Network`）。网页探测那半等 astra 回执再做。
+
+## 2026-10-12 · 卡 40 回执核对：通过，归档；luna 上并行做的「设置页第 1 步」不采用
+
+| 卡 | 核到 | 判定 |
+| --- | --- | --- |
+| 40 应用批 2 | 五处钉 = 父仓 `347e17a8`、后端 `8d9bdd20`、网页 `c981e3a8`；`v6` / `'20261012_0017'`；迁移 Job `investment-migrate-227b7ae2a7e6-v6` Completed；代理包仍 0.3.0；stage `b4be37fa`、晋级 `dd02416d`；`application-check` 0；12:11 上线 | 通过 |
+
+**不采用的一件**：luna 工作区里有人（提交署名 sunmoon，12:07，回执 `scripts/results/luna-settings-0021-step1.20261012.md`）照着刚写的 0021 做了设置页第 1 步：后端 `7afe64b`、网页 `ea8d6d3`、父仓 `8251d15`。它自己写明「未运行后端或前端测试套件」。同一件我上午已在 fable 做完并全量测过（后端 `e9f8da6`、网页 `f11008a`，含 MCP 开关与我的电脑只读块，比它多两块），而且两边各有一个 `20261012_0018` 迁移文件（它叫 `credential_base_url`，我叫 `settings_three_kinds`），合在一起 alembic 会出双头。处理：以 fable 为准；luna 的三个仓各做一次 `-s ours` 合并（历史里记着它的提交，树是 fable 的），推到 luna，所有者本地那几个提交就都在远端分支里了，`human-remote` 不会再推一遍。它的代码一行不进 fable。
+
+**规矩补一条**：Cursor / luna 工作区的助手只跑 inbox 里的卡，**不从账本里自己领活**；账本上「卡 40 之后做」是给远程排期的，不是派工。
+
