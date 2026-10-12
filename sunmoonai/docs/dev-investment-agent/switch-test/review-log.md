@@ -86,3 +86,19 @@ astra 在我改乙案之前（它手里是 512 KiB 那版合同）把**服务流
 
 **段 2 开工**：`GET/PUT /local/v1/settings`、`libraryDir`、放宽确认、重启重报，按 032。
 
+## 2026-10-12 · astra 0.4.0 乙案段 2 审读（runtime fable `f85fe31`）：通过；代理侧 0.4.0 齐了，等下次发布联调
+
+| 看了 | 看到 | 判定 |
+| --- | --- | --- |
+| `localSettings.ts` | PUT 只收五个字段；校验与托盘共用 `validatePreferences`（目录存在、≤ 32、选中 ⊆ 候选、无别名、沙箱只两档、受保护目录）；放宽判定与 0022 第四节逐条对得上（加目录 / 抬沙箱 / 开网 / 设或换知识库目录 / 开自启），合成一窗、随机码 60 秒、拒绝 / 超时 / 断线 409 `local_denied`，第二个写 409 `busy`；确认后**再校验一次并比对文件没被本地改过**；自启失败回滚；临时文件原子替换、0600；先回包再由独立生命周期子进程重启 | 过 |
+| `preferences.ts` / `resident.ts` | 托盘 `settings set` 与回环口同一套校验；加 `restart-resident` 子命令走现有 stop-request + startResident | 过 |
+| `config.ts` / `cli.ts` | `libraryDir` 可空、校验是存在的本地目录；启动时钉住它、只进回环文件助手的读集合，**不进** exec-server / relay 的 `roots`；`info` 带 `libraryDir` 与 `lastSettingsChange` | 过 |
+| `ticket.ts` | 未知 `kid` 且距上次取钥 > 60 秒重取一次，失败也计入节流 | 过 |
+| `localApi.ts` | 五个候选口；`settings` 路由 GET/PUT、PUT 只认 JSON、正文 ≤ 64 KiB；请求断开即取消等待中的确认 | 过 |
+| `desktop.ps1` | 设置窗加「本地知识库目录」只读框 + 选目录 / 清空 | 过 |
+| 测试 | Linux 308 过、发行包 46/2；Windows 真机：五口落到 47813、设置投影、知识库只读（控制通道写知识库被拒）、删目录 / 清知识库不弹窗直接重启、**所有者亲手在确认窗允许一次、拒绝一次**（拒绝后 `config.json` 字节相同、PID 相同）、换钥 61 秒后重取成功；Windows 发行测试 48/48。探针自己的两处夹具错误它都写明并修了，没有拿它冒充产品行为 | 过 |
+
+没验的（它写明）：现网发票→本机验、网页「我的电脑」真实联调、Chrome、elevated、干净机器升级——都等发布。
+
+**代理侧 0.4.0 到此齐了**（服务流段 1 + 回环口段 1、2 + 0.3.2 托盘修复），runtime fable `f85fe31`。按攒批规矩不单独发；下次发布卡 = 网页批 4 + 0.4.0。astra 眼下没有新任务页。
+
