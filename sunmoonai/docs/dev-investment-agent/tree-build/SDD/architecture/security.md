@@ -20,11 +20,13 @@
 
 本地代理启动 exec-server 时声明三项，写进环境的登记：
 
-| 项 | 默认 | 用户可抬到 |
-| --- | --- | --- |
-| 沙箱模式 | `workspace-write`，限 `cwd` | `danger-full-access`（本机确认，仅当前 Session） |
-| 根目录 | 白名单 | 加目录（本机确认） |
-| 网络 | 沙箱内禁网 | 放开（本机确认） |
+| 项 | 默认 | 用户可抬到 | 在哪抬 |
+| --- | --- | --- | --- |
+| 沙箱模式 | `workspace-write`，限白名单 | 本机弹窗：只读 → 白名单内 `workspace-write`（仅当前 thread、同目录同摘要、30 分钟）。**Windows 上永远到不了 `danger-full-access`**，内层沙箱必须在 | 弹窗（临时）/ 托盘「设置」（默认值，`read-only` 或 `workspace-write`） |
+| 根目录 | 白名单 | 加目录只能在托盘「设置」里勾选，弹窗不加 | 托盘「设置」 |
+| 网络 | 沙箱内禁网 | 本机弹窗同范围放开（临时）；或在托盘「设置」里打开（默认值） | 弹窗 / 托盘「设置」 |
+
+弹窗的触发、答法、记录与回执见 [审批](approval.md)「三条路」；代理侧实现在 `runtime/agent/src/permissions.ts`（astra，0.2.x）。
 
 **由谁挡已定（探针 2026-09-23，`runtime/probe/REPORT-2026-09-23-local-ceiling.md`）：exec-server 自己不挡，本地代理必须挡。**
 执行端的 `config.toml`（`sandbox_mode="read-only"`）与 `requirements.toml`（`allowed_sandbox_modes=["read-only"]`）对编排端的要求毫无作用：
