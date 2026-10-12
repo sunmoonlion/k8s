@@ -31,7 +31,7 @@
 | 所有者 | 两边 | 两个脚本都不带 `WS=`（默认 fable）；传话；真机验收 |
 
 本目录：`README.md`（本文，约定）、`human-local.sh`（**所有者在本地机上跑，拉：同步仓与副本，列出待办**）、`human-remote.sh`（**所有者在本地机上跑，推：把本地助手已提交的结果推回远程，顺带补提交漏掉的改动与父仓 gitlink**）、`inbox/<助手名>/`（每个助手一个收件箱：`cursor`、`astra`、`kimi`、`luna`、`qwen` 是本地助手的，远程写、各自做、互不看；`opus` 是在 qwen 工位做设计与审读的 Opus 的，它再给 `qwen` 写任务页；`fable` 是远程助手的，所有者或别的工位要派活给远程时放这里）、`done/`（已办与归档）、`hold/`（写好但暂缓的卡，不是待办）、`review-log.md`（远程的审读与交接记录，只追加）、做完的都归 `done/`。测试脚本不放这里，放被测仓。
-`~/switch-test/` 是本目录在两台机上的副本，**不在 git 里，不会自己更新**：`human-local.sh` 同步完仓后会切到仓里的最新版继续跑，并用它重建副本，所以副本里的脚本旧了也没关系。以仓里为准。本地机要装什么见「六、固定事实」。
+`~/switch-test/` 里只有两个**转发器**（`human-local.sh` 跑一次就生成），永远执行仓里当前工位（`WS`，默认 fable）的最新版，没有会过期的副本；待办与说明都直接看仓里的 `switch-test/`。第一次或转发器还没生成时直接跑仓里那份：`bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/human-local.sh`。本地机要装什么见「六、固定事实」。
 
 ## 一、每一轮怎么走：所有者拉、本地助手跑、所有者推
 
@@ -55,7 +55,7 @@
 
 ```bash
 # 1 + 2. 看待办：一个文件一条，没有文件就没有待办
-ls ~/switch-test/inbox/<自己的名字>/ && cat ~/switch-test/inbox/<自己的名字>/*.md   # 只看自己的箱子
+ls ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/inbox/<自己的名字>/   # 只看自己的箱子，直接看仓里的
 
 # 3. 逐条做（每条文件里写了 被测仓 / 跑什么 / 仓与提交 / 预计 / 看什么 / 前提 / 回传）
 #    3a 进被测仓，核提交号，对不上就停，贴出来

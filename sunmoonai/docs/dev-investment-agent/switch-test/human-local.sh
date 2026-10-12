@@ -2,8 +2,8 @@
 # 所有者在本地机上跑的（拉）：把全部仓和副本同步到远程助手推上来的最新状态，并列出待办。跑完之后的推回见 human-remote.sh。
 # 跑完后对 Cursor 说「请看 inbox/cursor」、对 astra 说「请看 inbox/astra」。本地助手不同步、不推；每条做完自己在被测仓本地提交（README「3c」）。
 # 用法：bash ~/switch-test/human-local.sh    （没有参数，总是同步全部：五仓 + 两个子仓 + runtime）
-# ~/switch-test 是副本，不在 git 里，不会自己更新：本脚本同步完仓之后，切换到仓里的最新版继续跑，
-# 由它重建副本。所以副本里的这份即使旧了也没关系，只要它还能同步 k8s。
+# ~/switch-test 里的两个脚本只是转发器（本脚本生成），永远跑仓里当前工位的最新版；第一次或转发器还没生成时，
+# 直接跑仓里这份：bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/human-local.sh
 set -uo pipefail
 WS="${WS:-fable}"
 K8S="$HOME/worktrees/$WS/k8s"; ST="$K8S/sunmoonai/docs/dev-investment-agent/switch-test"
@@ -72,8 +72,18 @@ if [ "${1:-}" != "--after-sync" ]; then
   exec bash "$ST/human-local.sh" --after-sync
 fi
 
-echo "===== 2. 刷新副本 ~/switch-test（用仓里的最新版覆盖）"
-rm -rf "$HOME/switch-test" && cp -r "$ST" "$HOME/switch-test"
+echo "===== 2. 刷新 ~/switch-test：两个脚本只是转发器，永远跑仓里当前工位的最新版（副本没有内容可过期）"
+mkdir -p "$HOME/switch-test"
+for name in human-local.sh human-remote.sh; do
+  cat > "$HOME/switch-test/$name" <<SHIM
+#!/usr/bin/env bash
+# 转发器：跑仓里当前工位（WS，默认 fable）的最新版；本文件由 human-local.sh 生成，不要手改
+exec bash "\$HOME/worktrees/\${WS:-fable}/k8s/sunmoonai/docs/dev-investment-agent/switch-test/$name" "\$@"
+SHIM
+  chmod +x "$HOME/switch-test/$name"
+done
+# 旧机制留下的整目录副本（inbox、README 等）不再需要；只留两个转发器
+find "$HOME/switch-test" -mindepth 1 -maxdepth 1 ! -name human-local.sh ! -name human-remote.sh -exec rm -rf {} +
 
 for box in "$ST"/inbox/*/; do
   who=$(basename "$box")
