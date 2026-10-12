@@ -23,6 +23,8 @@
 
 | 处 | 做什么 |
 | --- | --- |
+| 候选口 | 固定口改成按序试 **47811、47812、47813、47814、47815**（所有者机器上 47811 被 Cursor.exe 长期占着，现装 0.3.1 退到了 47812；再多备三个）；五个都占才记日志放弃。预检与 `/presence` 不变 |
+| 验票小补 | 遇到没见过的 `kid` 且上次取钥已超过 60 秒，重取一次 JWKS 再判（工作台换钥时不用等 10 分钟） |
 | `localApi.ts` | `GET /local/v1/settings`（与托盘「设置」窗同一份：`machineName, roots, rootChoices, ceiling, autostart, libraryDir, version, lastSettingsChange`）；`PUT /local/v1/settings`：校验复用 `preferences()`（目录存在、≤ 32、选项 ⊆ 候选、沙箱只 `read-only`/`workspace-write`）；**放宽判定按 0022 第四节**——有放宽项就弹本机确认窗（前台 `localConfirm`、后台 `windowsConfirm`，随机码、60 秒），一次合成一窗；拒绝或超时整条不写、回 409 `local_denied`；收窄直接写；同时只处理一个写，第二个 409 `busy` |
 | 应用 | 写 `config.json` 后先回 `{ applied: true, restart: true }`，再触发常驻进程重启（现有 stop-request + 自启 / `startResident`），重连时控制通道 hello 重报 roots 与 ceiling |
 | `libraryDir` | `config.json` 新字段（可空），`validate` 校验是本地绝对路径且存在；加入白名单检查集合；**不**加进 `roots`；`info` 里带出来 |
