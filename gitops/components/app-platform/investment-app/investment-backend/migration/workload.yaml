@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'investment-schema-check-v4', namespace: app-platform-dev}
+metadata: {name: 'investment-schema-check-v5', namespace: app-platform-dev}
 data:
   verify.py: |
     """Check the deployed schema and real runtime grants without printing credentials."""
@@ -58,7 +58,7 @@ data:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'investment-migrate-b09a366f3d71-v4', namespace: app-platform-dev}
+metadata: {name: 'investment-migrate-9282cde9c6f7-v5', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 420
@@ -72,22 +72,22 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: migrate
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:b09a366f3d71ff175c48a0259f1a7f20793be8bd746e26ca876af04c49f7a379
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:9282cde9c6f79d371c225c290f2caab029ef19f23bf148cd14069fe671f00e9c
           imagePullPolicy: IfNotPresent
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
           envFrom: [{secretRef: {name: investment-migration-auth}}]
           env:
             - {name: ENV, value: production}
-            - {name: DEPLOYMENT_ID, value: '982b216d7fc79133b59c122d37a3e372544f48a9'}
+            - {name: DEPLOYMENT_ID, value: '9174af2fc119b7918ea57d3cd25388b31c932a86'}
             - {name: ADMIN_FRONTEND_BASE_URL, value: 'https://investment-admin.sunmoonai.com:30443'}
             - {name: WEB_FRONTEND_BASE_URL, value: 'https://investment.sunmoonai.com:30443'}
-            - {name: EXPECTED_SCHEMA_REVISION, value: '20261009_0014'}
+            - {name: EXPECTED_SCHEMA_REVISION, value: '20261012_0016'}
           command: [/bin/sh, -ec]
           args: ['python -m app.bootstrap.migration upgrade && python /verify/verify.py']
           volumeMounts:
             - {name: verify, mountPath: /verify, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: verify, configMap: {name: 'investment-schema-check-v4'}}
+        - {name: verify, configMap: {name: 'investment-schema-check-v5'}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}
