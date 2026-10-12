@@ -1026,3 +1026,7 @@ return int(count) <= limit
 Cursor 顺手指出卡 38 里我给的 Python 截块用 `\n  ` 会误匹配四空格缩进，它改用正则只改 investment 块——以后卡里改 `sources.yaml` 直接说「改 investment 块这五个键」，不给脚本。
 
 **现在等所有者**：E（全新安装 0.3.0 真人配对）与批 1 的网页实测，清单在 `morning-2026-10-12.md` 第四节。
+
+## 2026-10-12 · 实测第一条：Windows 命令输出乱码（账 88）
+
+所有者在工作对话里让它列文件，第一次输出都是乱码，模型自己再切 UTF-8 重列。查实：中文 Windows 的 PowerShell/cmd 往管道写 GBK；Codex 自带的 UTF-8 前缀只在会话 shell 是 PowerShell 时加（`unified_exec.rs` 的 `req.shell_type` 取自 app-server 本机 shell），我们的 app-server 在 Linux 沙箱里，所以不加。两头治：后端模式说明加一句（fable 后端，随下次发布），代理在 `windowsBridge.ts` 转发 `process/start` 时给 PowerShell/cmd 加前缀（账 88，astra，0.3.1）。登录那条「与身份服务交换令牌失败」是一次性事务过期或重复回调，重登即好，文案另改。
