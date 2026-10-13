@@ -3,7 +3,7 @@
 > 状态：2026-10-13 Opus 在 qwen 工位写设计，未实施。依据：[任务清单 opus-001](../../../switch-test/inbox/opus/opus-001.md)、账 96、[决策](../../decisions.md) 2026-10-13 一条。
 > 起点：investment-backend `e73ffa5`（`FIN_FORECAST` 版本 0，`status="preparing"`），knowledge-backend `548e84a`，k8s `451b3fae`。
 > 先读：[`0009-semantic`](0009-semantic.md)（口径与 SQL 怎么走）、[`0015`](0015-files-not-dossiers.md)（成稿落文件）、[`0018`](0018-advisor-market.md)（专家 = 知识库 + skill）、[审批](../architecture/approval.md)（工具级三档）。
-> 分工：Opus 设计、拆任务、审读；Qwen 在同一工位实施（任务页在 `switch-test/inbox/qwen/`）；远程 Fable 最后审读、合进 fable、发布。
+> 分工（opus-001 2026-10-13 所有者纠正后）：远程机上能做的 Opus 自己做（设计、数据集、脚本、测试、专家包、评测题与跑分），每段自己写回执；只有所有者本机才能做的（KIND 本机联调链、浏览器里的页面、真机演示）写任务页给 Qwen（`switch-test/inbox/qwen/`）；远程 Fable 最后审读、合进 fable、发布。
 
 ## 一、做成什么
 
@@ -45,7 +45,7 @@
 | 项 | 值 |
 | --- | --- |
 | `dataset_id` | `olist-ecommerce` |
-| `data_version` | `olist-ecommerce-<16 位十六进制>`，取自「九个 parquet 的 sha256（按表名排序）+ 生成器版本」的 sha256 前 16 位。按输入定版本，不按 SQLite 文件的字节（同样的内容在不同机器上写出的字节可能不同） |
+| `data_version` | `olist-ecommerce-<16 位十六进制>`，取自「生成器版本 + 定义文件 `olist.yml` 的 sha256 + 九个 parquet 的 sha256（按文件名排序）」的 sha256 前 16 位。按输入定版本，不按 SQLite 文件的字节（同一台机器上两次生成字节相同，换机器、换 SQLite 版本不保证）；定义文件参与计算，改一个字版本就变，免得「同版本、内容不同」撞上登记的 409 |
 | `title` | `巴西电商 Olist 样例（演示与评测用，CC BY-NC-SA 4.0）` |
 | `security_code` | 不填（登记接口允许为空） |
 | `source_app` | `knowledge-sample` |
@@ -166,7 +166,7 @@
 | knowledge-backend `app/datasets/olist/olist.yml`（新） | 声明：九个文件的地址与 sha256、表名对照、主键、关系、字段字典、口径、说明。**数据集的定义只有这一份** |
 | knowledge-backend `app/scripts/build_olist_dataset.py`（新） | `--cache <目录> --out <文件>`：缺文件就下载，sha256 不对就停；用已有依赖（DuckDB）读 parquet、写 SQLite；写完用 `read_description()` 自检、生成一次语义模型；打印 `data_version`、`sha256`、`size_bytes`、起止日期，供登记 |
 | 测试 | 用几行合成数据造小 parquet（测试里现造，不进仓、不联网）：生成、自述校验、语义模型、口径行原样返回且不可查、类型映射、地理表无关系、两次生成 `data_version` 相同、sha256 不对时停 |
-| k8s `sunmoonai/scripts/local-integration/dataset-chain/` | 加一个样例桶 `development-knowledge-samples`（只给知识服务读）、`run.sh sample olist`（生成 → 上传样例桶 → 登记）、`driver.py verify-sample olist`（第四节的检查）。登记直接调知识服务的登记接口，用替身发的服务令牌，`source_app = knowledge-sample` |
+| k8s `sunmoonai/scripts/local-integration/dataset-chain/`（Qwen 在本机做） | 加一个样例桶 `development-knowledge-samples`（只给知识服务读）、`run.sh sample olist`（生成 → 上传样例桶 → 登记）、`driver.py verify-sample olist`（第四节的检查）。登记直接调知识服务的登记接口，用替身发的服务令牌，`source_app = knowledge-sample` |
 
 数据文件、parquet、生成出的 SQLite 都不进 git。生产上谁来登记、桶叫什么，留到发布时定（第九节）。
 
@@ -208,7 +208,7 @@
 | `forecast` 预测 | `run_sql` | 方法固定，见 5.3；先回测再外推；全部在 SQL 里算 | `method`、`window`、`excluded_periods`、`assumptions`、`rows`（`period`、`forecast_point`、`forecast_low`、`forecast_high`）、`backtest`、`sql` | 格式对；有这几项；`assumptions` 至少 2 条；`rows` 至少 1 行 |
 | `writeup` 成稿 | 无 | 按 0015 的写法要求写 `底稿/财务分析与预测-成稿.md`：回答、数据带角标、验过什么、局限、出处；不贴 JSON；不给买卖建议；`unavailable` 与截断必须写进局限；最后一步照例写 `交回.md` | `answer`、`limitations`、`citations` | 格式对；有正文；无买卖建议（`no_positioning_advice`） |
 
-`reserve` 与输入长度照 `FIN_REVIEW` 的量级定，Qwen 实测后回填。`field_words.py` 补齐新字段的中文词（现有测试会查）。
+`reserve` 与输入长度照 `FIN_REVIEW` 的量级定，跑分后回填。`field_words.py` 补齐新字段的中文词（现有测试会查）。
 
 ### 5.3 预测方法：移动平均
 
@@ -267,12 +267,12 @@
 
 | 段 | 谁做 | 做什么 | 停点怎么算过 |
 | --- | --- | --- | --- |
-| 1 数据 | Qwen | 第三节；联调链加样例 | 联调链里 `run.sh sample olist` 与 `driver verify-sample olist` 全过，第四节五项原文贴回执；knowledge 后端三件套（ruff、pyright、pytest）全过 |
-| 2 评测题 | Qwen | 第六节十题 | 真值查询在数据集上逐条跑通、结果贴回执；`run_eval.py --cases fin_forecast_10 --profile FIN_FORECAST` 能跑（专家包还是占位时允许全不过） |
-| 3 方法 | Qwen | 第五节 | 专家包规矩测试全过；用真 Codex 对本机 knowledge 跑一遍五步；十题过 ≥ 8（按第六节的算法） |
-| 4 切真 | Qwen | `status="ready"`、`version="1"`、标题去「筹备中」、`preparing_note` 清空 | 后端全量测试过；回执附一次完整委托的事件摘要与成稿文件 |
+| 1 数据 | Opus（远程）；Qwen（本机联调链） | 第三节；联调链加样例 | 远程：knowledge 后端三件套过；生成脚本对真实数据跑两次 `data_version` 相同；经知识服务的 MCP 处理链（语义层开着）第四节五项全过。本机：联调链 `run.sh sample olist` 与 `driver verify-sample olist` 原文 |
+| 2 评测题 | Opus | 第六节十题 | 真值查询在数据集上逐条跑通、结果贴回执；`run_eval.py --cases fin_forecast_10 --profile FIN_FORECAST` 能跑（专家包还是占位时允许全不过） |
+| 3 方法 | Opus | 第五节 | 专家包规矩测试全过；用真 Codex 对本机 knowledge 跑一遍五步；十题过 ≥ 8（按第六节的算法） |
+| 4 切真 | Opus；Qwen（本机 KIND 完整委托与浏览器） | `status="ready"`、`version="1"`、标题去「筹备中」、`preparing_note` 清空 | 后端全量测试过；回执附一次完整委托的事件摘要与成稿文件；本机浏览器里专家页与成稿 |
 
-每段 Qwen 写回执 `k8s/sunmoonai/scripts/results/fin-forecast-<段>-<日期>.md`，Opus 审过才进下一段。
+每段写回执 `k8s/sunmoonai/scripts/results/fin-forecast-<段>-<日期>.md`（Opus 的远程部分与 Qwen 的本机部分各一份，文件名里带 `-remote` / `-local`）；本机部分 Opus 审过才算这一段过。
 
 ## 九、要所有者定的、要记的
 
