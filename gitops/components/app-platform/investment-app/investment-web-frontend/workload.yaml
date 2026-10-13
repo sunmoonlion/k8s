@@ -20,7 +20,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/investment-web-frontend@sha256:668f539e4eeef76e50a90223b75c5f5e9311fe08808872b6dd01a8723ac89809
+          image: harbor.sunmoonai.com:30443/platform/investment-web-frontend@sha256:a5bfbb79a2597a371b845af78de21076fa6169f6179f3db82d67310494b6650f
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
@@ -29,7 +29,7 @@ spec:
             - {name: AUTH_APP, value: investment}
             - {name: APP_ORIGIN, value: "https://investment.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://investment-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "investment-web-frontend-668f539e4eeef76e"}
+            - {name: DEPLOYMENT_ID, value: "investment-web-frontend-a5bfbb79a2597a37"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
