@@ -130,3 +130,18 @@ astra 在我改乙案之前（它手里是 512 KiB 那版合同）把**服务流
 
 只换网页镜像（`sha256:a5bfbb79…` / `309e73d5`），后端锁「已是这一份」；钉 = 父仓 `102054b4`、网页 `309e73d5`、后端 `e73ffa5e`；晋级 digest `sha256:cc073bda…` / `191a4332`；`application-check` 0。所有者刷新网页点右边栏「文件」即可验。
 
+
+## 2026-10-13 · Opus 第 1 段远程部分复查：通过；qwen 工位已并上 origin/qwen
+
+| 看了什么 | 核到 | 判定 |
+| --- | --- | --- |
+| knowledge-backend qwen `94a3a72` | 只加四个文件（`datasets/olist/olist.yml` 401 行、`scripts/build_olist_dataset.py` 323 行、`tests/test_olist_dataset.py` 387 行、`docs/dataset-registry.md` 一节）；`app/app/` 运行代码一行没改 | 通过 |
+| 生成脚本 | 下载先写 `.part` 再核 sha256，不符就删不覆盖；缓存不符停下；列名与定义逐个比对；时间列统一 `%Y-%m-%d %H:%M:%S`；`.part` 写完 `os.replace`；写完按服务自己的 `read_description`+`build_manifest`+`WrenPlanner` 自检；`data_version` 把定义文件 sha256 算进去（改定义版本就变，不撞 409） | 通过 |
+| 测试 | 远程机重跑 `tests/test_olist_dataset.py`：8 passed；Opus 回执里全量 807 passed / 174 skipped，ruff 只剩原有 1 条 | 通过 |
+| 回执 `results/fin-forecast-1-remote-20261013.md` | 真实数据两次同版本 `olist-ecommerce-5f4af057bf031216`；经 `KnowledgeMcp.handle` 11 项全过，按月 GMV 20 行与直读 SQLite 相同；没做的写明（KIND 链归 Qwen、174 个跳过没核原因、生产样例桶未定） | 通过 |
+| k8s qwen | Opus 的五个提交落后 origin/qwen 四个（我早先快进的）；`merge-tree` 无冲突，我在 qwen 工位做了 `git merge origin/qwen`（`8866ae44`），现在能快进推送 | 已处理 |
+| knowledge-app qwen `f7e5aba` / knowledge-backend qwen | 都只比 origin 多一个提交，能快进 | 通过 |
+
+小瑕疵，不挡：`qwen-001.md` 与回执里链到 `inbox/opus/opus-001.md`，那页已按所有者意思删掉，链接会断；历史在 git 里。
+
+下一步：所有者 `from-remote qwen` 推远程 qwen、拉到本地，对本地 Qwen 说「请看 inbox/qwen」；Qwen 做 KIND 联调链一截（样例桶、`run.sh sample olist`、`driver verify-sample olist`），回执交 Opus。
