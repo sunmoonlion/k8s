@@ -331,6 +331,8 @@
 | 3 方法 | Opus | 第五节 | 专家包规矩测试全过；用真 Codex 对本地 knowledge 跑一遍五步；十题过 ≥ 8（按第六节的算法） |
 | 4 切真 | Opus；Qwen（本地 KIND 完整委托与浏览器） | `status="ready"`、`version="1"`、标题去「筹备中」、`preparing_note` 清空 | 后端全量测试过；回执附一次完整委托的事件摘要与成稿文件；本地浏览器里专家页与成稿 |
 
+**第 4 段提前切了代码**（所有者 2026-10-13：「现在好像要把筹备中改了吧，否则点击不了啊」）：investment-backend `FIN_FORECAST` 已是 `ready`、版本 `1`、标题去掉「筹备中」、`preparing_note` 清空。本地十题的线（第 3 段）照样要过；没过线就改方法、升版本。要在站点上点得到，还要合并与发布。
+
 每段写回执 `k8s/sunmoonai/scripts/results/fin-forecast-<段>-<日期>.md`（Opus 的远程部分与 Qwen 的本地部分各一份，文件名里带 `-remote` / `-local`）；本地部分 Opus 审过才算这一段过。
 
 ## 九、要所有者定的、要记的
