@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 # 所有者在本地机上跑的（推）：本地助手说「跑完了」之后，把它写下的结果和其它改动提交，并同步回远程。
-# 用法：bash ~/switch-test/human-remote.sh    （先推子仓与 runtime，再由 sync-five-repos.sh 同步父仓）
+# 用法：WS=<工位> bash ~/switch-test/human-remote.sh    （工位必须给，不猜；先推子仓与 runtime，再由 sync-five-repos.sh 同步父仓）
 # 推之前每个仓都先 fetch：远程助手这期间推了新提交的话，本地提交 rebase 到它上面再推；冲突就停。所以不必先跑 human-local.sh。
 # 跑完把最后打印的「仓 提交号」告诉远程助手。
 set -euo pipefail
-WS="${WS:-fable}"
+if [ -z "${WS:-}" ]; then
+  echo "✗ 要指定工位：WS=<fable|cursor|kimi|luna|qwen> bash ~/switch-test/$(basename "$0")   （不猜，和 five-repos-sync 一样）" >&2
+  exit 2
+fi
+WS="$WS"
 WORKTREE_ROOT="${WORKTREE_ROOT:-$HOME/worktrees/$WS}"
 SYNC_SCRIPT="${SYNC_SCRIPT:-$HOME/five-repos-sync/sync-five-repos.sh}"
 FIVE="k8s info-app investment-app knowledge-app tpl-app"

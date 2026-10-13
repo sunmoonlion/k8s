@@ -9,7 +9,7 @@
 | 远程助手（Fable） | 远程机 `~/worktrees/fable/*`，分支 `fable` | 写代码、文档、设计；写 `inbox/cursor/` 的发布卡与 `inbox/astra/` 的任务页；审读本地提交 |
 | Cursor（本地） | 本地机 `~/worktrees/fable/k8s`，分支 `fable` | **只跑 `inbox/cursor/` 里的卡**，回执写 `k8s/sunmoonai/scripts/results/`，本地提交；不从账本领活，不改产品代码 |
 | astra（本地） | 本地机 `~/worktrees/fable/runtime`，分支 `fable` | **只改 `runtime/agent`**，而且只按 `inbox/astra/` 里的 `astra-NNN.md` 做；箱子空就没有任务；不碰别的仓 |
-| 所有者 | 两边 | `human-local.sh` 拉、`human-remote.sh` 推（都不带 `WS=`，默认 fable）；传话；真机验收；决定合并 |
+| 所有者 | 两边 | `WS=<工位> human-local.sh` 拉、`WS=<工位> human-remote.sh` 推（工位必须给，不猜）；传话；真机验收；决定合并 |
 
 **五个工位地位一样**（`fable`、`cursor`、`kimi`、`luna`、`qwen`；所有者 2026-10-12 定「luna 没必要冻结，它的地位和其它一样」）。2026-10-12 15:20 起六个仓在五个分支上对齐到同一提交；远程每次推都推五个分支，所有者 `sync-five-repos.sh … -all` 一次同步全部。本地助手各用自己名字的工位。
 

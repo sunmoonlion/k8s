@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # 所有者在本地机上跑的（拉）：把全部仓和副本同步到远程助手推上来的最新状态，并列出待办。跑完之后的推回见 human-remote.sh。
 # 跑完后对 Cursor 说「请看 inbox/cursor」、对 astra 说「请看 inbox/astra」。本地助手不同步、不推；每条做完自己在被测仓本地提交（README「3c」）。
-# 用法：bash ~/switch-test/human-local.sh    （没有参数，总是同步全部：五仓 + 两个子仓 + runtime）
+# 用法：WS=<工位> bash ~/switch-test/human-local.sh    （工位必须给，不猜；同步该工位的五仓 + 子仓 + runtime）
 # ~/switch-test 里的两个脚本只是转发器（本脚本生成），永远跑仓里当前工位的最新版；第一次或转发器还没生成时，
-# 直接跑仓里这份：bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/human-local.sh
+# 直接跑仓里这份：WS=fable bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/human-local.sh
 set -uo pipefail
-WS="${WS:-fable}"
+if [ -z "${WS:-}" ]; then
+  echo "✗ 要指定工位：WS=<fable|cursor|kimi|luna|qwen> bash ~/switch-test/$(basename "$0")   （不猜，和 five-repos-sync 一样）" >&2
+  exit 2
+fi
+WS="$WS"
 K8S="$HOME/worktrees/$WS/k8s"; ST="$K8S/sunmoonai/docs/dev-investment-agent/switch-test"
 FIVE="k8s info-app investment-app knowledge-app tpl-app"
 # 父仓下的全部子仓（与 human-remote.sh 同一份）
@@ -77,8 +81,9 @@ mkdir -p "$HOME/switch-test"
 for name in human-local.sh human-remote.sh; do
   cat > "$HOME/switch-test/$name" <<SHIM
 #!/usr/bin/env bash
-# 转发器：跑仓里当前工位（WS，默认 fable）的最新版；本文件由 human-local.sh 生成，不要手改
-exec bash "\$HOME/worktrees/\${WS:-fable}/k8s/sunmoonai/docs/dev-investment-agent/switch-test/$name" "\$@"
+# 转发器：跑仓里 WS 工位的最新版（WS 必须给，不猜）；本文件由 human-local.sh 生成，不要手改
+if [ -z "\${WS:-}" ]; then echo "✗ 要指定工位：WS=<fable|cursor|kimi|luna|qwen> bash ~/switch-test/$name" >&2; exit 2; fi
+exec bash "\$HOME/worktrees/\$WS/k8s/sunmoonai/docs/dev-investment-agent/switch-test/$name" "\$@"
 SHIM
   chmod +x "$HOME/switch-test/$name"
 done

@@ -28,10 +28,10 @@
 | 远程助手 | 远程机 `~/worktrees/fable/*` | 写代码、文档、设计、发布卡、任务页；审读 |
 | **Cursor** | 本地机 `~/worktrees/fable/k8s` | 只跑 `inbox/cursor/` 里的卡；不看 astra 的箱子，不从账本领活 |
 | **astra** | 本地机 `~/worktrees/fable/runtime` | 只改 `runtime/agent`，只按 `inbox/astra/` 里的 `astra-NNN.md` 做；箱子空就没有任务 |
-| 所有者 | 两边 | 两个脚本都不带 `WS=`（默认 fable）；传话；真机验收 |
+| 所有者 | 两边 | 两个脚本都带 `WS=<工位>`（不猜，哪个工位都不特殊）；传话；真机验收 |
 
 本目录：`README.md`（本文，约定）、`human-local.sh`（**所有者在本地机上跑，拉：同步仓与副本，列出待办**）、`human-remote.sh`（**所有者在本地机上跑，推：把本地助手已提交的结果推回远程，顺带补提交漏掉的改动与父仓 gitlink**）、`inbox/<助手名>/`（每个助手一个收件箱：`cursor`、`astra`、`kimi`、`luna`、`qwen` 是本地助手的，远程写、各自做、互不看；`opus` 是在 qwen 工位做设计与审读的 Opus 的，它再给 `qwen` 写任务页；`fable` 是远程助手的，所有者或别的工位要派活给远程时放这里）、`done/`（已办与归档）、`hold/`（写好但暂缓的卡，不是待办）、`review-log.md`（远程的审读与交接记录，只追加）、做完的都归 `done/`。测试脚本不放这里，放被测仓。
-`~/switch-test/` 里只有两个**转发器**（`human-local.sh` 跑一次就生成），永远执行仓里当前工位（`WS`，默认 fable）的最新版，没有会过期的副本；待办与说明都直接看仓里的 `switch-test/`。第一次或转发器还没生成时直接跑仓里那份：`bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/human-local.sh`。本地机要装什么见「六、固定事实」。
+`~/switch-test/` 里只有两个**转发器**（`human-local.sh` 跑一次就生成），永远执行仓里 `WS` 工位的最新版，没有会过期的副本；**`WS` 必须显式给**（`WS=fable` / `WS=qwen` …），不猜、没有默认，哪个工位都不特殊。待办与说明都直接看仓里的 `switch-test/`。第一次或转发器还没生成时直接跑仓里那份：`WS=fable bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/human-local.sh`。本地机要装什么见「六、固定事实」。
 
 ## 一、每一轮怎么走：所有者拉、本地助手跑、所有者推
 
@@ -40,9 +40,9 @@
 | 步 | 谁 | 做什么 |
 | --- | --- | --- |
 | 1 | 远程助手 | 推脚本、推待办（见「三」），对所有者说「有新待办」 |
-| 2 | **所有者** | 在本地机跑 `bash ~/switch-test/human-local.sh`（拉）：同步全部仓，刷新副本，列出待办。然后对要干活的助手说 **「请看 inbox/<它的名字>」** |
+| 2 | **所有者** | 在本地机跑 `WS=<工位> bash ~/switch-test/human-local.sh`（拉）：同步全部仓，刷新副本，列出待办。然后对要干活的助手说 **「请看 inbox/<它的名字>」** |
 | 3 | 本地助手 | 看**自己的**收件箱（`inbox/<它的名字>/`），逐条做，结果写进被测仓的 `scripts/results/`；**每条做完就在被测仓提交**（见下「3c」）。**不同步、不推**。做完说：**「跑完了」** |
-| 4 | **所有者** | 在本地机跑 `bash ~/switch-test/human-remote.sh`（推）：推送子仓与 runtime（还有没提交的改动会先补提交），再提交父仓的 gitlink 并 `to-remote`。把它最后打印的那一句「本地回来了；仓 提交号…」告诉远程助手 |
+| 4 | **所有者** | 在本地机跑 `WS=<工位> bash ~/switch-test/human-remote.sh`（推）：推送子仓与 runtime（还有没提交的改动会先补提交），再提交父仓的 gitlink 并 `to-remote`。把它最后打印的那一句「本地回来了；仓 提交号…」告诉远程助手 |
 | 5 | 远程助手 | `pull`，读 `results/`，把待办移到 `done/` |
 
 副本还没有的第一次，所有者用仓里的那份：`bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/human-local.sh`。
