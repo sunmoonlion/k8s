@@ -219,12 +219,14 @@
 | 步 | 工具 | 做什么 | 交回物关键字段 | 当场验什么 | 不过去哪 |
 | --- | --- | --- | --- | --- | --- |
 | `scope` 定范围 | `list_datasets`、`describe_schema`、`metric_definitions`、`run_sql` | 认出数据集；读 `dataset_metadata` 全部行；把问题落到口径名、期间、粒度；数据集里没有的口径列进 `unavailable`；问题没给期间就用完整期间并写进 `assumptions` | `dataset`、`data_version`、`question`、`period`（起、止、粒度）、`complete_period`、`metrics`、`unavailable`、`notes`、`assumptions` | 格式对；必备字段齐；`dataset` 不为空（不过的说明：「没有找到能回答这个问题的数据集」）；`metrics` 至少 1 个 | **交人**：范围认错后面全白做；找不到数据集就停下问你 |
-| `pull` 取数 | `describe_schema`、`run_sql` | 按口径取期间序列；每列写来源（表、字段、过滤）；被认作不完整的期列进 `excluded_periods`；交回实际执行的 SQL | `columns`（名、中文、来源）、`rows`、`excluded_periods`、`sql`、`data_version` | 格式对；`rows` 至少 1 行；`sql` 不为空 | **重做 1 次**：多半是 SQL 或格式写错 |
-| `analyze` 分析 | `run_sql` | 趋势（环比、同比）；结构（区域、品类的占比与变化，按问题需要）；季节性只在有两个完整周期时才说；每条发现带支撑它的 SQL 与数 | `findings`（文字、数、SQL） | 格式对；`findings` 至少 2 条 | **退回取数 1 次**：分析不过多半是取的数不对 |
+| `pull` 取数 | `describe_schema`、`run_sql` | 按口径取期间序列；每列写来源（表、字段、过滤）；被认作不完整的期列进 `excluded_periods`；交回实际执行的 SQL | `columns`（名、中文、来源）、`rows`、`excluded_periods`、`sql`、`data_version` | 格式对；`rows` 至少 1 行；`sql` 不为空 | **重做 1 次**，仍不过交人：多半是 SQL 或格式写错 |
+| `analyze` 分析 | `run_sql` | 趋势（环比、同比）；结构（区域、品类的占比与变化，按问题需要）；季节性只在有两个完整周期时才说；每条发现带支撑它的 SQL 与数 | `findings`（文字、数、SQL） | 格式对；`findings` 至少 2 条 | **退回取数 1 次**（`max_reworks=0`，不先重做本步），回来仍不过交人：分析不过多半是取的数不对 |
 | `forecast` 预测 | `run_sql` | 方法固定（5.3）：认完整期 → 回测 → 外推 → 季度合计；全部在 SQL 里算 | `method`、`window`、`excluded_periods`、`assumptions`、`rows`（`period`、`forecast_point`、`forecast_low`、`forecast_high`）、`quarters`、`backtest`、`sql` | 格式对；必备字段齐；`assumptions` 至少 2 条；`rows` 至少 1 行 | **不返工，交人**（`max_reworks=0`）：方法固定，返工提示会催模型改方法、凑结果，等于把不平的数做平（与财报体检的勾稽、对照官方同理） |
-| `writeup` 成稿 | 无 | 按 0015 写 `底稿/财务分析与预测-成稿.md`：回答、数据（带角标）、专家验过什么、局限、出处；`unavailable` 与截断必须进局限；不贴 JSON；最后照例写 `交回.md` | `answer`、`limitations`、`citations` | 格式对；有正文；`limitations`、`citations` 各至少 1 条；无买卖建议（`no_positioning_advice`）；成稿文件存在（`deliverable_check`） | **交人** |
+| `writeup` 成稿 | 无 | 按 0015 写 `底稿/财务分析与预测-成稿.md`：回答、数据（带角标）、专家验过什么、局限、出处；`unavailable` 与截断必须进局限；不贴 JSON；最后照例写 `交回.md` | `answer`、`limitations`、`citations` | 格式对；有正文；`limitations`、`citations` 各至少 1 条；无买卖建议（`no_positioning_advice`）；成稿文件存在（`deliverable_check`） | **重做 1 次，仍不过交人**：补局限、出处这类内容，没有凑数的风险（与财报体检的成稿相同） |
 
 `reserve` 与输入长度照 `FIN_REVIEW` 的量级定，跑分后回填。`field_words.py` 补齐新字段的中文词（现有测试会查）。
+
+**失败去向的执行顺序**（`advisor.py`）：先看本步还有没有返工额度（`max_reworks`），有就重做本步；用完了，`on_reject="back"` 的退回 `back_to`（次数受 `max_backs` 限）；再不行交人。所以「不过直接交人」要写成 `on_reject="human"` 加 `max_reworks=0`。
 
 **「缺数据」怎么停**：现有的 `missing_data` 只认六位证券代码，Olist 这类非证券数据集触发不了它；这里不改机制，改由定范围的验收「`dataset` 不为空」加「不过交人」做到同样的效果——找不到数据集就停下问你，不硬算。以后接 A 股公司时，定范围再配上 `missing_data`（证券代码写在交回物里），没入库的公司照财报体检那样记需求。
 
