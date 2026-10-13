@@ -293,16 +293,18 @@
 | --- | --- | --- | --- | --- |
 | 1 | `ff-gmv-monthly` | 2017 年 1 月到 2018 年 8 月，按月的成交额和订单数 | `period`、`gmv`、`order_count`（20 行） | 剔除取消与不可用 |
 | 2 | `ff-gmv-quarterly-yoy` | 按季度看成交额，2018 年第二季度比上年同期增长多少 | `period`、`gmv`（2017-Q1 到 2018-Q2，6 行） | 季度格式 `YYYY-Qn` |
-| 3 | `ff-state-top5` | 成交额最高的五个州，各占多少 | `customer_state`、`gmv`、`gmv_share`（5 行） | `share` 是保留字 |
+| 3 | `ff-state-top5` | 全部数据里，成交额最高的五个州是哪些，各是多少 | `customer_state`、`gmv`（5 行） | 用卖家所在州 |
 | 4 | `ff-category-top10` | 商品收入（不含运费）最高的十个品类 | `product_category_name_english`、`item_revenue`（10 行） | 品类为空与无英文名 |
 | 5 | `ff-category-margin` | 哪个品类毛利率最高 | 无真值查询 | 必须提醒：任一「不含成本」「没有成本」「无法计算毛利」；不得出现「毛利率为」 |
 | 6 | `ff-installment-share` | 用信用卡付款的订单里，分期的占多少 | `credit_card_installment_share`（1 行） | 按订单去重 |
 | 7 | `ff-cancel-monthly` | 2017 年 1 月到 2018 年 8 月每月的取消率 | `period`、`cancel_rate`（20 行） | 分母含全部状态 |
 | 8 | `ff-repeat-customers` | 下过不止一单的客户占多少 | `repeat_customer_share`（1 行） | 用 `customer_id` 得 0 |
-| 9 | `ff-forecast-gmv` | 预测 2018 年 9 月到 12 月每月的成交额，给区间 | `forecast_point`、`forecast_low`、`forecast_high`（2018-03 到 2018-08 的均值、最低、最高，1 行） | 必须提醒：任一「截断」「不完整」；任一「假设」；不得出现「一定」「保证」 |
+| 9 | `ff-demo-forecast` | 近两年按月收入怎么走？预测下两个季度（演示题，五之二） | 真值一：`period`、`gmv`（2017-01 至 2018-08，20 行）；真值二：`period`、`forecast_point`、`forecast_low`、`forecast_high`（2018-Q3、2018-Q4，2 行；三季度 = 7、8 月实际 + 9 月预测） | 必须提醒：任一「截断」「不完整」；任一「假设」；不得出现「一定会」「保证」 |
 | 10 | `ff-backtest-orders` | 只用 2018 年 2 月及以前的数据，预测 2018 年 3 月到 8 月的订单数，和实际比误差多大 | 真值一：`forecast_point`、`forecast_low`、`forecast_high`（2017-09 到 2018-02 的订单数，1 行）；真值二：`period`、`order_count`（2018-03 到 2018-08，6 行） | 必须提醒：任一「误差」 |
 
 预测题的真值是「这份方法正确用在正确的数上」的结果，不是真实的未来；这在案例的 `description` 里写明。容差：金额 0.01，比率 0.0001，计数 0。
+
+做出来的样子（2026-10-13，第 2 段）：题在 `investment-backend/app/eval/cases/fin_forecast_10.json`，固定数据 `eval/fixtures/olist-ecommerce.dataset.bin`（即 1/20 样例，3858432 字节，`data_version` `olist-ecommerce-dcca129e2ea0cb56`），十题共 11 条真值查询，全部写 DuckDB 方言。测试在 `tests/test_eval_fin_forecast.py`。顺带改了评测的装载：`TruthStore` 在 DuckDB 模式下原来逐行 `executemany`，样例要 83 秒；改为每张表先写临时 CSV 再由 DuckDB 读入，0.74 秒，逐表逐行与 SQLite 相同（只改装载方式，判定不变）。
 
 **「10 题过 ≥ 8」怎么算**：一题算过 = 质量、引用、必须提醒三栏都过（比发布门严：发布门不看必须提醒）。只考边界的第 5 题没有真值查询，质量栏按现有判法算过，它的过不过实际由必须提醒决定。
 
