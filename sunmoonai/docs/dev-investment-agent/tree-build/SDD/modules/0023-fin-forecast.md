@@ -3,7 +3,7 @@
 > 状态：2026-10-13 Opus 在 qwen 工位写设计，未实施。依据：任务清单 opus-001（已撤，原文在 git 历史 `c8eecd22`）、账 96、[决策](../../decisions.md) 2026-10-13 一条。
 > 起点：investment-backend `e73ffa5`（`FIN_FORECAST` 版本 0，`status="preparing"`），knowledge-backend `548e84a`，k8s `451b3fae`。
 > 先读：[`0009-semantic`](0009-semantic.md)（口径与 SQL 怎么走）、[`0015`](0015-files-not-dossiers.md)（成稿落文件）、[`0018`](0018-advisor-market.md)（专家 = 知识库 + skill）、[审批](../architecture/approval.md)（工具级三档）。
-> 分工（所有者 2026-10-13 定，以这一条为准）：**Opus 主导**这位专家，从设计到切真；自己做的部分不经 fable 审读，每段自己写回执。远程机上能做的 Opus 自己做（设计、数据集、脚本、测试、专家包、评测题与跑分）；只有所有者本机才能做的（KIND 本机联调链、浏览器里的页面、真机演示）写任务页给 Qwen（`switch-test/inbox/qwen/`），**Qwen 的回执由 Opus 审**。fable 不再给 Opus 派任务；全部调好后由 fable **只做合并**（不审、不改），**发布也由 Opus 来做**。
+> 分工（所有者 2026-10-13 定，以这一条为准）：**Opus 主导**这位专家，从设计到切真；自己做的部分不经 fable 审读，每段自己写回执。远程机上能做的 Opus 自己做（设计、数据集、脚本、测试、专家包、评测题与跑分）；只有所有者本地才能做的（KIND 本地联调链、浏览器里的页面、真机演示）写任务页给 Qwen（`switch-test/inbox/qwen/`），**Qwen 的回执由 Opus 审**。fable 不再给 Opus 派任务；全部调好后由 fable **只做合并**（不审、不改），**发布也由 Opus 来做**。
 
 ## 一、做成什么
 
@@ -182,7 +182,7 @@
 | knowledge-backend `app/datasets/olist/olist.yml`（新） | 声明：九个文件的地址与 sha256、表名对照、主键、关系、字段字典、口径、说明。**数据集的定义只有这一份** |
 | knowledge-backend `app/scripts/build_olist_dataset.py`（新） | `--cache <目录> --out <文件>`：缺文件就下载，sha256 不对就停；用已有依赖（DuckDB）读 parquet、写 SQLite；写完用 `read_description()` 自检、生成一次语义模型；打印 `data_version`、`sha256`、`size_bytes`、起止日期，供登记 |
 | 测试 | 用几行合成数据造小 parquet（测试里现造，不进仓、不联网）：生成、自述校验、语义模型、口径行原样返回且不可查、类型映射、地理表无关系、两次生成 `data_version` 相同、sha256 不对时停 |
-| k8s `sunmoonai/scripts/local-integration/dataset-chain/`（Qwen 在本机做） | 加一个样例桶 `development-knowledge-samples`（只给知识服务读）、`run.sh sample olist`（生成 → 上传样例桶 → 登记）、`driver.py verify-sample olist`（第四节的检查）。登记直接调知识服务的登记接口，用替身发的服务令牌，`source_app = knowledge-sample` |
+| k8s `sunmoonai/scripts/local-integration/dataset-chain/`（Qwen 在本地做） | 加一个样例桶 `development-knowledge-samples`（只给知识服务读）、`run.sh sample olist`（生成 → 上传样例桶 → 登记）、`driver.py verify-sample olist`（第四节的检查）。登记直接调知识服务的登记接口，用替身发的服务令牌，`source_app = knowledge-sample` |
 
 数据文件、parquet、生成出的 SQLite 都不进 git。生产上谁来登记、桶叫什么，留到发布时定（第九节）。
 
@@ -326,12 +326,12 @@
 
 | 段 | 谁做 | 做什么 | 停点怎么算过 |
 | --- | --- | --- | --- |
-| 1 数据 | Opus（远程）；Qwen（本机联调链） | 第三节；联调链加样例 | 远程：knowledge 后端三件套过；生成脚本对真实数据跑两次 `data_version` 相同；经知识服务的 MCP 处理链（语义层开着）第四节五项全过。本机：联调链 `run.sh sample olist` 与 `driver verify-sample olist` 原文 |
+| 1 数据 | Opus（远程）；Qwen（本地联调链） | 第三节；联调链加样例 | 远程：knowledge 后端三件套过；生成脚本对真实数据跑两次 `data_version` 相同；经知识服务的 MCP 处理链（语义层开着）第四节五项全过。本地：联调链 `run.sh sample olist` 与 `driver verify-sample olist` 原文 |
 | 2 评测题 | Opus | 第六节十题 | 真值查询在数据集上逐条跑通、结果贴回执；`run_eval.py --cases fin_forecast_10 --profile FIN_FORECAST` 能跑（专家包还是占位时允许全不过） |
-| 3 方法 | Opus | 第五节 | 专家包规矩测试全过；用真 Codex 对本机 knowledge 跑一遍五步；十题过 ≥ 8（按第六节的算法） |
-| 4 切真 | Opus；Qwen（本机 KIND 完整委托与浏览器） | `status="ready"`、`version="1"`、标题去「筹备中」、`preparing_note` 清空 | 后端全量测试过；回执附一次完整委托的事件摘要与成稿文件；本机浏览器里专家页与成稿 |
+| 3 方法 | Opus | 第五节 | 专家包规矩测试全过；用真 Codex 对本地 knowledge 跑一遍五步；十题过 ≥ 8（按第六节的算法） |
+| 4 切真 | Opus；Qwen（本地 KIND 完整委托与浏览器） | `status="ready"`、`version="1"`、标题去「筹备中」、`preparing_note` 清空 | 后端全量测试过；回执附一次完整委托的事件摘要与成稿文件；本地浏览器里专家页与成稿 |
 
-每段写回执 `k8s/sunmoonai/scripts/results/fin-forecast-<段>-<日期>.md`（Opus 的远程部分与 Qwen 的本机部分各一份，文件名里带 `-remote` / `-local`）；本机部分 Opus 审过才算这一段过。
+每段写回执 `k8s/sunmoonai/scripts/results/fin-forecast-<段>-<日期>.md`（Opus 的远程部分与 Qwen 的本地部分各一份，文件名里带 `-remote` / `-local`）；本地部分 Opus 审过才算这一段过。
 
 ## 九、要所有者定的、要记的
 

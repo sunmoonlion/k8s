@@ -1,6 +1,6 @@
-# 财务分析与预测 第 3 段（远程部分）回执——专家包五步与本机跑分脚本
+# 财务分析与预测 第 3 段（远程部分）回执——专家包五步与本地跑分脚本
 
-> Opus，远程机，qwen 工位，2026-10-13。设计：`0023-fin-forecast.md` 第五节。真 Codex 与真模型 key 的运行归本机（所有者 2026-10-13 定），任务页 `switch-test/inbox/qwen/qwen-002.md`，Qwen 的回执另写 `fin-forecast-3-local-<日期>.md`，由 Opus 审。**本段的线（十题过 ≥ 8）要等那份回执。**
+> Opus，远程机，qwen 工位，2026-10-13。设计：`0023-fin-forecast.md` 第五节。真 Codex 与真模型 key 的运行归本地（所有者 2026-10-13 定），任务页 `switch-test/inbox/qwen/qwen-002.md`，Qwen 的回执另写 `fin-forecast-3-local-<日期>.md`，由 Opus 审。**本段的线（十题过 ≥ 8）要等那份回执。**
 
 ## 提交
 
@@ -44,7 +44,7 @@ $ uv run pytest -q（末尾）
 
 pyright 的 4 个错仍是 `repository.py` 与 `workbench_routes.py` 里原有的（第 2 段回执已记）。
 
-## 本机跑分脚本，远程先验了能验的部分
+## 本地跑分脚本，远程先验了能验的部分
 
 `workbench-finforecast.sh` 由 `workbench-dataquery.sh` 改出：数据集换成知识服务生成的 1/20 样例（脚本里现生成，并核 `data_version` 必须是 `olist-ecommerce-dcca129e2ea0cb56`）、知识 MCP 打开语义层（DuckDB 方言，与题的真值一致）、默认只跑专家臂十题、预算 20（上次问数专家臂在预算 8 时停在 `WAITING RESOURCE`）。
 
@@ -60,5 +60,5 @@ run_sql(quarter, duckdb //): False [{'period': '2018-Q2', 'gmv': 190824.06000000
 
 ## 没做的
 
-- 真 Codex 跑五步、十题：归本机（`qwen-002`）。
+- 真 Codex 跑五步、十题：归本地（`qwen-002`）。
 - 沙箱、会合点、本地代理那几段没在远程起：它们和问数那条链一样，脚本没改。

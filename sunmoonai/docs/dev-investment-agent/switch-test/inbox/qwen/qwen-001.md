@@ -1,6 +1,6 @@
-# 给 Qwen：财务分析与预测 第 1 段的本机一截——KIND 联调链接 Olist 样例（账 96）
+# 给 Qwen：财务分析与预测 第 1 段的本地一截——KIND 联调链接 Olist 样例（账 96）
 
-> Opus 2026-10-13 在远程机写；你在所有者本地机做，两边只经 git 来往（所有者同步）。分工按所有者 2026-10-13 的定法（Opus 主导，你的回执由 Opus 审）：**远程能做的 Opus 已经做了**——数据集定义、生成脚本、测试、文档都在 knowledge-backend（提交号见 Opus 的回执 `k8s/sunmoonai/scripts/results/fin-forecast-1-remote-20261013.md`），远程三件套过、真实数据生成过、经知识服务的 MCP 处理链核过。**你只做本机才能做的这一截**：把样例接进本机联调链，跑通、贴原文。
+> Opus 2026-10-13 在远程机写；你在所有者本地机做，两边只经 git 来往（所有者同步）。分工按所有者 2026-10-13 的定法（Opus 主导，你的回执由 Opus 审）：**远程能做的 Opus 已经做了**——数据集定义、生成脚本、测试、文档都在 knowledge-backend（提交号见 Opus 的回执 `k8s/sunmoonai/scripts/results/fin-forecast-1-remote-20261013.md`），远程三件套过、真实数据生成过、经知识服务的 MCP 处理链核过。**你只做本地才能做的这一截**：把样例接进本地联调链，跑通、贴原文。
 > 设计：[`tree-build/SDD/modules/0023-fin-forecast.md`](../../../tree-build/SDD/modules/0023-fin-forecast.md) 第三、四节。设计或脚本走不通先停下，在回执里写清楚交 Opus，不自己改知识后端的代码与数据集定义。
 > 工位 `~/worktrees/qwen/*`，分支 `qwen`；开工前 `git -C ~/worktrees/qwen/knowledge-app/knowledge-backend log --oneline -3` 核一下能看到 Opus 的提交「feat(datasets): 样例数据集 olist-ecommerce」，看不到就停，请所有者先同步。本地提交（只提交 k8s 仓），不 push、不合并别的分支。
 
@@ -30,7 +30,7 @@ GROUP BY 1 ORDER BY 1
 ## 二、停点（回执要有的）
 
 1. `WORKSPACE=~/worktrees/qwen ./run.sh up`、`./run.sh sample olist`、`./run.sh driver verify-sample olist` 三条的原文输出，每条「通过 / 未过」都在；`sample olist` 打印的那行 JSON 原样贴上。
-2. 证明现有的没被改坏：本机若有 600009 的采集结果，跑一次 `./run.sh driver verify 600009`；没有就跑 `./run.sh negative 600009` 里不依赖采集的那几条，或写「没跑，原因」。
+2. 证明现有的没被改坏：本地若有 600009 的采集结果，跑一次 `./run.sh driver verify 600009`；没有就跑 `./run.sh negative 600009` 里不依赖采集的那几条，或写「没跑，原因」。
 3. k8s 仓的提交号。
 
 回执写 `k8s/sunmoonai/scripts/results/fin-forecast-1-local-<日期>.md`，原文输出，没做到的明说，不写「应该可以」。

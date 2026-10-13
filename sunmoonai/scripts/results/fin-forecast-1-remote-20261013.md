@@ -1,6 +1,6 @@
 # 财务分析与预测 第 1 段（远程部分）回执——Olist 1/20 样例进 knowledge
 
-> Opus，远程机，qwen 工位，2026-10-13。设计：`sunmoonai/docs/dev-investment-agent/tree-build/SDD/modules/0023-fin-forecast.md` 第二之二、三、四节。Opus 主导；本机 KIND 联调链那一截在 `switch-test/inbox/qwen/qwen-001.md`，Qwen 的回执另写 `fin-forecast-1-local-<日期>.md`，由 Opus 审。
+> Opus，远程机，qwen 工位，2026-10-13。设计：`sunmoonai/docs/dev-investment-agent/tree-build/SDD/modules/0023-fin-forecast.md` 第二之二、三、四节。Opus 主导；本地 KIND 联调链那一截在 `switch-test/inbox/qwen/qwen-001.md`，Qwen 的回执另写 `fin-forecast-1-local-<日期>.md`，由 Opus 审。
 > 本回执取代同名文件的上一版（那一版是全量数据：文件 109 MB、`data_version` `olist-ecommerce-5f4af057bf031216`，在 git 历史里）。所有者同日定「只要一个完整的示例数据集」、按 1/20 抽样，数据集改为样例后本段重做了一遍。
 
 ## 提交
@@ -24,7 +24,7 @@
 
 **样例长什么样**：4917 单、4747 个真实客户、5587 条明细、地理表 4147 行（每个邮编前缀一行）；没有悬空引用（明细→订单、订单→客户、明细→商品各查过一遍，都是 0）。连续完整月份 2017-01 到 2018-08，2018-09 只有 1 单（已取消）。
 
-**MCP 核对怎么做的**：没有起 HTTP 服务（那是本机联调链的事），用的是知识服务自己的 `KnowledgeMcp.handle`（与 `tests/test_semantic_mcp.py` 同一种起法）：语义层开着，默认数据集用仓里的 600009 夹具，样例按真实登记的形状放进登记表（登记表与取文件两处用测试里现成的替身 `MemoryRegistry`、`LocalFiles`），工具经 JSON-RPC `tools/call` 调。驱动脚本在远程机 scratchpad，不进仓。
+**MCP 核对怎么做的**：没有起 HTTP 服务（那是本地联调链的事），用的是知识服务自己的 `KnowledgeMcp.handle`（与 `tests/test_semantic_mcp.py` 同一种起法）：语义层开着，默认数据集用仓里的 600009 夹具，样例按真实登记的形状放进登记表（登记表与取文件两处用测试里现成的替身 `MemoryRegistry`、`LocalFiles`），工具经 JSON-RPC `tools/call` 调。驱动脚本在远程机 scratchpad，不进仓。
 
 ## 三件套原文
 
@@ -103,7 +103,7 @@ run_sql 按月 GMV（MCP，语义层）: 20 行
 
 ## 没做的、要说的
 
-- **本机 KIND 联调链没跑**：样例桶、`run.sh sample olist`、`driver verify-sample olist` 归 Qwen（`qwen-001`）。
+- **本地 KIND 联调链没跑**：样例桶、`run.sh sample olist`、`driver verify-sample olist` 归 Qwen（`qwen-001`）。
 - **174 个跳过**：我没有核它们跳过的原因，也没在基线上对比跳过数；能确定的只有新加的 9 个用例一个都没跳。
 - **生产上的样例桶与登记身份**：没定，发布前定（`0023` 第九节）。
 - **与原设计的出入**（`0023` 已同步）：数据集改为 1/20 样例（第二之二节）；`data_version` 加进了定义文件的 sha256；YAML 里关系的键用 `columns` 不用 `on`（YAML 1.1 把 `on` 读成布尔值）。
