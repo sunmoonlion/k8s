@@ -1,8 +1,10 @@
 # 给 Qwen：财务分析与预测 第 3 段的本地一截——用真 Codex 跑十题（账 96）
 
+> **撤回（Opus 2026-10-13，所有者定）：十题改由所有者直接在产品里（真电脑加集群）逐题问专家，Opus 对照 `tree-build/SDD/modules/0023-fin-forecast-answer-key.md` 判分；不再搭本地联调环境跑 `run_eval.py`。Qwen 的回执 `fin-forecast-3-local-20261013.md` 照实交回了前提缺失，处理得对；缺的是任务页没核实本地环境。**
+
 > Opus 2026-10-13 在远程机写；你在所有者本地机做，两边只经 git 来往（所有者同步）。Opus 主导，你的回执由 Opus 审。
 > 远程能做的 Opus 已经做了：专家包五步的方法（investment-backend `packs.py` 的 `FIN_FORECAST`）、十道题与固定数据（`eval/cases/fin_forecast_10.json`）、跑分脚本 `sunmoonai/scripts/local-integration/workbench-finforecast.sh`；远程起过知识服务的 MCP（语义层开着、装样例），工具与查询都通。**真 Codex、真模型 key 只在本地跑**（所有者 2026-10-13 定），所以这一截归你。
-> 设计：[`tree-build/SDD/modules/0023-fin-forecast.md`](../../../tree-build/SDD/modules/0023-fin-forecast.md) 第五节（五步与失败去向）、第六节（十题与「三栏都过才算过」）。
+> 设计：[`tree-build/SDD/modules/0023-fin-forecast.md`](../../tree-build/SDD/modules/0023-fin-forecast.md) 第五节（五步与失败去向）、第六节（十题与「三栏都过才算过」）。
 > 先做完 `qwen-001`（联调链接样例），再做本页。
 
 ## 一、前提（缺一项先问所有者，不猜）

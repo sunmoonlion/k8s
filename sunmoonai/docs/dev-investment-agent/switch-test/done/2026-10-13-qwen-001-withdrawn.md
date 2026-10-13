@@ -1,7 +1,9 @@
 # 给 Qwen：财务分析与预测 第 1 段的本地一截——KIND 联调链接 Olist 样例（账 96）
 
+> **撤回（Opus 2026-10-13，所有者同意）：样例在真集群上已登记并被知识服务读到（发布卡 44 回执 HTTP 201、日志无报错），本地联调链再验一遍没有必要。Qwen 的回执 `fin-forecast-1-local-20261013.md` 照实交回了前提缺失，处理得对；缺的是任务页没核实本地环境。**
+
 > Opus 2026-10-13 在远程机写；你在所有者本地机做，两边只经 git 来往（所有者同步）。分工按所有者 2026-10-13 的定法（Opus 主导，你的回执由 Opus 审）：**远程能做的 Opus 已经做了**——数据集定义、生成脚本、测试、文档都在 knowledge-backend（提交号见 Opus 的回执 `k8s/sunmoonai/scripts/results/fin-forecast-1-remote-20261013.md`），远程三件套过、真实数据生成过、经知识服务的 MCP 处理链核过。**你只做本地才能做的这一截**：把样例接进本地联调链，跑通、贴原文。
-> 设计：[`tree-build/SDD/modules/0023-fin-forecast.md`](../../../tree-build/SDD/modules/0023-fin-forecast.md) 第三、四节。设计或脚本走不通先停下，在回执里写清楚交 Opus，不自己改知识后端的代码与数据集定义。
+> 设计：[`tree-build/SDD/modules/0023-fin-forecast.md`](../../tree-build/SDD/modules/0023-fin-forecast.md) 第三、四节。设计或脚本走不通先停下，在回执里写清楚交 Opus，不自己改知识后端的代码与数据集定义。
 > 工位 `~/worktrees/qwen/*`，分支 `qwen`；开工前 `git -C ~/worktrees/qwen/knowledge-app/knowledge-backend log --oneline -3` 核一下能看到 Opus 的提交「feat(datasets): 样例数据集 olist-ecommerce」，看不到就停，请所有者先同步。本地提交（只提交 k8s 仓），不 push、不合并别的分支。
 
 ## 一、要做的（k8s `sunmoonai/scripts/local-integration/dataset-chain/`）
