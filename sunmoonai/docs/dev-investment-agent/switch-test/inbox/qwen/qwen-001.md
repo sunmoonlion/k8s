@@ -8,7 +8,7 @@
 
 | 处 | 做什么 |
 | --- | --- |
-| `run.sh` | `up` 时多建一个桶 `development-knowledge-samples`（知识服务的存储账号只读；写入用联调链自己的管理账号）；知识服务的 `KNOWLEDGE_DATASET_ALLOWED_BUCKETS` 默认值加上它（逗号分隔，info 的桶照旧在）。新子命令 `sample olist`：在 `$KNOW` 下跑 `uv run python -m scripts.build_olist_dataset --cache $STATE/olist-cache --out $STATE/olist-ecommerce.sqlite`（第一次会下载九个 parquet，约 55 MB）→ 把生成的文件上传到样例桶，键 `samples/olist/<data_version>/olist-ecommerce.sqlite` → 调 `register_sample.py` 登记。现有子命令的行为不变 |
+| `run.sh` | `up` 时多建一个桶 `development-knowledge-samples`（知识服务的存储账号只读；写入用联调链自己的管理账号）；知识服务的 `KNOWLEDGE_DATASET_ALLOWED_BUCKETS` 默认值加上它（逗号分隔，info 的桶照旧在）。新子命令 `sample olist`：在 `$KNOW` 下跑 `uv run python -m scripts.build_olist_dataset --cache $STATE/olist-cache --out $STATE/olist-ecommerce.sqlite`（第一次会下载九个全量 parquet，约 55 MB，脚本按 1/20 抽样）→ 把生成的文件上传到样例桶，键 `samples/olist/<data_version>/olist-ecommerce.sqlite` → 调 `register_sample.py` 登记。现有子命令的行为不变 |
 | `register_sample.py`（新） | 读生成脚本最后打印的那行 JSON（`dataset_id`、`data_version`、`title`、`source_app`、`sha256`、`size_bytes`、`start_date`、`end_date`），加上桶与键，`POST /api/internal/v1/knowledge/datasets`；令牌用替身发的服务令牌，取法与现有 `register_once.py` 相同；`security_code` 不传；打印稳定的结果码，不打印令牌 |
 | `driver.py` | 新命令 `verify-sample olist`，逐条 `record`：`list_datasets` 有 `olist-ecommerce`、标题带 `CC BY-NC-SA 4.0`、`security_code` 为空；`describe_schema` 九张业务表都在、不含 `phys_`；`metric_definitions` 十一行、`queryable` 全假；`run_sql` 读 `dataset_metadata` 拿到 `complete_end = 2018-08`；`run_sql` 按月成交额（下面的 SQL）与直接读 `$STATE/olist-ecommerce.sqlite` 逐行相同（20 行，金额容差 0.01） |
 | `README.md` | 用法表加 `sample olist`、`driver verify-sample olist` 两行 |
@@ -25,7 +25,7 @@ WHERE o.order_status NOT IN ('canceled', 'unavailable')
 GROUP BY 1 ORDER BY 1
 ```
 
-远程机上同一份定义生成的结果，供你对照（不是判据，判据是 MCP 与直接读文件两条路相同）：`data_version` = `olist-ecommerce-5f4af057bf031216`，文件 sha256 `5366e6a6…`、114667520 字节；按月成交额首尾 `2017-01` 136943.46 / 787，`2018-08` 996973.51 / 6421。你那边的 `data_version` 应该相同（它只取决于定义文件与 parquet）；文件 sha256 若不同（SQLite 版本不同可能导致），照实写下即可，不算失败。
+远程机上同一份定义生成的结果，供你对照（不是判据，判据是 MCP 与直接读文件两条路相同）：样例按真实客户 1/20 抽样（所有者 2026-10-13 定），`data_version` = `olist-ecommerce-dcca129e2ea0cb56`，文件 sha256 `1e5f9284…`、3858432 字节，4917 单；按月成交额首尾 `2017-01` 5811.13 / 33，`2018-08` 44372.02 / 332。你那边的 `data_version` 应该相同（它只取决于定义文件与 parquet）；文件 sha256 若不同（SQLite 或 DuckDB 版本不同可能导致），照实写下即可，不算失败。第一次生成要下载九个全量 parquet（约 55 MB），之后只用缓存。
 
 ## 二、停点（回执要有的）
 

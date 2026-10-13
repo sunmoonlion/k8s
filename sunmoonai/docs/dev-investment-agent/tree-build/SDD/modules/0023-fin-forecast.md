@@ -36,7 +36,22 @@
 | 邮编前缀 | 文字，带前导零（`01003`） | 必须存文字 |
 | 币种 | 巴西雷亚尔 | 单位写「雷亚尔」 |
 
-按本文第三节的口径验算过（DuckDB 1.5.5 直读 parquet，脚本不进仓）：2017-01 到 2018-08 的按月 GMV 从 13.7 万升到 2018 年的约 98 万至 116 万；最近 6 个完整月（2018-03 到 2018-08）的均值约 108.5 万，最低约 99.7 万，最高约 115.6 万；用 2017-09 到 2018-02 回测 2018-03 到 2018-08，6 个月实际值全部落在区间内，绝对百分比误差 6% 到 19%。DuckDB 里 `share` 是保留字，不能作列名。
+以上是**全量**的摸底。按本文第三节的口径在全量上验算过（DuckDB 1.5.5 直读 parquet，脚本不进仓）：2017-01 到 2018-08 的按月 GMV 从 13.7 万升到 2018 年的约 98 万至 116 万；最近 6 个完整月（2018-03 到 2018-08）的均值约 108.5 万，最低约 99.7 万，最高约 115.6 万；用 2017-09 到 2018-02 回测 2018-03 到 2018-08，6 个月实际值全部落在区间内，绝对百分比误差 6% 到 19%。DuckDB 里 `share` 是保留字，不能作列名。
+
+## 二之二、只用一个 1/20 的样例（所有者 2026-10-13 定）
+
+所有者问「有必要下载全部数据集吗，一个完整的示例数据集就够了」，定 1/20。全量生成出的文件 109 MB、地理表 100 万行，评测装载真值库超过 10 分钟，也不能像 600009 那样把原件提交进仓做测试。
+
+| 规则 | 做法 |
+| --- | --- |
+| 按什么抽 | 按真实客户：`md5_number(customer_unique_id) % 20 = 0` 的客户入样（md5 固定，不随 DuckDB 版本变）。按订单抽会拆散同一客户的几单，复购失真 |
+| 跟着走的 | 入样客户的全部订单，订单的全部明细、支付、评价 |
+| 只留用到的 | 商品、卖家（被明细用到的） |
+| 全留 | 品类译名（71 行） |
+| 地理表 | 每个邮编前缀汇总成一行：经纬度取平均（6 位小数），城市与州取最常见的写法（同票取字母序在前的）；只留客户与卖家用到的前缀 |
+| 可复现 | 生成时 DuckDB 单线程、每张表按主键排序；同一台机器上两次生成逐字节相同 |
+
+裁出来（2026-10-13 实测）：4917 单、4747 个真实客户、5587 条明细，文件 3858432 字节，生成约 5 秒。原数据的特征都在：连续完整月份仍是 2017-01 到 2018-08；2016 年只有 10 月 18 单；2018-09 只有 1 单（已取消），之后没有数据；复购率 3.27%（全量 3.12%）；信用卡分期占比 66.9%（全量 66.9%）；取消单 30 张；仍然没有成本。按月成交额的形状一致（2017 年爬坡、2017-11 大促尖峰、2018 年走平、7 到 8 月回落），绝对数约为全量的 1/20。所有真值都在这份样例上算，不对照 Kaggle 上公开的全量统计。
 
 ## 三、数据集 `olist-ecommerce`
 
@@ -46,10 +61,10 @@
 | --- | --- |
 | `dataset_id` | `olist-ecommerce` |
 | `data_version` | `olist-ecommerce-<16 位十六进制>`，取自「生成器版本 + 定义文件 `olist.yml` 的 sha256 + 九个 parquet 的 sha256（按文件名排序）」的 sha256 前 16 位。按输入定版本，不按 SQLite 文件的字节（同一台机器上两次生成字节相同，换机器、换 SQLite 版本不保证）；定义文件参与计算，改一个字版本就变，免得「同版本、内容不同」撞上登记的 409 |
-| `title` | `巴西电商 Olist 样例（演示与评测用，CC BY-NC-SA 4.0）` |
+| `title` | `巴西电商 Olist 样例（1/20 抽样，演示与评测用，CC BY-NC-SA 4.0）` |
 | `security_code` | 不填（登记接口允许为空） |
 | `source_app` | `knowledge-sample` |
-| `start_date` / `end_date` | `2016-09-04` / `2018-10-17` |
+| `start_date` / `end_date` | 样例里最早与最晚的下单日期：`2016-10-04` / `2018-09-06` |
 | 文件 | 与现有数据集同形的 SQLite：业务表加自述表（`dataset_metadata`、`field_dictionary`、`metric_dictionary`、`table_links`、`table_keys`） |
 
 **许可证**：Olist 数据集是 CC BY-NC-SA 4.0，只作演示与评测。注明在三处：标题（`list_datasets` 会带出来，专家的出处里就有）、`dataset_metadata` 的 `license` 与 `source` 两行、生成脚本与说明文档的开头。
@@ -58,17 +73,17 @@
 
 表名改短：模型名就是 SQL 里写的名字，短名少出错。原文件名记在 `dataset_metadata` 的 `source_<表名>` 行里。
 
-| 表 | 原文件 | 行数 | 主键（`table_keys.key_columns`） | 说明字段（`label_columns`） |
+| 表 | 原文件 | 样例行数（全量） | 主键（`table_keys.key_columns`） | 说明字段（`label_columns`） |
 | --- | --- | --- | --- | --- |
-| `orders` | `olist_orders_dataset` | 99441 | `order_id` | `order_status`、`order_purchase_timestamp` |
-| `order_items` | `olist_order_items_dataset` | 112650 | `order_id, order_item_id` | `product_id`、`seller_id` |
-| `order_payments` | `olist_order_payments_dataset` | 103886 | `order_id, payment_sequential` | `payment_type` |
-| `order_reviews` | `olist_order_reviews_dataset` | 99224 | `review_id, order_id` | `review_score` |
-| `products` | `olist_products_dataset` | 32951 | `product_id` | `product_category_name` |
-| `customers` | `olist_customers_dataset` | 99441 | `customer_id` | `customer_unique_id`、`customer_state` |
-| `sellers` | `olist_sellers_dataset` | 3095 | `seller_id` | `seller_state` |
-| `geolocation` | `olist_geolocation_dataset` | 1000163 | 无（没有唯一键，不登记 `table_keys`） | — |
-| `product_category_translation` | `product_category_name_translation` | 71 | `product_category_name` | `product_category_name_english` |
+| `orders` | `olist_orders_dataset` | 4917（99441） | `order_id` | `order_status`、`order_purchase_timestamp` |
+| `order_items` | `olist_order_items_dataset` | 5587（112650） | `order_id, order_item_id` | `product_id`、`seller_id` |
+| `order_payments` | `olist_order_payments_dataset` | 5124（103886） | `order_id, payment_sequential` | `payment_type` |
+| `order_reviews` | `olist_order_reviews_dataset` | 4903（99224） | `review_id, order_id` | `review_score` |
+| `products` | `olist_products_dataset` | 3773（32951） | `product_id` | `product_category_name` |
+| `customers` | `olist_customers_dataset` | 4917（99441） | `customer_id` | `customer_unique_id`、`customer_state` |
+| `sellers` | `olist_sellers_dataset` | 1219（3095） | `seller_id` | `seller_state` |
+| `geolocation` | `olist_geolocation_dataset` | 4147（1000163，汇总后每个前缀一行） | `geolocation_zip_code_prefix` | `geolocation_state` |
+| `product_category_translation` | `product_category_name_translation` | 71（71） | `product_category_name` | `product_category_name_english` |
 
 列名照原样，包括原数据的拼写错误（`product_name_lenght`、`product_description_lenght`）。改了拼写，用户拿 Kaggle 上的说明对不上。
 
@@ -99,7 +114,7 @@
 | `review_order` | `order_reviews` | `orders` | `many_to_one` | `order_id` |
 | `product_category` | `products` | `product_category_translation` | `many_to_one` | `product_category_name` |
 
-`geolocation` 不建关系：它和客户、卖家按邮编前缀是多对多，字段名也不同。表照样入库，说明写进 `dataset_metadata`。
+`geolocation` 不建关系：汇总后虽然每个前缀一行，但它的前缀字段名与客户、卖家的不同，知识服务的关系要求两边同名。说明写进 `dataset_metadata`，要用自己写关联条件。
 
 ### 3.5 字段字典（`field_dictionary`）
 
@@ -144,17 +159,18 @@
 | `key` | `value` 要点 |
 | --- | --- |
 | `data_snapshot_id` | 同 `data_version` |
-| `start_date` / `end_date` | `2016-09-04` / `2018-10-17` |
+| `start_date` / `end_date` | `2016-10-04` / `2018-09-06`（由生成脚本按样例算） |
 | `complete_start` / `complete_end` | `2017-01` / `2018-08`：数据集声明的连续完整月份 |
 | `period_formats` | 月 `YYYY-MM`，季度 `YYYY-Qn`（例 `2018-Q2`），年 `YYYY` |
 | `currency` | 巴西雷亚尔（BRL） |
 | `license` / `source` | CC BY-NC-SA 4.0；Olist 在 Kaggle 发布的公开数据，经 WrenAI 样例文件取得，只作演示与评测 |
 | `source_<表名>` | 原文件名与 sha256 |
-| `note_truncation` | 2016 年零星、2016-11 无数据；2018-09 只有 16 单、2018-10 只有 4 单，是数据截断，不是业务下滑；2018 年第三季度不完整 |
+| `note_sample` | 这是全量按真实客户 1/20 抽出的样例，内部完整；绝对数约为全量的 1/20 |
+| `note_truncation` | 2016 年只有 10 月的 18 单；2018-09 只有 1 单（已取消），之后没有数据，是数据截断，不是业务下滑；2018 年第三季度不完整 |
 | `note_no_cost` | 不含成本、费用、利润，毛利与利润率算不出来 |
 | `note_customer_id` | `customer_id` 一单一个，客户数与复购用 `customer_unique_id` |
 | `note_status` | 收入类口径剔除 canceled、unavailable；取消率的分母含全部状态 |
-| `note_geolocation` | 一个邮编前缀多行，不能直接与客户、卖家关联；要用先按前缀汇总 |
+| `note_geolocation` | 每个邮编前缀一行（经纬度平均、城市与州取最常见的写法），只含客户与卖家用到的前缀；字段名不同，要自己写关联条件 |
 | `note_category` | 610 个商品无品类，13 个商品的品类无英文名；按品类汇总时单列「未知」 |
 
 `describe_schema` 不带这些说明；专家方法要求第一步用 `run_sql` 读 `dataset_metadata` 全部行（财报体检已是这样做）。
