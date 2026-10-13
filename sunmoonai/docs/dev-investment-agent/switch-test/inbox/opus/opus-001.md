@@ -1,6 +1,8 @@
 # 给 Opus：把专家「财务分析与预测」做成真的（账 96）——你设计、带 Qwen 实施、审读；远程 Fable 最后合并与发布
 
-> 所有者 2026-10-13 定：这位专家先在 fable 上开了头（专家包 `FIN_FORECAST`，`status: preparing`，五步照样子写了），接下来由你在 **qwen 工位**（`~/worktrees/qwen/*`，分支 `qwen`）把它做成真的。分工照远程 Fable 与 astra 的关系：**你**写设计、拆任务、审读、写回执；**Qwen** 在同一工位实施、跑测试、写回执；**远程 Fable** 不参与过程，做完后审一遍、合进 fable、发布。所有者负责同步、传话、真机演示。
+> 所有者 2026-10-13 定：这位专家先在 fable 上开了头（专家包 `FIN_FORECAST`，`status: preparing`，五步照样子写了），接下来由你在 **qwen 工位**（远程机 `~/worktrees/qwen/*`，分支 `qwen`）把它做成真的。**远程 Fable** 不参与过程，做完后审一遍、合进 fable、发布。所有者负责同步、传话、真机演示。
+>
+> **分工（2026-10-13 所有者纠正后，以这一条为准）**：照本项目一贯的模式——**远程机上能做的，你自己做**：设计、数据集定义、生成脚本、测试、专家包方法、评测题、评测跑分（远程机有 Codex 0.155.1、DuckDB、uv，知识后端与投资后端的测试都能跑），每段自己写回执；**只有必须在所有者本机做的，才写任务页给 Qwen**（它在所有者本地的 qwen 工位）：KIND 本机联调链（`local-integration/dataset-chain` 的 `run.sh sample olist`、`driver verify-sample`）、浏览器里的页面检查、真机演示。不要把远程能做的活派给 Qwen。astra 那边是例外，因为 Windows 代理只能在 Windows 上做。
 
 ## 一、起点（工位上已经有的）
 
@@ -23,17 +25,17 @@
 
 | 段 | 做什么 | 停点怎么算过 |
 | --- | --- | --- |
-| 1 数据 | Olist 九张表进 knowledge-app（摄入脚本、数据集登记、版本号、口径表、表关系）；MCP 的 `list_datasets` / `describe_schema` / `run_sql` 对它能用；写清许可证（Olist 是 CC BY-NC-SA 4.0，只作演示与评测，页面上注明） | 在本机起 knowledge 后端，用现有 MCP 测试脚本列到数据集、查到表结构、跑通一条按月收入 SQL；回执带原文输出 |
-| 2 评测题 | 10 道金标准（营收趋势、区域对比、品类利润率、分期比例、取消率、两道预测题）：问题、期望的数或区间、判定方法，进 `eval/cases/` | `run_eval.py` 能跑这组题（专家包还是占位时允许全不过，但题要能跑） |
-| 3 方法 | 填 `FIN_FORECAST` 五步的 `method_text`、`tools`、`output_schema`、`acceptance`、`missing_data`、`reserve`；预测那一步的方法要**简单、能说清**（移动平均 / 季节性朴素法 / 线性趋势，三选一并写明为什么），区间与假设必须在交回物里；成稿那一步按 0015 的写法要求（回答、数据带角标、验过什么、局限、出处；不贴 JSON） | 专家包规矩测试全过（`tests/test_workbench_pack_view.py`、`test_workbench_now_view.py`、`test_fin_review_pack.py` 那类）；用真 Codex 对本机 knowledge 跑一遍五步，10 题过 ≥ 8 |
-| 4 切真 | `status` 改 `ready`、版本改 `1`、`title` 去掉「筹备中」、`preparing_note` 清空；前端不用改 | 后端全量测试过；回执里附一次完整委托的事件摘要与成稿文件 |
+| 1 数据 | **你做**：Olist 九张表进 knowledge-app（摄入脚本、数据集登记、版本号、口径表、表关系）；MCP 的 `list_datasets` / `describe_schema` / `run_sql` 对它能用；写清许可证（Olist 是 CC BY-NC-SA 4.0，只作演示与评测，页面上注明）。**Qwen 做**：KIND 联调链接样例（桶、`run.sh sample olist`、`driver verify-sample`） | 远程：知识后端测试三件套过，生成脚本对真实数据跑两次 `data_version` 相同，用现有 MCP 测试脚本列到、查到、跑通按月 GMV；本机：联调链三条命令原文 |
+| 2 评测题 | **你做**：10 道金标准（营收趋势、区域对比、品类利润率、分期比例、取消率、两道预测题）：问题、期望的数或区间、判定方法，进 `eval/cases/` | `run_eval.py` 能跑这组题（专家包还是占位时允许全不过，但题要能跑） |
+| 3 方法 | **你做**：填 `FIN_FORECAST` 五步的 `method_text`、`tools`、`output_schema`、`acceptance`、`missing_data`、`reserve`；预测那一步的方法要**简单、能说清**（移动平均 / 季节性朴素法 / 线性趋势，三选一并写明为什么），区间与假设必须在交回物里；成稿那一步按 0015 的写法要求（回答、数据带角标、验过什么、局限、出处；不贴 JSON） | 专家包规矩测试全过（`tests/test_workbench_pack_view.py`、`test_workbench_now_view.py`、`test_fin_review_pack.py` 那类）；用真 Codex 对本机 knowledge 跑一遍五步，10 题过 ≥ 8 |
+| 4 切真 | **你做**：`status` 改 `ready`、版本改 `1`、`title` 去掉「筹备中」、`preparing_note` 清空；前端不用改。**Qwen 做**：在本机 KIND 上跑一次完整委托、浏览器里看专家页与成稿 | 后端全量测试过；回执里附一次完整委托的事件摘要与成稿文件 |
 
 ## 四、规矩
 
-- 只在 qwen 工位、qwen 分支做；涉及的仓：`investment-app/investment-backend`（专家包、评测）、`knowledge-app/knowledge-backend`（摄入、MCP）。**子仓先提交、父仓后提交**；不 push 到别的分支；不合并 fable；所有者用 `-all` 同步。
+- 只在 qwen 工位、qwen 分支做；涉及的仓：`investment-app/investment-backend`（专家包、评测）、`knowledge-app/knowledge-backend`（摄入、MCP）。**子仓先提交、父仓后提交**；不 push（所有者的同步脚本会把远程 qwen 工位的提交推上去、再拉到本地给 Qwen）；不合并 fable；要拿 fable 上的新文档就 `git merge origin/fable`（合并，不是 rebase）。
 - 不改别的专家包、不改专家包的机制（`StepContract`、`judge`、`Advisor`、审批三档）；真要改机制，先停下写清楚，由所有者转给远程。
 - 用户看得到的字里没有代号、没有 JSON 字样、没有买卖建议（现有测试会拦）。
-- 每段一个回执：`k8s/sunmoonai/scripts/results/fin-forecast-<段>-<日期>.md`，原文输出、没做到的明说、不写「应该可以」。你的设计写 `tree-build/SDD/modules/0023-fin-forecast.md`，给 Qwen 的任务页放 `switch-test/inbox/qwen/`。
+- 每段一个回执：`k8s/sunmoonai/scripts/results/fin-forecast-<段>-<日期>.md`，原文输出、没做到的明说、不写「应该可以」。你的设计写 `tree-build/SDD/modules/0023-fin-forecast.md`；只有本机那一截才写任务页放 `switch-test/inbox/qwen/`（Qwen 的回执也放 `results/`）。
 - 数据文件、下载的 parquet、模型 key 不进 git；评测用的 key 由所有者给、放 0600 文件。
 - 做完对所有者说一句「财务分析与预测做好了」；远程审读合并，发布走 Cursor 的发布卡（只从 fable 发）。
 
