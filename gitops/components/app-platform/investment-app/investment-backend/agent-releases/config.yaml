@@ -10,10 +10,10 @@ investment_agent_releases:
   reader: investment_release_reader
   writer: investment_release_writer
   job_revision: v1
-  version: 0.3.1
+  version: 0.4.0
   codex_version: 0.155.1
-  source_revision: 5ccca651452000e5e20f20c0a446886a458d54b2
-  object_key: windows-x64/0.3.1/sunmoon-agent-0.3.1-5ccca65-windows-x64.zip
-  zip_sha256: 8542e3156e464e909b1a29115799b77e28d946d03bb452b9ae64591f0dfead91
-  manifest_sha256: ce7a0ded10c6850132cdd4e5e183b750338c6f50076dbb8e4fb3368a097a52ff
-  size_bytes: 175320303
+  source_revision: f85fe3120fa1e0279d65e27b32db962e5adcd0a1
+  object_key: windows-x64/0.4.0/sunmoon-agent-0.4.0-f85fe31-windows-x64.zip
+  zip_sha256: 54ee3666b1628b89956bdb7e502c58e1e8ded3f19471d3f2cec09e9418ac800b
+  manifest_sha256: bf3b43a594d0873ecff354b2a4b8139602c222013424e253f89041efe36e38ac
+  size_bytes: 175334353
