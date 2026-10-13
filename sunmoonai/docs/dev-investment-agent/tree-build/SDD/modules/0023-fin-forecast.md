@@ -3,7 +3,7 @@
 > 状态：2026-10-13 Opus 在 qwen 工位写设计，未实施。依据：任务清单 opus-001（已撤，原文在 git 历史 `c8eecd22`）、账 96、[决策](../../decisions.md) 2026-10-13 一条。
 > 起点：investment-backend `e73ffa5`（`FIN_FORECAST` 版本 0，`status="preparing"`），knowledge-backend `548e84a`，k8s `451b3fae`。
 > 先读：[`0009-semantic`](0009-semantic.md)（口径与 SQL 怎么走）、[`0015`](0015-files-not-dossiers.md)（成稿落文件）、[`0018`](0018-advisor-market.md)（专家 = 知识库 + skill）、[审批](../architecture/approval.md)（工具级三档）。
-> 分工（所有者 2026-10-13 定，以这一条为准）：**Opus 主导**这位专家，从设计到切真；自己做的部分不经 fable 审读，每段自己写回执。远程机上能做的 Opus 自己做（设计、数据集、脚本、测试、专家包、评测题与跑分）；只有所有者本机才能做的（KIND 本机联调链、浏览器里的页面、真机演示）写任务页给 Qwen（`switch-test/inbox/qwen/`），**Qwen 的回执由 Opus 审**。fable 不再给 Opus 派任务。
+> 分工（所有者 2026-10-13 定，以这一条为准）：**Opus 主导**这位专家，从设计到切真；自己做的部分不经 fable 审读，每段自己写回执。远程机上能做的 Opus 自己做（设计、数据集、脚本、测试、专家包、评测题与跑分）；只有所有者本机才能做的（KIND 本机联调链、浏览器里的页面、真机演示）写任务页给 Qwen（`switch-test/inbox/qwen/`），**Qwen 的回执由 Opus 审**。fable 不再给 Opus 派任务；全部调好后由 fable **只做合并**（不审、不改），**发布也由 Opus 来做**。
 
 ## 一、做成什么
 
