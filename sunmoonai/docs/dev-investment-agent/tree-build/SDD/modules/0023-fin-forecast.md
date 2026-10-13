@@ -214,17 +214,40 @@
 | 只用数据集声明的完整期间；声明里没有就按「首尾两端订单量低于中间各期中位数一半的期」认不完整，并写明是这样认的 | 截断的月份不能当业务下滑 |
 | 数据集里没有的口径（`kind = unavailable`）照实说没有，不找替代品冒充 | 例：没有成本就不给毛利 |
 
-### 5.2 五步
+### 5.2 五步（2026-10-13 定稿：编排逐步定死，PPT 按此讲）
 
-| 步 | 工具 | 要点 | 交回物关键字段 | 验收 |
-| --- | --- | --- | --- | --- |
-| `scope` 定范围 | `list_datasets`、`describe_schema`、`metric_definitions`、`run_sql` | 认出数据集；读 `dataset_metadata` 全部行；把问题落到口径名、期间、粒度；问到但数据集没有的口径列进 `unavailable`；问题没给期间就用完整期间并写进 `assumptions`；找不到数据集就把 `dataset` 留空 | `dataset`、`data_version`、`question`、`period`（起、止、粒度）、`complete_period`、`metrics`、`unavailable`、`notes`、`assumptions` | 格式对；有 `dataset`、`data_version`、`period`、`metrics`；`missing_data` 认 `dataset` 为空 |
-| `pull` 取数 | `run_sql` | 按口径取期间序列；每列写来源（表、字段、过滤）；交回实际执行的 SQL | `columns`（名、中文、来源）、`rows`、`sql`、`data_version` | 格式对；`rows` 至少 1 行；有 `sql`、`data_version` |
-| `analyze` 分析 | `run_sql` | 趋势（环比、同比）、季节性只在有两个完整周期时才说、结构（区域、品类的占比与变化）；每条发现带支撑它的 SQL 与数 | `findings`（文字、证据、SQL） | 格式对；`findings` 至少 1 条 |
-| `forecast` 预测 | `run_sql` | 方法固定，见 5.3；先回测再外推；全部在 SQL 里算 | `method`、`window`、`excluded_periods`、`assumptions`、`rows`（`period`、`forecast_point`、`forecast_low`、`forecast_high`）、`backtest`、`sql` | 格式对；有这几项；`assumptions` 至少 2 条；`rows` 至少 1 行 |
-| `writeup` 成稿 | 无 | 按 0015 的写法要求写 `底稿/财务分析与预测-成稿.md`：回答、数据带角标、验过什么、局限、出处；不贴 JSON；不给买卖建议；`unavailable` 与截断必须写进局限；最后一步照例写 `交回.md` | `answer`、`limitations`、`citations` | 格式对；有正文；无买卖建议（`no_positioning_advice`） |
+| 步 | 工具 | 做什么 | 交回物关键字段 | 当场验什么 | 不过去哪 |
+| --- | --- | --- | --- | --- | --- |
+| `scope` 定范围 | `list_datasets`、`describe_schema`、`metric_definitions`、`run_sql` | 认出数据集；读 `dataset_metadata` 全部行；把问题落到口径名、期间、粒度；数据集里没有的口径列进 `unavailable`；问题没给期间就用完整期间并写进 `assumptions` | `dataset`、`data_version`、`question`、`period`（起、止、粒度）、`complete_period`、`metrics`、`unavailable`、`notes`、`assumptions` | 格式对；必备字段齐；`dataset` 不为空（不过的说明：「没有找到能回答这个问题的数据集」）；`metrics` 至少 1 个 | **交人**：范围认错后面全白做；找不到数据集就停下问你 |
+| `pull` 取数 | `describe_schema`、`run_sql` | 按口径取期间序列；每列写来源（表、字段、过滤）；被认作不完整的期列进 `excluded_periods`；交回实际执行的 SQL | `columns`（名、中文、来源）、`rows`、`excluded_periods`、`sql`、`data_version` | 格式对；`rows` 至少 1 行；`sql` 不为空 | **重做 1 次**：多半是 SQL 或格式写错 |
+| `analyze` 分析 | `run_sql` | 趋势（环比、同比）；结构（区域、品类的占比与变化，按问题需要）；季节性只在有两个完整周期时才说；每条发现带支撑它的 SQL 与数 | `findings`（文字、数、SQL） | 格式对；`findings` 至少 2 条 | **退回取数 1 次**：分析不过多半是取的数不对 |
+| `forecast` 预测 | `run_sql` | 方法固定（5.3）：认完整期 → 回测 → 外推 → 季度合计；全部在 SQL 里算 | `method`、`window`、`excluded_periods`、`assumptions`、`rows`（`period`、`forecast_point`、`forecast_low`、`forecast_high`）、`quarters`、`backtest`、`sql` | 格式对；必备字段齐；`assumptions` 至少 2 条；`rows` 至少 1 行 | **不返工，交人**（`max_reworks=0`）：方法固定，返工提示会催模型改方法、凑结果，等于把不平的数做平（与财报体检的勾稽、对照官方同理） |
+| `writeup` 成稿 | 无 | 按 0015 写 `底稿/财务分析与预测-成稿.md`：回答、数据（带角标）、专家验过什么、局限、出处；`unavailable` 与截断必须进局限；不贴 JSON；最后照例写 `交回.md` | `answer`、`limitations`、`citations` | 格式对；有正文；`limitations`、`citations` 各至少 1 条；无买卖建议（`no_positioning_advice`）；成稿文件存在（`deliverable_check`） | **交人** |
 
 `reserve` 与输入长度照 `FIN_REVIEW` 的量级定，跑分后回填。`field_words.py` 补齐新字段的中文词（现有测试会查）。
+
+**「缺数据」怎么停**：现有的 `missing_data` 只认六位证券代码，Olist 这类非证券数据集触发不了它；这里不改机制，改由定范围的验收「`dataset` 不为空」加「不过交人」做到同样的效果——找不到数据集就停下问你，不硬算。以后接 A 股公司时，定范围再配上 `missing_data`（证券代码写在交回物里），没入库的公司照财报体检那样记需求。
+
+### 5.2.1 什么时候停下来问你
+
+| 时机 | 怎么停 | 机制 |
+| --- | --- | --- |
+| 找不到能回答的数据集、范围认不出 | 定范围不过，交人 | `on_reject="human"` |
+| 预测不合格 | 不返工，交人 | `max_reworks=0`、`on_reject="human"` |
+| 分析再退回一次取数仍不过 | 交人 | `max_backs=1` 用完 |
+| 要跑命令 | 每条问你；改项目外的文件一律拒绝；不联网 | 专家包 `tool_policy`（命令问人、项目外拒绝、网络拒绝） |
+| 它自己有疑问 | 弹出提问，每步最多 3 问；问不到就写明假设继续 | `questions: allow`、`max_questions: 3` |
+
+### 5.2.2 和另外两位专家的编排有什么不同
+
+| | 问数 | 财报体检 | 财务分析与预测 |
+| --- | --- | --- | --- |
+| 步数 | 5：改写 → 生成 SQL → 执行 → 整理 → 成稿 | 7：定范围 → 数据摸底 → 勾稽 → 取数 → 算指标 → 对照官方 → 成稿 | 5：定范围 → 取数 → 分析 → 预测 → 成稿 |
+| 主线 | 把一句话变成一条对的 SQL | 先验数据能不能用，再算指标、对照公司披露 | 把口径定死，看清过去，按说得清的方法外推 |
+| 关键把关 | 执行不过退回重写 SQL | 勾稽、对照官方不给返工，不平就交人 | 预测不给返工；先回测再外推；截断与缺的口径照实写 |
+| 数据从哪来 | 默认数据集 | 按证券代码找；没入库就记需求、问你 | 按问题找；找不到就问你 |
+| 计算 | SQL | SQL 加按口径名查询 | 全部 SQL，结果列用口径名作别名 |
+| 交回 | 一张结果表与成稿 | 指标表、勾稽与对照结论与成稿 | 取数表、分析发现、预测表（方法、区间、假设、回测）与成稿 |
 
 ### 5.3 预测方法：移动平均
 
