@@ -1,6 +1,6 @@
 # 给 Qwen：财务分析与预测 第 1 段——Olist 数据集进 knowledge（账 96）
 
-> Opus 2026-10-13 写。设计全文：[`tree-build/SDD/modules/0023-fin-forecast.md`](../../../tree-build/SDD/modules/0023-fin-forecast.md)，**表名、主键、关系、类型、口径、说明以它第三节为准**；设计走不通先停下，在回执里写清楚交 Opus，不自己改设计。
+> Opus 2026-10-13 在远程机写；你在本地机做，两边只经 git 来往（所有者同步）。设计全文：[`tree-build/SDD/modules/0023-fin-forecast.md`](../../../tree-build/SDD/modules/0023-fin-forecast.md)，**表名、主键、关系、类型、口径、说明以它第三节为准**；设计走不通先停下，在回执里写清楚交 Opus，不自己改设计。
 > 工位 `~/worktrees/qwen/*`，分支 `qwen`。基线：knowledge-backend `548e84a`，k8s `451b3fae`（或之后本工位上的提交）。本地提交，**子仓先、父仓后**，不 push、不合并别的分支。只做本页；第 2 段（评测题）等 Opus 审过本段再发。
 
 ## 一、要做的
@@ -9,7 +9,7 @@
 
 | 处 | 做什么 |
 | --- | --- |
-| `app/datasets/olist/olist.yml`（新） | 数据集的唯一定义：九个文件的地址与 sha256（见下表）、表名对照、主键与说明字段、七条关系、字段字典（中文名、单位、WrenAI 英文说明原文）、十一个口径、`dataset_metadata` 各行。WrenAI 的英文说明从 `~/repo/WrenAI` 的 `legacy-v1` 分支取：`git -C ~/repo/WrenAI show legacy-v1:wren-ui/src/apollo/server/data/sample.ts`，`ecommerce` 一段 |
+| `app/datasets/olist/olist.yml`（新） | 数据集的唯一定义：九个文件的地址与 sha256（见下表）、表名对照、主键与说明字段、七条关系、字段字典（中文名、单位、WrenAI 英文说明原文）、十一个口径、`dataset_metadata` 各行。WrenAI 的英文说明在上游 `Canner/WrenAI` 的 `legacy/v1` 分支 `wren-ui/src/apollo/server/data/sample.ts` 的 `ecommerce` 一段（`https://raw.githubusercontent.com/Canner/WrenAI/legacy/v1/wren-ui/src/apollo/server/data/sample.ts`）；本地机取不到就在回执里说，由所有者从远程机转 |
 | `app/scripts/build_olist_dataset.py`（新） | `--cache <目录> --out <文件>`。缺 parquet 就下载到 `--cache`，sha256 对不上就停（非零退出）；只用已有依赖（DuckDB、标准库 `sqlite3`），**不加依赖**；按 0023 §3.3 映射类型，时间写成 `YYYY-MM-DD HH:MM:SS` 文字；写自述五张表；写完用 `app.infrastructure.semantic.sqlite_source.read_description()` 自检，再生成一次语义模型；最后打印一行 JSON：`dataset_id`、`data_version`、`sha256`、`size_bytes`、`start_date`、`end_date`、`title`。`data_version` 按 0023 §3.1 从输入算，不从输出文件算。文件开头写明许可证 CC BY-NC-SA 4.0、只作演示与评测 |
 | `tests/test_olist_dataset.py`（新） | 测试里用 DuckDB 现造几行的小 parquet（不进仓、不联网），sha256 用测试自己算的值覆盖声明里的值。断言：生成成功；`read_description()` 通过；九张业务表与自述表都在；时间列是文字且格式对；邮编前缀保留前导零；`table_links` 七条、无 `geolocation`；`table_keys` 中明细表是两列主键；`metric_dictionary` 十一行、全部 `queryable = 0`、`row_filter` 与 `kind` 列在；经 `SemanticQueryService`（或现有测试里起语义层的同一种办法）调 `metric_definitions` 能拿到这些行且 `queryable` 为假；两次生成 `data_version` 相同；改一个 sha256 后生成失败 |
 | `docs/` | 在 `docs/dataset-registry.md` 末尾加一小节「样例数据集」：怎么生成、怎么登记、许可证。不另起文件 |
