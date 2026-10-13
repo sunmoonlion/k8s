@@ -126,3 +126,7 @@ astra 在我改乙案之前（它手里是 512 KiB 那版合同）把**服务流
 
 所有者在工作对话点「文件」得到「这台电脑上没有在运行的代理」；控制台原文：`Fetch API cannot load http://127.0.0.1:47811/presence. Refused to connect because it violates the document's Content Security Policy`（`connect-src 'self'`）。是远程漏的：设计写了「浏览器直连回环口」，网页的 CSP 没跟着放行；astra 真机测的是站点的 JWKS 页面不是我们的应用页，所以它那边通了。改 `lib/security/content-security-policy.ts` 的 `connect-src` 加五个回环口（与 `LOCAL_PORTS` 同一张表），网页 `309e73d`，只换网页镜像，卡 43。
 
+## 2026-10-13 · 卡 43 回执核对：通过，归档（10:21 上线）
+
+只换网页镜像（`sha256:a5bfbb79…` / `309e73d5`），后端锁「已是这一份」；钉 = 父仓 `102054b4`、网页 `309e73d5`、后端 `e73ffa5e`；晋级 digest `sha256:cc073bda…` / `191a4332`；`application-check` 0。所有者刷新网页点右边栏「文件」即可验。
+
