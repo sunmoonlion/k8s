@@ -72,6 +72,23 @@ R1 的数据迁移两种 `source_app` 旧值都换，两个库里凡存它的表
 
 「knowledge」作普通词（本地知识库、云上知识库、知识检索工具）**不改**；R1 逐处判断，拿不准的列进 R1 回执，标「保留原词」，不改。
 
+## R1 改与留的界线（2026-10-14 远程盘点；标「待定」的三处等所有者定）
+
+原则：**改「这个应用叫什么」，留「它管的东西叫什么」。** 盘点范围是五组仓的源码与配置（不含依赖、构建产物、历史回执、录下来的样例）：含 `knowledge` 的约 4400 行，含应用名意义的 `info` 约 1000 种写法。
+
+| 类 | 例子 | 定 |
+| --- | --- | --- |
+| 应用身份 | 仓、目录、组件、镜像、k8s 对象名、域名（含测试里的 `info.example.test`）、Casdoor 应用 / 客户端 / 组织 / 服务身份名（`sunmoonai-info-web`、`sunmoonai-info-knowledge-ingest`…）、登录 cookie 名（`sunmoonai_info_web_sid`…）、跨应用键、gitops 路径、部署脚本名、`PLATFORM_INFO_*` | **改** |
+| 存储名 | 上面「名字对照」表里的库、角色、桶、键前缀、vhost、队列、Redis、私有目录、备份目录、`source_app` | **改**（乙） |
+| 指向应用的配置与环境变量 | 共 76 个：knowbase 自己的配置前缀 `KNOWLEDGE_MCP_*`、`KNOWLEDGE_DATASET_*`；调用方的 `KNOWLEDGE_APP_*`、`KNOWLEDGE_RETRIEVAL_*`、`INFO_*`；`CASDOOR_INFO_*`、`CASDOOR_KNOWLEDGE_*`；部署里的 `service_env_prefix` | **改名不改值**。特别是 `KNOWLEDGE_DOCUMENT_NAMESPACE` / `KNOWLEDGE_VERSION_NAMESPACE` 是生成固定 ID 用的 UUID，**值一个字都不能动**，否则已有文档的 ID 全对不上 |
+| 待定 1：MCP 服务名 | `sunmoon_knowledge`：沙箱镜像 `sandbox-platform/image/entrypoint.sh` 写进 Codex 配置；模型看到的工具名由它拼出（`sunmoon_knowledge/run_sql`）；评测提示词、单测、工具调用记录里都有 | 推荐**改**为 `sunmoon_knowbase`（它是应用身份）。代价：R5 多重建、多发一次沙箱镜像；改名前后的工具调用记录名字不同 |
+| 待定 2：带应用名前缀的内部标识 | 采集库的表 `info_collector`、`info_document`、`info_document_version`、`info_source`；事件类型 `info.security.ingest.v1`、`info.index.v1`；这里的 `info` 是应用名，不是领域词 | 推荐**改**（乙的本意是存储层不再出现旧名）：表用迁移 `ALTER TABLE … RENAME`（连同索引、约束、序列名，带回退）；事件类型随停服切换一起换，切换前队列已排空。代价：多一组迁移和一轮核对 |
+| 待定 3：knowledge 作领域词 | 知识库的表 `knowledge_document`、`knowledge_ingestion_job`、`knowledge_dataset` 等；类名 `KnowledgeDocument`；API 路径 `/api/knowledge/…`、`/api/internal/v1/knowledge/datasets`；令牌作用域 `knowledge:ingest`、`knowledge:retrieve`、`knowledge:admin`；事件类型 `knowledge.ingest.v1`；Python 模块名 | 推荐**留**：这里的 knowledge 说的是「存的是知识文档」，改名后 knowbase 存的仍是知识。改它要改表、改所有调用方的接口与令牌作用域，代价大、收益只是字面统一 |
+| 设计文档的文件名 | `0006-knowledge.md`、`0008-info*.md`、`PRD/apps/info.md` 等 | 文件名当编号用，**不改**（改了几十处链接全断）；内容在 R7 换新名 |
+| 无关的 info | `logger.info`、`component_info`、`st_mode`、**`cninfo` / `CNINFO`（巨潮资讯网，数据来源）** | **不碰** |
+
+R1 的替换脚本按这张表逐类写规则，每一类替换后单独列出改了哪些文件、多少处，进 `R1-opus` 回执；拿不准的不改、列出来。
+
 ---
 
 ## R0 冻结与前提 — Cursor 收尾，Qwen 与 Opus 核对
