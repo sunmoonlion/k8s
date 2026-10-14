@@ -158,7 +158,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'investment-rabbitmq-2b9b8423c89c-v2', namespace: messaging-platform-dev}
+metadata: {name: 'investment-rabbitmq-02f1054f2a0f-v2', namespace: messaging-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -172,7 +172,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:2b9b8423c89c35d1610fe3b10954a9bde3e0e70ad9bff95e07bdb51c663429c6
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:02f1054f2a0f0256d50788ab26957c407c49aea241b93a33b34f846537b17222
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:
