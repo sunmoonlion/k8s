@@ -137,7 +137,9 @@ for n in info-app knowledge-app info-backend info-web-frontend info-admin-fronte
 | `k8s` | gitops `info-app/` → `knowgather-app/` 等目录、`infrastructure/applications/` 的应用名表与 `deploy.yaml` / `verify.yaml`、`sources.yaml` 两块、存储名、Casdoor 声明、域名、`switch-test/human-local.sh`、`human-remote.sh` 的仓名表、各仓 `AGENTS.md` 里「五个协作仓」的名字 |
 | `tpl-app`、`runtime` | 只改提到这两个应用名的说明与脚本 |
 
-自测：各仓单测、构建全过；k8s 渲染比对——改名前后渲染出的对象，除了名字逐项相同（比对脚本与结果进回执）。
+**k8s 里只改真源，不手改渲染产物。** gitops 每个组件目录里，`config.yaml`、`stage.yaml`、`README.md` 是真源，R1 改；`workload.yaml`、`kustomization.yaml`、`*.sops.yaml`（加密的秘密）、`image.lock.yaml` 是 `platform-stage` / 构建链生成的，R1 只让它们跟着目录 `git mv`、内容不动——它们要靠所有者机器上的私有目录与 SOPS 私钥重新生成（远程机没有 ansible、sops，也没有私钥），新秘密也是那时按新名生成，放在 R5。所以 R1 提交后、R5 发布前，这些渲染产物里还是旧名字，属正常；R1 的提交在 R5 发布前不会进现网。
+
+自测：各仓单测、构建全过；在改名范围内（「改与留的界线」排除的除外）扫一遍，旧名只剩例外清单里的（扫描脚本与结果进回执）。渲染比对放到 R5.2 stage 之后做（见 R5）。
 
 写好 R5、R6 的逐条命令（填进本文对应小节），**R5 状态改成「可执行」之前，Qwen 不得开始 R5**。
 
@@ -293,7 +295,7 @@ git -C ~/master/$NEW remote -v
 
 ### R5.3 起新服与验证
 
-构建新镜像（knowgather、knowbase 的后端与两个网页，**以及 investment 的后端与网页**——它的跨应用键与环境变量名也改了）→ 部署新名字（新 Casdoor 应用与客户端、新服务身份）→ `application-check APP=knowgather`、`APP=knowbase`、`APP=investment` → 浏览器打开两个新域名能登录、能看到原有数据 → 投资里跨应用跳转与知识检索可用。
+`platform-stage` 按新名重新生成全部渲染产物 → **渲染比对**：Qwen 把改名前（R0 时的提交）与 stage 后的渲染产物逐个对象比对，列出除名字以外的差异（比对命令由 Opus 填），**Opus 审过才部署**；→ 构建新镜像（knowgather、knowbase 的后端与两个网页，**以及 investment 的后端与网页**——它的跨应用键与环境变量名也改了）→ 部署新名字（新 Casdoor 应用与客户端、新服务身份）→ `application-check APP=knowgather`、`APP=knowbase`、`APP=investment` → 浏览器打开两个新域名能登录、能看到原有数据 → 投资里跨应用跳转与知识检索可用。
 
 **停点**：Qwen 在浏览器上逐项核对（截图只截页面，不截令牌与口令），Opus 审回执。
 
