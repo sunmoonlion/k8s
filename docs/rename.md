@@ -122,7 +122,7 @@ for n in info-app knowledge-app info-backend info-web-frontend info-admin-fronte
    要看到 8 个 `admin=true`。gitee 要能在网页上以 sunmoonlion 登录、或有带 projects 权限的 API 令牌，写明用哪种。任何一样没有就停下，请所有者给权限（这是全程唯一可能要所有者出手的地方）；令牌只放 Qwen 本机，不进回执。
 
 **停点**：Opus 收到 Qwen 的 `R0-qwen`（本地机核对）并自己核完远程机，在本节「状态」写「开工」。
-**状态**：
+**状态**：**开工** · 2026-10-14 · Opus。前提核过：卡 47（16:10）、卡 48（16:51）上线且回执已审；Qwen `R0-qwen.20261014-1629.md`（A 权限：GitHub 8 仓 admin、gitee API 令牌两仓 admin；B 两组仓五工位干净已推；补核 qwen 四仓与 investment 三子仓干净已推，k8s `343e5d0f`）；远程机同一核对 44 行全部 ahead=0、dirty=0、子仓在 origin 上，布局与 `mb`、两组父仓的 gitee remote 齐。改名窗口自此开始：不跑同步脚本，其他工位冻结，往来照「回执往来」。
 
 ---
 
