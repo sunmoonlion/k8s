@@ -2,25 +2,24 @@
 
 > 为什么改、改哪些、深度为什么选乙，见 [0025](../sunmoonai/docs/dev-investment-agent/tree-build/SDD/modules/0025-know-names.md)。本文只管**谁、按什么顺序、执行哪条命令、在哪停下等审**。
 >
-> 所有者 2026-10-14 定：改名由 Opus 亲自做；本地集群上的部分由 Qwen 在所有者机器上跑；**不经 Cursor**。knowmart（原 advisor-app）还没有代码和部署，不在本手册，只改设计（R7）。
+> 所有者 2026-10-14 定：**改名只有 Opus 和 Qwen 两个人做，所有者不动手**——Opus 在远程机改全部内容、写全部命令、审每一段；Qwen 在所有者机器上做本地的一切（GitHub / gitee 仓改名、本地检出、同步脚本、集群切换、浏览器核对）。Cursor 只在开工前发完卡 47、48，之后冻结。knowmart（原 advisor-app）还没有代码和部署，不在本手册，只改设计（R7）。
 
 ## 规矩（每一段都适用）
 
 1. **只执行本文写下的命令。** 本文没写的、写得和现场对不上的，一律停下报告，不临场发挥、不「顺手修一下」。
 2. **按段走，一段一停。** 每段末尾有「停点」：执行人写回执，Opus 审过、在本文该段的「状态」里写上「通过 + 日期 + 审读人」，下一段才开始。
-3. **不删旧东西，只挪开。** 旧目录、旧桶、旧秘密目录、旧镜像、旧 Casdoor 应用一律保留到 R6 验收后，由所有者明说才删。
+3. **不删旧东西，只挪开。** 旧目录、旧桶、旧秘密目录、旧镜像、旧 Casdoor 应用一律保留；**删除不在本手册里**，R6 验收、下一次例行备份之后另行决定。
 4. **秘密不进回执、不进日志、不进 Git。** 口令、令牌、私钥只在本机生成、只进 SOPS。
 5. **出错先停，不重试成功了再报。** 失败的输出原样（去掉秘密）贴进回执。
-6. 回执统一放 `k8s/docs/rename-receipts/R<段号>-<执行人>.<时间>.md`，最后一行 `exit=<码>`；本地提交，**不 push**（推送由所有者的同步脚本做）。
+6. 回执统一放 `k8s/docs/rename-receipts/R<段号>-<执行人>.<时间>.md`，最后一行 `exit=<码>`；本地提交，**不 push**；两台机器之间的往来由 Qwen 在本地跑同步脚本（`WS=qwen bash ~/switch-test/human-local.sh` 拉远程、`human-remote.sh` 推本地），每次跑完把脚本最后一句写进回执。往来路线：Qwen 在本地 qwen 工位提交回执 → 跑 `human-remote.sh` 推到远程 → Opus 审、在本文写「通过」并提交 → Qwen 跑 `human-local.sh` 拉回，看到「通过」才开始下一段。两边只改各自的文件（Qwen 只写 `rename-receipts/`，Opus 只写本文与代码），不会互相冲突。
 
 ## 谁做什么
 
 | 角色 | 在哪 | 做什么 | 不做什么 |
 | --- | --- | --- | --- |
-| **所有者** | GitHub、gitee、本地机 | R0 冻结与开工令；R2 在 GitHub / gitee 上改 8 个仓的名字；每段之间跑同步脚本；R6 后决定何时删旧东西 | — |
-| **Opus**（远程机 qwen 工位） | 远程机 | R1 改全部代码、配置、gitops、同步脚本，写好 R5 的逐条命令；R3 远程机的检出换名；审每段回执；R7 文档 | 不碰所有者本地集群 |
-| **Qwen**（所有者机器） | 本地机 | R3 本地机的检出换名；R4 本地机的同步配置；R5 集群切换（备份 → 停服搬迁 → 起新服 → 验证）；R6 下线旧对象 | 不改代码、不改本文、不自己写命令 |
-| **Cursor** | — | **改名期间冻结**：不执行任何发布卡、不碰 info / knowledge / knowgather / knowbase 相关的仓与集群对象。R6 通过后，Cursor 以后的卡一律用新名字 | 改名的任何一步 |
+| **Opus**（远程机 qwen 工位） | 远程机 | R0 核远程机、发开工令；R1 改全部代码、配置、gitops、同步脚本，写好 R5、R6 的逐条命令；R3、R4 远程机那一份；审每段回执、在各段写「通过」；R7 文档 | 不碰所有者本地集群；不替 Qwen 执行本地命令 |
+| **Qwen**（所有者机器） | 本地机、GitHub、gitee | R0 核本地机；R2 在 GitHub / gitee 上改 8 个仓的名字；每段之间跑同步脚本；R3、R4 本地机那一份；R5 集群切换（备份 → 停服搬迁 → 起新服 → 浏览器核对）；R6 下线旧对象 | 不改代码、不改本文、不自己写命令；不删任何旧东西 |
+| **Cursor** | 本地机 | **开工前发完卡 47、48**（R0 的前提）；之后**冻结**：不执行任何发布卡、不碰 info / knowledge / knowgather / knowbase 相关的仓与集群对象。R6 通过后，Cursor 以后的卡一律用新名字 | 改名的任何一步 |
 | 其他工位（fable、kimi、luna、astra） | — | 冻结期间不提交这两组仓、不改 k8s 的 gitops；R3 后各自工位按新名字重新挂出 | — |
 
 ## 名字对照（全文以此为准）
@@ -38,14 +37,14 @@
 | 私有目录 / 备份目录 | `/etc/sunmoon/applications/sunmoon-kind/info`、`/mnt/sunmoon-data/backups/applications/sunmoon-kind/info`；knowledge 同理 | `…/knowgather`、`…/knowbase` |
 | `source_app` 值 | `info-app` | `knowgather-app` |
 
-「knowledge」作普通词（本地知识库、云上知识库、知识检索工具）**不改**；R1 逐处判断，拿不准的列进 R1 回执交所有者。
+「knowledge」作普通词（本地知识库、云上知识库、知识检索工具）**不改**；R1 逐处判断，拿不准的列进 R1 回执，标「保留原词」，不改。
 
 ---
 
-## R0 冻结与前提 — 所有者
+## R0 冻结与前提 — Cursor 收尾，Qwen 与 Opus 核对
 
-1. 卡 47、48 已上线（或所有者明说先改名、卡 48 按新名字重写）。
-2. 通知所有工位冻结（见上表）。Cursor 收到「改名冻结」后，手上的卡停在当前步。
+1. Cursor 发完卡 47、48，两份回执已由 Opus 审过（卡 48 要先等 Qwen 的 0024 Windows 真机回执）。之后 Cursor 不再接卡，直到 R6 写「改名完成」。
+2. 其他工位（fable、kimi、luna、astra）冻结（见上表）。
 3. 两台机器上，五个工位 × `info-app`、`knowledge-app`（含 6 个子仓）都**干净且已推**、各工位指向同一提交。远程机由 Opus 核，本地机由 Qwen 核，命令：
 
 ```bash
@@ -57,7 +56,7 @@ done; done
 
    要看到：每行最后一列是 0；同一仓各工位的提交号相同。
 
-**停点**：所有者在本节「状态」写「开工」。
+**停点**：Opus 收到 Qwen 的 `R0-qwen`（本地机核对）并自己核完远程机，在本节「状态」写「开工」。
 **状态**：
 
 ---
@@ -78,14 +77,14 @@ done; done
 
 写好 R5 的逐条命令（填进本文 R5 各小节），**R5 状态改成「可执行」之前，Qwen 不得开始 R5**。
 
-**停点**：Opus 写回执 `R1-opus`，所有者看过。推到旧名字的仓由所有者跑同步脚本完成。
+**停点**：Opus 写回执 `R1-opus` 并在本节写「通过」；Qwen 跑同步脚本把 R1 的提交推到旧名字的仓（各仓提交号进 `R1-qwen`）。
 **状态**：
 
 ---
 
-## R2 远端仓改名 — 所有者
+## R2 远端仓改名 — Qwen
 
-在 GitHub 与 gitee 网页上改名（仓设置 → 仓名）。只改名，不新建、不删。
+在 GitHub 与 gitee 上改名（网页的仓设置，或 `gh repo rename`；gitee 用网页或其 API）。只改名，不新建、不删。改前把 8 个仓各自默认分支与 qwen 分支的提交号记进回执。
 
 | 平台 | 旧 → 新 |
 | --- | --- |
@@ -94,7 +93,7 @@ done; done
 
 改完各开一次新地址的网页确认能打开、默认分支与提交号没变。
 
-**停点**：所有者在本节「状态」写「已改」。
+**停点**：Qwen 写 `R2-qwen`（改名前后的地址、提交号对照），Opus 审过写「通过」。
 **状态**：
 
 ---
@@ -157,9 +156,9 @@ git -C ~/master/$NEW remote -v; git -C ~/master/$NEW submodule foreach --quiet '
 
 `~/switch-test/human-*.sh` 是转发器，不用改；它转发到的 k8s 仓里那两份已在 R1 改好。
 
-然后所有者跑一次 `WS=qwen bash ~/switch-test/human-local.sh`，要能正常走完（不报找不到仓）。
+然后 Qwen 跑一次 `WS=qwen bash ~/switch-test/human-local.sh`，要能正常走完（不报找不到仓）。
 
-**停点**：Opus、Qwen 各写回执，所有者贴同步脚本最后一句。
+**停点**：Opus、Qwen 各写回执（Qwen 的含同步脚本最后一句），Opus 写「通过」。
 **状态**：
 
 ---
@@ -184,7 +183,7 @@ git -C ~/master/$NEW remote -v; git -C ~/master/$NEW submodule foreach --quiet '
 
 构建新镜像 → 部署新名字（新 Casdoor 应用与客户端、新服务身份）→ `application-check APP=knowgather`、`APP=knowbase`、`APP=investment` → 浏览器打开两个新域名能登录、能看到原有数据 → 投资里跨应用跳转与知识检索可用。
 
-**停点**：Opus 审回执；所有者在浏览器上亲手看一遍。
+**停点**：Qwen 在浏览器上逐项核对（截图只截页面，不截令牌与口令），Opus 审回执。
 
 回退（任一小节失败）：见 0025 第四节「回退」；Qwen 只执行 Opus 在本节写好的回退命令。
 
@@ -194,9 +193,9 @@ git -C ~/master/$NEW remote -v; git -C ~/master/$NEW submodule foreach --quiet '
 
 ## R6 下线旧对象 — Qwen（本地机）
 
-旧 Deployment / Job / Secret、旧 Casdoor 应用与客户端、旧 vhost 与 Redis 用户下线（命令由 Opus 填）。**旧桶、旧私有目录、Harbor 旧镜像仓库、`~/rename-backup/` 下的旧检出保留**，等下一次例行备份之后由所有者明说再删。
+旧 Deployment / Job / Secret、旧 Casdoor 应用与客户端、旧 vhost 与 Redis 用户下线（命令由 Opus 填）。**旧桶、旧私有目录、Harbor 旧镜像仓库、`~/rename-backup/` 下的旧检出保留**，删除不在本手册里。
 
-**停点**：Opus 审回执；所有者在本节写「改名完成」，冻结解除。
+**停点**：Opus 审回执，在本节写「改名完成」，冻结解除，Cursor 恢复接卡（用新名字）。
 **状态**：
 
 ---
