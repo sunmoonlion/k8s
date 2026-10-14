@@ -131,4 +131,22 @@ knowledge-admin-frontend   admin=true
 
 R0 本地机各项全部符合手册要求，无停报项。等 Opus 核完远程机、在 R0 节「状态」写「开工」后，我再动 R2（GitHub / gitee 改名）。R1 开始到 R4 通过的改名窗口内不跑同步脚本。
 
+## 补核（卡 48 之后）
+
+按派活卡 `switch-test/inbox/qwen/2026-10-14-rename-R0.md` 末尾「还差一步」执行，只读，未改任何仓。前置：`git -C ~/worktrees/qwen/k8s pull --ff-only` → `Already up to date.`，HEAD `56056b93`（卡 48 回执已核过、归档）。
+
+手册 R0 第 3 条第二段 + investment-app 三个子仓，输出原样：
+
+```text
+/home/zymun/worktrees/qwen/k8s           ahead=0 dirty=0
+/home/zymun/worktrees/qwen/investment-app ahead=0 dirty=0
+/home/zymun/worktrees/qwen/runtime       ahead=0 dirty=0
+/home/zymun/worktrees/qwen/tpl-app       ahead=0 dirty=0
+  investment-admin-frontend          branch=qwen on_remote=5 dirty=0
+  investment-backend                 branch=qwen on_remote=1 dirty=0
+  investment-web-frontend            branch=qwen on_remote=1 dirty=0
+```
+
+结论：四仓全部 `ahead=0`、`dirty=0`；三个子仓 `on_remote≥1`、`dirty=0`、branch=qwen。卡 48 在本地留下的提交都已推上去，无停报项。
+
 exit=0
