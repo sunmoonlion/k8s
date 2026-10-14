@@ -7,7 +7,7 @@ images:
   relay:
     object: relay-platform/relay
     # 第 2 段：权限审计回执与版本错配通知；只有 relay 更新源码锁
-    revision: 4d0ff0433628b8e821ca6239eebd8cf46f0a4fe3
+    revision: 4028d32de4801ef958806962c72502da0135a744
     context: sunmoonai/relay-platform/relay
     dockerfile: Dockerfile
     base: python
