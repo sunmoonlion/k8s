@@ -1,9 +1,9 @@
-"""改名 info → knowgather 的库内部分（k8s/docs/rename.md R1，0025）
+"""改名 info → knowcollector 的库内部分（k8s/docs/rename.md R1，0025）
 
 - 采集库四张带应用名前缀的表改名，连同名字里带它们的约束、索引、序列；
-- 原文桶 info-originals → knowgather-originals（开发库的 development-info-originals 同理），对象键前缀 info/ → knowgather/
+- 原文桶 info-originals → knowcollector-originals（开发库的 development-info-originals 同理），对象键前缀 info/ → knowcollector/
   （桶里的对象在 R5.2 已按新键复制好）；
-- 采集申请里由采集服务自己发起的 source_app 'info-app' → 'knowgather-app'。
+- 采集申请里由采集服务自己发起的 source_app 'info-app' → 'knowcollector-app'。
 
 库名与角色名的改动不在迁移里，由 R5.2 在停服时用 ALTER DATABASE / ALTER ROLE 做。
 
@@ -25,16 +25,16 @@ depends_on = None
 
 TABLES = ("info_source", "info_collector", "info_document", "info_document_version")
 BUCKET_TABLES = ("raw_artifact", "extracted_content", "security_dataset")
-BUCKETS = {"info-originals": "knowgather-originals", "development-info-originals": "development-knowgather-originals"}
+BUCKETS = {"info-originals": "knowcollector-originals", "development-info-originals": "development-knowcollector-originals"}
 NAME = {
     "up": re.compile(r"(^|_)info_(source|collector|document_version|document)(?=_|$)"),
-    "down": re.compile(r"(^|_)knowgather_(source|collector|document_version|document)(?=_|$)"),
+    "down": re.compile(r"(^|_)knowcollector_(source|collector|document_version|document)(?=_|$)"),
 }
 
 
 def _rename_objects(direction: str) -> None:
     """约束先改（主键、唯一约束背后的索引随之改名），再改剩下的索引与序列。只动 public 模式里名字匹配的对象。"""
-    new = "knowgather_" if direction == "up" else "info_"
+    new = "knowcollector_" if direction == "up" else "info_"
     pattern = NAME[direction]
     bind = op.get_bind()
     constraints = bind.execute(sa.text(
@@ -58,21 +58,21 @@ def _rename_objects(direction: str) -> None:
 
 def upgrade() -> None:
     for table in TABLES:
-        op.rename_table(table, table.replace("info_", "knowgather_", 1))
+        op.rename_table(table, table.replace("info_", "knowcollector_", 1))
     _rename_objects("up")
     for table in BUCKET_TABLES:
         for old, new in BUCKETS.items():
             op.execute(sa.text(f"UPDATE {table} SET bucket = :new WHERE bucket = :old").bindparams(old=old, new=new))
-        op.execute(f"UPDATE {table} SET object_key = 'knowgather/' || substr(object_key, 6) WHERE object_key LIKE 'info/%'")
-    op.execute("UPDATE security_request_requester SET source_app = 'knowgather-app' WHERE source_app = 'info-app'")
+        op.execute(f"UPDATE {table} SET object_key = 'knowcollector/' || substr(object_key, 6) WHERE object_key LIKE 'info/%'")
+    op.execute("UPDATE security_request_requester SET source_app = 'knowcollector-app' WHERE source_app = 'info-app'")
 
 
 def downgrade() -> None:
-    op.execute("UPDATE security_request_requester SET source_app = 'info-app' WHERE source_app = 'knowgather-app'")
+    op.execute("UPDATE security_request_requester SET source_app = 'info-app' WHERE source_app = 'knowcollector-app'")
     for table in BUCKET_TABLES:
-        op.execute(f"UPDATE {table} SET object_key = 'info/' || substr(object_key, 12) WHERE object_key LIKE 'knowgather/%'")
+        op.execute(f"UPDATE {table} SET object_key = 'info/' || substr(object_key, 12) WHERE object_key LIKE 'knowcollector/%'")
         for old, new in BUCKETS.items():
             op.execute(sa.text(f"UPDATE {table} SET bucket = :old WHERE bucket = :new").bindparams(old=old, new=new))
     _rename_objects("down")
     for table in TABLES:
-        op.rename_table(table.replace("info_", "knowgather_", 1), table)
+        op.rename_table(table.replace("info_", "knowcollector_", 1), table)

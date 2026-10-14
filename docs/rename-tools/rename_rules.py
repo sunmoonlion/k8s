@@ -1,4 +1,4 @@
-"""改名替换引擎（k8s/docs/rename.md R1）。info → knowgather、knowledge → knowbase。
+"""改名替换引擎（k8s/docs/rename.md R1）。info → knowcollector、knowledge → knowbase。
 
 用法：python3 rename_rules.py <五组仓的上一级目录> [--apply] [--report 报告.json]
 不加 --apply 只统计、不写盘。规则按「改与留的界线」分类，按顺序套用；先把要留的写法换成占位符保护起来，
@@ -74,109 +74,109 @@ def rule(cls: str, pattern: str, repl: Any) -> None:
 # 1 域名
 rule("域名", r"knowledge-admin\.(sunmoonai\.com|example\.test)", r"knowbase-admin.\1")
 rule("域名", r"(?<![\w.-])knowledge\.(sunmoonai\.com|example\.test)", r"knowbase.\1")
-rule("域名", r"info-admin\.(sunmoonai\.com|example\.test)", r"knowgather-admin.\1")
-rule("域名", r"(?<![\w.-])info\.(sunmoonai\.com|example\.test)", r"knowgather.\1")
+rule("域名", r"info-admin\.(sunmoonai\.com|example\.test)", r"knowcollector-admin.\1")
+rule("域名", r"(?<![\w.-])info\.(sunmoonai\.com|example\.test)", r"knowcollector.\1")
 # 1b 令牌作用域（所有者改定：改；它是「应用名:动作」）
 rule("作用域", r"(?<![\w.-])knowledge:(admin|ingest|retrieve|read)\b", r"knowbase:\1")
-rule("作用域", r"(?<![\w.-])info:admin\b", "knowgather:admin")
-rule("域名", r"(?<=//)info\.example\b", "knowgather.example")
+rule("作用域", r"(?<![\w.-])info:admin\b", "knowcollector:admin")
+rule("域名", r"(?<=//)info\.example\b", "knowcollector.example")
 rule("域名", r"(?<=//)knowledge\.example\b", "knowbase.example")
-rule("域名", r"(?<=//)info(?=[:/\"'])", "knowgather")
+rule("域名", r"(?<=//)info(?=[:/\"'])", "knowcollector")
 rule("域名", r"(?<=//)knowledge(?=[:/\"'])", "knowbase")
-rule("应用身份", r"\bInfoAppBot\b", "KnowgatherBot")
-rule("应用身份", r"\bInfoBot\b", "KnowgatherBot")
+rule("应用身份", r"\bInfoAppBot\b", "KnowcollectorBot")
+rule("应用身份", r"\bInfoBot\b", "KnowcollectorBot")
 # 2 两个应用之间的身份（成对出现，先于单个规则）
 for old, new in [
-    ("sunmoonai-info-knowledge-ingest", "sunmoonai-knowgather-knowbase-ingest"),
-    ("sunmoon-info-knowledge-ingest", "sunmoon-knowgather-knowbase-ingest"),
-    ("sunmoon-workload-info-knowledge", "sunmoon-workload-knowgather-knowbase"),
-    ("info-knowledge-ingest-client", "knowgather-knowbase-ingest-client"),
-    ("info-knowledge-artifact", "knowgather-knowbase-artifact"),
-    ("info-knowledge-service", "knowgather-knowbase-service"),
-    ("knowledge-info-ingest-service-binding", "knowbase-knowgather-ingest-service-binding"),
-    ("CASDOOR_INFO_KNOWLEDGE_", "CASDOOR_KNOWGATHER_KNOWBASE_"),
+    ("sunmoonai-info-knowledge-ingest", "sunmoonai-knowcollector-knowbase-ingest"),
+    ("sunmoon-info-knowledge-ingest", "sunmoon-knowcollector-knowbase-ingest"),
+    ("sunmoon-workload-info-knowledge", "sunmoon-workload-knowcollector-knowbase"),
+    ("info-knowledge-ingest-client", "knowcollector-knowbase-ingest-client"),
+    ("info-knowledge-artifact", "knowcollector-knowbase-artifact"),
+    ("info-knowledge-service", "knowcollector-knowbase-service"),
+    ("knowledge-info-ingest-service-binding", "knowbase-knowcollector-ingest-service-binding"),
+    ("CASDOOR_INFO_KNOWLEDGE_", "CASDOOR_KNOWCOLLECTOR_KNOWBASE_"),
 ]:
     rule("跨应用身份", re.escape(old), new)
 # 3 MCP 服务名（所有者定：改）
 rule("MCP", r"(?<![\w-])sunmoon_knowledge(?![\w-])", "sunmoon_knowbase")
 # 4 登录 cookie
 rule("cookie", r"sunmoonai_knowledge_", "sunmoonai_knowbase_")
-rule("cookie", r"sunmoonai_info_", "sunmoonai_knowgather_")
+rule("cookie", r"sunmoonai_info_", "sunmoonai_knowcollector_")
 # 5 环境变量（改名不改值）
 rule("环境变量", r"(?<![A-Za-z0-9])KNOWLEDGE_", "KNOWBASE_")
 rule("环境变量", r"(?<![A-Za-z0-9])KNOWLEDGE\b", "KNOWBASE")
-rule("环境变量", r"(?<![A-Za-z0-9])INFO_(?=[A-Z0-9])", "KNOWGATHER_")
-rule("环境变量", r"(?<=[A-Z]_)INFO\b", "KNOWGATHER")
+rule("环境变量", r"(?<![A-Za-z0-9])INFO_(?=[A-Z0-9])", "KNOWCOLLECTOR_")
+rule("环境变量", r"(?<=[A-Z]_)INFO\b", "KNOWCOLLECTOR")
 # 6 配置字段（pydantic 字段名 = 环境变量名小写）
 rule("配置字段", r"(?<![\w-])knowledge_(app|mcp|semantic|catalog|web_base_url)(?=_|\b)", r"knowbase_\1")
 rule("配置字段", r"(?<![\w-])knowledge_dataset_(path|id|title|object|sha256|registry_enabled|allowed_buckets|cache_dir)\b", r"knowbase_dataset_\1")
 # 7 部署配置键与应用名（gitops / ansible / Makefile）
 rule("部署键", r"(?<![\w-])(info|knowledge)_(backend|web|admin)_deployment\b",
-     lambda m: ("knowgather" if m[1] == "info" else "knowbase") + f"_{m[2]}_deployment")
-rule("部署键", r"(?<![\w-])info_deployment\b", "knowgather_deployment")
+     lambda m: ("knowcollector" if m[1] == "info" else "knowbase") + f"_{m[2]}_deployment")
+rule("部署键", r"(?<![\w-])info_deployment\b", "knowcollector_deployment")
 rule("部署键", r"(?<![\w-])knowledge_deployment\b", "knowbase_deployment")
 rule("部署键", r"(?<![\w-])knowledge_service(_receiver)?\b", r"knowbase_service\1")
 rule("部署键", r"service_access_hosts\.knowledge\b", "service_access_hosts.knowbase")
-rule("部署键", r"service_access_hosts\.info\b", "service_access_hosts.knowgather")
+rule("部署键", r"service_access_hosts\.info\b", "service_access_hosts.knowcollector")
 rule("部署键", r"applications\.knowledge\b", "applications.knowbase")
-rule("部署键", r"applications\.info\b", "applications.knowgather")
-rule("应用名", r"\bAPP=info\b", "APP=knowgather")
+rule("部署键", r"applications\.info\b", "applications.knowcollector")
+rule("应用名", r"\bAPP=info\b", "APP=knowcollector")
 rule("应用名", r"\bAPP=knowledge\b", "APP=knowbase")
-rule("应用名", r"applications-info\b", "applications-knowgather")
+rule("应用名", r"applications-info\b", "applications-knowcollector")
 rule("应用名", r"applications-knowledge\b", "applications-knowbase")
 # 8 组件与 k8s 对象名（kebab）
-rule("组件", r"(?<![\w.-])info-app\b", "knowgather-app")
+rule("组件", r"(?<![\w.-])info-app\b", "knowcollector-app")
 rule("组件", r"(?<![\w.-])knowledge-app\b", "knowbase-app")
 rule("组件", r"(?<![\w.])knowledge-(?=[a-z0-9])", "knowbase-")
-rule("组件", r"(?<![\w.])info-(?=(backend|web|admin|api|runtime|worker|scheduler|producer|migration|migrate|tls|database|redis|rabbitmq|identity|storage|service|browser|celery|domain|r5|development|production|originals|sandboxes|source|smoke|object|derived|rw|ro|write|requests|crawl|securities|watchlist|scanner|user|password|information|schema)\b)", "knowgather-")
+rule("组件", r"(?<![\w.])info-(?=(backend|web|admin|api|runtime|worker|scheduler|producer|migration|migrate|tls|database|redis|rabbitmq|identity|storage|service|browser|celery|domain|r5|development|production|originals|sandboxes|source|smoke|object|derived|rw|ro|write|requests|crawl|securities|watchlist|scanner|user|password|information|schema)\b)", "knowcollector-")
 # 9 存储名（乙）
-rule("存储", r"(?<![\w-])info_(runtime|migrator|storage|source_reader)\b", r"knowgather_\1")
+rule("存储", r"(?<![\w-])info_(runtime|migrator|storage|source_reader)\b", r"knowcollector_\1")
 rule("存储", r"(?<![\w-])knowledge_(runtime|migrator|source_reader|password)\b", r"knowbase_\1")
 rule("存储", r"(?<![\w-])knowledge_token\b", "knowbase_token")
-rule("存储", r"(?<=[\"' ])info:\*", "knowgather:*")
-rule("存储", r"(?<=[\"' ])info:(?=[a-z])", "knowgather:")
-rule("存储", r"(?<![\w-])info\.(default|admin\.default)\b", r"knowgather.\1")
+rule("存储", r"(?<=[\"' ])info:\*", "knowcollector:*")
+rule("存储", r"(?<=[\"' ])info:(?=[a-z])", "knowcollector:")
+rule("存储", r"(?<![\w-])info\.(default|admin\.default)\b", r"knowcollector.\1")
 rule("存储", r"(?<![\w-])knowledge\.(default|admin\.default)\b", r"knowbase.\1")
 rule("存储", r"://knowledge:knowledge@", "://knowbase:knowbase@")
-rule("存储", r"://info:info@", "://knowgather:knowgather@")
+rule("存储", r"://info:info@", "://knowcollector:knowcollector@")
 rule("存储", r"(?<=:5432/)knowledge\b", "knowbase")
-rule("存储", r"(?<=:5432/)info\b", "knowgather")
+rule("存储", r"(?<=:5432/)info\b", "knowcollector")
 rule("存储", r"(?<![\w-])knowledge_backend\b", "knowbase_backend")
-rule("存储", r"(?<![\w-])info_backend(?=_user\b|\b)", "knowgather_backend")
-rule("存储", r"(?<=[\"'`/ ])info/(?=(original|securities)\b)", "knowgather/")
-rule("存储", r"source_prefix: info/", "source_prefix: knowgather/")
-rule("存储", r"/sunmoon-kind/info\b", "/sunmoon-kind/knowgather")
+rule("存储", r"(?<![\w-])info_backend(?=_user\b|\b)", "knowcollector_backend")
+rule("存储", r"(?<=[\"'`/ ])info/(?=(original|securities)\b)", "knowcollector/")
+rule("存储", r"source_prefix: info/", "source_prefix: knowcollector/")
+rule("存储", r"/sunmoon-kind/info\b", "/sunmoon-kind/knowcollector")
 rule("存储", r"/sunmoon-kind/knowledge\b", "/sunmoon-kind/knowbase")
-rule("存储", r"(database|rabbitmq_vhost): info\b", r"\1: knowgather")
+rule("存储", r"(database|rabbitmq_vhost): info\b", r"\1: knowcollector")
 rule("存储", r"(database|rabbitmq_vhost): knowledge\b", r"\1: knowbase")
 # 10 source_app 的两种旧值（各自对应，不合并）
-rule("source_app", r"(?<=[\"'])info-app(?=[\"'])", "knowgather-app")
-rule("source_app", r"(source_app\W{1,12}[\"'])info(?=[\"'])", r"\1knowgather")
+rule("source_app", r"(?<=[\"'])info-app(?=[\"'])", "knowcollector-app")
+rule("source_app", r"(source_app\W{1,12}[\"'])info(?=[\"'])", r"\1knowcollector")
 # 11 采集库带应用名前缀的表与事件（所有者定：改）
-rule("表与事件", r"(?<![\w-])info_(collector|document_version|document|source)\b", r"knowgather_\1")
-rule("表与事件", r"(?<![\w-])(uq|ix|ck)_info_", r"\1_knowgather_")
-rule("表与事件", r"(?<![\w-])info\.((?:[a-z_]+\.)*[a-z_]+)\.v(\d+)\b", r"knowgather.\1.v\2")
+rule("表与事件", r"(?<![\w-])info_(collector|document_version|document|source)\b", r"knowcollector_\1")
+rule("表与事件", r"(?<![\w-])(uq|ix|ck)_info_", r"\1_knowcollector_")
+rule("表与事件", r"(?<![\w-])info\.((?:[a-z_]+\.)*[a-z_]+)\.v(\d+)\b", r"knowcollector.\1.v\2")
 # 12 代码里指向另一个应用的名字
 for old, new in [
     ("KnowledgeAppClient", "KnowbaseAppClient"), ("KnowledgeAppNotConfiguredError", "KnowbaseAppNotConfiguredError"),
     ("get_knowledge_app_client", "get_knowbase_app_client"), ("require_knowledge_admin", "require_knowbase_admin"),
-    ("require_info_admin", "require_knowgather_admin"), ("require_knowledge_ingest_service", "require_knowbase_ingest_service"),
+    ("require_info_admin", "require_knowcollector_admin"), ("require_knowledge_ingest_service", "require_knowbase_ingest_service"),
     ("require_knowledge_retrieve_service", "require_knowbase_retrieve_service"),
 ]:
     rule("代码名", rf"\b{old}\b", new)
 # 13 中文句子里夹着的 info / knowledge 几乎都指应用（「向 knowledge 重新登记」「只给 info 管理员」）
 CJK = r"[\u3000-\u303f\u4e00-\u9fff\uff00-\uffef]"
 rule("中文里的应用名", rf"(?<={CJK})\s?\bknowledge\b(?!-|_|\.)|\bknowledge\b(?=\s?{CJK})", lambda m: m[0].replace("knowledge", "knowbase"))
-rule("中文里的应用名", rf"(?<={CJK})\s?\binfo\b(?!-|_|\.)|\binfo\b(?=\s?{CJK})", lambda m: m[0].replace("info", "knowgather"))
+rule("中文里的应用名", rf"(?<={CJK})\s?\binfo\b(?!-|_|\.)|\binfo\b(?=\s?{CJK})", lambda m: m[0].replace("info", "knowcollector"))
 # 14 采集管理端的页面路径（info 是应用名；知识库管理端的 /knowledge/… 是领域词，留）
-rule("页面路径", r"(?<=/)info(?=/(crawl|securities|watchlist|requests)\b)", "knowgather")
+rule("页面路径", r"(?<=/)info(?=/(crawl|securities|watchlist|requests)\b)", "knowcollector")
 # 15 应用名作单词的配置值（只在部署机制里）：'info' / "knowledge"
 DEPLOY_FILES = re.compile(r"^k8s/(infrastructure|gitops/components/app-platform/common|gitops/clusters)/|Makefile$"
                           r"|/core/config\.py$|/domain/cross_app\.py$|/tests/test_cross_app\.py$|/env/server-schema\.ts$|/lib/cross-app/[^/]+\.ts$"
                           r"|/tests/test_security_request_routes_db\.py$|/tests/test_preview_fixtures\.py$")
-rule("应用名", r"(?<=[\"'])info(?=[\"'])", "knowgather")
+rule("应用名", r"(?<=[\"'])info(?=[\"'])", "knowcollector")
 rule("应用名", r"(?<=[\"'])knowledge(?=[\"'])", "knowbase")
-rule("应用名", r"(?m)^(\s*)info:(?=\s*$|\s+[\"'{])", r"\1knowgather:")
+rule("应用名", r"(?m)^(\s*)info:(?=\s*$|\s+[\"'{])", r"\1knowcollector:")
 rule("应用名", r"(?m)^(\s*)knowledge:(?=\s*$|\s+[\"'{])", r"\1knowbase:")
 ONLY_DEPLOY = {len(R) - 4, len(R) - 3, len(R) - 2, len(R) - 1}
 

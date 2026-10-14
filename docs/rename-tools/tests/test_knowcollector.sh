@@ -34,9 +34,9 @@ print("\n".join(out))
 PY
 docker exec -i opus-rename-pg psql -U postgres -d info -q -v ON_ERROR_STOP=1 < ${SEED:-/tmp/rename-seed.sql}
 snap() {
-  echo "  tables: $(P "select string_agg(tablename,' ' order by tablename) from pg_tables where schemaname='public' and (tablename like 'info%' or tablename like 'knowgather%')")"
+  echo "  tables: $(P "select string_agg(tablename,' ' order by tablename) from pg_tables where schemaname='public' and (tablename like 'info%' or tablename like 'knowcollector%')")"
   echo "  names with info_:       $(P "select count(*) from (select conname n from pg_constraint union all select relname from pg_class where relkind in ('i','S')) x where n ~ '(^|_)info_(source|collector|document)'")"
-  echo "  names with knowgather_: $(P "select count(*) from (select conname n from pg_constraint union all select relname from pg_class where relkind in ('i','S')) x where n ~ '(^|_)knowgather_(source|collector|document)'")"
+  echo "  names with knowcollector_: $(P "select count(*) from (select conname n from pg_constraint union all select relname from pg_class where relkind in ('i','S')) x where n ~ '(^|_)knowcollector_(source|collector|document)'")"
   for t in raw_artifact extracted_content security_dataset; do echo "  $t: $(P "select bucket||' '||object_key from $t")"; done
   echo "  requester source_app: $(P "select source_app from security_request_requester")"
 }
