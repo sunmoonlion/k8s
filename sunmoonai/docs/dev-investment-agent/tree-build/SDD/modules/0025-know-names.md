@@ -52,7 +52,7 @@
 | 对象存储 | 桶 `info-originals`（只有这一个；knowledge 没有自己的桶，用账号 `knowledge_source_reader` 读它的 `info/` 前缀）；对象键前缀 `info/` | 桶 `knowcollector-originals`、前缀 `knowcollector/`、账号 `knowbase_source_reader` | 建新桶 → 整桶复制并把键前缀 `info/` 换成 `knowcollector/` → 逐对象核对数量与校验和 → 两个库里记着桶名、对象键的行一并 `UPDATE` → 读桶账号与策略按新桶、新前缀重建 → 旧桶保留 | 对象数、总字节、抽样校验和一致；两个库里不再出现旧桶名与旧前缀 |
 | RabbitMQ | vhost `info` / `knowledge`、用户、队列 `info.default` | `knowcollector` / `knowbase` vhost、用户、`knowcollector.default` | 停服前先等队列排空；新建 vhost、用户、队列；旧的删 | 旧队列切换前为空；新队列能收发 |
 | Redis | 键前缀 `info:*`、用户 `info_runtime` | `knowcollector:*`、`knowcollector_runtime` | 新建用户与 ACL；旧键是缓存与锁，**不搬**，切换后让它过期或清掉（实施时逐个确认没有只存在 Redis 里的业务数据） | 新用户只能碰新前缀 |
-| 秘密 | 私有目录 `/etc/sunmoon/applications/sunmoon-kind/info`、`…/knowledge` 与各 `*.sops.yaml` | `…/knowcollector`、`…/knowbase` | 按新名重新生成（照现有 bootstrap / provision 任务的做法，revision 加一），进 SOPS；旧目录保留到切换验收后再删 | 新密文能解、旧明文不进 Git |
+| 秘密 | 私有目录 `/etc/sunmoon/applications/sunmoon-kind/info`、`…/knowledge` 与各 `*.sops.yaml` | `…/knowcollector`、`…/knowbase` | **沿用旧口令**（所有者 2026-10-14 定，「沿用旧口令吧，简单些」）：新私有目录照抄旧目录的秘密值，只换文件名与键名；stage 按新名渲染进 SOPS。改过名的库角色口令不变（PG16 用 SCRAM，改名不丢口令），新的库初始化任务按「角色已存在」直接登录验证；Redis、RabbitMQ、对象存储的新用户与新 Casdoor 应用、服务身份都用照抄的旧值开通。库与角色的归属注释 `sunmoon-kind/info` 要随改名改成 `sunmoon-kind/knowcollector`，否则初始化任务按「别人的库」拒绝。旧目录保留 | 新密文能解、旧明文不进 Git；各新身份能用旧值登录 |
 | 备份目录 | `/mnt/sunmoon-data/backups/applications/sunmoon-kind/info` 等 | `…/knowcollector`、`…/knowbase` | 新目录起用；切换前那份备份留在旧目录不动 | — |
 | 已存的引用 | `source_app` 有两种旧值：`info-app`（采集服务写）、`info`（数据集登记器默认值、knowledge 的登记记录）；投资里若存了跨应用地址 | `knowcollector-app`、`knowcollector`（各自对应，不合并） | 数据迁移（带回退迁移），两个库里存它的表都覆盖 | 库里不再出现旧值 |
 
