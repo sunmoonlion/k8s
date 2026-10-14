@@ -29,6 +29,20 @@ cd ~/worktrees/qwen/k8s && git pull --rebase origin qwen && sed -n '/^## R<段�
 cd ~/worktrees/qwen/k8s && git commit -am "rename: R<段号> 通过" && git pull --rebase origin qwen && git push origin qwen
 ```
 
+### 所有者只传话，不同步（所有者 2026-10-14 定）
+
+Opus 与 Qwen 互相发不了消息，但都直接推、直接拉 origin。所以改名期间所有者**不跑同步脚本**，只在两边之间传一句话：
+
+| 谁做完了 | 怎么交 | 所有者传给谁、传什么 |
+| --- | --- | --- |
+| Qwen 交了某段回执 | Qwen 自己推（上面第一条） | 告诉 Opus：「Qwen 交了 R<段号>」 |
+| Opus 审完写了「通过」 | Opus 自己推（上面第三条） | Opus 会说「R<段号> 通过，Qwen 可以做 R<下一段>」；所有者转告 Qwen |
+
+- 传话只说是哪一段、谁交的；手册里的「状态」以 origin 上的为准，传话只是提醒对方去拉。
+- 收到传话的一方先拉（上面第二条，或 Opus 那边 `git -C ~/worktrees/qwen/k8s pull --rebase origin qwen`），看到对应内容才动手；拉不到就回一句「还没看到」，不猜。
+- **开工前最后一次照常同步**：卡 48 回执回来时所有者跑一次 `WS=qwen bash ~/switch-test/human-local.sh`（把 Cursor 的回执与远程的提交两边带齐）。之后到 R4 结束都不跑。
+- **何时恢复同步**：R4 两台机器的仓名与同步配置都改好后，由 Qwen 跑一次 `human-local.sh` 验证能走通（见 R4）；从那以后照常同步。
+
 ## 谁做什么
 
 | 角色 | 在哪 | 做什么 | 不做什么 |
