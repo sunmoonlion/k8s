@@ -28,10 +28,10 @@ applications:
     admin_parent_revision: df64aa5d6781c22404697eedab943792f3ddfc80
     admin_revision: df64aa5d6781c22404697eedab943792f3ddfc80
   investment:
-    parent_revision: 93462322cdec3a2c36c5a5a0177f68f5e9a1dae2
-    backend_parent_revision: 15769d59ec3a6a3442bb3ddf3344348a2aab3e83
-    backend_revision: 15769d59ec3a6a3442bb3ddf3344348a2aab3e83
-    web_parent_revision: 309e73d5a810c684096f3a9f4cc72ba1b0a682fd
-    web_revision: 309e73d5a810c684096f3a9f4cc72ba1b0a682fd
+    parent_revision: f5aaeba37c079d749755c629a4d9c6975911ad67
+    backend_parent_revision: d177b5e9654a6071cbbfbdbd39628fa82fe776c9
+    backend_revision: d177b5e9654a6071cbbfbdbd39628fa82fe776c9
+    web_parent_revision: e6963ddc2b90f24686324c0dd455758773931d6d
+    web_revision: e6963ddc2b90f24686324c0dd455758773931d6d
     admin_parent_revision: b0f4c5de8450e6e17bb8d5ef846dcb76f4d01093
     admin_revision: b0f4c5de8450e6e17bb8d5ef846dcb76f4d01093
