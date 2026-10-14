@@ -33,6 +33,11 @@ for r in $FIVE $SUBS runtime; do
   git -C "$d" fetch -q origin "$WS" 2>/dev/null || true
   dirty=$(git -C "$d" status --porcelain --ignore-submodules=all | head -1)
   ahead=$(git -C "$d" rev-list --count "origin/$WS..HEAD" 2>/dev/null || echo 0)
+  # 子仓按父仓 gitlink 检出，可能来自另一工位；与 human-remote.sh 一样，
+  # 已在远端分支上的提交不算「没推回」。父仓和 runtime 仍须对齐本工位。
+  if [[ "$r" == */* ]] && [ -n "$(git -C "$d" branch -r --contains HEAD --list 'origin/*' 2>/dev/null)" ]; then
+    ahead=0
+  fi
   [ -n "$dirty" ] && { echo "  ✗ $r 有没提交的改动（本地助手还在做？）"; blocked=1; }
   [ "$ahead" != 0 ] && { echo "  ✗ $r 有 $ahead 个本地提交还没推回"; blocked=1; }
 done
