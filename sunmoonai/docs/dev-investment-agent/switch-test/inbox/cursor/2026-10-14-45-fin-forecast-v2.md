@@ -3,9 +3,9 @@
 ```text
 被测仓：k8s，**qwen 工作树 `~/worktrees/qwen/k8s`，分支 qwen**（所有者 2026-10-13 定：财务分析与预测的活以后都在 qwen 工位，含发布）
 跑：按编号步骤做（核对 → 改钉 → 构建 → 暂存与计划 → 提交 → 发布晋级 → 检查 → 回传）
-仓与提交：投资父仓 b48e558ece153a16ee24629b19aa415031bda9e9；后端 f89de886e784709cdfe7304faba1f953d2b9c778；网页 309e73d5…（不变）；管理端不动；知识服务不动
+仓与提交：投资父仓 a14b3f05e84a7fa09e88f3360082c62d3a4437a5；后端 ee5ee62306f150774ce418c2425237afd4547b68；网页 309e73d5…（不变）；管理端不动；知识服务不动
 预计：20–30 分钟；只换后端一个镜像；一次现网变更；没有新迁移，config 不动；API 中断约 1 分钟
-看什么：只有后端 image.lock 变（source_revision = f89de886…）、计划核到 '20261012_0018'、application-check 0
+看什么：只有后端 image.lock 变（source_revision = ee5ee623…）、计划核到 '20261012_0018'、application-check 0
 前提：所有者已通知执行，且**已在页面上停掉 10-14 那个还在跑的财务分析与预测任务**（它用的是第 1 版，新版上线后接不上）；
       已跑过 WS=qwen 的同步，~/worktrees/qwen/k8s 在 qwen 且干净、含本卡；platform-status 0；Harbor 在；不碰旧 kind；不退回
 回传：k8s/sunmoonai/scripts/results/fin-forecast-v2-cursor.<时间>.md，最后一行 exit=<码>；本地提交，不 push
@@ -15,9 +15,9 @@
 
 10-14 现网：所有者问「预测这个公司下个季度的表现」。知识服务里有 Olist 样例与 600009 财报两份数据；第 1 版专家的定范围自己挑了 600009，取数按月把 1994–2026 年铺开，两次撞 15 分钟单步超时，验收不过。设计里 A 股财报是「以后再接」，第 1 版没拦住。
 
-第 2 版（后端 `c0f99e4`，全量 809 过、0 失败；本卡钉的是在它之上的 `f89de88`）：定范围先按口径种类筛数据集，本版只认按期汇总的（Olist 这类），财报类不支持；问题没点名时只剩一份符合就用它，不止一份就问用户；新增一条确定性验收，口径种类不是按期汇总的就交人并说明「财报类请用财报体检」；取数不许拆得比数据存的粒度更细。专家版本 1 → 2。设计 `tree-build/SDD/modules/0023-fin-forecast.md` 第 5.2 节。
+第 2 版（后端 `c0f99e4`，全量 809 过、0 失败；本卡钉的是在它之上的 `ee5ee62`）：定范围先按口径种类筛数据集，本版只认按期汇总的（Olist 这类），财报类不支持；问题没点名时只剩一份符合就用它，不止一份就问用户；新增一条确定性验收，口径种类不是按期汇总的就交人并说明「财报类请用财报体检」；取数不许拆得比数据存的粒度更细。专家版本 1 → 2。设计 `tree-build/SDD/modules/0023-fin-forecast.md` 第 5.2 节。
 
-同一张卡还带上后端 `f89de88`（全量 811 过）：10-14 上午成稿那一步在所有者的 Windows 上两次耗满 15 分钟——模型想改昨天那份成稿，补丁对不上原文，又把 bash 写法交给 PowerShell；到点停下后，工作台拿最后一句「准备写文件」去验，报成「交回物不是 JSON 对象」。修法：到点停下的步骤记为「在时限内交回」不过、其余各条「没有验」，照常走返工与交人；写文件一律一个 `*** Add File` 整份写（覆盖旧文件），不用 Update File、不走命令行。
+同一张卡还带上后端 `f89de88`、`ee5ee62`（全量 811 过）：10-14 上午成稿那一步在所有者的 Windows 上两次耗满 15 分钟——模型想改昨天那份成稿，补丁对不上原文，又把 bash 写法交给 PowerShell；到点停下后，工作台拿最后一句「准备写文件」去验，报成「交回物不是 JSON 对象」。修法：到点停下的步骤记为「在时限内交回」不过、其余各条「没有验」，照常走返工与交人；写文件一律一个 `*** Add File` 整份写（覆盖旧文件），不用 Update File；Codex 不给 kimi-k3 这类它不认识的模型 apply_patch 工具，只能经命令行调，而它只在整条命令恰好是 `apply_patch <<'EOF' … EOF` 时自己接住（PowerShell 也一样），说明里把补丁格式和这条命令的样子写死。成稿硬检查仍是软的：现网会合点镜像还没有 `/service`（卡 42 说「另开卡」，没开），本卡不动会合点。
 
 **停下的规则**：任何一步退出码不是 0，就停在那一步，把输出贴进回传，不做退回。
 
@@ -31,7 +31,7 @@ git -C ~/worktrees/qwen/investment-app rev-parse HEAD; git -C ~/worktrees/qwen/i
 make -C infrastructure platform-status; echo "exit=$?"
 ```
 
-要看到：`qwen`；干净；现在钉的是父仓 `93462322…`、后端 `15769d59…`、网页 `309e73d5…`（卡 44 上线的那一版）；config 是 `v7` / `'20261012_0018'`；两个 `rev-parse` 分别是 `b48e558e…`、`f89de886…`（不是就停，请所有者先同步 qwen）；`platform-status` 0。
+要看到：`qwen`；干净；现在钉的是父仓 `93462322…`、后端 `15769d59…`、网页 `309e73d5…`（卡 44 上线的那一版）；config 是 `v7` / `'20261012_0018'`；两个 `rev-parse` 分别是 `a14b3f05…`、`ee5ee623…`（不是就停，请所有者先同步 qwen）；`platform-status` 0。
 
 ## 二、改钉（只动父仓与后端三行）
 
@@ -41,9 +41,9 @@ import re,pathlib
 p=pathlib.Path('infrastructure/applications/sources.yaml'); s=p.read_text()
 m=re.search(r'(?ms)^  investment:\n(?:(?!^  \S).*\n?)*', s); assert m
 block=m.group(0); new=block
-new=re.sub(r'(?m)^(    parent_revision: )\w+', r'\g<1>b48e558ece153a16ee24629b19aa415031bda9e9', new, count=1)
-new=re.sub(r'(?m)^(    backend_parent_revision: )\w+', r'\g<1>f89de886e784709cdfe7304faba1f953d2b9c778', new)
-new=re.sub(r'(?m)^(    backend_revision: )\w+', r'\g<1>f89de886e784709cdfe7304faba1f953d2b9c778', new)
+new=re.sub(r'(?m)^(    parent_revision: )\w+', r'\g<1>a14b3f05e84a7fa09e88f3360082c62d3a4437a5', new, count=1)
+new=re.sub(r'(?m)^(    backend_parent_revision: )\w+', r'\g<1>ee5ee62306f150774ce418c2425237afd4547b68', new)
+new=re.sub(r'(?m)^(    backend_revision: )\w+', r'\g<1>ee5ee62306f150774ce418c2425237afd4547b68', new)
 assert new!=block; p.write_text(s.replace(block,new,1))
 PY2
 git diff --stat; git diff infrastructure/applications/sources.yaml | grep "^[-+]" | grep -v "^+++\|^---"
@@ -63,7 +63,7 @@ git diff gitops/components/app-platform/investment-app/investment-backend/runtim
 make -C infrastructure application-deployment-plan APP=investment 2>&1 | grep -E "schema|revision|ok=|failed=" | tail -4; echo "exit=${PIPESTATUS[0]}"
 ```
 
-要看到：**只有后端的** `image.lock.yaml` 变（`source_revision` = `f89de886…`）；网页锁不变；没有 PEM；迁移 Job 名里镜像摘要那一段随后端镜像变、结尾仍是 `-v7`（没有新迁移）；计划核到 `20261012_0018`。
+要看到：**只有后端的** `image.lock.yaml` 变（`source_revision` = `ee5ee623…`）；网页锁不变；没有 PEM；迁移 Job 名里镜像摘要那一段随后端镜像变、结尾仍是 `-v7`（没有新迁移）；计划核到 `20261012_0018`。
 
 ## 四、提交、发布、晋级、检查
 
@@ -86,7 +86,7 @@ $K -n app-platform-dev get pods | grep -E "investment-(backend|migrate)" | head 
 
 ## 验收
 
-- 钉 = 父仓 `b48e558e…`、后端 `f89de886…`，网页不变；只换后端镜像；`application-check` 0。
+- 钉 = 父仓 `a14b3f05…`、后端 `ee5ee623…`，网页不变；只换后端镜像；`application-check` 0。
 - **真人验收由所有者做，不在本卡**：在一个项目里请「财务分析与预测」，问「预测这个公司下个季度的表现」——定范围应选 Olist 样例（600009 不再是候选），并在假设里写明「问题没点名，按唯一符合的数据集」；再问「上海机场下季度营收怎么样」——应在定范围停下交你，不往下取数。页面上的说明是两种之一，都算对：「没有找到能回答这个问题的数据集」（模型按方法把数据集留空），或「这份数据不是按期汇总的经营数据……财报类请用『财报体检』」（模型硬选了 600009，被新加的验收拦下）。
 
 ## 失败回退与交回
