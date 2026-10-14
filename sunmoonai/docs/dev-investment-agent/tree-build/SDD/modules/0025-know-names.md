@@ -49,12 +49,12 @@
 | --- | --- | --- | --- | --- |
 | PostgreSQL 库 | `info`、`knowledge` | `knowgather`、`knowbase` | 停服后 `ALTER DATABASE … RENAME TO …`（不复制数据） | 各表行数改名前后相同；`alembic current` 不变 |
 | 库角色 | `info_runtime`、`info_migrator`、`knowledge_runtime`、`knowledge_migrator` | `knowgather_*`、`knowbase_*` | `ALTER ROLE … RENAME TO …`，随后按新名重设口令（口令随秘密重做） | 新角色能连、权限与改名前相同 |
-| 对象存储桶 | `info-originals`（采集原文），knowledge 侧的桶 | `knowgather-originals`，knowbase 侧对应新桶 | 建新桶 → 整桶复制 → 逐对象核对数量与校验和 → 库里记着桶名的行一并 `UPDATE` → 新服务跑通后旧桶保留到下一次备份再删 | 对象数、总字节、抽样校验和一致；库里不再出现旧桶名 |
+| 对象存储 | 桶 `info-originals`（只有这一个；knowledge 没有自己的桶，用账号 `knowledge_source_reader` 读它的 `info/` 前缀）；对象键前缀 `info/` | 桶 `knowgather-originals`、前缀 `knowgather/`、账号 `knowbase_source_reader` | 建新桶 → 整桶复制并把键前缀 `info/` 换成 `knowgather/` → 逐对象核对数量与校验和 → 两个库里记着桶名、对象键的行一并 `UPDATE` → 读桶账号与策略按新桶、新前缀重建 → 旧桶保留 | 对象数、总字节、抽样校验和一致；两个库里不再出现旧桶名与旧前缀 |
 | RabbitMQ | vhost `info` / `knowledge`、用户、队列 `info.default` | `knowgather` / `knowbase` vhost、用户、`knowgather.default` | 停服前先等队列排空；新建 vhost、用户、队列；旧的删 | 旧队列切换前为空；新队列能收发 |
 | Redis | 键前缀 `info:*`、用户 `info_runtime` | `knowgather:*`、`knowgather_runtime` | 新建用户与 ACL；旧键是缓存与锁，**不搬**，切换后让它过期或清掉（实施时逐个确认没有只存在 Redis 里的业务数据） | 新用户只能碰新前缀 |
 | 秘密 | 私有目录 `/etc/sunmoon/applications/sunmoon-kind/info`、`…/knowledge` 与各 `*.sops.yaml` | `…/knowgather`、`…/knowbase` | 按新名重新生成（照现有 bootstrap / provision 任务的做法，revision 加一），进 SOPS；旧目录保留到切换验收后再删 | 新密文能解、旧明文不进 Git |
 | 备份目录 | `/mnt/sunmoon-data/backups/applications/sunmoon-kind/info` 等 | `…/knowgather`、`…/knowbase` | 新目录起用；切换前那份备份留在旧目录不动 | — |
-| 已存的引用 | knowbase 库里入库记录的 `source_app='info-app'`；投资里若存了跨应用地址 | `knowgather-app` | 一条数据迁移（带回退迁移） | 库里不再出现旧值 |
+| 已存的引用 | `source_app` 有两种旧值：`info-app`（采集服务写）、`info`（数据集登记器默认值、knowledge 的登记记录）；投资里若存了跨应用地址 | `knowgather-app`、`knowgather`（各自对应，不合并） | 数据迁移（带回退迁移），两个库里存它的表都覆盖 | 库里不再出现旧值 |
 
 ### 4.2 步骤
 
