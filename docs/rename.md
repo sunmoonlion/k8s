@@ -11,7 +11,23 @@
 3. **不删旧东西，只挪开。** 旧目录、旧桶、旧秘密目录、旧镜像、旧 Casdoor 应用一律保留；**删除不在本手册里**，R6 验收、下一次例行备份之后另行决定。
 4. **秘密不进回执、不进日志、不进 Git。** 口令、令牌、私钥只在本机生成、只进 SOPS。
 5. **出错先停，不重试成功了再报。** 失败的输出原样（去掉秘密）贴进回执。
-6. 回执统一放 `k8s/docs/rename-receipts/R<段号>-<执行人>.<时间>.md`，最后一行 `exit=<码>`；本地提交，**不 push**；两台机器之间的往来由 Qwen 在本地跑同步脚本（`WS=qwen bash ~/switch-test/human-local.sh` 拉远程、`human-remote.sh` 推本地），每次跑完把脚本最后一句写进回执。往来路线：Qwen 在本地 qwen 工位提交回执 → 跑 `human-remote.sh` 推到远程 → Opus 审、在本文写「通过」并提交 → Qwen 跑 `human-local.sh` 拉回，看到「通过」才开始下一段。两边只改各自的文件（Qwen 只写 `rename-receipts/`，Opus 只写本文与代码），不会互相冲突。
+6. 回执统一放 `k8s/docs/rename-receipts/R<段号>-<执行人>.<时间>.md`，最后一行 `exit=<码>`。
+7. **改名窗口（R1 开始到 R4 通过）里不跑同步脚本**（`human-local.sh`、`human-remote.sh`、`sync-five-repos.sh`）：它们写死了仓名与子仓路径，两台机器目录对不上时会中途退出、留下半同步的状态。窗口里两台机器的往来只用下面「窗口内往来」写明的 git 命令。R0 之前与 R4 通过之后照常用同步脚本。
+8. 所有者把改名期间的推送交给 Opus 与 Qwen：Opus 在远程机、Qwen 在本地机，**只推 `qwen` 分支、只推本文写明的仓**，不推别的分支、不强推。
+
+### 回执往来（R0 到 R6 都用这几条，只动 k8s 的 `qwen` 分支）
+
+两边只改各自的文件——Qwen 只写 `docs/rename-receipts/`，Opus 只写本文、代码与配置——所以 `--rebase` 不会冲突；万一冲突，停下报告，不手工解决。
+
+```bash
+# Qwen（本地机）交回执
+cd ~/worktrees/qwen/k8s && git add docs/rename-receipts && git commit -m "rename: R<段号> 回执（Qwen）" \
+  && git pull --rebase origin qwen && git push origin qwen
+# Qwen 等「通过」：拉下来看本文对应段的「状态」
+cd ~/worktrees/qwen/k8s && git pull --rebase origin qwen && sed -n '/^## R<段号>/,/^---/p' docs/rename.md
+# Opus（远程机）写「通过」后
+cd ~/worktrees/qwen/k8s && git commit -am "rename: R<段号> 通过" && git pull --rebase origin qwen && git push origin qwen
+```
 
 ## 谁做什么
 
@@ -45,16 +61,20 @@
 
 1. Cursor 发完卡 47、48，两份回执已由 Opus 审过（卡 48 要先等 Qwen 的 0024 Windows 真机回执）。之后 Cursor 不再接卡，直到 R6 写「改名完成」。
 2. 其他工位（fable、kimi、luna、astra）冻结（见上表）。
-3. 两台机器上，五个工位 × `info-app`、`knowledge-app`（含 6 个子仓）都**干净且已推**、各工位指向同一提交。远程机由 Opus 核，本地机由 Qwen 核，命令：
+3. 两台机器上，五个工位 × `info-app`、`knowledge-app`（含 6 个子仓）都**干净且已推到 origin**；qwen 工位的 `k8s`、`investment-app`（含两个子仓）、`runtime`、`tpl-app` 也干净且已推。R3 会把前两组的旧检出整个挪开、从 origin 重新 clone，没推的提交会丢在备份目录里。远程机由 Opus 核，本地机由 Qwen 核：
 
 ```bash
 for ws in cursor fable kimi luna qwen; do for r in info-app knowledge-app; do
-  d=~/worktrees/$ws/$r; printf '%-40s %s %s\n' "$d" "$(git -C $d rev-parse --short HEAD)" "$(git -C $d status --porcelain --ignore-submodules=none | wc -l)"
-  git -C $d submodule foreach --quiet 'printf "  %-36s %s %s\n" "$sm_path" "$(git rev-parse --short HEAD)" "$(git status --porcelain | wc -l)"'
+  d=~/worktrees/$ws/$r; git -C $d fetch -q origin
+  printf '%-40s branch=%s ahead=%s dirty=%s\n' "$d" "$(git -C $d branch --show-current)" \
+    "$(git -C $d rev-list --count origin/$ws..HEAD)" "$(git -C $d status --porcelain --ignore-submodules=none | wc -l)"
+  git -C $d submodule foreach --quiet 'git fetch -q origin; printf "  %-34s branch=%s on_remote=%s dirty=%s\n" "$sm_path" "$(git branch --show-current)" "$(git branch -r --contains HEAD | wc -l)" "$(git status --porcelain | wc -l)"'
 done; done
+for r in k8s investment-app runtime tpl-app; do d=~/worktrees/qwen/$r; git -C $d fetch -q origin
+  printf '%-40s ahead=%s dirty=%s\n' "$d" "$(git -C $d rev-list --count origin/qwen..HEAD)" "$(git -C $d status --porcelain --ignore-submodules=none | wc -l)"; done
 ```
 
-   要看到：每行最后一列是 0；同一仓各工位的提交号相同。
+   要看到：每行 `ahead=0`、`dirty=0`；子仓 `on_remote` ≥ 1（当前提交在 origin 的某个分支上）；工位行的 `branch` 等于工位名。子仓的 `branch` 可以为空（游离在父仓记的提交上，2026-10-14 远程机 fable 工位就有 4 个），只要 `on_remote` ≥ 1 就行，R3 会把它拨回同名分支。任何一项不符就停，先把那个工位推干净（窗口外，照常用同步脚本）。本地机还要核：`~/master`、`~/worktrees`、`mb` 与本文写的布局一致（`ls ~/master ~/worktrees`、`type mb`）。
 
 **停点**：Opus 收到 Qwen 的 `R0-qwen`（本地机核对）并自己核完远程机，在本节「状态」写「开工」。
 **状态**：
@@ -63,7 +83,7 @@ done; done
 
 ## R1 改内容 — Opus（远程机 qwen 工位）
 
-在 qwen 分支上改，**先推到旧名字的仓**（R2 改名后 GitHub / gitee 会接着认这些提交）：
+在 qwen 分支上改，**先推到旧名字的仓**（R2 改名后 GitHub / gitee 会接着认这些提交）。子仓 `.gitmodules` 里的地址直接写新名字；R1 到 R2 之间没有人拉子仓，所以新地址暂时不存在不碍事。
 
 | 仓 | 改什么 |
 | --- | --- |
@@ -75,9 +95,23 @@ done; done
 
 自测：各仓单测、构建全过；k8s 渲染比对——改名前后渲染出的对象，除了名字逐项相同（比对脚本与结果进回执）。
 
-写好 R5 的逐条命令（填进本文 R5 各小节），**R5 状态改成「可执行」之前，Qwen 不得开始 R5**。
+写好 R5、R6 的逐条命令（填进本文对应小节），**R5 状态改成「可执行」之前，Qwen 不得开始 R5**。
 
-**停点**：Opus 写回执 `R1-opus` 并在本节写「通过」；Qwen 跑同步脚本把 R1 的提交推到旧名字的仓（各仓提交号进 `R1-qwen`）。
+推送（Opus 在远程机，**先子仓后父仓**，只推 `qwen`）：
+
+```bash
+# R1 已在父仓里 git mv 了子仓目录，父仓目录本身要到 R3 才换名，所以此刻的路径是「旧父仓/新子仓」
+for d in info-app/knowgather-backend info-app/knowgather-web-frontend info-app/knowgather-admin-frontend \
+         knowledge-app/knowbase-backend knowledge-app/knowbase-web-frontend knowledge-app/knowbase-admin-frontend; do
+  git -C ~/worktrees/qwen/$d push origin HEAD:refs/heads/qwen   # remote 仍是旧仓名，R2 后由 GitHub 认到新仓
+done
+git -C ~/worktrees/qwen/info-app push origin qwen
+git -C ~/worktrees/qwen/knowledge-app push origin qwen
+for d in investment-app/investment-backend investment-app/investment-web-frontend; do git -C ~/worktrees/qwen/$d push origin HEAD:refs/heads/qwen; done
+for r in investment-app runtime tpl-app k8s; do git -C ~/worktrees/qwen/$r push origin qwen; done
+```
+
+**停点**：Opus 写回执 `R1-opus`（含各仓推上去的提交号）并在本节写「通过」。
 **状态**：
 
 ---
@@ -89,9 +123,17 @@ done; done
 | 平台 | 旧 → 新 |
 | --- | --- |
 | GitHub | `info-app` → `knowgather-app`；`knowledge-app` → `knowbase-app`；6 个子仓按「名字对照」表 |
-| gitee | `info-app` → `knowgather-app`；`knowledge-app` → `knowbase-app`（子仓在 gitee 上没有，不用管） |
+| gitee | `info-app` → `knowgather-app`；`knowledge-app` → `knowbase-app`（子仓在 gitee 上没有，不用管）。**gitee 的「仓库名称」和「仓库路径」是两个字段，两个都要改**，地址看的是路径；gitee 不一定转发旧地址，所以改完旧地址打不开属正常 |
 
-改完各开一次新地址的网页确认能打开、默认分支与提交号没变。
+改完核对：
+
+```bash
+for n in knowgather-app knowbase-app knowgather-backend knowgather-web-frontend knowgather-admin-frontend knowbase-backend knowbase-web-frontend knowbase-admin-frontend; do
+  printf '%-28s github qwen=%s master=%s\n' "$n" "$(git ls-remote git@github.com:sunmoonlion/$n.git refs/heads/qwen | cut -c1-8)" "$(git ls-remote git@github.com:sunmoonlion/$n.git refs/heads/master | cut -c1-8)"; done
+for n in knowgather-app knowbase-app; do printf '%-28s gitee  qwen=%s\n' "$n" "$(git ls-remote https://gitee.com/sunmoonlion/$n.git refs/heads/qwen | cut -c1-8)"; done
+```
+
+要看到：每个新地址都能列出分支，`qwen` 等于 `R1-opus` 记下的提交号，`master` 与改名前相同。
 
 **停点**：Qwen 写 `R2-qwen`（改名前后的地址、提交号对照），Opus 审过写「通过」。
 **状态**：
@@ -102,45 +144,63 @@ done; done
 
 两台机器做同样的事，**远程机先做**（Opus），`R3-opus` 审过、本节写进远程机的实际情况后，Qwen 再做本地机。**旧目录挪到 `~/rename-backup/`，不删。** 以 `info-app` → `knowgather-app` 为例，`knowledge-app` → `knowbase-app` 同样做一遍：
 
+为什么不用 `mb worktree remove`：它底层是 `git worktree remove`，而 git 不允许摘下带子仓的工位（`working trees containing submodules cannot be moved or removed`，2026-10-14 实测）。所以旧检出整目录挪开；R0 已证明它们都干净且已推，挪开的只是备份。以下流程 2026-10-14 已在草稿仓里演练通过（旧内容分支与新内容分支各一个，结果见 `R1-opus`）。
+
 ```bash
 set -e
 OLD=info-app NEW=knowgather-app        # 第二遍：OLD=knowledge-app NEW=knowbase-app
-mkdir -p ~/rename-backup
-# 1. 先摘下五个工位的 worktree（要求干净，否则 mb 会拒绝——那就停）
-for ws in cursor fable kimi luna qwen; do mb worktree remove "$ws" "$OLD"; done
+WS="cursor fable kimi luna qwen"   # 某台机器上没有哪个工位，就从这里去掉，并写进回执
+SSH='url.git@github.com:.insteadOf=https://github.com/'   # .gitmodules 里是 https 地址，子仓实际走 ssh；私有仓用 https 会卡在登录
+B=~/rename-backup/$(date +%Y%m%d-%H%M)-$OLD; mkdir -p "$B"
+newname() { basename "$1" | sed -e 's/^info-/knowgather-/' -e 's/^knowledge-/knowbase-/'; }
+# 子仓：remote 指向新仓名；拨回给定分支（与工位同名）并设上游——现在的子仓就是这样，同步脚本按此推 HEAD:<工位>
+fix_subs() { local top=$1 branch=$2 p
+  for p in $(git -C "$top" submodule foreach --quiet 'echo $sm_path'); do
+    git -C "$top/$p" remote set-url origin "git@github.com:sunmoonlion/$(newname "$p").git"
+    git -C "$top/$p" fetch -q origin
+    git -C "$top/$p" checkout -q -B "$branch"
+    git -C "$top/$p" branch -q --set-upstream-to="origin/$branch"
+  done; }
+
+# 1. 挪开五个工位的旧检出与旧主目录，注销旧仓
+for ws in $WS; do mv ~/worktrees/$ws/$OLD "$B/$ws"; done
 mb repo remove "$OLD"
-# 2. 旧主目录挪开（连同里面的 worktree 元数据与子仓 git 目录）
-mv ~/master/$OLD ~/rename-backup/$OLD-$(date +%Y%m%d-%H%M)
-# 3. 用新名字重新 clone（子仓按新 .gitmodules 一起拉）
-git clone --recurse-submodules git@github.com:sunmoonlion/$NEW.git ~/master/$NEW
-# 4. remote 照旧布局：父仓 origin 双推（GitHub + gitee）、另有 gitee；子仓只有 GitHub
+mv ~/master/$OLD "$B/master"
+# 2. 用新名字重新 clone 主目录（检出默认分支 master）
+git -c "$SSH" clone --recurse-submodules git@github.com:sunmoonlion/$NEW.git ~/master/$NEW
+test "$(git -C ~/master/$NEW branch --show-current)" = master
+# 3. 父仓 remote 照旧布局：origin 拉 GitHub、推 GitHub + gitee 两处，另有 gitee
 git -C ~/master/$NEW remote add gitee https://gitee.com/sunmoonlion/$NEW.git
 git -C ~/master/$NEW remote set-url --add --push origin git@github.com:sunmoonlion/$NEW.git
 git -C ~/master/$NEW remote set-url --add --push origin https://gitee.com/sunmoonlion/$NEW.git
-git -C ~/master/$NEW submodule foreach 'git remote set-url origin "git@github.com:sunmoonlion/$(basename "$sm_path").git"'
-# 5. 先建跟踪远端的本地分支——mb 只认本地分支，没有就「从 master 新建」，会丢掉工位上的提交
-git -C ~/master/$NEW fetch origin
-for ws in cursor fable kimi luna qwen; do git -C ~/master/$NEW branch --track "$ws" "origin/$ws"; done
-# 6. 重新注册并挂出五个工位；mb 不管子仓，挂出后逐个初始化
+fix_subs ~/master/$NEW master
+# 4. 先建跟踪 origin 的本地工位分支——mb 只认本地分支，没有就「从 master 新建」，会丢掉工位上的提交
+for ws in $WS; do git -C ~/master/$NEW branch -q --track "$ws" "origin/$ws"; done
+# 5. 注册并挂出五个工位；mb 不管子仓，挂出后逐个初始化、拨回同名分支
 mb repo add ~/master/$NEW
-for ws in cursor fable kimi luna qwen; do
+for ws in $WS; do
   mb worktree add "$ws" "$NEW"
-  git -C ~/worktrees/$ws/$NEW submodule update --init --recursive
+  git -c "$SSH" -C ~/worktrees/$ws/$NEW submodule update --init --recursive
+  fix_subs ~/worktrees/$ws/$NEW "$ws"
 done
 ```
 
-注意：除 qwen 外，其他工位的分支此时还是改名前的内容（子仓路径仍是 `info-backend` 等、`.gitmodules` 里是旧地址，GitHub 会把旧地址转到新仓）。它们在 qwen 的改名提交并进 master 后，由各工位照常合并；冻结解除前不要在这些分支上提交。
+`mb worktree add` 每个工位应输出「挂出 …」；**出现「从 master 新建分支」就停**（说明第 4 步没建好分支）。
+
+注意：除 qwen 外，其他工位的分支此时还是改名前的内容（子仓目录仍叫 `info-backend` 等），但子仓 remote 已指向新仓。它们在 qwen 的改名提交并进 master 后再跟上（见文末「冻结解除之后」）；冻结期间不要在这些分支上提交。
 
 核对（结果进回执）：
 
 ```bash
-for ws in cursor fable kimi luna qwen; do d=~/worktrees/$ws/$NEW
-  printf '%-40s %s %s\n' "$d" "$(git -C $d branch --show-current)" "$(git -C $d rev-parse --short HEAD)"
-  git -C $d submodule status; done
-git -C ~/master/$NEW remote -v; git -C ~/master/$NEW submodule foreach --quiet 'git remote -v | head -1'
+for ws in $WS; do d=~/worktrees/$ws/$NEW
+  printf '%-40s branch=%s head=%s origin=%s dirty=%s\n' "$d" "$(git -C $d branch --show-current)" \
+    "$(git -C $d rev-parse --short HEAD)" "$(git -C $d rev-parse --short origin/$ws)" "$(git -C $d status --porcelain --ignore-submodules=none | wc -l)"
+  git -C $d submodule foreach --quiet 'printf "  %-34s branch=%s up=%s head=%s origin=%s url=%s\n" "$sm_path" "$(git branch --show-current)" "$(git rev-parse --abbrev-ref @{u})" "$(git rev-parse --short HEAD)" "$(git rev-parse --short @{u})" "$(git remote get-url origin)"'
+done
+git -C ~/master/$NEW remote -v
 ```
 
-要看到：每个工位在同名分支（**不能出现「从 master 新建分支」**，出现就停）、提交号与 R0 记录（qwen 工位是 R1 的新提交）一致；子仓都已检出；remote 只有名字变了，布局和旧目录 `git remote -v` 一样。
+要看到：每个工位 `branch` = 工位名、`head` = `origin`、`dirty=0`；子仓 `branch` = 工位名、`up` = `origin/<工位>`、`url` 是新仓名，`head` 与 `origin` 相同（不同说明父仓记的子仓提交不是该分支的头，照实写进回执交 Opus 判断，不要动）；主目录 remote 与备份目录里 `git -C "$B/master" remote -v` 相比只有仓名变了。
 
 **停点**：Opus 写 `R3-opus`（远程机）、Qwen 写 `R3-qwen`（本地机），Opus 审。
 **状态**：
@@ -156,7 +216,7 @@ git -C ~/master/$NEW remote -v; git -C ~/master/$NEW submodule foreach --quiet '
 
 `~/switch-test/human-*.sh` 是转发器，不用改；它转发到的 k8s 仓里那两份已在 R1 改好。
 
-然后 Qwen 跑一次 `WS=qwen bash ~/switch-test/human-local.sh`，要能正常走完（不报找不到仓）。
+两台机器都改完、Opus 核过远程机之后，改名窗口结束：Qwen 跑一次 `WS=qwen bash ~/switch-test/human-local.sh`，要能正常走完（不报找不到仓），本地 qwen 工位的 `investment-app`、`runtime`、`tpl-app`、`k8s` 也随之拉到 R1 的提交。
 
 **停点**：Opus、Qwen 各写回执（Qwen 的含同步脚本最后一句），Opus 写「通过」。
 **状态**：
@@ -181,7 +241,7 @@ git -C ~/master/$NEW remote -v; git -C ~/master/$NEW submodule foreach --quiet '
 
 ### R5.3 起新服与验证
 
-构建新镜像 → 部署新名字（新 Casdoor 应用与客户端、新服务身份）→ `application-check APP=knowgather`、`APP=knowbase`、`APP=investment` → 浏览器打开两个新域名能登录、能看到原有数据 → 投资里跨应用跳转与知识检索可用。
+构建新镜像（knowgather、knowbase 的后端与两个网页，**以及 investment 的后端与网页**——它的跨应用键与环境变量名也改了）→ 部署新名字（新 Casdoor 应用与客户端、新服务身份）→ `application-check APP=knowgather`、`APP=knowbase`、`APP=investment` → 浏览器打开两个新域名能登录、能看到原有数据 → 投资里跨应用跳转与知识检索可用。
 
 **停点**：Qwen 在浏览器上逐项核对（截图只截页面，不截令牌与口令），Opus 审回执。
 
@@ -205,3 +265,12 @@ git -C ~/master/$NEW remote -v; git -C ~/master/$NEW submodule foreach --quiet '
 PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 换名；0018 改写为 knowmart（知识市场；吸收《专家市场架构对比分析和借鉴》第二、五、七节）；`docs/竞品比较分析.md`、`docs/专家市场架构对比分析和借鉴.md` 里的应用名换新；历史回执与冻结原件不改。
 
 **状态**：
+
+---
+
+## 冻结解除之后（不属于改名，但要有人做）
+
+1. fable 照常把 `qwen` 的改名提交并进 `master`（五组仓都要：knowgather-app、knowbase-app 及子仓、investment-app、k8s、runtime、tpl-app 里 R1 改过的）。
+2. 其他工位（cursor、fable、kimi、luna）各自把 `master` 并进自己的分支，或用 `mb worktree add --from-master <工位> <仓>` 拨回 master——拨回会丢掉该工位相对 master 的提交，用前确认已并进 master。
+3. 远程机 `~/rename-backup/` 与本地机同名目录保留，删除另行决定。
+
