@@ -1,5 +1,6 @@
 # `0023-fin-forecast` 专家「财务分析与预测」做成真的
 
+> 2026-10-14：现网事故（定范围误选 600009 财报、取数超时）已修成第 2 版（investment-backend `c0f99e4`），发布卡 45 待跑；见第 5.2 节末的事故记录。
 > 状态（2026-10-13 收尾）：**已实施并上线**——数据集、专家包五步、十题与固定数据都在 fable；发布卡 44 上线（投资后端 `15769d5`、集群登记样例）；集群真跑演示题过（判定见 [`0023-fin-forecast-answer-key.md`](0023-fin-forecast-answer-key.md)）。**没做的**：其余 9 题没有真跑（所有者定不再单独跑），所以「十题过 ≥ 8」这条线没有量过；失败去向（交人、退回）只有单元测试，没有在真跑里触发过。依据：任务清单 opus-001（已撤，原文在 git 历史 `c8eecd22`）、账 96、[决策](../../decisions.md) 2026-10-13 一条。
 > 起点：investment-backend `e73ffa5`（`FIN_FORECAST` 版本 0，`status="preparing"`），knowledge-backend `548e84a`，k8s `451b3fae`。
 > 先读：[`0009-semantic`](0009-semantic.md)（口径与 SQL 怎么走）、[`0015`](0015-files-not-dossiers.md)（成稿落文件）、[`0018`](0018-advisor-market.md)（专家 = 知识库 + skill）、[审批](../architecture/approval.md)（工具级三档）。
@@ -220,13 +221,15 @@
 
 | 步 | 工具 | 做什么 | 交回物关键字段 | 当场验什么 | 不过去哪 |
 | --- | --- | --- | --- | --- | --- |
-| `scope` 定范围 | `list_datasets`、`describe_schema`、`metric_definitions`、`run_sql` | 认出数据集；读 `dataset_metadata` 全部行；把问题落到口径名、期间、粒度；数据集里没有的口径列进 `unavailable`；问题没给期间就用完整期间并写进 `assumptions` | `dataset`、`data_version`、`question`、`period`（起、止、粒度）、`complete_period`、`metrics`、`unavailable`、`notes`、`assumptions` | 格式对；必备字段齐；`dataset` 不为空（不过的说明：「没有找到能回答这个问题的数据集」）；`metrics` 至少 1 个 | **交人**：范围认错后面全白做；找不到数据集就停下问你 |
+| `scope` 定范围 | `list_datasets`、`describe_schema`、`metric_definitions`、`run_sql` | 先按口径种类筛数据集：本版只支持按期汇总的（`kind=aggregate`），财报类（`kind=row`）不支持；问题点了名就用点名的，没点名（「这个公司」「它」）而只剩一份符合就用它并写进 `assumptions`，不止一份符合就问你是哪一份；都不符合就把 `dataset` 留空；读 `dataset_metadata` 全部行；把问题落到口径（名字与种类照抄）、期间、粒度（不细于数据存的粒度；没给期间用完整期间，没有声明就最多最近 36 期）；数据集里没有的口径列进 `unavailable` | `dataset`、`data_version`、`question`、`period`、`complete_period`、`metrics`（名字、种类）、`unavailable`、`notes`、`assumptions` | 格式对；必备字段齐；`dataset` 不为空；`metrics` 至少 1 个；**`metrics` 的种类全是 `aggregate`**（不过的说明：本版只支持按期汇总的经营数据，财报类请用「财报体检」） | **交人** |
 | `pull` 取数 | `describe_schema`、`run_sql` | 按口径取期间序列；每列写来源（表、字段、过滤）；被认作不完整的期列进 `excluded_periods`；交回实际执行的 SQL | `columns`（名、中文、来源）、`rows`、`excluded_periods`、`sql`、`data_version` | 格式对；`rows` 至少 1 行；`sql` 不为空 | **重做 1 次**，仍不过交人：多半是 SQL 或格式写错 |
 | `analyze` 分析 | `run_sql` | 趋势（环比、同比）；结构（区域、品类的占比与变化，按问题需要）；季节性只在有两个完整周期时才说；每条发现带支撑它的 SQL 与数 | `findings`（文字、数、SQL） | 格式对；`findings` 至少 2 条 | **退回取数 1 次**（`max_reworks=0`，不先重做本步），回来仍不过交人：分析不过多半是取的数不对 |
 | `forecast` 预测 | `run_sql` | 方法固定（5.3）：认完整期 → 回测 → 外推 → 季度合计；全部在 SQL 里算 | `method`、`window`、`excluded_periods`、`assumptions`、`rows`（`period`、`forecast_point`、`forecast_low`、`forecast_high`）、`quarters`、`backtest`、`sql` | 格式对；必备字段齐；`assumptions` 至少 2 条；`rows` 至少 1 行 | **不返工，交人**（`max_reworks=0`）：方法固定，返工提示会催模型改方法、凑结果，等于把不平的数做平（与财报体检的勾稽、对照官方同理） |
 | `writeup` 成稿 | 无 | 按 0015 写 `底稿/财务分析与预测-成稿.md`：回答、数据（带角标）、专家验过什么、局限、出处；`unavailable` 与截断必须进局限；不贴 JSON；最后照例写 `交回.md` | `answer`、`limitations`、`citations` | 格式对；有正文；`limitations`、`citations` 各至少 1 条；无买卖建议（`no_positioning_advice`）；成稿文件存在（`deliverable_check`） | **重做 1 次，仍不过交人**：补局限、出处这类内容，没有凑数的风险（与财报体检的成稿相同） |
 
 `reserve` 与输入长度照 `FIN_REVIEW` 的量级定，跑分后回填。`field_words.py` 补齐新字段的中文词（现有测试会查）。
+
+**2026-10-14 现网事故与第 2 版**：所有者问「预测这个公司下个季度的表现」，知识服务里有 Olist 与 600009 两份数据，第 1 版的定范围只写了「按标题和表挑一个能回答的」，模型自己挑了 600009（财报，季报中报年报是累计数）；取数一步要求「按月」，模型把 1994 到 2026 年按月铺开，两次撞上 15 分钟的单步超时，交回不完整，验收不过。第 1 版的方法没有拦住设计里写明「以后再接」的 A 股财报。第 2 版（`version="2"`）：定范围先按口径种类筛、指代不清就问、确定性验收要求口径种类全是 `aggregate`；取数不许拆得比数据存的粒度更细。
 
 **失败去向的执行顺序**（`advisor.py`）：先看本步还有没有返工额度（`max_reworks`），有就重做本步；用完了，`on_reject="back"` 的退回 `back_to`（次数受 `max_backs` 限）；再不行交人。所以「不过直接交人」要写成 `on_reject="human"` 加 `max_reworks=0`。
 
