@@ -36,7 +36,22 @@ git -C ~/worktrees/qwen/investment-app/investment-web-frontend rev-parse HEAD
 make -C infrastructure platform-status; echo "exit=$?"
 ```
 
-要看到：分支是 `qwen`，工作区干净；现在钉的是父仓 `f5aaeba3…`、后端 `d177b5e9…`、网页 `e6963ddc…`（卡 45 上线的那一版）；config 是 `v7` / `'20261012_0018'`；三个 `rev-parse` 分别是 `cf7dfaaa…`、`e937bbaa…`、`6321e7c8…`，对不上就停，请所有者先同步 qwen；`platform-status` 0。
+要看到：分支是 `qwen`，工作区干净；现在钉的是父仓 `f5aaeba3…`、后端 `d177b5e9…`、网页 `e6963ddc…`（卡 45 上线的那一版）；config 是 `v7` / `'20261012_0018'`；三个 `rev-parse` 是 `cf7dfaaa…`、`e937bbaa…`、`6321e7c8…`，**或者**是卡 48 那一版 `dad00410…`、`260c3d90…`、`9337a290…`（qwen 已往前走，2026-10-14 15:51 第一次执行就停在这里）——是后者就做下面「一之二」；两者都不是就停；`platform-status` 0。
+
+## 一之二、把投资三仓临时检出到本卡的三钉（只在 HEAD 是卡 48 那一版时做）
+
+构建要求源码目录的 HEAD **恰好**是钉的提交（`infrastructure/applications/build.yaml`「Refuse unreviewed source revisions」），而卡 48 那一版的网页要等代理 0.4.1 才能用，不能直接发。所以本卡期间把三仓临时检出到本卡的提交，第五步再切回 `qwen`。**这期间别人不要动 `~/worktrees/qwen/investment-app`。**
+
+```bash
+cd ~/worktrees/qwen/investment-app
+git status --porcelain --ignore-submodules=none | wc -l          # 必须 0
+for s in investment-backend investment-web-frontend investment-admin-frontend; do echo "$s $(git -C $s branch --show-current) $(git -C $s status --porcelain --untracked-files=all | wc -l)"; done   # 都应是 qwen 0
+git merge-base --is-ancestor cf7dfaaa5a4d4967dbef36c4b7536e98ee18f32e HEAD && echo ancestor-ok
+git checkout --detach cf7dfaaa5a4d4967dbef36c4b7536e98ee18f32e && git submodule update --checkout
+git rev-parse HEAD; git -C investment-backend rev-parse HEAD; git -C investment-web-frontend rev-parse HEAD
+```
+
+要看到：`ancestor-ok`；三个 `rev-parse` = `cf7dfaaa…`、`e937bbaa…`、`6321e7c8…`；管理端子仓仍是 `b0f4c5de…`（gitlink 没变）。远程 2026-10-14 已在自己那份 qwen 工位上实跑过这一步和第五步，可逆、不留改动。
 
 ## 二、改钉（只动父仓、后端、网页五行）
 
@@ -91,6 +106,18 @@ $K -n app-platform-dev get pods | grep -E "investment-(backend|migrate|web)" | h
 
 要看到：候选 `revision` = 提交后 HEAD；三次退出 0；后端各角色 Pod 与网页 Pod 换新、迁移 Job 完成。
 
+## 五、把投资三仓切回 qwen（做过「一之二」才做；成功、失败都要做）
+
+```bash
+cd ~/worktrees/qwen/investment-app
+git checkout qwen && for s in investment-backend investment-web-frontend investment-admin-frontend; do git -C $s checkout qwen; done
+git branch --show-current; git rev-parse --short HEAD; git submodule status
+for s in investment-backend investment-web-frontend investment-admin-frontend; do echo "$s $(git -C $s branch --show-current)"; done
+git status --porcelain --ignore-submodules=none | wc -l
+```
+
+要看到：父仓在 `qwen`、`dad0041`；`submodule status` 三行行首没有 `+`、`-`（后端 `260c3d9…`、网页 `9337a29…`、管理端 `b0f4c5d…`）；三个子仓都在 `qwen`；最后一行 0。
+
 ## 验收
 
 - 钉 = 父仓 `cf7dfaaa…`、后端 `e937bbaa…`、网页 `6321e7c8…`；管理端不变；`application-check` 0。
@@ -98,4 +125,4 @@ $K -n app-platform-dev get pods | grep -E "investment-(backend|migrate|web)" | h
 
 ## 失败回退与交回
 
-任一步失败停在原步，保留错误输出与候选。需恢复时把 `sources.yaml` 五行改回 `f5aaeba3…` / `d177b5e9…` / `e6963ddc…`，重走构建到晋级。报告写 `k8s/sunmoonai/scripts/results/fin-forecast-pack-version-cursor.<时间>.md`，最后一行 `exit=<码>`；本地提交，不 push、不移动本待办。
+任一步失败停在原步，保留错误输出与候选，**然后照样做第五步把投资三仓切回 qwen**。需恢复时把 `sources.yaml` 五行改回 `f5aaeba3…` / `d177b5e9…` / `e6963ddc…`，重走构建到晋级。报告写 `k8s/sunmoonai/scripts/results/fin-forecast-pack-version-cursor.<时间>.md`，最后一行 `exit=<码>`；本地提交，不 push、不移动本待办。
