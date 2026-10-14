@@ -85,6 +85,7 @@ R1 的数据迁移两种 `source_app` 旧值都换，两个库里凡存它的表
 | 带应用名前缀的内部标识（所有者定：改） | 采集库的表 `info_collector`、`info_document`、`info_document_version`、`info_source`；事件类型 `info.security.ingest.v1`、`info.index.v1`；这里的 `info` 是应用名，不是领域词 | **改**为 `knowgather_*`、`knowgather.*`：表用迁移 `ALTER TABLE … RENAME`（连同索引、约束、序列名，带回退）；事件类型随停服切换一起换，切换前队列已排空。代价：多一组迁移和一轮核对 |
 | knowledge 作领域词（所有者定：留） | 知识库的表 `knowledge_document`、`knowledge_ingestion_job`、`knowledge_dataset` 等；类名 `KnowledgeDocument`；API 路径 `/api/knowledge/…`、`/api/internal/v1/knowledge/datasets`；令牌作用域 `knowledge:ingest`、`knowledge:retrieve`、`knowledge:admin`；事件类型 `knowledge.ingest.v1`；Python 模块名 | **留**：这里的 knowledge 说的是「存的是知识文档」，改名后 knowbase 存的仍是知识。改它要改表、改所有调用方的接口与令牌作用域，代价大、收益只是字面统一 |
 | 设计文档的文件名 | `0006-knowledge.md`、`0008-info*.md`、`PRD/apps/info.md` 等 | 文件名当编号用，**不改**（改了几十处链接全断）；内容在 R7 换新名 |
+| 冻结的旧体系与历史记录 | `k8s/sunmoonai/` 下的旧体系目录 `app-platform`、`cicd-platform`、`data-platform`、`deploy-sunmoonai-all`、`infrastructure`、`ingress-platform`、`kind-infrastructure`、`messaging-platform`、`operations`、`ops-platform`、`registry-platform` 与 `CHECKPOINT-old-system-*.md`（2026-10-06 起冻结，只作查阅；新体系只引用 `sunmoonai/relay-platform`、`sunmoonai/sandbox-platform`）；各处的 `results/`、`thread/`、`history/`、`switch-test/done/`、`hold/`、评测报告 `eval/reports/`、录下来的样例 `preview/fixtures/` | **不改**。去掉这些后要改的约 720 个文件 |
 | 无关的 info | `logger.info`、`component_info`、`st_mode`、**`cninfo` / `CNINFO`（巨潮资讯网，数据来源）** | **不碰** |
 
 R1 的替换脚本按这张表逐类写规则，每一类替换后单独列出改了哪些文件、多少处，进 `R1-opus` 回执；拿不准的不改、列出来。
