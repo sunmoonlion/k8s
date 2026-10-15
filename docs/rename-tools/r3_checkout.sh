@@ -30,7 +30,9 @@ for ws in $WS; do
   [ ! -e "$HOME/worktrees/$ws/$NEW" ] || { echo "停：~/worktrees/$ws/$NEW 已存在"; exit 1; }
   [ -z "$(git -C "$HOME/worktrees/$ws/$OLD" status --porcelain --ignore-submodules=none)" ] || { echo "停：~/worktrees/$ws/$OLD 有未提交改动"; exit 1; }
 done
-[ "$(grep -cxF "\$HOME/master/$OLD" "$REPOS_CONF")" = 1 ] || { echo "停：$REPOS_CONF 里没有恰好一行 \$HOME/master/$OLD"; exit 1; }
+# repos.conf 要么恰有旧名一行（本机还没改），要么已拉到改好的版本（恰有新名一行、没有旧名）
+n_old=$(grep -cxF "\$HOME/master/$OLD" "$REPOS_CONF" || true); n_new=$(grep -cxF "\$HOME/master/$NEW" "$REPOS_CONF" || true)
+case "$n_old/$n_new" in 1/0|0/1) ;; *) echo "停：$REPOS_CONF 里旧名 $n_old 行、新名 $n_new 行（应为 1/0 或 0/1）"; exit 1;; esac
 [ -f "$MB" ] || { echo "停：没有 $MB"; exit 1; }
 
 B=$HOME/rename-backup/$(date +%Y%m%d-%H%M)-$OLD
@@ -78,7 +80,7 @@ fix_subs "$HOME/master/$NEW" master
 for ws in $WS; do git -C "$HOME/master/$NEW" branch -q --track "$ws" "origin/$ws"; done
 
 # 5. repos.conf：这一行换成新名，保持 $HOME 写法与位置（本地机与远程机路径不同，不能写绝对路径）
-sed -i "s#^\\\$HOME/master/$OLD\$#\$HOME/master/$NEW#" "$REPOS_CONF"
+[ "$n_old" = 0 ] || sed -i "s#^\\\$HOME/master/$OLD\$#\$HOME/master/$NEW#" "$REPOS_CONF"
 [ "$(grep -cxF "\$HOME/master/$NEW" "$REPOS_CONF")" = 1 ] || { echo "停：repos.conf 没改对"; exit 1; }
 
 # 6. 挪出五个工位；mb 不管子仓，挂出后逐个初始化、拨回同名分支
