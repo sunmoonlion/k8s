@@ -179,7 +179,7 @@ for r in investment-app runtime tpl-app k8s; do git -C ~/worktrees/qwen/$r push 
 | 平台 | 旧 → 新 |
 | --- | --- |
 | GitHub | `info-app` → `knowfeed-app`；`knowledge-app` → `knowbase-app`；6 个子仓按「名字对照」表 |
-| gitee | `info-app` → `knowfeed-app`；`knowledge-app` → `knowbase-app`（子仓在 gitee 上没有，不用管）。**gitee 的「仓库名称」和「仓库路径」是两个字段，两个都要改**，地址看的是路径；gitee 不一定转发旧地址，所以改完旧地址打不开属正常 |
+| gitee | `info-app` → `knowfeed-app`；`knowledge-app` → `knowbase-app`（gitee 上虽有 6 个同名旧子仓，但只有早期的 `master`/`opus`，提交不在现在的历史里，子仓也从不往 gitee 推——是旧拷贝，R2 不改；留还是删由所有者在 R6 定）。**gitee 的「仓库名称」和「仓库路径」是两个字段，两个都要改**，地址看的是路径；gitee 不一定转发旧地址，所以改完旧地址打不开属正常 |
 
 改完核对（地址的协议跟着本机，从旧检出里取前缀）：
 
