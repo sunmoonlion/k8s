@@ -567,6 +567,7 @@ $K -n sandbox-platform-dev get deploy -l app=sandbox -o yaml | grep -E 'name: (K
 | 类（工具里的名字） | 删什么 | 怎么删 |
 | --- | --- | --- |
 | `k8s` | 旧阶段的 Flux Kustomization（`info-*` 10 个、`knowledge-*` 9 个，R5.2 后显示失败）与它们留下的对象 | 先删 Kustomization（各阶段 `deletionPolicy: Orphan`，对象留下），再按标签 `kustomize.toolkit.fluxcd.io/name` 删对象（先 Deployment/Job，后其余），等旧 Pod 退净。另点名删共享组件阶段里改了名的 3 个：traefik 的 Service `knowledge-tls`、Ingress `knowledge-service-access`，investment-runtime 的 Secret `investment-knowledge-service`（现行声明里已没有这个名字、标签是预期阶段才删）。没带旧标签、名字以 `info-`/`knowledge-` 开头的其余对象只列不删 |
+| `job-history` | （所有者 2026-10-15 要求顺带清）`app-platform-dev`、`data-platform-dev`、`messaging-platform-dev` 里**已完成、且现行声明里已没有**的历史 Job（investment、tpl 等每次发布留下的旧摘要 Job，连同它们的已完成 Pod） | 现行 `gitops/components/**/workload.yaml` 里声明的 Job 一个不删（Flux 会重建并重跑，阶段健康检查与 `application-check` 也看它们）；没完成的只列不删 |
 | `postgresql` | 库 `info`、`knowledge`；角色 `info_runtime`、`info_migrator`、`knowledge_runtime`、`knowledge_migrator` | `DROP DATABASE … WITH (FORCE)`、`DROP ROLE` |
 | `redis` | 用户 `info_runtime`、`knowledge_runtime` 与键 `info:*`、`knowledge:*` | 扫描后 `UNLINK`、`ACL DELUSER`、`ACL SAVE` |
 | `rabbitmq` | vhost `info`、`knowledge`（连同队列 `*.default`）与用户 `info_runtime`、`knowledge_runtime` | `rabbitmqctl delete_vhost / delete_user` |
@@ -597,12 +598,12 @@ grep -E "^=====|\?\?" docs/rename-receipts/R6.1-list.$T.txt
 cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
 R6='sudo -n nsenter --target 1 --mount --wd=/home/zymun/worktrees/qwen/k8s -- infrastructure/.venv/bin/python docs/rename-tools/r6_cleanup.py'
 T=$(date +%Y%m%d-%H%M)
-for c in k8s postgresql redis rabbitmq object-storage ragflow casdoor private harbor harbor-gc; do
+for c in k8s job-history postgresql redis rabbitmq object-storage ragflow casdoor private harbor harbor-gc; do
   $R6 delete $c --confirm $c 2>&1 | tee -a docs/rename-receipts/R6.2-delete.$T.txt; rc=${PIPESTATUS[0]}; echo "== $c exit=$rc"; [ "$rc" = 0 ] || break
 done
 ```
 
-要看到：十个 `exit=0`；每类「删后」里清单内的项都没了（`??` 项原样还在）。任何一类不是 0 就停，后面的不做。
+要看到：十一个 `exit=0`；每类「删后」里清单内的项都没了（`??` 项原样还在）。任何一类不是 0 就停，后面的不做。
 
 **Windows hosts**（先在副本上演练，再真改；真改会弹一次 UAC，请所有者点「是」）：
 

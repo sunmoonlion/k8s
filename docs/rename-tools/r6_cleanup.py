@@ -89,7 +89,8 @@ HARBOR_PROJECT = "platform"
 HARBOR_REPOS = [f"{a}-{c}" for a in OLD_APPS for c in ("backend", "web-frontend", "admin-frontend")]
 OLD_NAME = re.compile(r"^(info|knowledge)([-_.]|$)")
 
-CATEGORIES = ["k8s", "postgresql", "redis", "rabbitmq", "object-storage", "ragflow", "casdoor", "private", "harbor", "harbor-gc"]
+JOB_NAMESPACES = (APP_NS, DATA_NS, MSG_NS)
+CATEGORIES = ["k8s", "job-history", "postgresql", "redis", "rabbitmq", "object-storage", "ragflow", "casdoor", "private", "harbor", "harbor-gc"]
 
 
 class Stop(Exception):
@@ -227,6 +228,46 @@ def k8s_delete(found):
             return
         time.sleep(5)
     raise Stop("旧应用的 Pod 3 分钟内没有全部退出")
+
+
+# ---------------------------------------------------------------- 历史 Job（所有者 2026-10-15 要求顺带清）
+def declared_jobs():
+    """现行 gitops 声明里的全部 Job（命名空间, 名字）——这些不能删：Flux 会重建并重跑，阶段健康检查与 application-check 也看它们。"""
+    names = subprocess.run(["git", "-C", str(REPO), "ls-files", "gitops/components"], capture_output=True, text=True, check=True).stdout.split()
+    out = set()
+    for n in names:
+        if n.endswith("/workload.yaml"):
+            for d in yaml.safe_load_all((REPO / n).read_text(encoding="utf-8")):
+                if isinstance(d, dict) and d.get("kind") == "Job":
+                    out.add((d["metadata"].get("namespace", ""), d["metadata"]["name"]))
+    return out
+
+
+def jobs_list():
+    keep = declared_jobs()
+    require(len(keep) > 20, "现行声明里找到的 Job 太少，像是读错了仓，不往下做")
+    history, kept, unfinished = [], 0, []
+    for ns in JOB_NAMESPACES:
+        for j in json.loads(kube("-n", ns, "get", "jobs.batch", "-o", "json"))["items"]:
+            name = j["metadata"]["name"]
+            if (ns, name) in keep:
+                kept += 1
+                continue
+            done = any(c.get("type") == "Complete" and c.get("status") == "True" for c in j.get("status", {}).get("conditions", []))
+            stage = j["metadata"].get("labels", {}).get("kustomize.toolkit.fluxcd.io/name", "")
+            (history if done else unfinished).append({"namespace": ns, "name": name, "stage": stage})
+    return {"declared_kept": kept, "history_completed": history, "not_completed_listed_only": [dict(u, listed=False) for u in unfinished]}
+
+
+def jobs_delete(found):
+    keep = declared_jobs()
+    by_ns = {}
+    for j in found["history_completed"]:
+        require((j["namespace"], j["name"]) not in keep, f'{j["name"]} 在现行声明里，不删')
+        by_ns.setdefault(j["namespace"], []).append("jobs.batch/" + j["name"])
+    for ns, refs in sorted(by_ns.items()):
+        for i in range(0, len(refs), 50):
+            kube("-n", ns, "delete", *refs[i:i + 50], "--ignore-not-found", "--cascade=background", "--wait=true", "--timeout=300s", timeout=400)
 
 
 # ---------------------------------------------------------------- PostgreSQL
@@ -543,7 +584,7 @@ def gc_delete(_found):
     raise Stop("Harbor 垃圾回收一小时没结束")
 
 
-HANDLERS = {"k8s": (k8s_list, k8s_delete), "postgresql": (pg_list, pg_delete), "redis": (redis_list, redis_delete),
+HANDLERS = {"k8s": (k8s_list, k8s_delete), "job-history": (jobs_list, jobs_delete), "postgresql": (pg_list, pg_delete), "redis": (redis_list, redis_delete),
             "rabbitmq": (mq_list, mq_delete), "object-storage": (s3_list, s3_delete), "ragflow": (ragflow_list, ragflow_delete),
             "casdoor": (casdoor_list, casdoor_delete), "private": (private_list, private_delete), "harbor": (harbor_list, harbor_delete),
             "harbor-gc": (gc_list, gc_delete)}
