@@ -37,24 +37,25 @@
 | **乙（定）：连存数据的名字一起改** | 甲的全部 + 库改名（`ALTER DATABASE … RENAME`、角色改名）、桶复制到 `knowcollector-originals` 再删旧桶、vhost 重建、Redis 键改名、私有目录与 SOPS 密文重做、备份目录换名 | 无 | 要停服搬数据；桶里的原文要整体复制并核对；秘密要重新生成并进 SOPS；任何一步出错都要按备份恢复。工作量约是甲的两倍 |
 | 丙：只改用户看得见的 | 域名、Casdoor 显示名、页面上的名字 | 其余全部 | 最省事，但仓、目录、配置里仍是 info / knowledge，以后读代码的人会对不上；不推荐 |
 
-远程原推荐甲（不搬数据）；所有者定乙：改完以后存储层也不再出现 info / knowledge，一次到位。代价是要停服搬数据，所以第四节多了备份、搬迁、核对三道。
+远程原推荐甲（不搬数据）；所有者定乙：改完以后存储层也不再出现 info / knowledge，一次到位。2026-10-15 所有者又定现有数据都不要，存储层改为从空的开始，不再搬迁（4.1）。
 
 ## 四、怎么做（乙）
 
 分工：**代码、配置、gitops、搬迁脚本、核对全部由远程（Opus）亲手写**；仓改名与同步配置由所有者在 gitee 与本地做（只有所有者有权限）；**必须在所有者本地集群上执行的部分由 Qwen 照远程写的步骤跑，远程逐段审回执**；不经 Cursor。
 
-### 4.1 存数据的名字怎么换
+### 4.1 存数据的名字怎么换：不搬，从空的开始（所有者 2026-10-15 定）
 
-| 存储 | 改名前 | 改名后 | 怎么换 | 核对 |
-| --- | --- | --- | --- | --- |
-| PostgreSQL 库 | `info`、`knowledge` | `knowcollector`、`knowbase` | 停服后 `ALTER DATABASE … RENAME TO …`（不复制数据） | 各表行数改名前后相同；`alembic current` 不变 |
-| 库角色 | `info_runtime`、`info_migrator`、`knowledge_runtime`、`knowledge_migrator` | `knowcollector_*`、`knowbase_*` | `ALTER ROLE … RENAME TO …`，随后按新名重设口令（口令随秘密重做） | 新角色能连、权限与改名前相同 |
-| 对象存储 | 桶 `info-originals`（只有这一个；knowledge 没有自己的桶，用账号 `knowledge_source_reader` 读它的 `info/` 前缀）；对象键前缀 `info/` | 桶 `knowcollector-originals`、前缀 `knowcollector/`、账号 `knowbase_source_reader` | 建新桶 → 整桶复制并把键前缀 `info/` 换成 `knowcollector/` → 逐对象核对数量与校验和 → 两个库里记着桶名、对象键的行一并 `UPDATE` → 读桶账号与策略按新桶、新前缀重建 → 旧桶保留 | 对象数、总字节、抽样校验和一致；两个库里不再出现旧桶名与旧前缀 |
-| RabbitMQ | vhost `info` / `knowledge`、用户、队列 `info.default` | `knowcollector` / `knowbase` vhost、用户、`knowcollector.default` | 停服前先等队列排空；新建 vhost、用户、队列；旧的删 | 旧队列切换前为空；新队列能收发 |
-| Redis | 键前缀 `info:*`、用户 `info_runtime` | `knowcollector:*`、`knowcollector_runtime` | 新建用户与 ACL；旧键是缓存与锁，**不搬**，切换后让它过期或清掉（实施时逐个确认没有只存在 Redis 里的业务数据） | 新用户只能碰新前缀 |
-| 秘密 | 私有目录 `/etc/sunmoon/applications/sunmoon-kind/info`、`…/knowledge` 与各 `*.sops.yaml` | `…/knowcollector`、`…/knowbase` | **沿用旧口令**（所有者 2026-10-14 定，「沿用旧口令吧，简单些」）：新私有目录照抄旧目录的秘密值，只换文件名与键名；stage 按新名渲染进 SOPS。改过名的库角色口令不变（PG16 用 SCRAM，改名不丢口令），新的库初始化任务按「角色已存在」直接登录验证；Redis、RabbitMQ、对象存储的新用户与新 Casdoor 应用、服务身份都用照抄的旧值开通。库与角色的归属注释 `sunmoon-kind/info` 要随改名改成 `sunmoon-kind/knowcollector`，否则初始化任务按「别人的库」拒绝。旧目录保留 | 新密文能解、旧明文不进 Git；各新身份能用旧值登录 |
-| 备份目录 | `/mnt/sunmoon-data/backups/applications/sunmoon-kind/info` 等 | `…/knowcollector`、`…/knowbase` | 新目录起用；切换前那份备份留在旧目录不动 | — |
-| 已存的引用 | `source_app` 有两种旧值：`info-app`（采集服务写）、`info`（数据集登记器默认值、knowledge 的登记记录）；投资里若存了跨应用地址 | `knowcollector-app`、`knowcollector`（各自对应，不合并） | 数据迁移（带回退迁移），两个库里存它的表都覆盖 | 库里不再出现旧值 |
+所有者定：两个应用的现有数据都不要（「我们目前的文档可以都不要。目前仅仅是两个数据集，我们可以重新传啊」）。所以存储层不改名、不搬迁，**新名字的应用用全新的库、桶、vhost、队列、Redis 用户起来**：
+
+| 存储 | 怎么做 |
+| --- | --- |
+| PostgreSQL | 新库 `knowcollector`、`knowbase` 与新角色由部署时的库初始化任务按新名建；迁移链从头跑，采集库的新迁移 `0014` 把 `info_*` 表、`info_collector` → `knowcollector_crawler`、两列与约束索引改成新名 |
+| 对象存储 | 新桶 `knowcollector-originals` 由存储开通任务建；对象键前缀用新的 `knowcollector/` |
+| RabbitMQ、Redis | 新 vhost、队列、用户、键前缀由开通任务按新名建 |
+| 秘密 | 新私有目录按新名**全新生成**（stage 的初始化），取代前述「沿用旧口令」。为此 R1 删掉改名后组件目录里旧的 `*.sops.yaml`——它们在，stage 会按「已有库不许换口令」拒绝生成 |
+| 已存的值 | 没有旧数据，`source_app`、身份哈希用的 `info.canonical.v1` 等照常改名，不存在新旧身份对不上 |
+| 旧的 | 旧库、旧角色、旧桶、旧 vhost、旧 Redis 用户、旧 Casdoor 应用与服务身份、私有目录都**原样留作备份**；旧应用的 k8s 对象在新版本晋级时由 Flux 随旧目录消失而删除。是否清理在 R6 定 |
+| 数据集 | Olist、600009 两个数据集在改名完成后由远程重新上传，不在改名步骤里 |
 
 ### 4.2 步骤
 
