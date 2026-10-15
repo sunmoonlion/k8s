@@ -392,8 +392,12 @@ for f in $(git diff --name-only gitops | grep image.lock); do echo "$f: $(grep -
 > 2026-10-15 第二次执行停在这里（`R5.1-qwen.20261015-1641.md`）：逐个对象 stage 时，阶段图里带着各阶段的镜像摘要，四个应用与供给器都换了镜像，只选一个对象时其余变了的阶段落在「未选中」里，拓扑守卫（`infrastructure/components/topology.yaml`「Require unselected stage declarations to remain unchanged」）拦下。第三次改成 `OBJECT=all`，停在 ragflow（`R5.1-qwen.20261015-1704.md`）：`infrastructure/components/stages.py` 按目录字母序排 prepare，`data-platform/ragflow` 排在 `data-platform/valkey` 前面，ragflow 要用的 `valkey_credentials` 还没备好——ragflow 自 10-05 换渲染器后从没重新 stage 过，这是既有隐患，与改名无关（记在「冻结解除之后」第 5 条）；而且 `OBJECT=all` 会把本轮不动的组件都重新渲一遍，超出范围。
 >
 > 现在的做法：拓扑图（`gitops/clusters/kind/stages.yaml`）只由各 `stage.yaml`、配置和镜像锁算出，不看各组件 stage 出来的文件，与选了哪个对象无关；守卫比的是**工作区里的** `stages.yaml`。所以先 `topology-stage OBJECT=all` 单独把拓扑排齐（它不跑任何组件的 prepare），之后逐个 stage 七个对象时「未选中」部分就与工作区一致，守卫通过。上两次留下的产物（tpl 的 7 个声明、`/etc/sunmoon/applications/sunmoon-kind/` 下新建的 `knowfeed`、`knowbase`）不用清：前者会被覆盖，后者是这次要用的私有输入，会被原样读回。
+>
+> traefik 的 prepare 读 `infrastructure/.build/components/chart-source.yaml`（固定图表的来源与摘要），它由 `services-chart` 生成；`.build` 不进 Git，R3 按新名重新检出后就没了，所以第四次执行停在 traefik（`R5.1-qwen.20261015-1726.md`）。`services-tools` 从本地物料装好工作区自己的 `helm` 并核字节，`services-chart` 用只读身份从 Harbor 拉回已发布的 traefik 图表、核哈希后写出这个文件——**不连外网**，Harbor 里已有该版本时不推送。两条都不碰集群。
 
 ```bash
+make -C infrastructure services-tools; echo "tools exit=$?"
+make -C infrastructure services-chart; echo "chart exit=$?"; ls -l infrastructure/.build/components/chart-source.yaml
 make -C infrastructure topology-stage OBJECT=all; echo "topology exit=$?"
 for o in app-platform/tpl-app app-platform/knowfeed-app app-platform/knowbase-app app-platform/investment-app sandbox-platform/provisioner ingress-platform/traefik data-platform/elk/collector; do
   echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
@@ -407,7 +411,7 @@ for a in tpl knowfeed knowbase investment; do
 done
 ```
 
-要看到：`topology exit=0`、七个 stage 都是 `exit=0`；改动的组件目录只在这几处：四个应用、`sandbox-platform/provisioner`、`sandbox-platform/sandbox`（镜像锁）、`ingress-platform/traefik`、`data-platform/elk`、`clusters/kind`（别处也有改动不必停，照贴，第 5 步的比对会逐个对象列出来）；没有 PEM；knowfeed、knowbase 的 `database/` 下重新有了 `bootstrap.sops.yaml`、`runtime.sops.yaml`（按新名全新生成）；私有目录多出 `knowfeed`、`knowbase` 两个（旧的 `info`、`knowledge` 还在，不动）；计划：knowfeed 核到 `20261015_0014`、迁移 Job 结尾 `-v3`，knowbase 核到 `20260927_0007`，investment 核到 `20261012_0018`，tpl 核到 `20260911_0003`。
+要看到：`tools`、`chart`、`topology` 都是 `exit=0`、七个 stage 都是 `exit=0`；改动的组件目录只在这几处：四个应用、`sandbox-platform/provisioner`、`sandbox-platform/sandbox`（镜像锁）、`ingress-platform/traefik`、`data-platform/elk`、`clusters/kind`（别处也有改动不必停，照贴，第 5 步的比对会逐个对象列出来）；没有 PEM；knowfeed、knowbase 的 `database/` 下重新有了 `bootstrap.sops.yaml`、`runtime.sops.yaml`（按新名全新生成）；私有目录多出 `knowfeed`、`knowbase` 两个（旧的 `info`、`knowledge` 还在，不动）；计划：knowfeed 核到 `20261015_0014`、迁移 Job 结尾 `-v3`，knowbase 核到 `20260927_0007`，investment 核到 `20261012_0018`，tpl 核到 `20260911_0003`。
 
 **5. 渲染比对**（改名前的渲染产物 vs 这次 stage 的，逐个 k8s 对象）：
 
@@ -419,6 +423,18 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 
 要看到：第 1 节「不可变 Job」**0 条**（有一条就停：Flux 套用时会被拒）。报告整份随回执提交，Opus 逐条审第 3–6 节。
 
+> 2026-10-15 第四次执行：拓扑与前五个对象（四个应用、供给器）都 `exit=0`，停在 traefik（缺 `chart-source.yaml`，见第 4 步说明）。**第五次只续跑剩下的**（前五个不重来，产物都在工作区）：
+>
+> ```bash
+> cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+> make -C infrastructure services-tools; echo "tools exit=$?"
+> make -C infrastructure services-chart; echo "chart exit=$?"; ls -l infrastructure/.build/components/chart-source.yaml
+> for o in ingress-platform/traefik data-platform/elk/collector; do
+>   echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
+> done
+> ```
+>
+> 再照跑第 4 步块里 `done` 之后的核对与四个计划，然后做第 5 步。
 > 2026-10-15 第三次执行：停在第 4 步的 ragflow（见第 4 步说明），已改为先排齐拓扑再逐个 stage，从第 4 步续跑，第 1–3 步不重来。
 > 2026-10-15 第二次执行：第 1–3 步通过（14 个镜像锁正确），停在第 4 步，已改为整套 stage，从第 4 步续跑。
 > 2026-10-15 第一次执行停在第 1 步（`R5.1-qwen.20261015-1531.md`）：块正则带了 `s`（dotall），第一个块吞掉了全部四个应用，`assert` 拦住、文件未改。已改为 `(?m)`，第 1、2 步在 `sources.yaml`、`component-images.yaml` 的副本上实跑核过（28 行、两行，各应用各自的提交）。从第 1 步重跑。
