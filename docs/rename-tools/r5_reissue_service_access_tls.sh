@@ -5,7 +5,7 @@
 # 做法：沿用原私钥（身份不换），按任务里同样的 openssl 参数重出 CSR、用平台 CA 重签五年证书，SAN 只换主机名；
 # 私有目录与备份目录两份一起换（任务要求二者逐字节相同），旧证书改名留在原处（证书是公开内容）。
 # 不打印私钥；只报证书的公开字段。必须 root，并在 PID 1 的挂载命名空间里跑（备份盘只在那边可见）：
-#   sudo -n nsenter --target 1 --mount -- bash docs/rename-tools/r5_reissue_service_access_tls.sh
+#   sudo -n nsenter --target 1 --mount --wd=/home/zymun/worktrees/qwen/k8s -- bash docs/rename-tools/r5_reissue_service_access_tls.sh
 # 演练用：R5_TLS_PRIVATE / R5_TLS_BACKUP / R5_TLS_CA_DIR 改指副本目录；真跑别设。
 set -euo pipefail
 D=${R5_TLS_PRIVATE:-/etc/sunmoon/services/sunmoon-kind/service-access}/tls

@@ -400,7 +400,7 @@ for f in $(git diff --name-only gitops | grep image.lock); do echo "$f: $(grep -
 ```bash
 make -C infrastructure services-tools; echo "tools exit=$?"
 make -C infrastructure services-chart; echo "chart exit=$?"; ls -l infrastructure/.build/components/chart-source.yaml
-sudo -n nsenter --target 1 --mount -- bash docs/rename-tools/r5_reissue_service_access_tls.sh; echo "tls exit=$?"
+sudo -n nsenter --target 1 --mount --wd=/home/zymun/worktrees/qwen/k8s -- bash docs/rename-tools/r5_reissue_service_access_tls.sh; echo "tls exit=$?"
 make -C infrastructure topology-stage OBJECT=all; echo "topology exit=$?"
 for o in app-platform/tpl-app app-platform/knowfeed-app app-platform/knowbase-app app-platform/investment-app sandbox-platform/provisioner ingress-platform/traefik data-platform/elk/collector; do
   echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
@@ -426,11 +426,12 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 
 要看到：第 1 节「不可变 Job」**0 条**（有一条就停：Flux 套用时会被拒）。报告整份随回执提交，Opus 逐条审第 3–6 节。
 
+> 2026-10-15 第六次执行：重签脚本没跑起来（`tls exit=127`，`R5.1-qwen.20261015-1748.md`）——`nsenter --mount` 进去后工作目录是 `/`，Opus 漏了 `--wd`（`infrastructure/Makefile` 与 R6 的写法都带着），已补；证书未动。**第七次照下面第五次那段的续跑块重跑**（命令已带 `--wd`）。
 > 2026-10-15 第五次执行：`tools`、`chart` 都过，停在 traefik 的证书主机名核对（见第 4 步说明）。**第六次只续跑这几条**（`services-tools`、`services-chart` 已做过，前五个对象不重来）：
 >
 > ```bash
 > cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
-> sudo -n nsenter --target 1 --mount -- bash docs/rename-tools/r5_reissue_service_access_tls.sh; echo "tls exit=$?"
+> sudo -n nsenter --target 1 --mount --wd=/home/zymun/worktrees/qwen/k8s -- bash docs/rename-tools/r5_reissue_service_access_tls.sh; echo "tls exit=$?"
 > for o in ingress-platform/traefik data-platform/elk/collector; do
 >   echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
 > done
