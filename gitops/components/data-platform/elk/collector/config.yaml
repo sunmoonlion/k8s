@@ -2,7 +2,7 @@
 # Node-level collector admission is isolated; business namespaces stay restricted.
 elk_collector_enabled: true
 elk_collector_namespace: sunmoon-log-collector
-elk_collector_applications: [tpl, info, knowledge, investment, casdoor]
+elk_collector_applications: [tpl, knowfeed, knowbase, investment, casdoor]
 # Persist offsets and undelivered chunks on each node's independent data mount.
 elk_collector_state_directory: /data/kind-local-storage/log-collector
 elk_collector_memory_chunks: 32

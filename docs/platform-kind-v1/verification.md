@@ -85,7 +85,7 @@
 | knowledge | Info原文VersionId/hash、服务身份日记、真实Scheduler/Outbox/Worker中文解析、关系/租户/数据集拒绝 | PDF/其它格式与浏览器全集、完整爬取来源、恢复演练 |
 | investment | 基础登录/消息/运行与公共入口；实际领域Port以独立身份HTTPS取得Knowledge中文证据与原文引用 | 外部模型Key、执行环境、Agent工具、信息查询完整业务 |
 
-tpl/info公共入口在2026-10-03验证，knowledge/investment在2026-10-04验证；真实跨应用链也在既有单元验证。验收探针采用UUID及原文指定版本，仅清本轮对象；失败日记和Worker仍使用输入不得删除。维护见[provider](../../gitops/components/app-platform/knowledge-app/knowledge-backend/provider/README.md)。
+tpl/info公共入口在2026-10-03验证，knowbase/investment在2026-10-04验证；真实跨应用链也在既有单元验证。验收探针采用UUID及原文指定版本，仅清本轮对象；失败日记和Worker仍使用输入不得删除。维护见[provider](../../gitops/components/app-platform/knowbase-app/knowbase-backend/provider/README.md)。
 
 ## 物料目录维护
 

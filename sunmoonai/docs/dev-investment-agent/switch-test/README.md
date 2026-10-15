@@ -159,7 +159,7 @@ echo "主机 $(hostname)  时间 $(date -Is)  工位 ${WS}  系统 $(uname -srm)
 echo "内存 $(free -h | awk '/Mem:/{print $2" 总 / "$7" 可用"}')  磁盘 $(df -h / | awk 'NR==2{print $4" 可用"}')"
 echo "Python $(python3 -V 2>&1)  Node $(node --version 2>/dev/null || echo 无)  Docker $(docker --version 2>/dev/null || echo 无)"
 echo "Codex $(codex --version 2>/dev/null || echo 无)  CODEX_HOME=${CODEX_HOME:-未设}"
-for r in k8s info-app investment-app knowledge-app tpl-app runtime; do
+for r in k8s knowfeed-app investment-app knowbase-app tpl-app runtime; do
   d="${HOME}/worktrees/${WS}/${r}"; [ -e "${d}/.git" ] || continue
   printf "%-16s %s  %s\n" "${r}" "$(git -C "${d}" rev-parse --short HEAD)" "$(git -C "${d}" branch --show-current)"
   for s in "${d}"/*-backend; do [ -e "${s}/.git" ] && printf "  %-14s %s  %s\n" "$(basename "${s}")" "$(git -C "${s}" rev-parse --short HEAD)" "$(git -C "${s}" branch --show-current)"; done

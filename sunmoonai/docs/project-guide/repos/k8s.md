@@ -44,16 +44,16 @@
 
 ## 3. 一个 App 的部署单元
 
-以 `app-platform/info-app/` 为例——**7 个 deploy 入口 + 1 个 deployment 目录**：
+以 `app-platform/knowfeed-app/` 为例——**7 个 deploy 入口 + 1 个 deployment 目录**：
 
 ```
 deploy-info-app-all/            App 总入口
-deploy-info-backend-api/        ┐
-deploy-info-backend-worker/     │ Backend 四角色
-deploy-info-backend-scheduler/  │
-deploy-info-migration/          ┘
-deploy-info-admin-frontend/     ┐ 双前端
-deploy-info-web-frontend/       ┘
+deploy-knowfeed-backend-api/        ┐
+deploy-knowfeed-backend-worker/     │ Backend 四角色
+deploy-knowfeed-backend-scheduler/  │
+deploy-knowfeed-migration/          ┘
+deploy-knowfeed-admin-frontend/     ┐ 双前端
+deploy-knowfeed-web-frontend/       ┘
 
 deployment/
 ├── render.py       渲染 bundle（解析镜像 digest 写入）
@@ -218,8 +218,8 @@ ls -1d */
 python3 app-platform/scripts/verify-formal-instance.py --app info
 
 # apply 真实顺序（权威）
-awk '/^def apply\(/,/^def drift\(/' app-platform/info-app/deployment/deploy.py
+awk '/^def apply\(/,/^def drift\(/' app-platform/knowfeed-app/deployment/deploy.py
 
 # bundle 各文件的资源 kind
-grep -h '^kind:' app-platform/info-app/deployment/bundle/*.yaml | sort -u
+grep -h '^kind:' app-platform/knowfeed-app/deployment/bundle/*.yaml | sort -u
 ```

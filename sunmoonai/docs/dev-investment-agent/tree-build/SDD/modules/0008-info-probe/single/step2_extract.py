@@ -4,7 +4,7 @@
 import glob, json, os, re, sys, logging
 import pdfplumber
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
-ROOT = os.path.expanduser("~/info-smoke-storage/development-info-originals/info/securities/code=600009/source=cninfo")
+ROOT = os.path.expanduser("~/knowfeed-smoke-storage/development-knowfeed-originals/knowfeed/securities/code=600009/source=cninfo")
 HERE = os.path.expanduser("~/annual-report-probe")
 STATEMENTS = [("balance_sheet", "合并资产负债表", "母公司资产负债表"),
               ("income_statement", "合并利润表", "母公司利润表"),

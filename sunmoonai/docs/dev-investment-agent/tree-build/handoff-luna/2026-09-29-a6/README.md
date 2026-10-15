@@ -7,7 +7,7 @@
 ## 为什么有这件事
 
 所有者定了工程结构的规则（见 [工程架构](../../SDD/architecture/engineering.md)「工程结构」）：应用层不引用基础设施层，也不直接用数据库、网络这类库。
-按这个规则，四个后端（模板与 info、knowledge、investment）里模板带来的两处代码要改：
+按这个规则，四个后端（模板与 knowfeed、knowbase、investment）里模板带来的两处代码要改：
 
 | 代号 | 改了什么 | 状态 |
 | --- | --- | --- |
@@ -101,4 +101,4 @@ from app.infrastructure.messaging.durable_tasks import DurableTasks, enqueue_tas
 
 ## 往后还会有同类的事
 
-`k8s.patch` 涉及的两个测试还引用了 info 的采集服务与 knowledge 的入库、检索、投递服务。这几个文件也在整改清单里（账本 A7、A8），改的时候会按同样的办法：远程先备好补丁并验证，再交给你。
+`k8s.patch` 涉及的两个测试还引用了 knowfeed 的采集服务与 knowbase 的入库、检索、投递服务。这几个文件也在整改清单里（账本 A7、A8），改的时候会按同样的办法：远程先备好补丁并验证，再交给你。

@@ -9,8 +9,8 @@
 
 | 主档 | 归属 | 派生系统 |
 | --- | --- | --- |
-| 来源、采集作业、文档版本、原始制品 | info-app | Elasticsearch 索引（**默认关闭**） |
-| 摄入任务、知识文档与版本、Evidence | knowledge-app | RAGFlow |
+| 来源、采集作业、文档版本、原始制品 | knowfeed-app | Elasticsearch 索引（**默认关闭**） |
+| 摄入任务、知识文档与版本、Evidence | knowbase-app | RAGFlow |
 | Agent session / run / 事件 / 副作用 / Pilot 请求 | investment-app | LangGraph checkpoint 表（同库） |
 | 用户身份 `auth_user` | 各 App 各自一份 | Casdoor 为上游 IdP |
 
@@ -22,8 +22,8 @@
 这是约束第 2 条（单一主档）与第 5 条（RAGFlow 是派生系统）的直接后果，
 代码里有两处可观察的体现：
 
-- info 的索引任务在 `SEARCH_BACKEND=disabled` 时**直接跳过**（默认就是 disabled）
-- knowledge 在无 RAGFlow 凭据时摄入止于 `artifact_verified`，**不写** `KnowledgeDocument*`
+- knowfeed 的索引任务在 `SEARCH_BACKEND=disabled` 时**直接跳过**（默认就是 disabled）
+- knowbase 在无 RAGFlow 凭据时摄入止于 `artifact_verified`，**不写** `KnowledgeDocument*`
 
 两者都是「**主档已落、派生未建**」的**合法状态**，不是故障。
 
@@ -43,7 +43,7 @@ Migration 拥有迁移对象；未知清单拒绝。角色独立 Secret 键和�
 **前端不得持有后端或数据库凭据。**Secret 名仍从具体 release 的 external_secrets 查。
 
 investment-app 另有一步特殊处理：部署时在跑迁移 Job **之前**用 SQL 改 PG 角色的
-LOGIN 状态；info 与 knowledge 无此步。
+LOGIN 状态；knowfeed 与 knowbase 无此步。
 
 ## 4. 迁移纪律
 
@@ -76,7 +76,7 @@ Outbox/Inbox/死信/租约**：去重、回滚、Provider 回执和迟到执行�
 | Agent run 幂等 | investment `infrastructure/agent/repositories.py` | `session_id` + `idempotency_key` |
 | Pilot run 幂等 | investment `pilot_repository.py` | `owner_actor_id` + `idempotency_key` |
 | 摄入任务幂等 | knowledge `knowledge_ingestion_service.py` | `idempotency_key` 命中则返回已有 job |
-| 分发幂等键 | info | `info-app:{version_id}:{dataset_key}:artifact-v1` |
+| 分发幂等键 | info | `knowfeed-app:{version_id}:{dataset_key}:artifact-v1` |
 | 副作用一次性 | investment `side_effect_service.record_once` | `tool_call_id` 为 PK + `ON CONFLICT DO NOTHING` |
 | Resume 令牌一次性 | investment `pilot_repository.consume_resume` | 置位后不可复用 |
 
@@ -87,4 +87,4 @@ elasticsearch · kibana · logstash · **object-storage**（目录名不是 mini
 消息中间件不在此，在 `messaging-platform/`（RabbitMQ）。
 
 **四个 App 实际用到的只有**：PostgreSQL、Redis、object-storage、RabbitMQ、
-Elasticsearch（info，默认关闭）。**mongodb / neo4j / kibana / logstash 未见任何 App 侧引用。**
+Elasticsearch（knowfeed，默认关闭）。**mongodb / neo4j / kibana / logstash 未见任何 App 侧引用。**

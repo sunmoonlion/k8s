@@ -41,13 +41,13 @@
     agent_releases_enabled: '{{ lookup("vars", application_name + "_agent_releases", default={}).enabled | default(false) | bool }}'
     storage_enabled: '{{ cfg.object_storage.enabled | default(false) | bool }}'
     provider_enabled: '{{ cfg.knowledge_provider.enabled | default(false) | bool }}'
-    service_enabled: '{{ cfg.knowledge_service.enabled | default(false) | bool }}'
-    receiver_enabled: '{{ cfg.knowledge_service_receiver.enabled | default(false) | bool }}'
-    service_relation: '{{ "ingest" if application_name == "info" else "retrieve" }}'
-    service_env_prefix: '{{ "KNOWLEDGE_APP_SERVICE" if application_name == "info" else "KNOWLEDGE_RETRIEVAL_SERVICE" }}'
+    service_enabled: '{{ cfg.knowbase_service.enabled | default(false) | bool }}'
+    receiver_enabled: '{{ cfg.knowbase_service_receiver.enabled | default(false) | bool }}'
+    service_relation: '{{ "ingest" if application_name == "knowfeed" else "retrieve" }}'
+    service_env_prefix: '{{ "KNOWBASE_APP_SERVICE" if application_name == "knowfeed" else "KNOWBASE_RETRIEVAL_SERVICE" }}'
     service_bindings:
-      ingest: '{{ (lookup("file", repo + "/gitops/components/app-platform/info-app/info-backend/config.yaml") | from_yaml).info_backend_deployment.knowledge_service }}'
-      retrieve: '{{ (lookup("file", repo + "/gitops/components/app-platform/investment-app/investment-backend/config.yaml") | from_yaml).investment_backend_deployment.knowledge_service }}'
+      ingest: '{{ (lookup("file", repo + "/gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml") | from_yaml).knowfeed_backend_deployment.knowbase_service }}'
+      retrieve: '{{ (lookup("file", repo + "/gitops/components/app-platform/investment-app/investment-backend/config.yaml") | from_yaml).investment_backend_deployment.knowbase_service }}'
     all_candidate_files: '{{ core_candidate_files + (["agent-releases/workload.yaml","agent-releases/provision.sops.yaml","agent-releases/kustomization.yaml","runtime/agent-releases.sops.yaml"] if agent_releases_enabled else []) + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) + (["service-identity/workload.yaml","service-identity/provision.sops.yaml","service-identity/kustomization.yaml","runtime/service.sops.yaml"] if service_enabled else []) }}'
     selected_application_components: '{{ selection.applications[application_name] }}'
     selected_backend: '{{ application_name + "-backend" in selected_application_components }}'
@@ -62,7 +62,7 @@
         quiet: true
         that:
           - not ansible_check_mode
-          - application_name in ['tpl','info','knowledge','investment']
+          - application_name in ['tpl','knowfeed','knowbase','investment']
           - application_action in ['plan','validate']
           - application_action == 'plan' or cfg.enabled | bool
           - selected_application_components | length > 0
@@ -118,9 +118,9 @@
           - browser_clients.web.name != browser_clients.admin.name
           - cfg.redis_user == application_name + '_runtime'
           - cfg.redis_key_pattern == application_name + ':*'
-          - not provider_enabled or (application_name == 'knowledge' and not storage_enabled)
-          - not service_enabled or (application_name in ['info','investment'] and service_access_enabled | bool)
-          - not receiver_enabled or (application_name == 'knowledge' and provider_enabled and service_access_enabled | bool)
+          - not provider_enabled or (application_name == 'knowbase' and not storage_enabled)
+          - not service_enabled or (application_name in ['knowfeed','investment'] and service_access_enabled | bool)
+          - not receiver_enabled or (application_name == 'knowbase' and provider_enabled and service_access_enabled | bool)
           - not receiver_enabled or (service_bindings.ingest.enabled | bool and service_bindings.retrieve.enabled | bool)
           - not receiver_enabled or service_bindings.ingest.client_id != service_bindings.retrieve.client_id
           - not receiver_enabled or service_bindings.ingest.organization != service_bindings.retrieve.organization

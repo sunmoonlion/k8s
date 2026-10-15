@@ -11,11 +11,11 @@ if [ -z "${WS:-}" ]; then
 fi
 WS="$WS"
 K8S="$HOME/worktrees/$WS/k8s"; ST="$K8S/sunmoonai/docs/dev-investment-agent/switch-test"
-FIVE="k8s info-app investment-app knowledge-app tpl-app"
+FIVE="k8s knowfeed-app investment-app knowbase-app tpl-app"
 # 父仓下的全部子仓（与 human-remote.sh 同一份）
-SUBS="info-app/info-backend info-app/info-web-frontend info-app/info-admin-frontend
+SUBS="knowfeed-app/knowfeed-backend knowfeed-app/knowfeed-web-frontend knowfeed-app/knowfeed-admin-frontend
   investment-app/investment-backend investment-app/investment-web-frontend investment-app/investment-admin-frontend
-  knowledge-app/knowledge-backend knowledge-app/knowledge-web-frontend knowledge-app/knowledge-admin-frontend
+  knowbase-app/knowbase-backend knowbase-app/knowbase-web-frontend knowbase-app/knowbase-admin-frontend
   tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend"
 
 pull() { # 仓目录 标签
@@ -54,7 +54,7 @@ else
   for r in $FIVE; do pull "$HOME/worktrees/$WS/$r" "$r" || exit 1; done
 fi
 pull "$HOME/worktrees/$WS/investment-app/investment-backend" "investment-app/investment-backend" || exit 1
-pull "$HOME/worktrees/$WS/knowledge-app/knowledge-backend" "knowledge-app/knowledge-backend" || exit 1
+pull "$HOME/worktrees/$WS/knowbase-app/knowbase-backend" "knowbase-app/knowbase-backend" || exit 1
 pull "$HOME/worktrees/$WS/runtime" runtime || exit 1
 
 # 1b. 子仓接回工位分支。five-repos-sync 的 submodule update 按父仓指针检出，子仓必然游离（detached）；

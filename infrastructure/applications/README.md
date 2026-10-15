@@ -14,7 +14,7 @@
 
 | 选择 | 支持值/含义 |
 |---|---|
-| APP | tpl、info、knowledge、investment；每条应用命令显式指定 |
+| APP | tpl、knowfeed、knowbase、investment；每条应用命令显式指定 |
 | COMPONENT | backend、web、admin，用于application-source-plan |
 | application_download_mode | domestic或official-proxy；源与代理配套 |
 | 构建预算字段 | backend/frontends各自峰值；host检查再扣VHD增长 |
@@ -25,18 +25,18 @@
 以info为例，替换APP即可覆盖4应用×3角色：
 
 ```sh
-make -C infrastructure application-source-plan APP=info COMPONENT=backend
+make -C infrastructure application-source-plan APP=knowfeed COMPONENT=backend
 make -C infrastructure application-verify-materials
 make -C infrastructure application-publish
-make -C infrastructure application-build-backend APP=info
-make -C infrastructure application-publish-backend APP=info
-make -C infrastructure application-build-web APP=info
-make -C infrastructure application-publish-web APP=info
-make -C infrastructure application-build-admin APP=info
-make -C infrastructure application-publish-admin APP=info
+make -C infrastructure application-build-backend APP=knowfeed
+make -C infrastructure application-publish-backend APP=knowfeed
+make -C infrastructure application-build-web APP=knowfeed
+make -C infrastructure application-publish-web APP=knowfeed
+make -C infrastructure application-build-admin APP=knowfeed
+make -C infrastructure application-publish-admin APP=knowfeed
 ```
 
-缺基础物料先`application-plan`、`application-materials`；verify/publish处理基础镜像，build在线取npm/pnpm、pip/uv依赖。成品发布固定manifest，构建结果与传输归档在`.build/applications/`。**发布成功后`application-publish-*`会调`application-lock-*`，把`.build/applications/<repo>-deployment-image.yaml`写进组件目录的`image.lock.yaml`**（渲染只认gitops里这一份；2026-10-06之前没有这一步，锁要手工拷）。只同步锁也可以单独`make application-lock-backend APP=info`。发布只用独立publisher，puller核目标摘要，成功后删除本次transport，不要求以后部署保留业务离线包。
+缺基础物料先`application-plan`、`application-materials`；verify/publish处理基础镜像，build在线取npm/pnpm、pip/uv依赖。成品发布固定manifest，构建结果与传输归档在`.build/applications/`。**发布成功后`application-publish-*`会调`application-lock-*`，把`.build/applications/<repo>-deployment-image.yaml`写进组件目录的`image.lock.yaml`**（渲染只认gitops里这一份；2026-10-06之前没有这一步，锁要手工拷）。只同步锁也可以单独`make application-lock-backend APP=knowfeed`。发布只用独立publisher，puller核目标摘要，成功后删除本次transport，不要求以后部署保留业务离线包。
 
 构建输出必须为linux/amd64、预期非root用户和实际解释器版本；私有Harborauth以root0600临时配置提供。转换工具受限，不共享Docker socket。源码/配方/基底/网络输入计入本地构建身份，不混用其他应用结果。新增版本先审核源码与依赖锁，禁止构建任意dirty树。
 
@@ -65,20 +65,20 @@ Harbor始终NO_PROXY直连，源与代理是配套选择；系统/Vlinux网络�
 ## 声明准备与晋级
 
 ```sh
-make -C infrastructure application-deployment-plan APP=info
-make -C infrastructure application-stage APP=info
+make -C infrastructure application-deployment-plan APP=knowfeed
+make -C infrastructure application-stage APP=knowfeed
 ```
 
 plan校验拥有的API与固定源码schema；`application-stage`走通用组件渲染器（`OBJECT=app-platform/<应用>-app`），生成/备份账号、TLS和候选并写本应用声明，不覆盖其他APP。`platform-stage OBJECT=all`只跑一次组件 stage，不再按应用重复准备。审阅公开与加密语义、提交组件image.lock/声明，再按[Flux发布晋级](../flux/README.md#发布与显式晋级)处理固定源。真实协议检查在[verify.yaml](verify.yaml)。
 
-**准备有副作用**：private/backup文件、身份和TLS；Knowledge provider还可通过远端RAGFlow API建立私有dataset，见[provider维护](../../gitops/components/app-platform/knowledge-app/knowledge-backend/provider/README.md)。未知同名/绑定冲突停止，不称stage纯只读。
+**准备有副作用**：private/backup文件、身份和TLS；Knowledge provider还可通过远端RAGFlow API建立私有dataset，见[provider维护](../../gitops/components/app-platform/knowbase-app/knowbase-backend/provider/README.md)。未知同名/绑定冲突停止，不称stage纯只读。
 
 ## 部署与真实入口验收
 
 ```sh
-make -C infrastructure application-bootstrap APP=info
-make -C infrastructure application-check APP=info
-make -C infrastructure application-check-public APP=info
+make -C infrastructure application-bootstrap APP=knowfeed
+make -C infrastructure application-check APP=knowfeed
+make -C infrastructure application-check-public APP=knowfeed
 ```
 
 bootstrap对已晋级版本串联render/validate→Flux apply→check，Jobs先建独立DB/角色→schema迁移→Redis/Rabbit/浏览器/关系身份→API/Worker/Scheduler/Web/Admin。后端database/migrator权限分离，用户名和密码见组件README，不手动提前初始化。

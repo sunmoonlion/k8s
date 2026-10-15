@@ -11,11 +11,11 @@ fi
 WS="$WS"
 WORKTREE_ROOT="${WORKTREE_ROOT:-$HOME/worktrees/$WS}"
 SYNC_SCRIPT="${SYNC_SCRIPT:-$HOME/five-repos-sync/sync-five-repos.sh}"
-FIVE="k8s info-app investment-app knowledge-app tpl-app"
+FIVE="k8s knowfeed-app investment-app knowbase-app tpl-app"
 # 父仓下的全部子仓（前端也在内：2026-10-08 luna 的网页修复因只列了两个后端而没推上来）
-SUBS="info-app/info-backend info-app/info-web-frontend info-app/info-admin-frontend
+SUBS="knowfeed-app/knowfeed-backend knowfeed-app/knowfeed-web-frontend knowfeed-app/knowfeed-admin-frontend
   investment-app/investment-backend investment-app/investment-web-frontend investment-app/investment-admin-frontend
-  knowledge-app/knowledge-backend knowledge-app/knowledge-web-frontend knowledge-app/knowledge-admin-frontend
+  knowbase-app/knowbase-backend knowbase-app/knowbase-web-frontend knowbase-app/knowbase-admin-frontend
   tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend"
 OTHERS="$SUBS runtime"
 pushed=()

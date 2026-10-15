@@ -22,8 +22,8 @@
        │   （桌面应用）     │   主动外连）      │   （Codex）       │  （Codex）
        ▼                   ▼                  ▼                   ▼
   ┌──────────── 后端（supervisor）────────────────┐   知识服务        模型厂商
-  │ 身份与会话 · 设备 · 派发网关 · 路由与编排      │   info-app 采集   用户自选
-  │ Task/Attempt/Interaction/持久化账（PostgreSQL）│   knowledge-app   用户自付
+  │ 身份与会话 · 设备 · 派发网关 · 路由与编排      │   knowfeed-app 采集   用户自选
+  │ Task/Attempt/Interaction/持久化账（PostgreSQL）│   knowbase-app   用户自付
   │ 方法库 · 审计 · 结果密文                       │   建库与 MCP
   └───────────────────────▲────────────────────────┘
                           │ ⑦ HTTPS（内部人员）
@@ -55,7 +55,7 @@
 | 八个既有 Next.js 前端 | 见下两行 | 四个 app 仓各一对：`tpl-`、`info-`、`knowledge-`、`investment-` 的 `*-web-frontend/` 与 `*-admin-frontend/` |
 | 官网与下载页 | 产品介绍与下载；注册登录经认证服务的页面，支付经支付渠道的页面；**必须写明「key 只在桌面应用里输入」** | 上述 `*-web-frontend/` |
 | 内部管理后台 | 内部人员的运营、客服、审计查询；**只见元数据，不见研究结果正文** | 上述 `*-admin-frontend/`，沿用平台模板 |
-| 知识服务 | info-app 从合法来源采集；knowledge-app 建库、检索、领域工具，经 MCP 按查询下发；embedding 与 rerank 用自有模型。**不接触用户 key、不装观点类内容、不整批下发** | `info-app`、`knowledge-app`；Codex 经通道 ⑤ 直接调它 |
+| 知识服务 | knowfeed-app 从合法来源采集；knowbase-app 建库、检索、领域工具，经 MCP 按查询下发；embedding 与 rerank 用自有模型。**不接触用户 key、不装观点类内容、不整批下发** | `knowfeed-app`、`knowbase-app`；Codex 经通道 ⑤ 直接调它 |
 | 模型厂商 | 推理，由用户选择并付费 | 用户自选、自付；Codex 经通道 ⑥ 调 |
 
 

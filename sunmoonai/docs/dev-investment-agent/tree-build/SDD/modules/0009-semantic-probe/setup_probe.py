@@ -1,7 +1,7 @@
 """探针第一步：把第 23 课零售库（SQLite，只读）转成 DuckDB 文件，并生成 Wren 语义模型项目。
 只读源数据集；所有产物在 ~/wren-probe 下。"""
 import os, sqlite3, duckdb, yaml, hashlib, json
-SRC="/home/zym/worktrees/fable/knowledge-app/knowledge-backend/app/datasets/lesson23_business_analysis.sqlite"
+SRC="/home/zym/worktrees/fable/knowbase-app/knowbase-backend/app/datasets/lesson23_business_analysis.sqlite"
 OUT=os.path.expanduser("~/wren-probe/data/lesson23.duckdb")
 PROJ=os.path.expanduser("~/wren-probe/project")
 TABLES=["order_performance","order_line_performance","funnel_daily","lost_demand_daily","inventory_daily_analysis","supply_performance"]

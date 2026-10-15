@@ -1,6 +1,6 @@
 # 沙箱供给器（0003 D9）：在 sandbox-pool 里按用户拉起/更新/回收沙箱。工作台经内网调它。
 # 先建 Secret：kubectl -n sandbox-pool create secret generic sandbox-provisioner --from-literal=token=<与工作台共享的令牌>
-#           以及（可选）knowledge 共用令牌：--from-literal=knowledge-token=<KNOWLEDGE_MCP 令牌>——只在工作台没配签名密钥时用；配了就按用户签 JWT（D10）
+#           以及（可选）knowbase 共用令牌：--from-literal=knowbase-token=<KNOWBASE_MCP 令牌>——只在工作台没配签名密钥时用；配了就按用户签 JWT（D10）
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -60,11 +60,11 @@ spec:
             - { name: SANDBOX_NAMESPACE, value: "sandbox-pool" }
             - { name: SANDBOX_IMAGE, value: "harbor.sunmoonai.com:30443/app-images/sandbox@sha256:dbafbcd4eba426fe2a8aa89545214a90b80ae38d508bf1bcee55dda7d41502af" }
             - { name: RELAY_URL, value: "ws://relay.edge.svc.cluster.local:47100" }
-            - { name: KNOWLEDGE_MCP_URL, value: "http://knowledge-backend.app-platform-dev.svc.cluster.local:8000/api/mcp/knowledge" }
+            - { name: KNOWBASE_MCP_URL, value: "http://knowbase-backend.app-platform-dev.svc.cluster.local:8000/api/mcp/knowledge" }
             - name: PROVISIONER_TOKEN
               valueFrom: { secretKeyRef: { name: sandbox-provisioner, key: token } }
-            - name: KNOWLEDGE_MCP_SHARED_TOKEN
-              valueFrom: { secretKeyRef: { name: sandbox-provisioner, key: knowledge-token, optional: true } }
+            - name: KNOWBASE_MCP_SHARED_TOKEN
+              valueFrom: { secretKeyRef: { name: sandbox-provisioner, key: knowbase-token, optional: true } }
           ports:
             - { name: http, containerPort: 8080 }
           readinessProbe:

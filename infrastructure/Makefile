@@ -28,10 +28,10 @@ export OBJECT SITE
 COMPONENT ?= backend
 ifneq ($(filter application-build-% application-publish-% application-source-plan application-deployment-plan application-render application-stage application-validate-release application-check application-check-public application-bootstrap,$(MAKECMDGOALS)),)
 ifneq ($(words $(APP)),1)
-$(error APP must be tpl, info, knowledge or investment)
+$(error APP must be tpl, knowfeed, knowbase or investment)
 endif
-ifneq ($(filter $(APP),tpl info knowledge investment),$(APP))
-$(error APP must be tpl, info, knowledge or investment)
+ifneq ($(filter $(APP),tpl knowfeed knowbase investment),$(APP))
+$(error APP must be tpl, knowfeed, knowbase or investment)
 endif
 endif
 # Every ordinary field has one source; the explicit list also documents the input closure.
@@ -48,14 +48,14 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml \
 	../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml \
 	../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml \
-	../gitops/components/app-platform/info-app/info-backend/config.yaml \
-	../gitops/components/app-platform/info-app/info-web-frontend/config.yaml \
-	../gitops/components/app-platform/info-app/info-admin-frontend/config.yaml \
-	../gitops/components/app-platform/info-app/config.yaml \
-	../gitops/components/app-platform/knowledge-app/config.yaml \
-	../gitops/components/app-platform/knowledge-app/knowledge-backend/config.yaml \
-	../gitops/components/app-platform/knowledge-app/knowledge-web-frontend/config.yaml \
-	../gitops/components/app-platform/knowledge-app/knowledge-admin-frontend/config.yaml \
+	../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml \
+	../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml \
+	../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml \
+	../gitops/components/app-platform/knowfeed-app/config.yaml \
+	../gitops/components/app-platform/knowbase-app/config.yaml \
+	../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml \
+	../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml \
+	../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml \
 	../gitops/components/app-platform/investment-app/config.yaml \
 	../gitops/components/app-platform/investment-app/investment-backend/config.yaml \
 	../gitops/components/app-platform/investment-app/investment-backend/agent-releases/config.yaml \
@@ -338,7 +338,7 @@ application-publish-backend application-publish-web application-publish-admin:
 	$(MAKE) application-lock-$(APPLICATION_ROLE) APP=$(APP)
 
 # 发布成功后，把构建写在 .build/ 里的「可审阅的部署镜像锁」拷进组件目录的 image.lock.yaml（渲染只认 gitops 里这一份）。
-# 没有这一步，构建完的镜像不会进入声明（2026-10-06 发现）。单独调用也行：make application-lock-backend APP=info
+# 没有这一步，构建完的镜像不会进入声明（2026-10-06 发现）。单独调用也行：make application-lock-backend APP=knowfeed
 .PHONY: application-lock-backend application-lock-web application-lock-admin
 application-lock-backend application-lock-web application-lock-admin: APPLICATION_ROLE = $(patsubst application-lock-%,%,$@)
 application-lock-backend application-lock-web application-lock-admin: APPLICATION_REPOSITORY = $(APP)-$(if $(filter backend,$(APPLICATION_ROLE)),backend,$(APPLICATION_ROLE)-frontend)
@@ -416,8 +416,8 @@ platform-deploy-selected:
 	$(if $(and $(filter true,$(PLATFORM_FOUNDATIONS)),$(filter false,$(PLATFORM_SERVICES))),$(MAKE) services-render services-validate-release foundations-bootstrap foundations-check)
 	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) services-bootstrap SERVICE_IMAGES=$(PLATFORM_SERVICE_IMAGES))
 	$(if $(filter true,$(PLATFORM_TPL)),$(MAKE) application-bootstrap APP=tpl)
-	$(if $(filter true,$(PLATFORM_INFO)),$(MAKE) application-bootstrap APP=info)
-	$(if $(filter true,$(PLATFORM_KNOWLEDGE)),$(MAKE) application-bootstrap APP=knowledge)
+	$(if $(filter true,$(PLATFORM_KNOWFEED)),$(MAKE) application-bootstrap APP=knowfeed)
+	$(if $(filter true,$(PLATFORM_KNOWBASE)),$(MAKE) application-bootstrap APP=knowbase)
 	$(if $(filter true,$(PLATFORM_INVESTMENT)),$(MAKE) application-bootstrap APP=investment)
 	$(if $(filter host,$(OBJECT)),$(MAKE) platform-install-lifecycle)
 
@@ -439,8 +439,8 @@ platform-check-selected:
 	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) install-binaries BINARIES=mc)
 	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) services-check-public)
 	$(if $(filter true,$(PLATFORM_TPL)),$(MAKE) application-check-public APP=tpl)
-	$(if $(filter true,$(PLATFORM_INFO)),$(MAKE) application-check-public APP=info)
-	$(if $(filter true,$(PLATFORM_KNOWLEDGE)),$(MAKE) application-check-public APP=knowledge)
+	$(if $(filter true,$(PLATFORM_KNOWFEED)),$(MAKE) application-check-public APP=knowfeed)
+	$(if $(filter true,$(PLATFORM_KNOWBASE)),$(MAKE) application-check-public APP=knowbase)
 	$(if $(filter true,$(PLATFORM_INVESTMENT)),$(MAKE) application-check-public APP=investment)
 
 # Public object navigation is read-only. Lifecycle candidate generation is an internal host operation.
@@ -463,7 +463,7 @@ platform-stage: platform-selection
 	$(MAKE) platform-stage-selected
 platform-stage-selected:
 	@.venv/bin/python -c 'import json,os; d=json.load(open("$(SELECTION_PREFIX).json")); assert d["object"]==os.environ["OBJECT"] and d["action"]=="stage", "Run the public platform-stage entry to validate this object afresh"'
-	$(if $(filter true,$(PLATFORM_FOUNDATIONS) $(PLATFORM_SERVICES) $(PLATFORM_TPL) $(PLATFORM_INFO) $(PLATFORM_KNOWLEDGE) $(PLATFORM_INVESTMENT)),$(MAKE) services-stage)
+	$(if $(filter true,$(PLATFORM_FOUNDATIONS) $(PLATFORM_SERVICES) $(PLATFORM_TPL) $(PLATFORM_KNOWFEED) $(PLATFORM_KNOWBASE) $(PLATFORM_INVESTMENT)),$(MAKE) services-stage)
 platform-build: SELECTION_ACTION=build
 platform-build: platform-selection
 	$(MAKE) platform-build-selected
@@ -472,12 +472,12 @@ platform-build-selected:
 	$(if $(filter true,$(PLATFORM_TPL_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=tpl)
 	$(if $(filter true,$(PLATFORM_TPL_WEB)),$(MAKE) application-build-web application-publish-web APP=tpl)
 	$(if $(filter true,$(PLATFORM_TPL_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=tpl)
-	$(if $(filter true,$(PLATFORM_INFO_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=info)
-	$(if $(filter true,$(PLATFORM_INFO_WEB)),$(MAKE) application-build-web application-publish-web APP=info)
-	$(if $(filter true,$(PLATFORM_INFO_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=info)
-	$(if $(filter true,$(PLATFORM_KNOWLEDGE_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=knowledge)
-	$(if $(filter true,$(PLATFORM_KNOWLEDGE_WEB)),$(MAKE) application-build-web application-publish-web APP=knowledge)
-	$(if $(filter true,$(PLATFORM_KNOWLEDGE_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=knowledge)
+	$(if $(filter true,$(PLATFORM_KNOWFEED_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=knowfeed)
+	$(if $(filter true,$(PLATFORM_KNOWFEED_WEB)),$(MAKE) application-build-web application-publish-web APP=knowfeed)
+	$(if $(filter true,$(PLATFORM_KNOWFEED_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=knowfeed)
+	$(if $(filter true,$(PLATFORM_KNOWBASE_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=knowbase)
+	$(if $(filter true,$(PLATFORM_KNOWBASE_WEB)),$(MAKE) application-build-web application-publish-web APP=knowbase)
+	$(if $(filter true,$(PLATFORM_KNOWBASE_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=knowbase)
 	$(if $(filter true,$(PLATFORM_INVESTMENT_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=investment)
 	$(if $(filter true,$(PLATFORM_INVESTMENT_WEB)),$(MAKE) application-build-web application-publish-web APP=investment)
 	$(if $(filter true,$(PLATFORM_INVESTMENT_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=investment)

@@ -16,7 +16,7 @@ TLS私钥由prepare生成/备份后SOPS发布，仅Traefik消费；客户端只�
 |---|---|---|
 | `service_access_enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
 | `service_access_hosts.casdoor` | 文本/表达式 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
-| `service_access_hosts.knowledge` | 文本/表达式 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `service_access_hosts.knowbase` | 文本/表达式 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
 
 ## 部署、检查与退回
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 本机联调：证券代码 → info 采集建库 → 对象存储 → 向知识服务登记 → 知识服务取文件 → MCP 查询。
+# 本机联调：证券代码 → knowfeed 采集建库 → 对象存储 → 向知识服务登记 → 知识服务取文件 → MCP 查询。
 #
 # 不连任何集群。用一次性的容器（对象存储、缓存）和一个已有的 PostgreSQL 容器里的两个新库。
 # 口令每次随机生成，只放在状态目录里（0600），不进仓库、不进结果文件。
@@ -9,17 +9,17 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE="${WORKSPACE:-$HOME/worktrees/fable}"
-INFO="$WORKSPACE/info-app/info-backend/app"
-KNOW="$WORKSPACE/knowledge-app/knowledge-backend/app"
+INFO="$WORKSPACE/knowfeed-app/knowfeed-backend/app"
+KNOW="$WORKSPACE/knowbase-app/knowbase-backend/app"
 STATE="${DATASET_CHAIN_STATE:-$HOME/.cache/sunmoon-dataset-chain}"
 PG_CONTAINER="${PG_CONTAINER:-pgtest}"
 PG_URL_BASE="${PG_URL_BASE:-postgresql://t:t@127.0.0.1:55432}"
 S3_IMAGE="${S3_IMAGE:-bitnamilegacy/minio:2025.7.23}"
 REDIS_IMAGE="${REDIS_IMAGE:-redis:7-alpine}"
 S3_PORT=59000 REDIS_PORT=59379 OIDC_PORT=59080 KNOW_PORT=59001
-INFO_BUCKET=development-info-originals
-AUDIENCE=sunmoonai-knowledge-internal
-SUBJECT=service/sunmoonai-info-knowledge-ingest
+KNOWFEED_BUCKET=development-knowfeed-originals
+AUDIENCE=sunmoonai-knowbase-internal
+SUBJECT=service/sunmoonai-knowfeed-knowbase-ingest
 
 say() { printf '%s\n' "$*" >&2; }
 secret() { head -c 24 /dev/urandom | base64 | tr -d '/+=' | cut -c1-28; }
@@ -47,14 +47,14 @@ up() {
     cat > "$STATE/env" <<ENV
 S3_ROOT_USER=itroot
 S3_ROOT_PASSWORD=$(secret)
-INFO_S3_KEY=itinfo
-INFO_S3_SECRET=$(secret)
+KNOWFEED_S3_KEY=itinfo
+KNOWFEED_S3_SECRET=$(secret)
 KNOW_S3_KEY=itknowledge
 KNOW_S3_SECRET=$(secret)
 NOACCESS_S3_KEY=itnoaccess
 NOACCESS_S3_SECRET=$(secret)
-INFO_CLIENT_ID=it-info-client
-INFO_CLIENT_SECRET=$(secret)
+KNOWFEED_CLIENT_ID=it-info-client
+KNOWFEED_CLIENT_SECRET=$(secret)
 MCP_TOKEN=$(secret)
 MCP_TOKEN_NARROW=$(secret)
 ENV
@@ -67,34 +67,34 @@ ENV
   docker run -d --name it-redis -p 127.0.0.1:$REDIS_PORT:6379 "$REDIS_IMAGE" >/dev/null
   wait_http "http://127.0.0.1:$S3_PORT/minio/health/live" 60 || { say "对象存储没起来"; exit 1; }
 
-  # 桶开版本保留；info 可读写自己的桶，knowledge 对它只读，第三个账号什么都没有
+  # 桶开版本保留；knowfeed 可读写自己的桶，knowbase 对它只读，第三个账号什么都没有
   mc() { docker exec it-s3 mc "$@"; }
   mc alias set it "http://127.0.0.1:9000" "$S3_ROOT_USER" "$S3_ROOT_PASSWORD" >/dev/null
-  mc mb --ignore-existing "it/$INFO_BUCKET" >/dev/null
-  mc version enable "it/$INFO_BUCKET" >/dev/null
-  docker exec -i it-s3 sh -c 'cat > /tmp/info-rw.json' <<JSON
-{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:GetObject","s3:GetObjectVersion","s3:PutObject","s3:ListBucket","s3:ListBucketVersions","s3:GetBucketLocation"],"Resource":["arn:aws:s3:::$INFO_BUCKET","arn:aws:s3:::$INFO_BUCKET/*"]}]}
+  mc mb --ignore-existing "it/$KNOWFEED_BUCKET" >/dev/null
+  mc version enable "it/$KNOWFEED_BUCKET" >/dev/null
+  docker exec -i it-s3 sh -c 'cat > /tmp/knowfeed-rw.json' <<JSON
+{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:GetObject","s3:GetObjectVersion","s3:PutObject","s3:ListBucket","s3:ListBucketVersions","s3:GetBucketLocation"],"Resource":["arn:aws:s3:::$KNOWFEED_BUCKET","arn:aws:s3:::$KNOWFEED_BUCKET/*"]}]}
 JSON
-  docker exec -i it-s3 sh -c 'cat > /tmp/info-ro.json' <<JSON
-{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:GetObject","s3:GetObjectVersion"],"Resource":["arn:aws:s3:::$INFO_BUCKET/*"]}]}
+  docker exec -i it-s3 sh -c 'cat > /tmp/knowfeed-ro.json' <<JSON
+{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:GetObject","s3:GetObjectVersion"],"Resource":["arn:aws:s3:::$KNOWFEED_BUCKET/*"]}]}
 JSON
-  mc admin policy create it info-rw /tmp/info-rw.json >/dev/null
-  mc admin policy create it info-ro /tmp/info-ro.json >/dev/null
-  mc admin user add it "$INFO_S3_KEY" "$INFO_S3_SECRET" >/dev/null
+  mc admin policy create it knowfeed-rw /tmp/knowfeed-rw.json >/dev/null
+  mc admin policy create it knowfeed-ro /tmp/knowfeed-ro.json >/dev/null
+  mc admin user add it "$KNOWFEED_S3_KEY" "$KNOWFEED_S3_SECRET" >/dev/null
   mc admin user add it "$KNOW_S3_KEY" "$KNOW_S3_SECRET" >/dev/null
   mc admin user add it "$NOACCESS_S3_KEY" "$NOACCESS_S3_SECRET" >/dev/null
-  mc admin policy attach it info-rw --user "$INFO_S3_KEY" >/dev/null
-  mc admin policy attach it info-ro --user "$KNOW_S3_KEY" >/dev/null
+  mc admin policy attach it knowfeed-rw --user "$KNOWFEED_S3_KEY" >/dev/null
+  mc admin policy attach it knowfeed-ro --user "$KNOW_S3_KEY" >/dev/null
 
   for db in it_info it_knowledge; do
     docker exec "$PG_CONTAINER" psql -U t -d postgres -qc "DROP DATABASE IF EXISTS $db WITH (FORCE)" -c "CREATE DATABASE $db" >/dev/null 2>&1
   done
-  # info 的迁移链要求库里预先装好 uuid-ossp（它自己不建；knowledge 的迁移链自己建）。
+  # knowfeed 的迁移链要求库里预先装好 uuid-ossp（它自己不建；knowbase 的迁移链自己建）。
   # 这里替平台的数据库供给步骤做这件事。新集群上要由供给步骤保证，见待办账本。
   docker exec "$PG_CONTAINER" psql -U t -d it_info -qc 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public' >/dev/null
-  say "从空库跑迁移：info"
+  say "从空库跑迁移：knowfeed"
   (cd "$INFO" && DATABASE_URL="$PG_URL_BASE/it_info" ENV=development uv run alembic upgrade head 2>&1 | tail -1 >&2)
-  say "从空库跑迁移：knowledge"
+  say "从空库跑迁移：knowbase"
   (cd "$KNOW" && DATABASE_URL="$PG_URL_BASE/it_knowledge" ENV=development uv run alembic upgrade head 2>&1 | tail -1 >&2)
 
   umask 077
@@ -102,7 +102,7 @@ JSON
 import json, os, sys
 state = sys.argv[1]
 e = dict(l.strip().split("=", 1) for l in open(f"{state}/env") if "=" in l)
-json.dump({e["INFO_CLIENT_ID"]: {"secret": e["INFO_CLIENT_SECRET"], "subject": "$SUBJECT", "audience": "$AUDIENCE"}}, open(f"{state}/clients.json", "w"))
+json.dump({e["KNOWFEED_CLIENT_ID"]: {"secret": e["KNOWFEED_CLIENT_SECRET"], "subject": "$SUBJECT", "audience": "$AUDIENCE"}}, open(f"{state}/clients.json", "w"))
 tokens = {
     e["MCP_TOKEN"]: {"user": "it-expert", "sandbox": "it", "tools": None},
     e["MCP_TOKEN_NARROW"]: {"user": "it-narrow", "sandbox": "it", "tools": ["describe_schema"]},
@@ -139,12 +139,12 @@ knowledge_env() {
 DATABASE_URL=$PG_URL_BASE/it_knowledge
 S3_ACCESS_KEY_ID=${KNOW_S3_KEY_OVERRIDE:-$KNOW_S3_KEY}
 S3_SECRET_ACCESS_KEY=${KNOW_S3_SECRET_OVERRIDE:-$KNOW_S3_SECRET}
-KNOWLEDGE_DATASET_REGISTRY_ENABLED=${REGISTRY_ENABLED:-true}
-KNOWLEDGE_DATASET_ALLOWED_BUCKETS=${ALLOWED_BUCKETS:-$INFO_BUCKET}
-KNOWLEDGE_DATASET_CACHE_DIR=$STATE/knowledge-datasets
-KNOWLEDGE_SEMANTIC_ENGINE_ENABLED=true
-KNOWLEDGE_SEMANTIC_CACHE_DIR=$STATE/knowledge-semantic
-KNOWLEDGE_MCP_TOKENS_JSON='$(cat "$STATE/mcp-tokens.json")'
+KNOWBASE_DATASET_REGISTRY_ENABLED=${REGISTRY_ENABLED:-true}
+KNOWBASE_DATASET_ALLOWED_BUCKETS=${ALLOWED_BUCKETS:-$KNOWFEED_BUCKET}
+KNOWBASE_DATASET_CACHE_DIR=$STATE/knowbase-datasets
+KNOWBASE_SEMANTIC_ENGINE_ENABLED=true
+KNOWBASE_SEMANTIC_CACHE_DIR=$STATE/knowledge-semantic
+KNOWBASE_MCP_TOKENS_JSON='$(cat "$STATE/mcp-tokens.json")'
 INTERNAL_AUTH_DISCOVERY_URL=http://127.0.0.1:$OIDC_PORT/.well-known/openid-configuration
 INTERNAL_AUTH_AUDIENCE=$AUDIENCE
 INTERNAL_AUTH_SUBJECT_ALLOWLIST=${SUBJECT_ALLOWLIST:-$SUBJECT}
@@ -154,7 +154,7 @@ ENV
 start_knowledge() {
   load
   pkill_port $KNOW_PORT; sleep 1
-  mkdir -p "$STATE/knowledge-datasets" "$STATE/knowledge-semantic"
+  mkdir -p "$STATE/knowbase-datasets" "$STATE/knowledge-semantic"
   knowledge_env > "$STATE/knowledge.env"; chmod 600 "$STATE/knowledge.env"
   spawn "$STATE/knowledge.log" "$STATE/knowledge.env" "$KNOW" .venv/bin/uvicorn app.bootstrap.api:app --host 127.0.0.1 --port $KNOW_PORT
   wait_http "http://127.0.0.1:$KNOW_PORT/api/internal/v1/knowledge/datasets" 60 || { say "知识服务没起来，见 $STATE/knowledge.log"; tail -5 "$STATE/knowledge.log" >&2; exit 1; }
@@ -165,13 +165,13 @@ info_env() {
   cat <<ENV
 DATABASE_URL=$PG_URL_BASE/it_info
 STORAGE_BACKEND=s3
-S3_BUCKET=$INFO_BUCKET
-S3_ACCESS_KEY_ID=$INFO_S3_KEY
-S3_SECRET_ACCESS_KEY=$INFO_S3_SECRET
-KNOWLEDGE_APP_DATASET_URL=http://127.0.0.1:$KNOW_PORT/api/internal/v1/knowledge/datasets
-KNOWLEDGE_APP_SERVICE_DISCOVERY_URL=http://127.0.0.1:$OIDC_PORT/.well-known/openid-configuration
-KNOWLEDGE_APP_SERVICE_CLIENT_ID=$INFO_CLIENT_ID
-KNOWLEDGE_APP_SERVICE_CLIENT_SECRET=${INFO_CLIENT_SECRET_OVERRIDE:-$INFO_CLIENT_SECRET}
+S3_BUCKET=$KNOWFEED_BUCKET
+S3_ACCESS_KEY_ID=$KNOWFEED_S3_KEY
+S3_SECRET_ACCESS_KEY=$KNOWFEED_S3_SECRET
+KNOWBASE_APP_DATASET_URL=http://127.0.0.1:$KNOW_PORT/api/internal/v1/knowledge/datasets
+KNOWBASE_APP_SERVICE_DISCOVERY_URL=http://127.0.0.1:$OIDC_PORT/.well-known/openid-configuration
+KNOWBASE_APP_SERVICE_CLIENT_ID=$KNOWFEED_CLIENT_ID
+KNOWBASE_APP_SERVICE_CLIENT_SECRET=${KNOWFEED_CLIENT_SECRET_OVERRIDE:-$KNOWFEED_CLIENT_SECRET}
 CELERY_BROKER_URL=redis://127.0.0.1:$REDIS_PORT/1
 CELERY_QUEUE=info-it
 ENV
@@ -216,9 +216,9 @@ negative() {
   ALLOWED_BUCKETS=some-other-bucket start_knowledge
   expect "对象所在的桶不在知识服务的允许清单里" knowledge_refused_registration "$code"
   SUBJECT_ALLOWLIST=service/someone-else start_knowledge
-  expect "info 的服务身份没有被知识服务绑定" knowledge_rejected_identity "$code"
+  expect "knowfeed 的服务身份没有被知识服务绑定" knowledge_rejected_identity "$code"
   start_knowledge
-  INFO_CLIENT_SECRET_OVERRIDE=wrong-secret expect "info 拿错的口令去换令牌" service_token_unavailable "$code"
+  KNOWFEED_CLIENT_SECRET_OVERRIDE=wrong-secret expect "knowfeed 拿错的口令去换令牌" service_token_unavailable "$code"
   pkill_port $OIDC_PORT; sleep 1
   expect "身份服务不在" service_token_unavailable "$code"
   spawn "$STATE/oidc.log" /dev/null "$KNOW" .venv/bin/python "$HERE/oidc_standin.py" --port $OIDC_PORT --clients "$STATE/clients.json"
@@ -236,16 +236,16 @@ negative() {
   expect "身份服务换了签名密钥，知识服务不重启也能验" ok "$code"
 
   # 知识服务的存储账号没有权限：专家得到的是一句不含内部细节的话
-  rm -rf "$STATE/knowledge-datasets" "$STATE/knowledge-semantic"
+  rm -rf "$STATE/knowbase-datasets" "$STATE/knowledge-semantic"
   KNOW_S3_KEY_OVERRIDE="$NOACCESS_S3_KEY" KNOW_S3_SECRET_OVERRIDE="$NOACCESS_S3_SECRET" start_knowledge
-  (cd "$KNOW" && STATE="$STATE" KNOW_PORT=$KNOW_PORT S3_PORT=$S3_PORT INFO_BUCKET=$INFO_BUCKET .venv/bin/python "$HERE/driver.py" storage-denied "$code") || FAILED=$((FAILED+1))
+  (cd "$KNOW" && STATE="$STATE" KNOW_PORT=$KNOW_PORT S3_PORT=$S3_PORT KNOWFEED_BUCKET=$KNOWFEED_BUCKET .venv/bin/python "$HERE/driver.py" storage-denied "$code") || FAILED=$((FAILED+1))
 
   # 有人往同一个键写了别的内容：知识服务钉住的是登记时的那个版本
-  rm -rf "$STATE/knowledge-datasets" "$STATE/knowledge-semantic"
+  rm -rf "$STATE/knowbase-datasets" "$STATE/knowledge-semantic"
   start_knowledge
-  (cd "$KNOW" && STATE="$STATE" KNOW_PORT=$KNOW_PORT S3_PORT=$S3_PORT INFO_BUCKET=$INFO_BUCKET .venv/bin/python "$HERE/driver.py" overwritten "$code") || FAILED=$((FAILED+1))
+  (cd "$KNOW" && STATE="$STATE" KNOW_PORT=$KNOW_PORT S3_PORT=$S3_PORT KNOWFEED_BUCKET=$KNOWFEED_BUCKET .venv/bin/python "$HERE/driver.py" overwritten "$code") || FAILED=$((FAILED+1))
   if [ -f "$STATE/junk-version" ]; then  # 联调自己写进去的那个版本，用管理账号清掉
-    docker exec it-s3 mc rm --quiet --version-id "$(sed -n 2p "$STATE/junk-version")" "it/$INFO_BUCKET/$(sed -n 1p "$STATE/junk-version")" >/dev/null
+    docker exec it-s3 mc rm --quiet --version-id "$(sed -n 2p "$STATE/junk-version")" "it/$KNOWFEED_BUCKET/$(sed -n 1p "$STATE/junk-version")" >/dev/null
     rm -f "$STATE/junk-version"
   fi
 
@@ -350,8 +350,8 @@ case "${1:-}" in
     load; pkill_port $OIDC_PORT; sleep 1
     spawn "$STATE/oidc.log" /dev/null "$KNOW" .venv/bin/python "$HERE/oidc_standin.py" --port $OIDC_PORT --clients "$STATE/clients.json"
     wait_http "http://127.0.0.1:$OIDC_PORT/jwks" 20 || { say "身份服务替身没起来"; exit 1; } ;;
-  knowledge-log) tail -"${2:-20}" "$STATE/knowledge.log" ;;
-  driver) shift; load; (cd "$KNOW" && STATE="$STATE" KNOW_PORT=$KNOW_PORT S3_PORT=$S3_PORT INFO_BUCKET=$INFO_BUCKET PG_URL_BASE="$PG_URL_BASE" \
+  knowbase-log) tail -"${2:-20}" "$STATE/knowledge.log" ;;
+  driver) shift; load; (cd "$KNOW" && STATE="$STATE" KNOW_PORT=$KNOW_PORT S3_PORT=$S3_PORT KNOWFEED_BUCKET=$KNOWFEED_BUCKET PG_URL_BASE="$PG_URL_BASE" \
             .venv/bin/python "$HERE/driver.py" "$@") ;;
   *) say "用法：run.sh up | ingest <代码> | build <代码> | driver verify <代码> | negative <代码> | queued <代码> | restart-knowledge | down"; exit 2 ;;
 esac

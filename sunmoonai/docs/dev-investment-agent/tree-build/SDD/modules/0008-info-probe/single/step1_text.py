@@ -4,7 +4,7 @@ import json, os, sys, time, glob, hashlib
 from concurrent.futures import ProcessPoolExecutor
 import pdfplumber, logging
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
-ROOT = os.path.expanduser("~/info-smoke-storage/development-info-originals/info/securities/code=600009/source=cninfo")
+ROOT = os.path.expanduser("~/knowfeed-smoke-storage/development-knowfeed-originals/knowfeed/securities/code=600009/source=cninfo")
 OUT = os.path.expanduser("~/annual-report-probe/cache")
 
 def work(path):

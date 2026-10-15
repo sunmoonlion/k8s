@@ -1,6 +1,6 @@
 # 备忘：PDF 方案、交易所 XBRL 的现状、Qlib 的实际情况
 
-日期：2026-09-28。状态：**讨论稿，没有动任何代码**。等 luna 做完集群迁移后，并入 info 平台的设计文档（决策文档 `D25`）。
+日期：2026-09-28。状态：**讨论稿，没有动任何代码**。等 luna 做完集群迁移后，并入 knowfeed 平台的设计文档（决策文档 `D25`）。
 查证方式：从东京这台服务器发只读请求，共十几个；原始返回留在本目录 `evidence/` 下。个别网站对境外访问可能表现不同。
 
 ## 一句话结论
@@ -18,7 +18,7 @@
 
 ### 现在是怎么做的
 
-info 后端用 pdfplumber，范围很窄：每份年报只看前 25 页，只抽「主要会计数据」那一张表。认不出就明确报错，不猜。
+knowfeed 后端用 pdfplumber，范围很窄：每份年报只看前 25 页，只抽「主要会计数据」那一张表。认不出就明确报错，不猜。
 抽出的数与报表数据逐项比对，对上才标「已核实」。600009 的 9 份年报全部成功，共 177 个数。
 
 局限：只验证过一家公司；只能处理有文字层的 PDF；表格没有边框线时抽不出来；字体缺映射时会乱码。
@@ -28,7 +28,7 @@ info 后端用 pdfplumber，范围很窄：每份年报只看前 25 页，只抽
 
 | 用途 | 要什么 | 错了的后果 | 走哪条路 |
 | --- | --- | --- | --- |
-| 取数：报表数字进数据集 | 一分不差，能追到页码 | 专家算错指标 | info 平台，确定性抽取 |
+| 取数：报表数字进数据集 | 一分不差，能追到页码 | 专家算错指标 | knowfeed 平台，确定性抽取 |
 | 取文：附注、公告、研报、用户资料进检索 | 版面和表格保留，能引用到页 | 引文不准，人可以翻原文核对 | 知识服务，交给 RAGFlow |
 | 留存与预览 | 原件不丢，网页能看 | — | 对象存储；浏览器直接显示 PDF |
 
@@ -151,7 +151,7 @@ RAGFlow 对 PDF 做的事（看的是本机 `~/repo/ragflow` 的源码，2026-05
 
 | 借什么 | 说明 |
 | --- | --- |
-| 按时点存储 | 每个数记「属于哪一期」与「哪天公布」；与 info 平台的三个时点是同一个想法 |
+| 按时点存储 | 每个数记「属于哪一期」与「哪天公布」；与 knowfeed 平台的三个时点是同一个想法 |
 | 行情的存储格式、复权算法 | 专门为行情设计 |
 | 交易日历、指数历史成分的采集办法 | 接口知识 |
 
@@ -244,7 +244,7 @@ RAGFlow 对 PDF 做的事（看的是本机 `~/repo/ragflow` 的源码，2026-05
 - 巨潮资讯：`http://www.cninfo.com.cn/`；深证信数据服务平台：`https://webapi.cninfo.com.cn/`
 - Qlib：`https://github.com/microsoft/qlib`（`README.md`、`scripts/data_collector/pit/`、`scripts/data_collector/yahoo/`）
 - RAGFlow：本机 `~/repo/ragflow`（`deepdoc/README_zh.md`、`rag/app/`、`rag/nlp/__init__.py`）
-- 项目内：info 后端 `app/infrastructure/securities/pdf_tables.py`、`app/application/securities/dataset/official_report.py`；知识后端 `docs/knowledge-provider.md`
+- 项目内：knowfeed 后端 `app/infrastructure/securities/pdf_tables.py`、`app/application/securities/dataset/official_report.py`；知识后端 `docs/knowbase-provider.md`
 
 ## 七、本目录的文件
 

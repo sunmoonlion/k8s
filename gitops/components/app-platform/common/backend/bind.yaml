@@ -4,7 +4,7 @@
   ansible.builtin.assert:
     quiet: true
     that:
-      - prepare_vars.application_name in ['tpl', 'info', 'knowledge', 'investment']
+      - prepare_vars.application_name in ['tpl', 'knowfeed', 'knowbase', 'investment']
 - name: Bind application paths
   ansible.builtin.set_fact:
     application_name: '{{ prepare_vars.application_name }}'
@@ -34,13 +34,13 @@
     storage_enabled: '{{ (backend_cfg.object_storage.enabled | default(false)) | bool }}'
     agent_releases_enabled: '{{ lookup("vars", prepare_vars.application_name + "_agent_releases", default={}).enabled | default(false) | bool }}'
     provider_enabled: '{{ (backend_cfg.knowledge_provider.enabled | default(false)) | bool }}'
-    service_enabled: '{{ (backend_cfg.knowledge_service.enabled | default(false)) | bool }}'
-    receiver_enabled: '{{ (backend_cfg.knowledge_service_receiver.enabled | default(false)) | bool }}'
-    service_relation: '{{ "ingest" if application_name == "info" else "retrieve" }}'
-    service_env_prefix: '{{ "KNOWLEDGE_APP_SERVICE" if application_name == "info" else "KNOWLEDGE_RETRIEVAL_SERVICE" }}'
+    service_enabled: '{{ (backend_cfg.knowbase_service.enabled | default(false)) | bool }}'
+    receiver_enabled: '{{ (backend_cfg.knowbase_service_receiver.enabled | default(false)) | bool }}'
+    service_relation: '{{ "ingest" if application_name == "knowfeed" else "retrieve" }}'
+    service_env_prefix: '{{ "KNOWBASE_APP_SERVICE" if application_name == "knowfeed" else "KNOWBASE_RETRIEVAL_SERVICE" }}'
     service_bindings:
-      ingest: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/info-app/info-backend/config.yaml") | from_yaml).info_backend_deployment.knowledge_service }}'
-      retrieve: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/investment-app/investment-backend/config.yaml") | from_yaml).investment_backend_deployment.knowledge_service }}'
+      ingest: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml") | from_yaml).knowfeed_backend_deployment.knowbase_service }}'
+      retrieve: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/investment-app/investment-backend/config.yaml") | from_yaml).investment_backend_deployment.knowbase_service }}'
 - name: Derive public rollout identity
   ansible.builtin.set_fact:
     deployment_id: '{{ app_images.backend.deployment_id }}'

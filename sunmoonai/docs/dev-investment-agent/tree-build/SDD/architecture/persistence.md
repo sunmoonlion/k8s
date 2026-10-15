@@ -10,7 +10,7 @@
 | **事件** | Session、Task、Attempt 的事件流；Outbox | 工作台 | PostgreSQL 事件表 + Outbox 表（现有） | 永久；网页按 cursor 回放（`AT-15`） |
 | **产物 Artifact** | 步骤交回物、研究底稿、结果信封、覆盖前的备份版本 | 工作台 | 元数据在 PostgreSQL；正文在对象存储（`C-D4`，桶按领域归 investment）；**同时落用户工作区一份**，那份是用户的副本 | 永久；版本只增不改 |
 | **会话记录** | Codex thread 的 rollout：第一层与第二层的全部 turn、工具调用、审批、token 用量 | **Codex**（`CODEX_HOME`） | 沙箱 pod 的 PVC | 与沙箱同寿命；PVC 丢了会话丢，账不丢 |
-| **用户资料** | 显式上传或勾选上送的文件 | 知识服务 | `knowledge-app` 库 + 对象存储 | 用户删即删 |
+| **用户资料** | 显式上传或勾选上送的文件 | 知识服务 | `knowbase-app` 库 + 对象存储 | 用户删即删 |
 | **密钥与令牌** | 用户模型 key、会合点令牌、app-server 能力令牌 | 密钥库 | k8s Secret（第一期）/ Vault | 撤换即失效；不入表、不入事件、不入日志（`I8`） |
 | **本机** | 代理配置、白名单、上限、`status.json`、执行端 `CODEX_HOME` | 用户机器 | `~/.sunmoon-agent/` | 本机；卸载即无 |
 
@@ -42,7 +42,7 @@ PostgreSQL（账、事件、Artifact 元数据） ──真源──▶ 网页�
 | PostgreSQL | 每日全量 + WAL；恢复演练是发布门（`constraints.md`「做数据迁移时」六条验收） | 同 |
 | 对象存储 | 桶开版本化 | 跨机房复制 |
 | 沙箱 PVC | **不备份**：会话可丢，账不可丢（`D18` 待定要不要备） | 看 `D9` 的资源模型 |
-| 知识服务 | 随 `knowledge-app` 现有策略 | 同 |
+| 知识服务 | 随 `knowbase-app` 现有策略 | 同 |
 
 ## 与现有表的关系
 

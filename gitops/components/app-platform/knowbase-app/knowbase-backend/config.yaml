@@ -1,0 +1,86 @@
+# 知识应用运行配置；RAGFlow为派生索引，信息原文以独立只读身份读取。
+---
+knowbase_backend_deployment:
+  database: knowbase
+  database_runtime_user: knowbase_runtime
+  database_migrator_user: knowbase_migrator
+  database_extensions:
+  - uuid-ossp
+  database_bootstrap_revision: v1
+  migration_job_revision: v2
+  expected_schema_revision: '20260927_0007'
+  private_dir: /etc/sunmoon/applications/sunmoon-kind/knowbase
+  backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/knowbase
+  deploy_budget_bytes: 2147483648
+  redis_user: knowbase_runtime
+  redis_key_pattern: knowbase:*
+  redis_identity_revision: v2
+  rabbitmq_user: knowbase_runtime
+  rabbitmq_vhost: knowbase
+  rabbitmq_queue: knowbase.default
+  rabbitmq_identity_revision: v2
+  identity_organization: built-in
+  # 普通用户所在组织（决策 D21、SDD 0014）：网页端应用挂这里；管理端仍在 built-in。
+  identity_user_organization: sunmoonai
+  identity_revision: v3
+  api_port: 8000
+  api_replicas: 1
+  worker_replicas: 1
+  worker_concurrency: 2
+  scheduler_replicas: 1
+  resources:
+    api:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: '2'
+        memory: 768Mi
+    worker:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: '2'
+        memory: 1Gi
+    scheduler:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: '1'
+        memory: 512Mi
+  celery_control_queue_exclusive: true
+  celery_event_queue_exclusive: true
+  domain_runtime_env: {}
+  # 0010：数据集目录、多数据集与语义层（0008-info 段三、0009-semantic）、工具的 JWT 验签
+  cross_app_enabled: true
+  tmp_size_limit: 2Gi
+  domain_env:
+    KNOWBASE_MCP_JWT_ISSUER: sunmoon-workbench
+    KNOWBASE_MCP_RATE_PER_MINUTE: '120'
+    KNOWBASE_DATASET_TITLE: 零售经营库（最小实例）
+    KNOWBASE_DATASET_REGISTRY_ENABLED: 'true'
+    KNOWBASE_DATASET_ALLOWED_BUCKETS: knowfeed-originals
+    KNOWBASE_DATASET_CACHE_DIR: /tmp/knowbase-datasets
+    KNOWBASE_SEMANTIC_ENGINE_ENABLED: 'true'
+    KNOWBASE_SEMANTIC_CACHE_DIR: /tmp/knowledge-semantic
+  domain_secrets:
+    KNOWBASE_MCP_JWT_PUBLIC_KEY: {source: workbench-signing, key: public_key_pem}
+  domain_secrets_roles: [api]
+  domain_ingress:
+    - {name: sandboxes, namespace_var: sandbox_namespace, pod_labels: {sunmoonai.com/sandbox: 'true'}}
+  knowledge_provider:
+    enabled: true
+    dataset_key: default
+    dataset_name: sunmoon-kind-knowbase-default
+    tenant_id: sunmoonai
+    source_user: knowbase_source_reader
+    source_bucket: knowfeed-originals
+    # 2026-10-06 放宽到 knowfeed/：原文在 knowfeed/original/，登记的数据集文件在 knowfeed/securities/…/datasets/
+    source_prefix: knowfeed/
+    # v2：前缀放宽后策略要在现网重建一次（Job 按代次命名，不升代次不重跑）
+    job_revision: v2
+
+  knowbase_service_receiver:
+    enabled: true

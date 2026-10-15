@@ -6,7 +6,7 @@
 
 | 项 | 定了什么 |
 | --- | --- |
-| 第四个应用 | `advisor-app`，由 `tpl-app` 实例化：`advisor-backend`、`advisor-web-frontend`（市场 + 作者编辑页）、`advisor-admin-frontend`（上架审核、分类）。与 knowledge 是不同的概念：advisor 把 profile 内化为工作流给 Codex 用，knowledge 加工存储采集来的信息；专家知识库由 advisor 自己存、自己索引（甲） |
+| 第四个应用 | `advisor-app`，由 `tpl-app` 实例化：`advisor-backend`、`advisor-web-frontend`（市场 + 作者编辑页）、`advisor-admin-frontend`（上架审核、分类）。与 knowbase 是不同的概念：advisor 把 profile 内化为工作流给 Codex 用，knowbase 加工存储采集来的信息；专家知识库由 advisor 自己存、自己索引（甲） |
 | 市场怎么分 | 三大类：宏观、行业、上市公司；每类若干专家 |
 | 一位专家是什么 | **知识库 + skill**。skill 就是现在的专家 profile / 专家包（六问、步骤、每步验收、工具范围、放行表）；知识库是这位专家在云上的私有资料 |
 | 谁上架 | 第一期我们；以后主要靠作者（独立的账号体系，§二之二），所以要有作者编辑页。第一期只有我们自己的作者账号 |
@@ -14,11 +14,11 @@
 | 用户还上传吗 | 不。用户的 Codex 能读的资料只有：项目目录、本地知识库（0019）、选定专家的云上知识库、公共数据 |
 | 选专家 | 在投研的专家对话框里点「选专家」→ 跳 advisor 前端 → 选定 → 跳回原处；编排按选定专家的 profile 做 |
 
-## 二、Codex 可读的四处资料（取代 0011 §一与 knowledge PRD 六之二）
+## 二、Codex 可读的四处资料（取代 0011 §一与 knowbase PRD 六之二）
 
 | 层 | 谁的 | 放哪 | 谁能读 | 怎么进来 | 页面上 |
 | --- | --- | --- | --- | --- | --- |
-| 公共数据 | 我们 | 服务器（knowledge-app） | 所有用户、所有专家 | 我们在管理端采集、建库、登记 | 不以库的面目出现，「问就有」 |
+| 公共数据 | 我们 | 服务器（knowbase-app） | 所有用户、所有专家 | 我们在管理端采集、建库、登记 | 不以库的面目出现，「问就有」 |
 | 专家的云上知识库 | 每位专家（作者） | 服务器（advisor-app），按专家隔离 | 选定这位专家的那段对话，经按「用户 × 专家 × 对话」签的令牌 | 作者在市场里备：专家资料夹 + 作者私有知识库挂给它的部分（§二之二） | 市场页只显示概况（多少份、涉及什么），不显示原件 |
 | 项目目录 | 每个用户 | 用户电脑 | 该用户的 Codex 经本地代理 | 用户自己放、工作与专家产出 | 项目、右边栏文件树 |
 | 本地知识库 | 每个用户 | 用户电脑上的一个目录 | 该用户的 Codex 经本地代理，跨项目 | 用户自己放、信息采集放入 | 侧边栏「本地知识库」（0019） |
@@ -64,7 +64,7 @@ skill 的真源从 `investment-backend/.../packs.py` 搬到 advisor 的数据库
 
 ## 四、专家的云上知识库怎么被读
 
-沙箱里加一个 MCP `sunmoon_advisor`（与 `sunmoon_workbench`、knowledge 同一套令牌机制，`aud=advisor`，`sub=用户`，加 `expert`、`session`、`exp`）：
+沙箱里加一个 MCP `sunmoon_advisor`（与 `sunmoon_workbench`、knowbase 同一套令牌机制，`aud=advisor`，`sub=用户`，加 `expert`、`session`、`exp`）：
 
 | 工具 | 做什么 |
 | --- | --- |
@@ -72,7 +72,7 @@ skill 的真源从 `investment-backend/.../packs.py` 搬到 advisor 的数据库
 | `read_expert_item` | 读一条（大文件分页），返回内容 + 引用 `{expert, item, version, sha256}` |
 | `search_expert_library` | 按问题找片段，带出处。第一期先做全文；语义索引第二期 |
 
-令牌由 investment 在专家对话开始编排时签发，只带选定的那一位专家；对话到终态令牌作废。advisor 后端用平台公钥就地验（`security.md` MCP token 一行）。knowledge PRD「已知的缺口：文档检索」里的 `search_documents` 先在这里做出来，以后公共库复用。
+令牌由 investment 在专家对话开始编排时签发，只带选定的那一位专家；对话到终态令牌作废。advisor 后端用平台公钥就地验（`security.md` MCP token 一行）。knowbase PRD「已知的缺口：文档检索」里的 `search_documents` 先在这里做出来，以后公共库复用。
 
 ## 五、选专家：跳出去、跳回来
 
@@ -119,7 +119,7 @@ skill 的真源从 `investment-backend/.../packs.py` 搬到 advisor 的数据库
 
 | 项 | 说明 |
 | --- | --- |
-| 专家知识库放哪（2026-10-11 所有者定「甲」） | advisor 自己存、自己建索引、自己出 MCP；knowledge 只碰公共数据，两者是不同的概念，不存在分工 |
+| 专家知识库放哪（2026-10-11 所有者定「甲」） | advisor 自己存、自己建索引、自己出 MCP；knowbase 只碰公共数据，两者是不同的概念，不存在分工 |
 | 编排在哪（2026-10-11 所有者定「甲」） | advisor-app 存 profile / 工作流的真源与版本（作者编辑、校验、试跑、出版本，「把 profile 内化为工作流」在这一侧）；工作台取版本逐步跑、喂 Codex，Task / 方向盘 / 审批 / 验收 / 记账都不动 |
 | 作者上传资料的版权 | 作者承诺条款；举报下架。第二期 |
 | 专家知识库配额与文件类型 | 作者编辑页开放前定 |

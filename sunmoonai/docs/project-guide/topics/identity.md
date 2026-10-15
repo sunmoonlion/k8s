@@ -36,7 +36,7 @@ required_scopes=(f"{self.app_slug}:admin",) if surface == "admin" else ()
 - **Admin 强制要求 `{app}:admin` scope**
 - **Web 不要求任何 scope**
 
-各 App 的 Admin scope 分别是 `info:admin` / `knowledge:admin` / `investment:admin`。
+各 App 的 Admin scope 分别是 `knowfeed:admin` / `knowbase:admin` / `investment:admin`。
 
 ### 3.1 登录流程
 
@@ -74,14 +74,14 @@ csrf 值 hmac 相等。
 
 绑定表由 `SERVICE_AUTH_SUBJECT_BINDINGS_JSON` 提供，是 subject → 最大 scope 集的**精确映射**。
 
-### 4.2 knowledge-app 的双关系验证器
+### 4.2 knowbase-app 的双关系验证器
 
-knowledge 是两条入站关系的提供方，用**两个独立的验证器实例**：
+knowbase 是两条入站关系的提供方，用**两个独立的验证器实例**：
 
 | 关系 | 调用方 | scope |
 | --- | --- | --- |
-| `ingest` | info-app | `knowledge:ingest` |
-| `retrieve` | investment-app | `knowledge:retrieve` |
+| `ingest` | knowfeed-app | `knowbase:ingest` |
+| `retrieve` | investment-app | `knowbase:retrieve` |
 
 各自独立的 audience、subject allowlist、discovery / backchannel 配置。
 
@@ -118,10 +118,10 @@ audience/subject 绑定及 `delivery:observe`，不接受浏览器 Cookie 替代
 
 | 仓 | 状态 |
 | --- | --- |
-| knowledge-app | 摄入/检索领域面 + 公共投递指标 |
+| knowbase-app | 摄入/检索领域面 + 公共投递指标 |
 | investment-app | Pilot Runtime + 公共投递指标 |
 | tpl-app | 公共投递指标，无领域 Internal 用例 |
-| info-app | 公共投递指标，不因此新增资讯领域入站契约 |
+| knowfeed-app | 公共投递指标，不因此新增资讯领域入站契约 |
 
 数据库/broker 进程身份不同于上述 HTTP 服务身份。源码渲染已使用 API/Worker/Scheduler
 分角色键；2026-09-20 本机 KIND 的三个 App 已切换到独立 PG 与 RabbitMQ 运行身份，

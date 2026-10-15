@@ -3,7 +3,7 @@
 # 3) 前台起 app-server，监听 ws://0.0.0.0:$APP_SERVER_PORT，能力令牌鉴权（工作台是唯一客户端）。
 # 必需环境：RELAY_URL RELAY_USER RELAY_TOKEN APP_SERVER_TOKEN_FILE；模型 key 二选一：OPENAI_API_KEY（含国产厂商 key）或挂好的 $CODEX_HOME/auth.json。
 # 可选：MODEL、MODEL_PROVIDER、PROVIDER_BASE_URL、PROVIDER_WIRE_API（默认 responses）、ENVIRONMENT_ID（默认 user-pc）；
-#       KNOWLEDGE_MCP_URL + KNOWLEDGE_MCP_TOKEN（知识服务 MCP，0006）。
+#       KNOWBASE_MCP_URL + KNOWBASE_MCP_TOKEN（知识服务 MCP，0006）。
 set -euo pipefail
 : "${RELAY_URL:?}" "${RELAY_USER:?}" "${RELAY_TOKEN:?}" "${APP_SERVER_TOKEN_FILE:?}"
 CODEX_HOME="${CODEX_HOME:-/data/codex}"; mkdir -p "$CODEX_HOME"
@@ -35,10 +35,10 @@ if [ ! -f "$CODEX_HOME/config.toml" ] || [ "${REWRITE_CONFIG:-1}" = 1 ]; then
     echo "[windows]"
     echo "sandbox = \"unelevated\""
     # 知识服务 MCP（0006）：HTTP 型写进编排端 config；令牌走环境变量名，不落盘（F-KNOW-03）
-    if [ -n "${KNOWLEDGE_MCP_URL:-}" ]; then
-      echo "[mcp_servers.sunmoon_knowledge]"
-      echo "url = \"${KNOWLEDGE_MCP_URL}\""
-      echo "bearer_token_env_var = \"SUNMOON_KNOWLEDGE_TOKEN\""
+    if [ -n "${KNOWBASE_MCP_URL:-}" ]; then
+      echo "[mcp_servers.sunmoon_knowbase]"
+      echo "url = \"${KNOWBASE_MCP_URL}\""
+      echo "bearer_token_env_var = \"SUNMOON_KNOWBASE_TOKEN\""
       echo "startup_timeout_sec = 20"
     fi
     # 工作台的记录工具服务（0001-workbench：专家读本项目别的对话与底稿），同一种接法
@@ -51,7 +51,7 @@ if [ ! -f "$CODEX_HOME/config.toml" ] || [ "${REWRITE_CONFIG:-1}" = 1 ]; then
   } > "$CODEX_HOME/config.toml"
 fi
 # MCP 令牌留在 app-server 进程环境里（它按 bearer_token_env_var 读）；沙箱里的模型进程看不到环境
-if [ -n "${KNOWLEDGE_MCP_TOKEN:-}" ]; then export SUNMOON_KNOWLEDGE_TOKEN="$KNOWLEDGE_MCP_TOKEN"; unset KNOWLEDGE_MCP_TOKEN; fi
+if [ -n "${KNOWBASE_MCP_TOKEN:-}" ]; then export SUNMOON_KNOWBASE_TOKEN="$KNOWBASE_MCP_TOKEN"; unset KNOWBASE_MCP_TOKEN; fi
 if [ -n "${WORKBENCH_MCP_TOKEN:-}" ]; then export SUNMOON_WORKBENCH_TOKEN="$WORKBENCH_MCP_TOKEN"; unset WORKBENCH_MCP_TOKEN; fi
 # 远端环境：默认指向沙箱侧桥；不含本地执行（include_local=false，C-A12 不退回本地执行）
 cat > "$CODEX_HOME/environments.toml" <<EOF

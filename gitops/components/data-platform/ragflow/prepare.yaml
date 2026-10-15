@@ -51,9 +51,9 @@
       runtime_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
       storage_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
       session_secret: '{{ lookup("password","/dev/null",length=64,chars=["ascii_letters","digits"]) }}'
-      knowledge_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      knowbase_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
       acceptance_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
-      knowledge_token: '{{ lookup("password","/dev/null",length=64,chars=["ascii_letters","digits"]) }}'
+      knowbase_token: '{{ lookup("password","/dev/null",length=64,chars=["ascii_letters","digits"]) }}'
       acceptance_token: '{{ lookup("password","/dev/null",length=64,chars=["ascii_letters","digits"]) }}'
   no_log: true
 - name: Keep independent RAGFlow identity only in memory
@@ -111,7 +111,7 @@
         metadata: {name: ragflow-initialize-auth, namespace: '{{ data_namespace }}'}
         stringData:
           service_conf.yaml: '{{ lookup("template",playbook_dir + "/../../gitops/components/data-platform/ragflow/service_conf.yaml.j2") }}'
-          input.json: '{{ {"knowledge_password":ragflow_credentials.knowledge_password,"acceptance_password":ragflow_credentials.acceptance_password,"knowledge_token":ragflow_credentials.knowledge_token,"acceptance_token":ragflow_credentials.acceptance_token,"embedding_model":text_embeddings_model,"embedding_url":"http://text-embeddings." + data_namespace + ".svc.cluster.local:" + (text_embeddings_port | string)} | to_json }}'
+          input.json: '{{ {"knowbase_password":ragflow_credentials.knowbase_password,"acceptance_password":ragflow_credentials.acceptance_password,"knowbase_token":ragflow_credentials.knowbase_token,"acceptance_token":ragflow_credentials.acceptance_token,"embedding_model":text_embeddings_model,"embedding_url":"http://text-embeddings." + data_namespace + ".svc.cluster.local:" + (text_embeddings_port | string)} | to_json }}'
           ca.crt: '{{ component_tls_material.ragflow.ca }}'
   no_log: true
 - name: Encrypt runtime-only configuration and HTTPS identity

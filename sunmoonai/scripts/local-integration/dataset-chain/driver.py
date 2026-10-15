@@ -23,14 +23,14 @@ from botocore.exceptions import ClientError
 STATE = Path(os.environ["STATE"])
 KNOW = f"http://127.0.0.1:{os.environ['KNOW_PORT']}"
 S3 = f"http://127.0.0.1:{os.environ['S3_PORT']}"
-BUCKET = os.environ["INFO_BUCKET"]
+BUCKET = os.environ["KNOWFEED_BUCKET"]
 ENV = dict(
     line.strip().split("=", 1)
     for line in (STATE / "env").read_text().splitlines()
     if "=" in line
 )
 HERE = Path(__file__).resolve().parent
-KNOWLEDGE_APP = Path.cwd()
+KNOWBASE_APP = Path.cwd()
 
 results: list[dict] = []
 
@@ -79,7 +79,7 @@ def s3(key_name: str):
 
 
 def registered(code: str) -> dict:
-    """info 登记表里这只证券最新发布的数据集。"""
+    """knowfeed 登记表里这只证券最新发布的数据集。"""
     import subprocess
 
     sql = (
@@ -106,7 +106,7 @@ def normalise(rows):
 
 def verify(code: str) -> None:
     dataset = registered(code)
-    record("info 记下了登记成功", dataset["registered"], dataset["data_version"])
+    record("knowfeed 记下了登记成功", dataset["registered"], dataset["data_version"])
     record("数据集文件带着版本标识存进了对象存储", bool(dataset["version_id"]))
 
     # 知识服务的存储账号：只读
@@ -116,14 +116,14 @@ def verify(code: str) -> None:
     record("知识服务的账号能读到文件，校验值与登记的一致", hashlib.sha256(content).hexdigest() == dataset["sha256"])
     try:
         reader.put_object(Bucket=dataset["bucket"], Key="it-write-probe", Body=b"x")
-        record("知识服务的账号不能写 info 的桶", False, "写成功了")
+        record("知识服务的账号不能写 knowfeed 的桶", False, "写成功了")
     except ClientError as exc:
-        record("知识服务的账号不能写 info 的桶", exc.response["Error"]["Code"] == "AccessDenied")
+        record("知识服务的账号不能写 knowfeed 的桶", exc.response["Error"]["Code"] == "AccessDenied")
     try:
         reader.list_objects_v2(Bucket=dataset["bucket"], MaxKeys=1)
-        record("知识服务的账号不能列 info 的桶", False, "列成功了")
+        record("知识服务的账号不能列 knowfeed 的桶", False, "列成功了")
     except ClientError as exc:
-        record("知识服务的账号不能列 info 的桶", exc.response["Error"]["Code"] == "AccessDenied")
+        record("知识服务的账号不能列 knowfeed 的桶", exc.response["Error"]["Code"] == "AccessDenied")
 
     expert = Mcp(ENV["MCP_TOKEN"])
     init = expert.rpc("initialize", {"protocolVersion": "2025-03-26", "capabilities": {}, "clientInfo": {"name": "dataset-chain", "version": "1"}})
@@ -143,7 +143,7 @@ def verify(code: str) -> None:
     record("登记后专家能列出这个数据集", found is not None)
     if not found:
         return
-    record("列出的版本就是 info 发布的版本", found["data_version"] == dataset["data_version"], found["data_version"])
+    record("列出的版本就是 knowfeed 发布的版本", found["data_version"] == dataset["data_version"], found["data_version"])
     record("列出的内容不含对象位置", not any("s3://" in str(v) or "object" in k for k, v in found.items()))
 
     name = dataset["dataset_id"]
@@ -155,7 +155,7 @@ def verify(code: str) -> None:
         path = Path(tmp) / "direct.sqlite"
         path.write_bytes(content)
         direct = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
-        truth = json.loads((KNOWLEDGE_APP / "tests/fixtures/semantic/fin_truth_queries.json").read_text())
+        truth = json.loads((KNOWBASE_APP / "tests/fixtures/semantic/fin_truth_queries.json").read_text())
         same = 0
         different = []
         for query in truth:
@@ -223,7 +223,7 @@ def verify(code: str) -> None:
     anonymous = httpx.post(f"{KNOW}/api/mcp/knowledge", json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"}, timeout=20)
     record("不带令牌访问 MCP 被拒绝", anonymous.status_code == 401, str(anonymous.status_code))
 
-    cache = STATE / "knowledge-datasets"
+    cache = STATE / "knowbase-datasets"
     files = list(cache.glob("*"))
     record("知识服务取回的文件按校验值命名，内容一致", any(f.name.startswith(dataset["sha256"]) and hashlib.sha256(f.read_bytes()).hexdigest() == dataset["sha256"] for f in files), f"{len(files)} 个文件")
 
@@ -256,13 +256,13 @@ def overwritten(code: str) -> None:
         first = got["rows"][0]
         value = list(first.values())[0] if isinstance(first, dict) else first[0]
     record("知识服务取到的仍是登记时的那个版本", isinstance(value, float) and value > 0, str(got)[:80] if not ok else "")
-    cache = STATE / "knowledge-datasets"
+    cache = STATE / "knowbase-datasets"
     record("取回的文件校验值与登记的一致", any(hashlib.sha256(f.read_bytes()).hexdigest() == dataset["sha256"] for f in cache.glob("*")))
     try:
         writer.delete_object(Bucket=dataset["bucket"], Key=dataset["object_key"], VersionId=after)
-        record("info 的账号删不了已留存的版本", False, "删成功了")
+        record("knowfeed 的账号删不了已留存的版本", False, "删成功了")
     except ClientError as exc:
-        record("info 的账号删不了已留存的版本", exc.response["Error"]["Code"] == "AccessDenied")
+        record("knowfeed 的账号删不了已留存的版本", exc.response["Error"]["Code"] == "AccessDenied")
     (STATE / "junk-version").write_text(f"{dataset['object_key']}\n{after}\n")
 
 

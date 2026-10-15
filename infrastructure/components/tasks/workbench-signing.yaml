@@ -1,5 +1,5 @@
 ---
-# 工作台的令牌签名密钥对（ES256）：一处生成、三处引用——investment 用私钥签，knowledge 与 relay 用公钥验。
+# 工作台的令牌签名密钥对（ES256）：一处生成、三处引用——investment 用私钥签，knowbase 与 relay 用公钥验。
 # 平台级私有输入 services_config_dir/workbench-signing.yaml（主备非覆盖），和别的组件输入一个做法。
 # 结果只放在内存变量 workbench_signing（private_key_pem / public_key_pem）。
 - name: Generate a candidate ES256 key pair only in memory

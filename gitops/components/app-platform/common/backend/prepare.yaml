@@ -63,9 +63,9 @@
       - cfg.redis_user == application_name + '_runtime'
       - cfg.redis_key_pattern == application_name + ':*'
       - cfg.redis_pubsub_channel_pattern | default('') in ['', application_name + ':workbench:*']
-      - not provider_enabled | bool or (application_name == 'knowledge' and not storage_enabled | bool)
-      - not service_enabled | bool or (application_name in ['info','investment'] and service_access_enabled | bool)
-      - not receiver_enabled | bool or (application_name == 'knowledge' and provider_enabled | bool and service_access_enabled | bool)
+      - not provider_enabled | bool or (application_name == 'knowbase' and not storage_enabled | bool)
+      - not service_enabled | bool or (application_name in ['knowfeed','investment'] and service_access_enabled | bool)
+      - not receiver_enabled | bool or (application_name == 'knowbase' and provider_enabled | bool and service_access_enabled | bool)
       - not receiver_enabled | bool or (service_bindings.ingest.enabled | bool and service_bindings.retrieve.enabled | bool)
       - not receiver_enabled | bool or service_bindings.ingest.client_id != service_bindings.retrieve.client_id
       - not receiver_enabled | bool or service_bindings.ingest.organization != service_bindings.retrieve.organization

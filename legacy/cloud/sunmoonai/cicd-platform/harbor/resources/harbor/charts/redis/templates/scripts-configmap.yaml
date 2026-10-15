@@ -189,10 +189,10 @@ data:
         fi
     else
         # Fetches current master's host and port
-        REDIS_SENTINEL_INFO=($(get_sentinel_master_info))
-        info "Current master: REDIS_SENTINEL_INFO=(${REDIS_SENTINEL_INFO[0]},${REDIS_SENTINEL_INFO[1]})"
-        REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
-        REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
+        REDIS_SENTINEL_KNOWFEED=($(get_sentinel_master_info))
+        info "Current master: REDIS_SENTINEL_KNOWFEED=(${REDIS_SENTINEL_KNOWFEED[0]},${REDIS_SENTINEL_KNOWFEED[1]})"
+        REDIS_MASTER_HOST=${REDIS_SENTINEL_KNOWFEED[0]}
+        REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_KNOWFEED[1]}
         {{- if and .Values.sentinel.externalAccess.enabled .Values.sentinel.externalAccess.service.loadBalancerIP }}
         if [[ "$REDIS_MASTER_HOST" == "$(get_service_ip "$SVC_NAME")" ]]; then
         {{- else }}
@@ -396,12 +396,12 @@ data:
         info "Found previous master $master_in_persisted_conf in /opt/bitnami/redis-sentinel/etc/sentinel.conf"
         debug "$(cat /opt/bitnami/redis-sentinel/etc/sentinel.conf | grep monitor)"
     fi
-    REDIS_SENTINEL_INFO=($(get_sentinel_master_info))
+    REDIS_SENTINEL_KNOWFEED=($(get_sentinel_master_info))
     if [ "$?" -eq "0" ]; then
         # current master's host and port obtained from other Sentinel
-        info "printing REDIS_SENTINEL_INFO=(${REDIS_SENTINEL_INFO[0]},${REDIS_SENTINEL_INFO[1]})"
-        REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
-        REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
+        info "printing REDIS_SENTINEL_KNOWFEED=(${REDIS_SENTINEL_KNOWFEED[0]},${REDIS_SENTINEL_KNOWFEED[1]})"
+        REDIS_MASTER_HOST=${REDIS_SENTINEL_KNOWFEED[0]}
+        REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_KNOWFEED[1]}
     else
         REDIS_MASTER_HOST="$master_in_persisted_conf"
         REDIS_MASTER_PORT_NUMBER="$REDISPORT"
@@ -609,9 +609,9 @@ data:
     }
 
     sentinel_failover_finished() {
-        REDIS_SENTINEL_INFO=($(run_sentinel_command get-master-addr-by-name "{{ .Values.sentinel.masterSet }}"))
-        echo "REDIS_SENTINEL_INFO: $REDIS_SENTINEL_INFO"
-        REDIS_MASTER_HOST="${REDIS_SENTINEL_INFO[0]}"
+        REDIS_SENTINEL_KNOWFEED=($(run_sentinel_command get-master-addr-by-name "{{ .Values.sentinel.masterSet }}"))
+        echo "REDIS_SENTINEL_KNOWFEED: $REDIS_SENTINEL_KNOWFEED"
+        REDIS_MASTER_HOST="${REDIS_SENTINEL_KNOWFEED[0]}"
         echo "REDIS_MASTER_HOST: $REDIS_MASTER_HOST"
         {{- if .Values.sentinel.externalAccess.enabled }}
         # Get the current service name and its IP
@@ -752,9 +752,9 @@ data:
     }
 
     sentinel_failover_finished() {
-        REDIS_SENTINEL_INFO=($(run_sentinel_command get-master-addr-by-name "{{ .Values.sentinel.masterSet }}"))
-        echo "REDIS_SENTINEL_INFO: $REDIS_SENTINEL_INFO"
-        REDIS_MASTER_HOST="${REDIS_SENTINEL_INFO[0]}"
+        REDIS_SENTINEL_KNOWFEED=($(run_sentinel_command get-master-addr-by-name "{{ .Values.sentinel.masterSet }}"))
+        echo "REDIS_SENTINEL_KNOWFEED: $REDIS_SENTINEL_KNOWFEED"
+        REDIS_MASTER_HOST="${REDIS_SENTINEL_KNOWFEED[0]}"
         echo "REDIS_MASTER_HOST: $REDIS_MASTER_HOST"
         {{- if .Values.sentinel.externalAccess.enabled }}
         # Get the current service name and its IP

@@ -21,7 +21,7 @@ git ls-tree -r --name-only 547a8f6d83cc296a86a7604697057465620c7edc -- sunmoonai
 - B7v 固定候选、命令和 JUnit（按上方 `547a8f6d…` 提交读取）：
   tpl-app `09ff4a9268db5006f5d32a2953f58c95b1369819`；四后端各 6 项生命周期实测；
   模板另验 3 联合、30 broker、完整后端 258 项，普通部署单元 18 项；未部署。
-- [Knowledge Provider 解耦](#knowledge-provider-内部解耦)：
+- [Knowledge Provider 解耦](#knowbase-provider-内部解耦)：
   Backend `26aa0715f15e2c8df4713559063a9a2e3215a1c8`，完整 450 项及独立角色 27 项；
   默认 RAGFlow，未接 WeKnora，未改变跨 App 契约，不是替换供应商运行验收。
 - KIND 时点快照（按上方 `547a8f6d…` 提交读取）：
@@ -56,8 +56,8 @@ git ls-tree -r --name-only 547a8f6d83cc296a86a7604697057465620c7edc -- sunmoonai
 | runtime-rendering | B7m 实例保留模板角色 Secret/探针/release 关联与领域挂载；未重写历史 bundle |
 | runtime-permissions | B7n 九角色 PG 目录和 broker 授权审计；实际旧权限、default ACL 及供给副作用 |
 | template-database-policy | B7o 模板精确六表/列 GRANT、独立四登录和真实拒绝；不是旧角色撤权工具 |
-| info-database-policy | B7p Info 15 表策略与真实领域用例/拒绝 |
-| knowledge-database-policy | B7q Knowledge 10 表策略、操作账及轮询/回执权限 |
+| knowfeed-database-policy | B7p Info 15 表策略与真实领域用例/拒绝 |
+| knowbase-database-policy | B7q Knowledge 10 表策略、操作账及轮询/回执权限 |
 | investment-database-policy | B7r Investment 18 表策略、PG Saver、审批恢复/取消与事务权限 |
 | template-broker-policy | B7s 三角色预建拓扑、生产/消费隔离及真实 Celery 拒绝 |
 | instance-broker-alignment | B7t 模板→三实例串行拓扑承接、目标 venv 与辅助服务隔离 |
@@ -92,7 +92,7 @@ git show 6757974b4084c92c8df62af637b020d998d4a160:sunmoonai/docs/v5-backlog-runt
 | --- | --- |
 | `mooc-manus-v5/`（111 个文件） | 旧 ADR、契约和脚本退出当前工作树；没有发现目录外现行代码按路径或脚本名调用它们。旧契约不替代 provider 仓的当前契约，旧部署/清理脚本不迁作新发布工具 |
 | `app-platform-architecture-v2-refactor-plan.md` | 原状态停在 R5 阶段，退出当前施工入口；当前事实看 project-guide，规则看 `tree-build/`，发布缺口看“发布与门禁” |
-| `knowledge-provider-decoupling-luna.md` | 实施过程按 Git 保留；适配义务由 Knowledge Backend 的 `docs/knowledge-provider.md` 维护，关键验证与限制见下节 |
+| `knowbase-provider-decoupling-luna.md` | 实施过程按 Git 保留；适配义务由 Knowbase Backend 的 `docs/knowbase-provider.md` 维护，关键验证与限制见下节 |
 
 例如，在 k8s 仓根读取单文件或列出原目录：
 
@@ -100,7 +100,7 @@ git show 6757974b4084c92c8df62af637b020d998d4a160:sunmoonai/docs/v5-backlog-runt
 git ls-tree -r --name-only 6facaaaad8eded7f96ee54c4c62d20ff37cd234d -- sunmoonai/docs/mooc-manus-v5
 git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/mooc-manus-v5/adr/ADR-001-runtime-selection.md
 git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/app-platform-architecture-v2-refactor-plan.md
-git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/knowledge-provider-decoupling-luna.md
+git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/knowbase-provider-decoupling-luna.md
 ```
 
 冻结 turn 保留原文；`evidence/v5/` 与 `architecture-v2/` 的后续清退见下节。历史命令或旧路径

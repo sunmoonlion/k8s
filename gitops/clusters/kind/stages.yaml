@@ -62,15 +62,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: info-admin, namespace: flux-system}
+metadata: {name: knowfeed-admin, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/info-app/info-admin-frontend
+  path: ./components/app-platform/knowfeed-app/knowfeed-admin-frontend
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: info-runtime}
+    - {name: knowfeed-runtime}
     - {name: traefik}
   prune: false
   deletionPolicy: Orphan
@@ -81,12 +81,12 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: info-database, namespace: flux-system}
+metadata: {name: knowfeed-database, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/info-app/info-backend/database
+  path: ./components/app-platform/knowfeed-app/knowfeed-backend/database
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: postgresql}
@@ -99,15 +99,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: info-migration, namespace: flux-system}
+metadata: {name: knowfeed-migration, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/info-app/info-backend/migration
+  path: ./components/app-platform/knowfeed-app/knowfeed-backend/migration
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: info-database}
+    - {name: knowfeed-database}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -117,15 +117,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: info-redis, namespace: flux-system}
+metadata: {name: knowfeed-redis, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/info-app/info-backend/redis
+  path: ./components/app-platform/knowfeed-app/knowfeed-backend/redis
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: info-migration}
+    - {name: knowfeed-migration}
     - {name: redis}
   prune: false
   deletionPolicy: Orphan
@@ -136,15 +136,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: info-rabbitmq, namespace: flux-system}
+metadata: {name: knowfeed-rabbitmq, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/info-app/info-backend/rabbitmq
+  path: ./components/app-platform/knowfeed-app/knowfeed-backend/rabbitmq
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: info-redis}
+    - {name: knowfeed-redis}
     - {name: rabbitmq}
   prune: false
   deletionPolicy: Orphan
@@ -155,15 +155,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: info-identity, namespace: flux-system}
+metadata: {name: knowfeed-identity, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/info-app/info-backend/identity
+  path: ./components/app-platform/knowfeed-app/knowfeed-backend/identity
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: info-rabbitmq}
+    - {name: knowfeed-rabbitmq}
     - {name: casdoor}
   prune: false
   deletionPolicy: Orphan
@@ -174,17 +174,17 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: info-runtime, namespace: flux-system}
+metadata: {name: knowfeed-runtime, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/info-app/info-backend/runtime
+  path: ./components/app-platform/knowfeed-app/knowfeed-backend/runtime
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: info-identity}
-    - {name: info-service-identity}
-    - {name: info-storage}
+    - {name: knowfeed-identity}
+    - {name: knowfeed-service-identity}
+    - {name: knowfeed-storage}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -194,12 +194,12 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: info-storage, namespace: flux-system}
+metadata: {name: knowfeed-storage, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/info-app/info-backend/storage
+  path: ./components/app-platform/knowfeed-app/knowfeed-backend/storage
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: object-storage}
@@ -212,12 +212,12 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: info-service-identity, namespace: flux-system}
+metadata: {name: knowfeed-service-identity, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/info-app/info-backend/service-identity
+  path: ./components/app-platform/knowfeed-app/knowfeed-backend/service-identity
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: casdoor}
@@ -231,15 +231,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: info-web, namespace: flux-system}
+metadata: {name: knowfeed-web, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/info-app/info-web-frontend
+  path: ./components/app-platform/knowfeed-app/knowfeed-web-frontend
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: info-runtime}
+    - {name: knowfeed-runtime}
     - {name: traefik}
   prune: false
   deletionPolicy: Orphan
@@ -438,15 +438,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: knowledge-admin, namespace: flux-system}
+metadata: {name: knowbase-admin, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/knowledge-app/knowledge-admin-frontend
+  path: ./components/app-platform/knowbase-app/knowbase-admin-frontend
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: knowledge-runtime}
+    - {name: knowbase-runtime}
     - {name: traefik}
   prune: false
   deletionPolicy: Orphan
@@ -457,12 +457,12 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: knowledge-database, namespace: flux-system}
+metadata: {name: knowbase-database, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/knowledge-app/knowledge-backend/database
+  path: ./components/app-platform/knowbase-app/knowbase-backend/database
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: postgresql}
@@ -475,15 +475,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: knowledge-migration, namespace: flux-system}
+metadata: {name: knowbase-migration, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/knowledge-app/knowledge-backend/migration
+  path: ./components/app-platform/knowbase-app/knowbase-backend/migration
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: knowledge-database}
+    - {name: knowbase-database}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -493,15 +493,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: knowledge-redis, namespace: flux-system}
+metadata: {name: knowbase-redis, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/knowledge-app/knowledge-backend/redis
+  path: ./components/app-platform/knowbase-app/knowbase-backend/redis
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: knowledge-migration}
+    - {name: knowbase-migration}
     - {name: redis}
   prune: false
   deletionPolicy: Orphan
@@ -512,15 +512,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: knowledge-rabbitmq, namespace: flux-system}
+metadata: {name: knowbase-rabbitmq, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/knowledge-app/knowledge-backend/rabbitmq
+  path: ./components/app-platform/knowbase-app/knowbase-backend/rabbitmq
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: knowledge-redis}
+    - {name: knowbase-redis}
     - {name: rabbitmq}
   prune: false
   deletionPolicy: Orphan
@@ -531,15 +531,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: knowledge-identity, namespace: flux-system}
+metadata: {name: knowbase-identity, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/knowledge-app/knowledge-backend/identity
+  path: ./components/app-platform/knowbase-app/knowbase-backend/identity
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: knowledge-rabbitmq}
+    - {name: knowbase-rabbitmq}
     - {name: casdoor}
   prune: false
   deletionPolicy: Orphan
@@ -550,18 +550,18 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: knowledge-runtime, namespace: flux-system}
+metadata: {name: knowbase-runtime, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/knowledge-app/knowledge-backend/runtime
+  path: ./components/app-platform/knowbase-app/knowbase-backend/runtime
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: knowledge-identity}
-    - {name: knowledge-provider}
+    - {name: knowbase-identity}
+    - {name: knowbase-provider}
     - {name: ragflow-runtime}
-    - {name: info-service-identity}
+    - {name: knowfeed-service-identity}
     - {name: investment-service-identity}
   prune: false
   deletionPolicy: Orphan
@@ -572,15 +572,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: knowledge-provider, namespace: flux-system}
+metadata: {name: knowbase-provider, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/knowledge-app/knowledge-backend/provider
+  path: ./components/app-platform/knowbase-app/knowbase-backend/provider
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: info-storage}
+    - {name: knowfeed-storage}
     - {name: ragflow-runtime}
   prune: false
   deletionPolicy: Orphan
@@ -591,15 +591,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: knowledge-web, namespace: flux-system}
+metadata: {name: knowbase-web, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/knowledge-app/knowledge-web-frontend
+  path: ./components/app-platform/knowbase-app/knowbase-web-frontend
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: knowledge-runtime}
+    - {name: knowbase-runtime}
     - {name: traefik}
   prune: false
   deletionPolicy: Orphan

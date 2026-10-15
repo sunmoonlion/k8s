@@ -34,8 +34,8 @@ APP_NAMESPACE = os.environ.get("APP_NAMESPACE", "app-platform-dev")
 RELAY_NAMESPACE = os.environ.get("RELAY_NAMESPACE", "") or (
     re.match(r"^wss?://[^./]+\.([^./]+)\.svc", RELAY_URL).group(1) if re.match(r"^wss?://[^./]+\.([^./]+)\.svc", RELAY_URL) else "edge"
 )
-KNOWLEDGE_MCP_URL = os.environ.get("KNOWLEDGE_MCP_URL", "")
-KNOWLEDGE_MCP_SHARED_TOKEN = os.environ.get("KNOWLEDGE_MCP_SHARED_TOKEN", "")  # 退路：工作台没配签名密钥时共用；否则 spec 里带按用户签的 JWT（D10）
+KNOWBASE_MCP_URL = os.environ.get("KNOWBASE_MCP_URL", "")
+KNOWBASE_MCP_SHARED_TOKEN = os.environ.get("KNOWBASE_MCP_SHARED_TOKEN", "")  # 退路：工作台没配签名密钥时共用；否则 spec 里带按用户签的 JWT（D10）
 ENVIRONMENT_ID = os.environ.get("SANDBOX_ENVIRONMENT_ID", "user-pc")
 PROVISIONER_TOKEN = os.environ.get("PROVISIONER_TOKEN", "")
 K8S_API = os.environ.get("K8S_API", "https://kubernetes.default.svc")
@@ -54,7 +54,7 @@ class SandboxSpec(BaseModel):
     model_key: str = Field(min_length=8, max_length=512)
     relay_token: str = Field(min_length=16, max_length=512)
     relay_user: str = Field(min_length=1, max_length=64)
-    knowledge_mcp_token: str | None = Field(default=None, max_length=512)
+    knowbase_mcp_token: str | None = Field(default=None, max_length=512)
     # 工作台的记录工具服务（0001-workbench：专家读本项目别的对话与底稿）；两项一起给才配进沙箱
     records_mcp_url: str = Field(default="", max_length=512)
     records_mcp_token: str | None = Field(default=None, max_length=2048)
@@ -138,7 +138,7 @@ class KubeClient:
 
 
 def labels(user: str) -> dict[str, str]:
-    # sunmoonai.com/sandbox 是别的命名空间放行沙箱时选的标签（investment、knowledge 的入站策略）
+    # sunmoonai.com/sandbox 是别的命名空间放行沙箱时选的标签（investment、knowbase 的入站策略）
     return {"app": "sandbox", "user": user, "sunmoonai.com/managed-by": "sandbox-provisioner", "sunmoonai.com/sandbox": "true"}
 
 
@@ -150,7 +150,7 @@ def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dic
         "model-key": spec.model_key,
         "relay-token": spec.relay_token,
         "app-server-token": app_server_token,
-        "knowledge-token": spec.knowledge_mcp_token or KNOWLEDGE_MCP_SHARED_TOKEN or "",
+        "knowbase-token": spec.knowbase_mcp_token or KNOWBASE_MCP_SHARED_TOKEN or "",
         "workbench-token": (spec.records_mcp_token or "") if spec.records_mcp_url else "",
     }
     secret = {
@@ -180,10 +180,10 @@ def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dic
             {"name": "MODEL", "value": spec.model},
             {"name": "PROVIDER_BASE_URL", "value": spec.provider_base_url},
         ]
-    if KNOWLEDGE_MCP_URL and data["knowledge-token"]:
+    if KNOWBASE_MCP_URL and data["knowbase-token"]:
         env += [
-            {"name": "KNOWLEDGE_MCP_URL", "value": KNOWLEDGE_MCP_URL},
-            {"name": "KNOWLEDGE_MCP_TOKEN", "valueFrom": {"secretKeyRef": {"name": name, "key": "knowledge-token"}}},
+            {"name": "KNOWBASE_MCP_URL", "value": KNOWBASE_MCP_URL},
+            {"name": "KNOWBASE_MCP_TOKEN", "valueFrom": {"secretKeyRef": {"name": name, "key": "knowbase-token"}}},
         ]
     if spec.records_mcp_url and data["workbench-token"]:
         env += [

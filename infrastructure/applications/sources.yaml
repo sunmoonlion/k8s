@@ -1,6 +1,6 @@
 # Fixed parent gitlinks; reviewed local backend descendants are built through the native chain.
 # 2026-10-06 起钉 fable（各应用父仓的 fable 头，子仓就是父仓记录的那一个提交）。
-# 2026-10-07：账 54/55/56（结果边栏、知识库、公共数据入口移到管理后台）。info 后端与管理端未动。
+# 2026-10-07：账 54/55/56（结果边栏、知识库、公共数据入口移到管理后台）。knowfeed 后端与管理端未动。
 ---
 applications:
   tpl:
@@ -11,7 +11,7 @@ applications:
     web_revision: a398a63b52af7e46d27a7d6837e00010434d4553
     admin_parent_revision: 3a0c88fbe3475d2eaf38732c48f30ff53a5aa650
     admin_revision: 3a0c88fbe3475d2eaf38732c48f30ff53a5aa650
-  info:
+  knowfeed:
     parent_revision: 38c6d0a90f432f7584644d080c9ae0694a79b154
     backend_parent_revision: 87062b7a673a1fbc21b34122013f5cdebede08a6
     backend_revision: 87062b7a673a1fbc21b34122013f5cdebede08a6
@@ -19,7 +19,7 @@ applications:
     web_revision: 0ac00faf431adb6d7a31ad41f11168bbf144a65b
     admin_parent_revision: 27bc4c9af7aa0563f4573571e7e8c81a31d6efce
     admin_revision: 27bc4c9af7aa0563f4573571e7e8c81a31d6efce
-  knowledge:
+  knowbase:
     parent_revision: ee6ad50db3076b73de733c98691eda2580b66c48
     backend_parent_revision: 85409177b85bfc51bb710a68f5be3740c7dbd3e4
     backend_revision: 85409177b85bfc51bb710a68f5be3740c7dbd3e4

@@ -30,7 +30,7 @@
 | `domain_egress` | 应用级出站放行，每条一个 NetworkPolicy | `name`、`roles`、`ports`，目标二选一：`namespace_var` + `pod_labels` 或 `cidrs` |
 | `domain_ingress` | 应用级入站放行，只到 api 端口 | `name`、`namespace_var`、`pod_labels` |
 
-实现：`backend/domain/prepare.yaml`（校验、读秘密、推链接），`backend/runtime/workload.yaml.j2`（渲染）。共享签名密钥对由 `infrastructure/components/tasks/workbench-signing.yaml` 准备，investment 用私钥，knowledge 与 relay 用公钥。
+实现：`backend/domain/prepare.yaml`（校验、读秘密、推链接），`backend/runtime/workload.yaml.j2`（渲染）。共享签名密钥对由 `infrastructure/components/tasks/workbench-signing.yaml` 准备，investment 用私钥，knowbase 与 relay 用公钥。
 
 ## 更新与不可变Job
 

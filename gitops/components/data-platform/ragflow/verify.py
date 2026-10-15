@@ -38,7 +38,7 @@ with psycopg2.connect(**pg) as db:
 
 s3cfg=config['s3'];s3=boto3.client('s3',endpoint_url=s3cfg['endpoint_url'],region_name='us-east-1',aws_access_key_id=s3cfg['access_key'],aws_secret_access_key=s3cfg['secret_key'],verify='/run/tls/ca.crt',config=Config(signature_version='s3v4',s3={'addressing_style':'path'}))
 s3.head_bucket(Bucket=s3cfg['bucket'])
-for operation,args in [(s3.head_bucket,{'Bucket':'info-originals'}),(s3.get_bucket_versioning,{'Bucket':s3cfg['bucket']})]:
+for operation,args in [(s3.head_bucket,{'Bucket':'knowfeed-originals'}),(s3.get_bucket_versioning,{'Bucket':s3cfg['bucket']})]:
     try:operation(**args)
     except ClientError as error:assert error.response['ResponseMetadata']['HTTPStatusCode']==403
     else:raise AssertionError('RAGFlow S3 identity exceeded its boundary')
@@ -47,7 +47,7 @@ dataset_id=None
 try:
     dataset=call('POST','/datasets',json={'name':'sunmoon-acceptance-'+uuid.uuid4().hex,'language':'Chinese','chunk_method':'naive','permission':'me','parser_config':{'chunk_token_num':128,'layout_recognize':'Plain Text','auto_keywords':0,'auto_questions':0,'raptor':{'use_raptor':False},'graphrag':{'use_graphrag':False}}})
     dataset_id=dataset['id']
-    foreign=client.get(base+'/datasets',params={'id':dataset_id},headers={'Authorization':'Bearer '+inputs['knowledge_token']},timeout=10)
+    foreign=client.get(base+'/datasets',params={'id':dataset_id},headers={'Authorization':'Bearer '+inputs['knowbase_token']},timeout=10)
     foreign.raise_for_status();foreign_data=foreign.json();assert foreign_data.get('code',0)!=0 or not foreign_data.get('data')
     text='月球引力与海洋潮汐\n月球的引力是引起海洋潮汐的重要原因。太阳的引力也会影响潮汐，海水周期性的涨落被称为潮汐。\n\n数据库事务与数据一致性\n数据库事务能够在发生错误时回滚未提交的修改。PostgreSQL支持事务提交和回滚。'
     docs=call('POST','/datasets/'+dataset_id+'/documents',files={'file':('sunmoon-live-chinese.txt',text.encode('utf-8'),'text/plain')})
@@ -64,7 +64,7 @@ try:
     retrieval=call('POST','/retrieval',json={'question':'月球的引力会引起海洋的什么现象？','dataset_ids':[dataset_id],'knn_top_k':5,'similarity_threshold':0.1,'vector_similarity_weight':0.7})
     chunks=retrieval['chunks'];assert chunks and any('潮汐' in row.get('content','') for row in chunks)
     assert all(row.get('document_id')==doc_id for row in chunks)
-    foreign_retrieval=client.post(base+'/retrieval',json={'question':'月球引力','dataset_ids':[dataset_id]},headers={'Authorization':'Bearer '+inputs['knowledge_token']},timeout=30)
+    foreign_retrieval=client.post(base+'/retrieval',json={'question':'月球引力','dataset_ids':[dataset_id]},headers={'Authorization':'Bearer '+inputs['knowbase_token']},timeout=30)
     assert foreign_retrieval.status_code in (401,403) or foreign_retrieval.json().get('code') not in (None,0)
     result={'passed':True,'chinese_upload_parse_retrieve':True,'worker_ingestion_completed':True,'runtime_ddl_denied':True,'invalid_token_denied':True,'cross_tenant_denied':True,'s3_originals_and_management_denied':True,'retrieved_chunks':len(chunks),'scope':'RAGFlow derived retrieval protocol; business domain integration and restart/rebuild not claimed'}
 finally:
@@ -102,7 +102,7 @@ print(json.dumps(result))
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--kubectl',required=True);parser.add_argument('--kubeconfig',required=True);parser.add_argument('--namespace',required=True);parser.add_argument('--base',required=True);parser.add_argument('--timeout',type=int,default=300);args=parser.parse_args()
     private=json.load(sys.stdin)
-    data={'base':args.base,'timeout_seconds':args.timeout,'acceptance_token':private['acceptance_token'],'knowledge_token':private['knowledge_token']}
+    data={'base':args.base,'timeout_seconds':args.timeout,'acceptance_token':private['acceptance_token'],'knowbase_token':private['knowbase_token']}
     command=[args.kubectl,'--kubeconfig='+args.kubeconfig,'--context=kind-sunmoon-kind','--request-timeout=30s','-n',args.namespace,'exec','-i','deployment/ragflow-api','-c','api','--','/ragflow/.venv/bin/python3','-c',POD_SOURCE]
     proc=subprocess.run(command,input=json.dumps(data),text=True,capture_output=True,timeout=args.timeout+180)
     if proc.returncode:

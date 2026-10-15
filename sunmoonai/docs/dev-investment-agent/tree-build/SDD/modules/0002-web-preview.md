@@ -121,12 +121,12 @@ PREVIEW_FIXTURES_OUT=<investment-web-frontend>/app/preview/fixtures \
 | 检查 | 结果 |
 | --- | --- |
 | 前门的测试 | 15 项过（四个网页端各跑一遍） |
-| 四个网页端：类型检查、代码检查、全部测试 | 过。模板 78、info 81、knowledge 80、investment 105 |
-| 真的起预览，把每个情景里录下来的每个读取都向预览要一遍 | investment 224 个、info 20 个，返回与样例逐字相同 |
+| 四个网页端：类型检查、代码检查、全部测试 | 过。模板 78、knowfeed 81、knowbase 80、investment 105 |
+| 真的起预览，把每个情景里录下来的每个读取都向预览要一遍 | investment 224 个、knowfeed 20 个，返回与样例逐字相同 |
 | 浏览器：目录页、仪表盘、没登录时被带到登录页、点登录回来 | 过，有截图 |
 | 记录器的测试 | 4 项过（四个后端） |
-| 造样例的测试 | investment 3 项、info 2 项过 |
-| 后端全部测试 | investment 768 过、5 跳过；info 1137 过、13 跳过。代码检查、类型检查、分层四条规则都过 |
+| 造样例的测试 | investment 3 项、knowfeed 2 项过 |
+| 后端全部测试 | investment 768 过、5 跳过；knowfeed 1137 过、13 跳过。代码检查、类型检查、分层四条规则都过 |
 
 ## 七、提交
 

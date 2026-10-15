@@ -1,0 +1,35 @@
+# 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
+# enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
+---
+prepare: {file: app-platform/common/backend/prepare.yaml, vars: {application_name: knowbase}}
+defaults: {enabled: '{{ knowbase_deployment.enabled }}', timeout: 8m}
+stages:
+- name: knowbase-database
+  path: database
+  dependsOn: [postgresql]
+  resources: [workload.yaml, bootstrap.sops.yaml, runtime.sops.yaml]
+- name: knowbase-migration
+  path: migration
+  dependsOn: [knowbase-database]
+  resources: [workload.yaml, auth.sops.yaml]
+- name: knowbase-redis
+  path: redis
+  dependsOn: [knowbase-migration, redis]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: knowbase-rabbitmq
+  path: rabbitmq
+  dependsOn: [knowbase-redis, rabbitmq]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: knowbase-identity
+  path: identity
+  dependsOn: [knowbase-rabbitmq, casdoor]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: knowbase-runtime
+  path: runtime
+  dependsOn: '{{ ["knowbase-identity"] + (["knowbase-provider", "ragflow-runtime"] if knowbase_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["knowfeed-service-identity", "investment-service-identity"] if knowbase_backend_deployment.knowbase_service_receiver.enabled | default(false) else []) }}'
+  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["storage.sops.yaml"] if knowbase_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if knowbase_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if knowbase_backend_deployment.knowbase_service.enabled | default(false) else []) + (["domain.sops.yaml"] if knowbase_backend_deployment.domain_secrets | default({}) | length > 0 else []) }}'
+- name: knowbase-provider
+  path: provider
+  dependsOn: [knowfeed-storage, ragflow-runtime]
+  enabled: '{{ knowbase_deployment.enabled and knowbase_backend_deployment.knowledge_provider.enabled | default(false) }}'
+  resources: [workload.yaml, provision.sops.yaml]

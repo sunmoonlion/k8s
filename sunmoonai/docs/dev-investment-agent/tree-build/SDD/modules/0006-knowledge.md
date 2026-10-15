@@ -1,6 +1,6 @@
 # `0006-knowledge` 知识服务
 
-> 内网；映射 `knowledge-app`（`info-app` 采集）。自有数据与用户资料，同一套检索，经 MCP 给沙箱里的 Codex。要装什么见 [数据与资料](../../PRD/knowledge.md)。
+> 内网；映射 `knowbase-app`（`knowfeed-app` 采集）。自有数据与用户资料，同一套检索，经 MCP 给沙箱里的 Codex。要装什么见 [数据与资料](../../PRD/knowledge.md)。
 
 ## 功能义务
 
@@ -28,11 +28,11 @@ A 股非金融三大表与附注：入库的三大表、附注表提取工具、
 
 ## 实现状态（2026-09-24，第四段）
 
-已落在 `knowledge-app/knowledge-backend/app`：`application/services/dataset_query.py`（只读 SQLite 数据集：单条 SELECT/WITH、禁 ATTACH/PRAGMA、超时中断、200 行封顶，每个结果带 `citation{dataset_id,data_version,as_of,query_digest}`）；`interfaces/mcp/knowledge_mcp.py`（Streamable HTTP JSON-RPC：`initialize`/`tools/list`/`tools/call`/`ping`；Bearer 令牌表，按令牌过滤工具清单、每分钟限流、越权计数）；`bootstrap/mcp.py`（只挂 MCP 的最小应用，联调与评测用）；主路由同挂。三个工具 `describe_schema`、`metric_definitions`、`run_sql`；数据集 = 第 23 课库（`datasets/`，不进 git）。沙箱镜像入口按 `KNOWLEDGE_MCP_URL`/`KNOWLEDGE_MCP_TOKEN` 写 `[mcp_servers.sunmoon_knowledge]`（`bearer_token_env_var`）。Codex 0.155.1 实测能列出并调用（`k8s/sunmoonai/scripts/local-integration/workbench-dataquery.sh`）。15 测试。
+已落在 `knowbase-app/knowbase-backend/app`：`application/services/dataset_query.py`（只读 SQLite 数据集：单条 SELECT/WITH、禁 ATTACH/PRAGMA、超时中断、200 行封顶，每个结果带 `citation{dataset_id,data_version,as_of,query_digest}`）；`interfaces/mcp/knowbase_mcp.py`（Streamable HTTP JSON-RPC：`initialize`/`tools/list`/`tools/call`/`ping`；Bearer 令牌表，按令牌过滤工具清单、每分钟限流、越权计数）；`bootstrap/mcp.py`（只挂 MCP 的最小应用，联调与评测用）；主路由同挂。三个工具 `describe_schema`、`metric_definitions`、`run_sql`；数据集 = 第 23 课库（`datasets/`，不进 git）。沙箱镜像入口按 `KNOWBASE_MCP_URL`/`KNOWBASE_MCP_TOKEN` 写 `[mcp_servers.sunmoon_knowbase]`（`bearer_token_env_var`）。Codex 0.155.1 实测能列出并调用（`k8s/sunmoonai/scripts/local-integration/workbench-dataquery.sh`）。15 测试。
 
-数据集来源（2026-09-25）：本地路径优先；容器里从对象存储按 `s3://bucket/key` 加 sha256 钉版取到 `/tmp`（`dataset_store.py`），第一次工具调用时取，不匹配不用。KIND 开发包：ConfigMap 五个 `KNOWLEDGE_DATASET_*`/`KNOWLEDGE_MCP_RATE_PER_MINUTE` 键、api 容器可选引用 Secret `knowledge-mcp-tokens`、api 出站加 80（MinIO）；桶 `development-knowledge-datasets` 只读进 `storage-access-bootstrap/config/access.json`。
+数据集来源（2026-09-25）：本地路径优先；容器里从对象存储按 `s3://bucket/key` 加 sha256 钉版取到 `/tmp`（`dataset_store.py`），第一次工具调用时取，不匹配不用。KIND 开发包：ConfigMap 五个 `KNOWBASE_DATASET_*`/`KNOWBASE_MCP_RATE_PER_MINUTE` 键、api 容器可选引用 Secret `knowbase-mcp-tokens`、api 出站加 80（MinIO）；桶 `development-knowbase-datasets` 只读进 `storage-access-bootstrap/config/access.json`。
 
-令牌（2026-09-25，D10）：配了 `KNOWLEDGE_MCP_JWT_PUBLIC_KEY`（Secret `knowledge-mcp-tokens/jwt-public-key.pem`）时，三段式令牌按 ES256 验签，`aud=knowledge`、`exp`、可选 `iss`，`sub`/`sandbox`/`tools` 即授权；静态表共存。工作台每次拉起或撤换沙箱都按用户签一枚，经供给器进沙箱 Secret（`F-KNOW-03` 完成）。未做：`F-KNOW-04` 用户资料入库；检索与领域工具（第一切口）；异常调用上报只到日志与计数。
+令牌（2026-09-25，D10）：配了 `KNOWBASE_MCP_JWT_PUBLIC_KEY`（Secret `knowbase-mcp-tokens/jwt-public-key.pem`）时，三段式令牌按 ES256 验签，`aud=knowledge`、`exp`、可选 `iss`，`sub`/`sandbox`/`tools` 即授权；静态表共存。工作台每次拉起或撤换沙箱都按用户签一枚，经供给器进沙箱 Secret（`F-KNOW-03` 完成）。未做：`F-KNOW-04` 用户资料入库；检索与领域工具（第一切口）；异常调用上报只到日志与计数。
 
 ## 多数据集（2026-09-27，已做，未部署）
 

@@ -29,7 +29,7 @@
 
 **两点备忘，不挡发布**：① Chrome 新版正在把「私有网络访问」换成「本地网络访问」权限提示，网页探测那半（远程做）要用 `fetch(url, { targetAddressSpace: 'loopback' })` 并把被拒当「探不到」；② 小口对无 `Origin` 的本机请求一律 403，所以 `curl` 看到 403 是对的，不是坏了。
 
-**六仓对齐（15:20）**：按 10-11 夜的约定，审读过后把 luna 与 fable 对齐——runtime fable 快进到 `5ccca65`；其余九个仓（三个 app 父仓、三个后端、投资后端/网页/父仓）各做一次「树取 fable、两个父」的合并提交推到 luna 与 fable，内容一行不变，只是把 luna 上多出的提交（U2 摘抄、设置页第 1 步的 `-s ours`、以及 15:10 同步脚本自动提交的 `592fe03`——它把投资父仓指针指回了被弃用的 `7afe64b`/`ea8d6d3`）收进历史。k8s 本来就相同。现在十一个仓 luna == fable：runtime `5ccca65`、投资父仓 `0bb0b72`、后端 `3a70280`（树 = `30a89d2`）、网页 `80d6833`（树 = `a972023`）、info `dc02a53`、knowledge `f79b43b`、tpl `631316b`、k8s `6f488ddf`。
+**六仓对齐（15:20）**：按 10-11 夜的约定，审读过后把 luna 与 fable 对齐——runtime fable 快进到 `5ccca65`；其余九个仓（三个 app 父仓、三个后端、投资后端/网页/父仓）各做一次「树取 fable、两个父」的合并提交推到 luna 与 fable，内容一行不变，只是把 luna 上多出的提交（U2 摘抄、设置页第 1 步的 `-s ours`、以及 15:10 同步脚本自动提交的 `592fe03`——它把投资父仓指针指回了被弃用的 `7afe64b`/`ea8d6d3`）收进历史。k8s 本来就相同。现在十一个仓 luna == fable：runtime `5ccca65`、投资父仓 `0bb0b72`、后端 `3a70280`（树 = `30a89d2`）、网页 `80d6833`（树 = `a972023`）、knowfeed `dc02a53`、knowbase `f79b43b`、tpl `631316b`、k8s `6f488ddf`。
 
 **工位切换**：从现在起所有者两个同步脚本不带 `WS=`（默认就是 fable）；Cursor 在 `~/worktrees/fable/k8s` 跑卡；astra 在 runtime 的 fable 分支上做；五个工位一样，每次推五个分支。发布卡 41（应用批 3 + 代理 0.3.1）已写在 inbox，按 fable 工作树写的。
 
@@ -135,12 +135,12 @@ astra 在我改乙案之前（它手里是 512 KiB 那版合同）把**服务流
 
 | 看了什么 | 核到 | 判定 |
 | --- | --- | --- |
-| knowledge-backend qwen `94a3a72` | 只加四个文件（`datasets/olist/olist.yml` 401 行、`scripts/build_olist_dataset.py` 323 行、`tests/test_olist_dataset.py` 387 行、`docs/dataset-registry.md` 一节）；`app/app/` 运行代码一行没改 | 通过 |
+| knowbase-backend qwen `94a3a72` | 只加四个文件（`datasets/olist/olist.yml` 401 行、`scripts/build_olist_dataset.py` 323 行、`tests/test_olist_dataset.py` 387 行、`docs/dataset-registry.md` 一节）；`app/app/` 运行代码一行没改 | 通过 |
 | 生成脚本 | 下载先写 `.part` 再核 sha256，不符就删不覆盖；缓存不符停下；列名与定义逐个比对；时间列统一 `%Y-%m-%d %H:%M:%S`；`.part` 写完 `os.replace`；写完按服务自己的 `read_description`+`build_manifest`+`WrenPlanner` 自检；`data_version` 把定义文件 sha256 算进去（改定义版本就变，不撞 409） | 通过 |
 | 测试 | 远程机重跑 `tests/test_olist_dataset.py`：8 passed；Opus 回执里全量 807 passed / 174 skipped，ruff 只剩原有 1 条 | 通过 |
 | 回执 `results/fin-forecast-1-remote-20261013.md` | 真实数据两次同版本 `olist-ecommerce-5f4af057bf031216`；经 `KnowledgeMcp.handle` 11 项全过，按月 GMV 20 行与直读 SQLite 相同；没做的写明（KIND 链归 Qwen、174 个跳过没核原因、生产样例桶未定） | 通过 |
 | k8s qwen | Opus 的五个提交落后 origin/qwen 四个（我早先快进的）；`merge-tree` 无冲突，我在 qwen 工位做了 `git merge origin/qwen`（`8866ae44`），现在能快进推送 | 已处理 |
-| knowledge-app qwen `f7e5aba` / knowledge-backend qwen | 都只比 origin 多一个提交，能快进 | 通过 |
+| knowbase-app qwen `f7e5aba` / knowbase-backend qwen | 都只比 origin 多一个提交，能快进 | 通过 |
 
 小瑕疵，不挡：`qwen-001.md` 与回执里链到 `inbox/opus/opus-001.md`，那页已按所有者意思删掉，链接会断；历史在 git 里。
 

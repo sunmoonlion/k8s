@@ -34,7 +34,7 @@
 | 折行 | 长科目名会折成两行，数字夹在中间。把上下两行只有文字的行拼起来再认 |
 | 认不出 | 记下来，不猜 |
 
-用的库是 pdfplumber 0.11.10，借用 info 后端现成的 Python 环境，没有新装任何东西。
+用的库是 pdfplumber 0.11.10，借用 knowfeed 后端现成的 Python 环境，没有新装任何东西。
 
 ## 结果
 
@@ -168,7 +168,7 @@
 | `out/compare.json` | 逐项比对的明细 |
 | `out/compare-summary.txt` | 第三步打印的汇总 |
 
-重跑：`<info 后端的 Python 环境>/bin/python step1_text.py`，然后 `step2_extract.py`、`step3_compare.py`。
-原件在 `~/info-smoke-storage/` 下，数据集用的是投资后端评测夹具里的那一份（版本 `sh600009-financials-9fd91db79529e208`）。
+重跑：`<knowfeed 后端的 Python 环境>/bin/python step1_text.py`，然后 `step2_extract.py`、`step3_compare.py`。
+原件在 `~/knowfeed-smoke-storage/` 下，数据集用的是投资后端评测夹具里的那一份（版本 `sh600009-financials-9fd91db79529e208`）。
 
 年报原文是法定披露的公开文件。本目录里的抽取结果仅作内部验证用，不进仓库、不对外提供。

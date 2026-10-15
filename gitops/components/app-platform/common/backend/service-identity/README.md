@@ -18,6 +18,6 @@ Knowledge核验签名、issuer、audience及精确subject，按本地关系绑�
 
 ## 核验和停止
 
-application-check APP=info/investment读取各自初始化回执；APP=knowledge进一步验证实际Info客户端HTTPS投递、持久日记、Scheduler/Outbox/Worker及实际Investment领域Port HTTPS检索。浏览器身份、关系交叉、租户/数据集边界同时检查。完整爬取和Agent工具执行尚未由此证明。
+application-check APP=knowfeed/investment读取各自初始化回执；APP=knowledge进一步验证实际Info客户端HTTPS投递、持久日记、Scheduler/Outbox/Worker及实际Investment领域Port HTTPS检索。浏览器身份、关系交叉、租户/数据集边界同时检查。完整爬取和Agent工具执行尚未由此证明。
 
-停用需分别处理调用方运行配置、接收绑定及远端客户端；enabled=false和Git回退不会撤销已发令牌或删除远端身份。当前没有自动密码轮换/客户端删除入口。操作流程见[应用手册](../../../../../../infrastructure/applications/README.md)，实际探针清理见[Knowledge provider](../../../knowledge-app/knowledge-backend/provider/README.md)。
+停用需分别处理调用方运行配置、接收绑定及远端客户端；enabled=false和Git回退不会撤销已发令牌或删除远端身份。当前没有自动密码轮换/客户端删除入口。操作流程见[应用手册](../../../../../../infrastructure/applications/README.md)，实际探针清理见[Knowledge provider](../../../knowbase-app/knowbase-backend/provider/README.md)。

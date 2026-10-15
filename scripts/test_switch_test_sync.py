@@ -9,8 +9,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "sunmoonai/docs/dev-investment-agent/switch-test/human-remote.sh"
-PARENTS = ("k8s", "info-app", "investment-app", "knowledge-app", "tpl-app")
-CHILDREN = ("investment-app/investment-backend", "knowledge-app/knowledge-backend")
+PARENTS = ("k8s", "knowfeed-app", "investment-app", "knowbase-app", "tpl-app")
+CHILDREN = ("investment-app/investment-backend", "knowbase-app/knowbase-backend")
 
 
 def run(*args, **kwargs):

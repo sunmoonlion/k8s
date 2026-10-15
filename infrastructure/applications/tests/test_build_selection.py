@@ -8,7 +8,7 @@ INFRA = Path(__file__).resolve().parents[2]
 
 class BuildSelection(unittest.TestCase):
     def test_all_twelve_build_and_publication_arguments(self):
-        for app in ['tpl', 'info', 'knowledge', 'investment']:
+        for app in ['tpl', 'knowfeed', 'knowbase', 'investment']:
             for role in ['backend', 'web', 'admin']:
                 with self.subTest(app=app, role=role):
                     repository = app + '-' + (role if role == 'backend' else role + '-frontend')

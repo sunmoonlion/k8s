@@ -34,7 +34,7 @@ Investment LangGraph Pilot 仍在跑，沙箱池、会合点、本地代理一�
 
 ```
 外部信息源 ──采集──▶ 治理/去重 ──分发──▶ 知识库索引 ──检索──▶ 投资研究智能体
-             info-app                  knowledge-app          investment-app
+             knowfeed-app                  knowbase-app          investment-app
 ```
 
 三个领域 App **共享同一正式模板骨架**，因为它们都从同一个模板实例化；另有一个仓只负责把它们部署到
@@ -48,8 +48,8 @@ Kubernetes。**平台五仓，必须并列放置**（部署脚本按同级相对
 | 仓 | 职责 | 含业务源码 |
 | --- | --- | --- |
 | `tpl-app` | 模板：定义"一个标准 App 长什么样"，并提供部署脚手架 | 是（无领域） |
-| [`info-app`](repos/info-app.md) | 资讯域：采集、抽取、去重、治理，向 knowledge 分发 | 是 |
-| [`knowledge-app`](repos/knowledge-app.md) | 知识域：摄入与检索，两套跨仓契约的**唯一提供方** | 是 |
+| [`knowfeed-app`](repos/knowfeed-app.md) | 资讯域：采集、抽取、去重、治理，向 knowbase 分发 | 是 |
+| [`knowbase-app`](repos/knowbase-app.md) | 知识域：摄入与检索，两套跨仓契约的**唯一提供方** | 是 |
 | `investment-app` | 智能体域：投资研究 run、检索证据、人机交互 | 是 |
 | `k8s` | 部署编排：全部平台的部署声明、发布门禁；本文档也在此 | **否** |
 
@@ -59,14 +59,14 @@ Kubernetes。**平台五仓，必须并列放置**（部署脚本按同级相对
 ## 2. 依赖方向
 
 ```
-tpl-app ──实例化──▶ info-app ──artifact v1──▶ knowledge-app ──retrieval v1──▶ investment-app
+tpl-app ──实例化──▶ knowfeed-app ──artifact v1──▶ knowbase-app ──retrieval v1──▶ investment-app
                         │                          │                              │
                         └──────────── 都经 Casdoor 取身份 ──────────────────────────┘
 
 k8s ──构建镜像 / 渲染 bundle / apply──▶ 三个 App 的运行态
 ```
 
-**没有反向依赖**：knowledge 不调 info，info 不知道 investment 存在，tpl 不知道任何实例存在。
+**没有反向依赖**：knowbase 不调 knowfeed，knowfeed 不知道 investment 存在，tpl 不知道任何实例存在。
 跨 App 只经受版本控制的 HTTP 契约，**禁止跨 App 直接读写数据库**。
 
 契约的规律：**schema 真源放在被调方（provider），锁文件放在调用方（consumer）**。
@@ -151,7 +151,7 @@ app/app/
 非平台：`deploy-sunmoonai-all/`（总控）、`utils/`（跨平台工具）、`docs/`（含本文档）。
 
 App 侧实际用到的数据组件只有：PostgreSQL、Redis、object-storage、RabbitMQ、
-Elasticsearch（info 索引，**默认关闭**）。mongodb / neo4j / kibana / logstash 未见 App 引用。
+Elasticsearch（knowfeed 索引，**默认关闭**）。mongodb / neo4j / kibana / logstash 未见 App 引用。
 
 → 细节：[`repos/k8s.md`](repos/k8s.md)
 
@@ -201,8 +201,8 @@ Next.js 可以做 SSR 与同源交互，但**最终授权永远在 Backend**。
 ### 5.2 数据链（异步，跨 App）
 
 ```
-info 采集 → 治理/去重 → distribution_record + 事务 outbox_message
-  → Beat 发 pump 提示 → Worker 发布/消费命令 → POST knowledge 摄入
+knowfeed 采集 → 治理/去重 → distribution_record + 事务 outbox_message
+  → Beat 发 pump 提示 → Worker 发布/消费命令 → POST knowbase 摄入
   → knowledge job + Outbox → 上传/解析回执 + 单次持久轮询 → RAGFlow 派生索引
   → investment 检索取证据 → Citation 投影回浏览器
 ```
@@ -381,7 +381,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 
 | App | 缺口 |
 | --- | --- |
-| info | Elasticsearch 索引默认关闭（`SEARCH_BACKEND=disabled`），索引任务直接跳过；分发运行时**只接受 `knowledge-app`** 一个下游 |
+| info | Elasticsearch 索引默认关闭（`SEARCH_BACKEND=disabled`），索引任务直接跳过；分发运行时**只接受 `knowbase-app`** 一个下游 |
 | knowledge | Admin 入库运维页是**静态占位**，无 fetch 无操作 |
 | investment | `RunBudget` 四维限额已实现，但**两条生产链都不调用**（全仓仅三处引用：定义处、非生产图、其测试），故 `budget_exceeded` 状态在生产中**不可达**；Web 面未接 Pilot 链 |
 

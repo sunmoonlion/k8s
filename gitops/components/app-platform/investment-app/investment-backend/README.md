@@ -95,10 +95,10 @@ plan只读；check会创建限定随机数据库/消息/业务探针并精确清
 | `investment_backend_deployment.resources.scheduler.limits.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
 | `investment_backend_deployment.celery_control_queue_exclusive` | 开关 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
 | `investment_backend_deployment.celery_event_queue_exclusive` | 开关 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
-| `investment_backend_deployment.knowledge_service.enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
-| `investment_backend_deployment.knowledge_service.application` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
-| `investment_backend_deployment.knowledge_service.client_id` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
-| `investment_backend_deployment.knowledge_service.organization` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
-| `investment_backend_deployment.knowledge_service.scope` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
-| `investment_backend_deployment.knowledge_service.job_revision` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
-| `investment_backend_deployment.knowledge_service.token_seconds` | 整数 | 身份相关参数；秘密值留私有输入，不作为文件编辑即完成轮换的承诺。 |
+| `investment_backend_deployment.knowbase_service.enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
+| `investment_backend_deployment.knowbase_service.application` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `investment_backend_deployment.knowbase_service.client_id` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `investment_backend_deployment.knowbase_service.organization` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `investment_backend_deployment.knowbase_service.scope` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `investment_backend_deployment.knowbase_service.job_revision` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
+| `investment_backend_deployment.knowbase_service.token_seconds` | 整数 | 身份相关参数；秘密值留私有输入，不作为文件编辑即完成轮换的承诺。 |

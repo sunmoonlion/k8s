@@ -111,7 +111,7 @@
 | 网页 | `investment-web-frontend`：Next.js 16、同源 `/api/`、OIDC 会话在后端 | 从"只剩官网"改回产品界面；按 `C-R6` 模板优先 |
 | 工作台后端 | `investment-backend`：FastAPI 四角色、Run 状态机、事件表、Outbox/Inbox、执行租约 | 状态机改成 Task/Attempt 两层；Pilot 链退役；加 app-server 客户端与审批分发 |
 | 身份 | Casdoor：浏览器 OIDC + PKCE、服务身份 | 直接用；放内网，登录页经边缘出去 |
-| 知识服务 | `knowledge-app`（检索）、`info-app`（采集） | 加用户资料入库、MCP 封装、按用户限流 |
+| 知识服务 | `knowbase-app`（检索）、`knowfeed-app`（采集） | 加用户资料入库、MCP 封装、按用户限流 |
 | 部署 | `k8s`：`infrastructure/` 远程 kubeadm、`kind-infrastructure` 本机、`ingress-platform` Traefik、bundle 与门禁 | 内网站点用 kubeadm 那套；边缘裁一份薄的；沙箱池是新的一类部署单元 |
 
 **真正从零的**：沙箱池、会合点、本地代理（`runtime` 仓）、评测。

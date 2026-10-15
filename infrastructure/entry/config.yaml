@@ -24,13 +24,13 @@ entry_cluster_routes:
   - name: information
     backend: '127.0.0.1:{{ cluster_ingress_port }}'
     hostnames:
-      - '{{ info_web_deployment.origin | urlsplit("hostname") }}'
-      - '{{ info_admin_deployment.origin | urlsplit("hostname") }}'
+      - '{{ knowfeed_web_deployment.origin | urlsplit("hostname") }}'
+      - '{{ knowfeed_admin_deployment.origin | urlsplit("hostname") }}'
   - name: knowledge
     backend: '127.0.0.1:{{ cluster_ingress_port }}'
     hostnames:
-      - '{{ knowledge_web_deployment.origin | urlsplit("hostname") }}'
-      - '{{ knowledge_admin_deployment.origin | urlsplit("hostname") }}'
+      - '{{ knowbase_web_deployment.origin | urlsplit("hostname") }}'
+      - '{{ knowbase_admin_deployment.origin | urlsplit("hostname") }}'
   - name: investment
     backend: '127.0.0.1:{{ cluster_ingress_port }}'
     hostnames:

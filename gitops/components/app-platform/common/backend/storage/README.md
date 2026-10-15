@@ -14,4 +14,4 @@ S3端点、端口、区域来自[对象存储组件](../../../../data-platform/o
 
 application-check在实际API配置下调用业务ObjectStorage适配器，核对两个指定VersionId及读回SHA，检查跨桶/版本策略管理拒绝。root验收程序只删除本轮UUID的两个指定版本，不删除业务对象；文件夹挂载或S3登录成功不能代替业务适配器验收。
 
-原文生命周期、历史版本删除和备份轮换尚未实现自动策略。停用不能回退容器本地文件系统；配置变更与部署见[应用手册](../../../../../../infrastructure/applications/README.md)，原文只读接入见[Knowledge provider](../../../knowledge-app/knowledge-backend/provider/README.md)。
+原文生命周期、历史版本删除和备份轮换尚未实现自动策略。停用不能回退容器本地文件系统；配置变更与部署见[应用手册](../../../../../../infrastructure/applications/README.md)，原文只读接入见[Knowledge provider](../../../knowbase-app/knowbase-backend/provider/README.md)。

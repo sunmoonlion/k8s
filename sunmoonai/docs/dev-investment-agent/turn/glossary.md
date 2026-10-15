@@ -93,7 +93,7 @@
 
 | 组 | 成员 | 并列放置 |
 | --- | --- | --- |
-| **平台五仓** | `tpl-app`、`info-app`、`knowledge-app`、`investment-app`、`k8s` | **必须**——部署脚本按同级相对路径互相引用 |
+| **平台五仓** | `tpl-app`、`knowfeed-app`、`knowbase-app`、`investment-app`、`k8s` | **必须**——部署脚本按同级相对路径互相引用 |
 | **客户端仓** | `runtime`（本地代理）；`desktop-app` 已退役 | 不要求——不参与 k8s 部署 |
 
 说「五仓」时指的是**平台五仓**，不含客户端仓；要指全部时写「全部仓」。

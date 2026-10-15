@@ -5,7 +5,7 @@ data:
   ENV: production
   APP_SLUG: {{ application_name }}
   DEPLOYMENT_ID: {{ deployment_id | to_json }}
-  ALLOWED_HOSTS: {{ (['localhost','127.0.0.1',(application_name + '-api'),(application_name + '-api.') + app_namespace + '.svc.cluster.local', cfg.web_origin | urlsplit('hostname'), cfg.admin_origin | urlsplit('hostname')] + ([service_access_hosts.knowledge] if receiver_enabled else [])) | join(',') | to_json }}
+  ALLOWED_HOSTS: {{ (['localhost','127.0.0.1',(application_name + '-api'),(application_name + '-api.') + app_namespace + '.svc.cluster.local', cfg.web_origin | urlsplit('hostname'), cfg.admin_origin | urlsplit('hostname')] + ([service_access_hosts.knowbase] if receiver_enabled else [])) | join(',') | to_json }}
   REDIS_HOST: redis.{{ data_namespace }}.svc.cluster.local
   REDIS_PORT: '6379'
   REDIS_DB: '0'
@@ -37,10 +37,10 @@ data:
   SSL_CERT_FILE: /etc/sunmoon/provider/ca.crt
 {% endif %}
 {% if service_enabled %}
-  {{ 'KNOWLEDGE_APP_INGEST_URL' if application_name == 'info' else 'KNOWLEDGE_RETRIEVAL_URL' }}: https://{{ service_access_hosts.knowledge }}/api/internal/v1/knowledge/{{ 'ingestions' if service_relation == 'ingest' else 'retrievals' }}
-  {{ service_env_prefix }}_APPLICATION: {{ cfg.knowledge_service.application | to_json }}
-  {{ service_env_prefix }}_CLIENT_ID: {{ cfg.knowledge_service.client_id | to_json }}
-  {{ service_env_prefix }}_SCOPE: {{ cfg.knowledge_service.scope | to_json }}
+  {{ 'KNOWBASE_APP_INGEST_URL' if application_name == 'knowfeed' else 'KNOWBASE_RETRIEVAL_URL' }}: https://{{ service_access_hosts.knowbase }}/api/internal/v1/knowledge/{{ 'ingestions' if service_relation == 'ingest' else 'retrievals' }}
+  {{ service_env_prefix }}_APPLICATION: {{ cfg.knowbase_service.application | to_json }}
+  {{ service_env_prefix }}_CLIENT_ID: {{ cfg.knowbase_service.client_id | to_json }}
+  {{ service_env_prefix }}_SCOPE: {{ cfg.knowbase_service.scope | to_json }}
   {{ service_env_prefix }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
   {{ service_env_prefix }}_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
   SSL_CERT_FILE: /etc/sunmoon/service/ca.crt
@@ -167,10 +167,10 @@ spec:
             - {secretRef: {name: {{ application_name }}-storage-runtime}}
 {% endif %}
 {% if provider_enabled and role in ['api','worker'] %}
-            - {secretRef: {name: knowledge-provider-runtime}}
+            - {secretRef: {name: knowbase-provider-runtime}}
 {% endif %}
 {% if service_enabled and role in ['api','worker'] %}
-            - {secretRef: {name: {{ application_name }}-knowledge-service}}
+            - {secretRef: {name: {{ application_name }}-knowbase-service}}
 {% endif %}
 {% if agent_releases_enabled | default(false) and role == 'api' %}
             - {secretRef: {name: {{ application_name }}-agent-releases-runtime}}
@@ -203,7 +203,7 @@ spec:
         - {name: storage-ca, secret: {secretName: {{ application_name }}-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
 {% endif %}
 {% if provider_enabled %}
-        - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+        - {name: provider-ca, secret: {secretName: knowbase-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
 {% endif %}
         - {name: tmp, emptyDir: {sizeLimit: {{ cfg.tmp_size_limit | default('64Mi') }}}}
         - {name: celery-config, configMap: {name: {{ application_name }}-celery-config}}
@@ -255,9 +255,9 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: knowledge-ragflow-egress, namespace: {{ app_namespace }}}
+metadata: {name: knowbase-ragflow-egress, namespace: {{ app_namespace }}}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/part-of: knowledge, sunmoonai.com/ragflow-client: 'true'}}
+  podSelector: {matchLabels: {app.kubernetes.io/part-of: knowbase, sunmoonai.com/ragflow-client: 'true'}}
   policyTypes: [Egress]
   egress:
     - to:

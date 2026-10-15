@@ -12,7 +12,7 @@ float32、batch_tokens、client_batch_size、concurrent_requests、tokenization_
 
 render核所有模型文件/hash，只复制缺失内容到静态Retain卷，拒绝链接/漂移/覆盖。模型升级需匹配文件锁与revision/维度、重新索引派生数据并重新验收；后续外部模型服务切换尚未实现。
 
-services-check实际请求health/info、OpenAI embeddings及TEI native embed，核固定修订/版本/float32、有限数值/归一化/维度、两组中文相关性、重复输出。四样本检查不是模型benchmark；实际RAG/业务检索另外由相应验收覆盖。模型资源与未验能力见验收边界。
+services-check实际请求health/knowfeed、OpenAI embeddings及TEI native embed，核固定修订/版本/float32、有限数值/归一化/维度、两组中文相关性、重复输出。四样本检查不是模型benchmark；实际RAG/业务检索另外由相应验收覆盖。模型资源与未验能力见验收边界。
 
 ## 配置字段
 

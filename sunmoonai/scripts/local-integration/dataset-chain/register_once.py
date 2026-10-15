@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""只做登记这一步（不重新建数据集），把结果按稳定的错误码打印出来。在 info 后端的环境里运行。"""
+"""只做登记这一步（不重新建数据集），把结果按稳定的错误码打印出来。在 knowfeed 后端的环境里运行。"""
 
 from __future__ import annotations
 

@@ -14,7 +14,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault("PROVISIONER_TOKEN", "prov-token-0123456789")
 os.environ.setdefault("SANDBOX_IMAGE", "harbor.example/app-images/sandbox@sha256:" + "a" * 64)
-os.environ.setdefault("KNOWLEDGE_MCP_URL", "http://knowledge-backend.app-platform-dev.svc.cluster.local:8000/api/mcp/knowledge")
+os.environ.setdefault("KNOWBASE_MCP_URL", "http://knowbase-backend.app-platform-dev.svc.cluster.local:8000/api/mcp/knowledge")
 import provisioner as target  # noqa: E402
 
 
@@ -100,7 +100,7 @@ async def test_put_is_idempotent_and_keeps_the_capability_token(stack):
         env = {e["name"]: e for e in dep["spec"]["template"]["spec"]["containers"][0]["env"]}
         assert env["OPENAI_API_KEY"]["valueFrom"]["secretKeyRef"]["key"] == "model-key"
         assert env["MODEL_PROVIDER"]["value"] == "kimi"
-        assert "KNOWLEDGE_MCP_URL" not in env  # no knowledge token given and no shared token configured
+        assert "KNOWBASE_MCP_URL" not in env  # no knowledge token given and no shared token configured
         # second PUT with a rotated model key: same capability token, secret replaced, PVC untouched
         pvc_rv = api.objects[("persistentvolumeclaims", "sandbox-u-demo-codex-home")]["metadata"]["resourceVersion"]
         second = await c.put("/sandboxes/u-demo", json=spec(model_key="sk-rotated-key-0987654321"), headers=headers)

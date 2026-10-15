@@ -51,9 +51,9 @@ spec:
             - { name: MODEL_PROVIDER, value: "kimi" }
             - { name: MODEL, value: "kimi-k3" }
             - { name: PROVIDER_BASE_URL, value: "https://api.moonshot.cn/v1" }
-            # 知识服务 MCP（0006）：挂在 knowledge-backend 主应用；令牌来自 Secret
-            - { name: KNOWLEDGE_MCP_URL, value: "http://knowledge-backend.app-platform-dev.svc.cluster.local:8000/api/mcp/knowledge" }
-            - name: KNOWLEDGE_MCP_TOKEN
+            # 知识服务 MCP（0006）：挂在 knowbase-backend 主应用；令牌来自 Secret
+            - { name: KNOWBASE_MCP_URL, value: "http://knowbase-backend.app-platform-dev.svc.cluster.local:8000/api/mcp/knowledge" }
+            - name: KNOWBASE_MCP_TOKEN
               valueFrom: { secretKeyRef: { name: sandbox-demo-knowledge, key: token, optional: true } }
           ports:
             - { name: app-server, containerPort: 47800 }

@@ -44,7 +44,7 @@ contracts/      接口的写法（zod）
 
 聊天页和工作页都要用的东西不放在哪个功能里，放在公共的位置：把 Codex 的一件事变成一行（`lib/workbench/items.ts`）、一段对话上能做的动作（`lib/workbench/conversation.ts`）、输入框、一行命令或一次查数据的样子、「没有数据」卡片、对话的名字（都在 `components/workbench/`）。
 
-这套放法先在 investment 里用。info、knowledge 做页面时（第 8、9 步）照此办，届时把检查搬进模板。
+这套放法先在 investment 里用。knowfeed、knowbase 做页面时（第 8、9 步）照此办，届时把检查搬进模板。
 
 ## 三、第 1 段做了什么
 
@@ -195,7 +195,7 @@ contracts/      接口的写法（zod）
 | # | 问题 | 处理 |
 | --- | --- | --- |
 | 1 | 正式构建下，每一页都有一条内容安全策略的报错：「加载中」那一页的脚本没有带随机数，被浏览器拦了。没动过的旧页面上也有 | **没有改**。是底座的问题，页面照常显示。记在账本 H52 |
-| 2 | 字体没有生效：样式里无衬线字体的变量指向它自己，页面用的是浏览器默认的衬线字体。模板与三个应用的网页端都这样 | 已改：用系统自带的字体，不下载字体文件。模板、info、knowledge、investment 四个网页端都改了。管理端没有改（账本 H53） |
+| 2 | 字体没有生效：样式里无衬线字体的变量指向它自己，页面用的是浏览器默认的衬线字体。模板与三个应用的网页端都这样 | 已改：用系统自带的字体，不下载字体文件。模板、knowfeed、knowbase、investment 四个网页端都改了。管理端没有改（账本 H53） |
 | 3 | 第 6 步录的聊天样例里，「问到没有数据的公司」那一轮是坏的：工具调用的类型名被替换坏了，所以没有「没有数据」的事件，也没有花费。第 6 步汇报时没有发现 | 已改，并加了检查。原因：拼出来的那一轮用单个字母当编号，回放时把别的词里的字母也换掉了 |
 | 4 | 开发模式下改了样式文件，页面还是旧的 | 是开发服务器的缓存。删掉 `.next/dev` 再开。只影响本机调试 |
 
@@ -232,7 +232,7 @@ contracts/      接口的写法（zod）
 | investment-app | `df45be5` | 到第 6 段为止的指针 |
 | investment-backend | `3935ced` 及之后一个 | 样例的两处修正 |
 | investment-app | `6fce162` | 两个子仓的指针 |
-| tpl-web-frontend、info-web-frontend、knowledge-web-frontend | `0ee328f`、`d2acc6d`、`8c7536d` | 字体 |
+| tpl-web-frontend、knowfeed-web-frontend、knowbase-web-frontend | `0ee328f`、`d2acc6d`、`8c7536d` | 字体 |
 
 ## 八、以后要改的细节
 

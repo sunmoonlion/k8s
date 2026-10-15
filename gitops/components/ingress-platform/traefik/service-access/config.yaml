@@ -3,4 +3,4 @@
 service_access_enabled: true
 service_access_hosts:
   casdoor: 'casdoor-tls.{{ app_namespace }}.svc.cluster.local'
-  knowledge: 'knowledge-tls.{{ app_namespace }}.svc.cluster.local'
+  knowbase: 'knowbase-tls.{{ app_namespace }}.svc.cluster.local'

@@ -143,7 +143,7 @@ KIND 开发包新增 `./sunmoon app prepare-input` 准备入口：显式选基�
 复核包版本和历史发布声明（不能代替 live 核验）：
 ```bash
 grep -h '^version' */[a-z]*-backend/app/pyproject.toml
-python3 -c "import json;print(json.load(open('k8s/sunmoonai/app-platform/info-app/deployment/bundle/release.json'))['formal_release'])"
+python3 -c "import json;print(json.load(open('k8s/sunmoonai/app-platform/knowfeed-app/deployment/bundle/release.json'))['formal_release'])"
 ```
 
 ## 8. 当前 KIND 切换事实与剩余验收

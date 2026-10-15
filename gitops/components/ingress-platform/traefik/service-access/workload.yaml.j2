@@ -1,4 +1,4 @@
-{% for name in ['casdoor','knowledge'] %}
+{% for name in ['casdoor','knowbase'] %}
 ---
 apiVersion: v1
 kind: Service
@@ -21,8 +21,8 @@ spec:
     - host: {{ service_access_hosts[name] }}
       http:
         paths:
-          - path: {{ '/api/internal/v1/knowledge' if name == 'knowledge' else '/' }}
+          - path: {{ '/api/internal/v1/knowledge' if name == 'knowbase' else '/' }}
             pathType: Prefix
             backend:
-              service: {name: {{ 'knowledge-api' if name == 'knowledge' else 'casdoor' }}, port: {name: http}}
+              service: {name: {{ 'knowbase-api' if name == 'knowbase' else 'casdoor' }}, port: {name: http}}
 {% endfor %}

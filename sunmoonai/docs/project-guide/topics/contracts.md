@@ -17,8 +17,8 @@ DTO / Port / 前端 zod 都齐全，却仍能在**每个实例里各自未接线
 
 | 契约 | provider（schema 真源） | consumer（锁文件） | 传输 |
 | --- | --- | --- | --- |
-| **artifact v1** | `knowledge-app/contracts/artifact/v1/info-knowledge-artifact.schema.json` | `info-app/contracts/knowledge-provider-lock.json` | info → knowledge，HTTP 摄入 |
-| **retrieval v1** | `knowledge-app/contracts/retrieval/v1/`（request / response / citation 三份 schema） | `investment-app/contracts/knowledge-retrieval-provider-lock.json` | investment → knowledge，HTTP 检索 |
+| **artifact v1** | `knowbase-app/contracts/artifact/v1/knowfeed-knowbase-artifact.schema.json` | `knowfeed-app/contracts/knowbase-provider-lock.json` | info → knowbase，HTTP 摄入 |
+| **retrieval v1** | `knowbase-app/contracts/retrieval/v1/`（request / response / citation 三份 schema） | `investment-app/contracts/knowbase-retrieval-provider-lock.json` | investment → knowbase，HTTP 检索 |
 | **web-interaction v1** | `tpl-app/contracts/web-interaction-v1.consumer-vectors.json` | 各 App 后端 DTO + 各 Web 前端 zod | **同 App 内**后端 ↔ Web 前端 |
 
 **规律**：schema 真源放在**被调方**（provider）仓；锁文件放在**调用方**（consumer）仓。
@@ -46,8 +46,8 @@ provider 改 schema → 双端（provider + consumer）测试都通过 → 才�
 
 | 契约 | provider 侧 | consumer 侧 |
 | --- | --- | --- |
-| artifact v1 | knowledge 的摄入测试对 manifest digest | info 的分发辅助测试 |
-| retrieval v1 | knowledge 的检索测试对 manifest digest | investment 设 `KNOWLEDGE_RETRIEVAL_CONTRACT_DIR` 后跑契约测试 |
+| artifact v1 | knowbase 的摄入测试对 manifest digest | knowfeed 的分发辅助测试 |
+| retrieval v1 | knowbase 的检索测试对 manifest digest | investment 设 `KNOWBASE_RETRIEVAL_CONTRACT_DIR` 后跑契约测试 |
 | web-interaction v1 | 后端消费向量测试 | 前端 vitest，向量路径由 `WEB_INTERACTION_CONSUMER_VECTORS` 注入 |
 
 **注意**：consumer 侧测试需要环境变量指向 provider 仓的契约目录，
@@ -61,13 +61,13 @@ provider 改 schema → 双端（provider + consumer）测试都通过 → 才�
 ## 5. citation 的 `source_href` 只有一个形状
 
 **全平台统一为 `/api/web/v1/citations/{evidence_id}/source`**，相对路径，
-由消费方在**自己的 origin** 下解析——knowledge 与 investment 各自都有这条路由。
+由消费方在**自己的 origin** 下解析——knowbase 与 investment 各自都有这条路由。
 
 同形的地方共七处，改一处必须七处一起改：
 
 | 位置 | 角色 |
 | --- | --- |
-| `knowledge-app/contracts/retrieval/v1/citation.schema.json` | 契约真源 |
+| `knowbase-app/contracts/retrieval/v1/citation.schema.json` | 契约真源 |
 | `knowledge:application/dto/retrieval.py` `Citation` | provider 投影 |
 | `knowledge:application/dto/interaction.py` `BrowserCitation` | 浏览器面 |
 | `investment:domain/agent/knowledge.py` `Citation` | consumer 投影 |
@@ -84,7 +84,7 @@ provider 改 schema → 双端（provider + consumer）测试都通过 → 才�
 
 ```bash
 # provider 侧：契约正则必须匹配真实路由
-cd knowledge-app/knowledge-backend/app
+cd knowbase-app/knowbase-backend/app
 uv run pytest tests/test_knowledge_retrieval.py -k resolves_to_a_real_route
 # consumer 侧：两个经事件存储首尾相接的类必须同形
 cd investment-app/investment-backend/app

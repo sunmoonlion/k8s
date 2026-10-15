@@ -64,7 +64,7 @@ spec:
             - {name: APP_NAMESPACE, value: '{{ app_namespace }}'}
             - {name: SANDBOX_IMAGE_PULL_SECRET, value: registry-puller}
             - {name: RELAY_NAMESPACE, value: '{{ relay_namespace }}'}
-            - {name: KNOWLEDGE_MCP_URL, value: '{{ knowledge_mcp_url }}'}
+            - {name: KNOWBASE_MCP_URL, value: '{{ knowbase_mcp_url }}'}
             - {name: SANDBOX_PVC_SIZE, value: '{{ sandbox_pvc_size }}'}
             - {name: PROVISIONER_TOKEN, valueFrom: {secretKeyRef: {name: sandbox-provisioner, key: token}}}
           ports: [{name: http, containerPort: {{ sandbox_provisioner_port }}}]

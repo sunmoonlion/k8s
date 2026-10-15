@@ -224,7 +224,7 @@
     },
     {
       "id": "text-embeddings-inference",
-      "group": "knowledge",
+      "group": "knowbase",
       "source": "ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4",
       "platform": "linux/amd64",
       "status": "resolved",
@@ -236,7 +236,7 @@
     },
     {
       "id": "ragflow",
-      "group": "knowledge",
+      "group": "knowbase",
       "source": "docker.io/infiniflow/ragflow:v0.27.2",
       "platform": "linux/amd64",
       "status": "resolved",
@@ -248,7 +248,7 @@
     },
     {
       "id": "infinity",
-      "group": "knowledge",
+      "group": "knowbase",
       "source": "docker.io/infiniflow/infinity:v0.7.3-x64-v3",
       "platform": "linux/amd64",
       "status": "resolved",
@@ -260,7 +260,7 @@
     },
     {
       "id": "valkey",
-      "group": "knowledge",
+      "group": "knowbase",
       "source": "docker.io/valkey/valkey:8.1.10",
       "platform": "linux/amd64",
       "status": "resolved",
@@ -272,7 +272,7 @@
     },
     {
       "id": "onlyoffice",
-      "group": "knowledge",
+      "group": "knowbase",
       "source": "docker.io/onlyoffice/documentserver:9.4.0",
       "platform": "linux/amd64",
       "status": "resolved",
@@ -280,7 +280,7 @@
       "reference": "docker.io/onlyoffice/documentserver@sha256:8c114db7648a1654828d33e1f9f3b18e97c4caae6707d34bf04d793d260f7e67",
       "config_digest": "sha256:4934c364adccc2898d0998951fb09d455496454de417cce2a74b7b1e808daab0",
       "compressed_layer_bytes": 1267193468,
-      "material_owner": "components/app-platform/knowledge-app/onlyoffice"
+      "material_owner": "components/app-platform/knowbase-app/onlyoffice"
     },
     {
       "id": "local-path",

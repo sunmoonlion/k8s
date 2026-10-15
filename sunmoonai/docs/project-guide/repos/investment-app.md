@@ -11,8 +11,8 @@
 
 ## 1. 定位
 
-智能体域：以 LangGraph 承载投资研究 run，向 knowledge 取检索证据，经人机交互产出结论。
-消费 knowledge 的 retrieval v1 契约。
+智能体域：以 LangGraph 承载投资研究 run，向 knowbase 取检索证据，经人机交互产出结论。
+消费 knowbase 的 retrieval v1 契约。
 
 **五仓中领域代码最重的一个**：约 110 个文件、8–9k 行。也是唯一有完整状态机、
 检查点恢复、事件流与副作用记账的仓——[`tree-build/PRD/requirement.md`](../../dev-investment-agent/tree-build/PRD/requirement.md)
@@ -39,11 +39,11 @@
 | `infrastructure/agent/delivery.py` | 公共投递策略的 Agent 会话租约扩展，不另建 publisher/死信真源 |
 | `interfaces/endpoints/agent_routes.py` | Admin Agent v4 面（默认关闭） |
 | `interfaces/endpoints/pilot_runtime_routes.py` | Internal Pilot 面 |
-| `contracts/knowledge-retrieval-provider-lock.json` | retrieval 契约**消费锁** |
+| `contracts/knowbase-retrieval-provider-lock.json` | retrieval 契约**消费锁** |
 
 ## 3. 硬规则
 
-模板五项不变量（79 行）+ UUID 双侧默认值检查（`:60`，与 knowledge 同款）。
+模板五项不变量（79 行）+ UUID 双侧默认值检查（`:60`，与 knowbase 同款）。
 
 运行期约束：
 
@@ -80,7 +80,7 @@ completed · failed · cancelled · budget_exceeded  → ∅（四终态，出�
 | Pilot | 同入口，持久 payload.kind=pilot | `/api/internal/v1/investment/*` | 需 `AGENT_PILOT_ENABLED` |
 
 **Pilot 链步骤**：建 run（`owner_actor_id` + `idempotency_key` 幂等）与 Outbox 同事务 → 公共投递
-→ HTTP POST knowledge 检索（OAuth client credentials）→ **零证据即失败**
+→ HTTP POST knowbase 检索（OAuth client credentials）→ **零证据即失败**
 → `Citation.from_evidence` 逐条写 citation 事件 → LLM 草稿（OpenAI 兼容）
 → graph interrupt 要求 approval，写 `input_required` → resume 原子消费 token
 → summary → `completed`。
@@ -146,7 +146,7 @@ Pilot run 用 `owner_actor_id + idempotency_key`。
 
 | 接口 | 角色 |
 | --- | --- |
-| knowledge retrieval v1 | **consumer**（锁：`contracts/knowledge-retrieval-provider-lock.json`） |
+| knowledge retrieval v1 | **consumer**（锁：`contracts/knowbase-retrieval-provider-lock.json`） |
 | `/api/internal/v1/investment/*` | provider（Pilot Runtime，Bearer + 委托用户头） |
 | `/api/agent/*` | provider，**默认 404** |
 | Admin/Web OIDC、`/api/web/v1` | 同模板 |

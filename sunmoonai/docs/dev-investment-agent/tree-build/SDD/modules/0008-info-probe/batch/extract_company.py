@@ -3,7 +3,7 @@
 import glob, json, os, re, sys, time, logging
 import pdfplumber
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
-STORE = os.path.expanduser("~/info-smoke-storage/development-info-originals/info/securities")
+STORE = os.path.expanduser("~/knowfeed-smoke-storage/development-knowfeed-originals/knowfeed/securities")
 OUT = os.path.expanduser("~/annual-report-probe/batch/out")
 WANTED = {"合并资产负债表": "balance_sheet", "合并利润表": "income_statement", "合并现金流量表": "cash_flow"}
 OTHER = re.compile(r"^(母公司|公司|本公司)?(资产负债表|利润表|现金流量表|所有者权益变动表|股东权益变动表)$|^合并(所有者权益变动表|股东权益变动表)$")

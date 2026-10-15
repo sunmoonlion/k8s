@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""登记一个采集批次并排队，和管理接口做的事一样，只是不经过浏览器登录。在 info 后端的环境里运行。"""
+"""登记一个采集批次并排队，和管理接口做的事一样，只是不经过浏览器登录。在 knowfeed 后端的环境里运行。"""
 
 from __future__ import annotations
 

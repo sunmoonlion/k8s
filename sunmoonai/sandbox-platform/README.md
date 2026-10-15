@@ -61,7 +61,7 @@ Deployment、Service、NetworkPolicy → 工作台把 `app_server_url` 与能力
 ```bash
 cd sunmoonai/sandbox-platform/provisioner
 docker build -t harbor.sunmoonai.com:30443/app-images/sandbox-provisioner:v1-r1 . && docker push …   # 取 digest 填 resources/provisioner.yaml
-kubectl -n sandbox-pool create secret generic sandbox-provisioner --from-literal=token=<共享令牌> [--from-literal=knowledge-token=<共用 MCP 令牌>]
+kubectl -n sandbox-pool create secret generic sandbox-provisioner --from-literal=token=<共享令牌> [--from-literal=knowbase-token=<共用 MCP 令牌>]
 kubectl apply -f resources/provisioner.yaml
 .venv/bin/python -m pytest tests -q        # 供给器单测
 ```

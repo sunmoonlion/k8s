@@ -21,14 +21,14 @@
 
 ### 1.1 这是什么项目
 
-SunMoonAI，一个面向投资研究的 AI 产品。仓库分五个平台仓（`tpl-app` 模板、`info-app` 资讯采集、`knowledge-app` 知识库与检索、`investment-app` 投资研究智能体、`k8s` 部署），必须并列放置。文档集在 `k8s/sunmoonai/docs/` 下：`project-guide/` 投影现有源码，`dev-investment-agent/` 是要建的目标态与开发流程。
+SunMoonAI，一个面向投资研究的 AI 产品。仓库分五个平台仓（`tpl-app` 模板、`knowfeed-app` 资讯采集、`knowbase-app` 知识库与检索、`investment-app` 投资研究智能体、`k8s` 部署），必须并列放置。文档集在 `k8s/sunmoonai/docs/` 下：`project-guide/` 投影现有源码，`dev-investment-agent/` 是要建的目标态与开发流程。
 
-内容流水线：外部信息源 → info-app 采集、治理、去重 → knowledge-app 建索引、提供检索 → investment-app 消费检索证据做研究。
+内容流水线：外部信息源 → knowfeed-app 采集、治理、去重 → knowbase-app 建索引、提供检索 → investment-app 消费检索证据做研究。
 
 ### 1.2 现有源码状态
 
 - 三个领域 App 都是 Next.js 前端（Admin/Web 各一）加单领域 FastAPI 后端，四运行角色（API / Worker / Scheduler / Migration）同一镜像。
-- investment-app 后端约 8 到 9k 行，有 Run 状态机、LangGraph 检查点、事件流、副作用记账、共享 Outbox/Inbox 可靠投递（源码已接线）。一条 Pilot 链在跑：建 run → 调 knowledge 检索 → 零证据即失败 → LLM 草稿 → graph interrupt 等审批 → resume → 完成。
+- investment-app 后端约 8 到 9k 行，有 Run 状态机、LangGraph 检查点、事件流、副作用记账、共享 Outbox/Inbox 可靠投递（源码已接线）。一条 Pilot 链在跑：建 run → 调 knowbase 检索 → 零证据即失败 → LLM 草稿 → graph interrupt 等审批 → resume → 完成。
 - `RunBudget` 四维限额已定义但生产链不调用；预算是内存态。
 - **桌面客户端与本地 runtime 一行代码都没有。**目标态的三块里两块尚未开始。
 
@@ -206,7 +206,7 @@ SunMoonAI，一个面向投资研究的 AI 产品。仓库分五个平台仓（`
 2. **"同一个实例、经我们的 runtime"和"用户照常用 Codex"是矛盾的。**已经在用 Codex CLI、Claude Code、Cursor 的人日常不会切到我们的壳；如果只在求助时打开，第一层上下文根本不在我们这里，同一实例的好处落空。引擎钉死 codex app-server，市场另一半人用别的。
 3. **token 由用户付、方向盘由我们握，激励错位。**我们的 workflow 每多一步返工、每派一个独立验收 Attempt、每开一路竞争都是用户账单；我们没有让流程变省的天然压力，用户会把贵账算在我们头上。
 4. **第一期控制面太重，可能在任何人付钱之前先把一年花掉。**租约、fencing、outbox、多方竞争、跨设备密文取回都不是验证"方法有没有价值"所必需的。staging 估 56–94 人周又说 2–3 人 6–8 周，对不上。
-5. **数据有什么没有答案。**如果 info-app 采的主要是公开公告与研报，MCP 层卖的是结构化、口径和引用，不是独占；定价和 value.md 都得按这个来。
+5. **数据有什么没有答案。**如果 knowfeed-app 采的主要是公开公告与研报，MCP 层卖的是结构化、口径和引用，不是独占；定价和 value.md 都得按这个来。
 6. **卖给谁没有收窄。**"投资经理"太宽；没有一个切得很窄的场景，第一个专家包和第一套评测集都定不下来。
 
 **建议**：
@@ -233,7 +233,7 @@ SunMoonAI，一个面向投资研究的 AI 产品。仓库分五个平台仓（`
 | U3 | 用户怎么知道有专家可问（旧设计靠领域识别引流，新设计里满意的用户永远不碰云端） | 未决；Claude 建议本机 runtime 用领域目录做便宜提示不调云端，或靠产品教育 |
 | U4 | 云端给回的方法与数据谁验收（旧设计验本机产出，翻过来后顾问给的东西也要质量门） | 未决；value.md 的对比评测是这个门但还是空的 |
 | U5 | 计费：订阅（D23 原建议）还是按次求助 | 未决；新定位下按次很自然 |
-| U6 | 数据盘点：info-app 实际采什么、独占性如何 | 未回答 |
+| U6 | 数据盘点：knowfeed-app 实际采什么、独占性如何 | 未回答 |
 | U7 | 第一个切口场景 | 未定；Claude 建议财报季覆盖或公告解读加勾稽筛查 |
 | U8 | 是否先做人肉验证再建控制面 | 所有者未表态 |
 | U9 | 是否保留引擎中立的显式交接退路 | 所有者未表态；与"同一实例"有张力 |

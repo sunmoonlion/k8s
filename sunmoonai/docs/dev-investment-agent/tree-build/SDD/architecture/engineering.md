@@ -9,7 +9,7 @@
 | 沙箱池 | `k8s` 仓新部署单元 + 一个小镜像（Codex CLI 钉版 + 出站桥） | 容器；出站桥 Python 或 Node，与代理共用协议实现 | 新 |
 | 会合点 | 新仓 `relay`（或先放 `k8s/platforms/`，`D16` 待定） | Python asyncio + websockets 起步；延迟不达标再换 Go | 新 |
 | 本地代理 | `runtime` 仓 | TypeScript/Node（Codex CLI 是 npm 包，同一运行时）；随包带钉版 Codex；签名分发 | 新（仓已有，内容换） |
-| 知识服务 | `knowledge-app` | 现状 + MCP 服务端 + 用户资料入库 | 改造 |
+| 知识服务 | `knowbase-app` | 现状 + MCP 服务端 + 用户资料入库 | 改造 |
 | 评测 | 先落 `investment-backend` 的 `eval/` | Python | 新 |
 
 **退役仓**：`desktop-app`（本地 worktree、`~/master` 副本、`repos.conf` 条目一并删；GitHub 仓由所有者删）。
@@ -43,7 +43,7 @@
 
 ### 细则：后端
 
-三个后端（info、knowledge、investment）和模板（tpl-app）是同一套骨架，规则相同。
+三个后端（knowfeed、knowbase、investment）和模板（tpl-app）是同一套骨架，规则相同。
 
 | 层 | 目录 | 放什么 | 可以引用 |
 | --- | --- | --- | --- |
@@ -119,7 +119,7 @@
 | 打镜像时没有排除 `scripts/`、`eval/` | 三个后端仓库根的 `.dockerignore` | **已补**（2026-09-29） |
 | 旧运行时的表还在库里 | investment 的数据库 | 已发布的迁移不删不改；以后用新的迁移去掉 |
 | 旧运行时的历史设计文档 | investment-backend `docs/mooc-manus-v4-*`（3 份）与 `docs/adr/`（18 份） | **已删**（2026-09-29 所有者定，investment-backend `0c22ea6`） |
-| 父仓库里的检索契约消费锁 | `investment-app/contracts/knowledge-retrieval-provider-lock.json` | 所有者 2026-09-29 定撤销检索身份；这份锁到时一并删 |
+| 父仓库里的检索契约消费锁 | `investment-app/contracts/knowbase-retrieval-provider-lock.json` | 所有者 2026-09-29 定撤销检索身份；这份锁到时一并删 |
 | 接口层两套放法并存 | 三个后端 | 工作台路由挪到 `http/web`；其余随改随挪 |
 | 首页还挂着旧的研究工作区，约 829 行 | investment-web-frontend | 随前端改造处理 |
 | 应用层里放着对外的实现（会合点管理通道、供给器、Redis 发布、令牌签名） | investment-backend `application/workbench/` | 前三样**已挪到基础设施层**（2026-09-29，`0d55ab6`）。令牌签名还在应用层，规则没定（账本 H3） |

@@ -4,8 +4,8 @@
 services_sandbox_provisioner_enabled: true
 sandbox_provisioner_port: 8080
 sandbox_pvc_size: 2Gi
-# 新体系里 knowledge 的 Service 叫 knowledge-api（common/backend/runtime 模板）
-knowledge_mcp_url: 'http://knowledge-api.{{ app_namespace }}.svc.cluster.local:8000/api/mcp/knowledge'
+# 新体系里 knowbase 的 Service 叫 knowbase-api（common/backend/runtime 模板）
+knowbase_mcp_url: 'http://knowbase-api.{{ app_namespace }}.svc.cluster.local:8000/api/mcp/knowledge'
 sandbox_provisioner_resources:
   requests: {cpu: 50m, memory: 64Mi}
   limits: {cpu: 500m, memory: 256Mi}

@@ -1,7 +1,7 @@
 # 跨应用跳转：一个应用把用户带到另一个应用
 
 > 产品层面的约定在 [`PRD/apps/README.md`](../../PRD/apps/README.md) 4.1。这一份写的是它落在代码里的样子。
-> 对应 [先后顺序](../../PRD/apps/README.md) 的第 5 步，2026-09-29 做完：先进模板，再同步到 info、knowledge、investment。
+> 对应 [先后顺序](../../PRD/apps/README.md) 的第 5 步，2026-09-29 做完：先进模板，再同步到 knowfeed、knowbase、investment。
 > 页面还没有用到它。第 7、8、9 步做页面时直接用。
 
 ## 一、约定
@@ -31,13 +31,13 @@
 | 配置 | 含义 | 例 |
 | --- | --- | --- |
 | `CROSS_APP_SOURCES_JSON` | 哪些应用可以把用户带到这里，各自的回跳地址。没写回跳地址的，页面上不显示「回到原处」 | `{"investment": {"return_url": "https://…/zh-CN/workbench?ref={ref}"}, "knowledge": {}}` |
-| `CROSS_APP_TARGETS_JSON` | 这个应用会把用户带去哪些应用，各自网页端的地址。没配的，页面上不显示去那里的链接 | `{"info": {"web_base_url": "https://info.example"}}` |
+| `CROSS_APP_TARGETS_JSON` | 这个应用会把用户带去哪些应用，各自网页端的地址。没配的，页面上不显示去那里的链接 | `{"info": {"web_base_url": "https://knowfeed.example"}}` |
 
 | 应用 | 默认认谁带来的用户 | 默认带用户去哪 |
 | --- | --- | --- |
 | 模板 | 谁都不认 | 哪都不去 |
-| info | investment、knowledge，都没有回跳地址 | 哪都不去 |
-| knowledge | investment、info，都没有回跳地址 | 哪都不去 |
+| info | investment、knowbase，都没有回跳地址 | 哪都不去 |
+| knowledge | investment、knowfeed，都没有回跳地址 | 哪都不去 |
 | investment | 谁都不认 | 哪都不去 |
 
 | 配置写错了 | 后果 |
@@ -94,17 +94,17 @@
 <ReturnToOrigin>回到原处</ReturnToOrigin>
 ```
 
-拼出来的链接：`https://<info 网页端>/zh-CN/requests/new?code=600519&from=investment&ref=<委托编号>`
+拼出来的链接：`https://<knowfeed 网页端>/zh-CN/requests/new?code=600519&from=investment&ref=<委托编号>`
 
-## 四、info 原来那一份
+## 四、knowfeed 原来那一份
 
-info 做采集申请时先写过一份专用的（2026-09-29，`3b5d037`）。这次换成共用的，三处变了。都还没有部署过，没有页面在用。
+knowfeed 做采集申请时先写过一份专用的（2026-09-29，`3b5d037`）。这次换成共用的，三处变了。都还没有部署过，没有页面在用。
 
 | 项 | 原来 | 现在 |
 | --- | --- | --- |
-| 配置 | `SECURITY_REQUEST_SOURCES_JSON`、`KNOWLEDGE_WEB_BASE_URL` | `CROSS_APP_SOURCES_JSON`、`CROSS_APP_TARGETS_JSON` |
+| 配置 | `SECURITY_REQUEST_SOURCES_JSON`、`KNOWBASE_WEB_BASE_URL` | `CROSS_APP_SOURCES_JSON`、`CROSS_APP_TARGETS_JSON` |
 | 接口 | `GET /api/web/v1/security-request-origin` | `GET /api/web/v1/cross-app/origin` |
-| 申请的返回里去 knowledge 的地址模板 | 有（`catalog_url_template`） | 没有，只给数据集的编号。链接由网页端拼 |
+| 申请的返回里去 knowbase 的地址模板 | 有（`catalog_url_template`） | 没有，只给数据集的编号。链接由网页端拼 |
 
 ## 五、提交
 
@@ -126,7 +126,7 @@ info 做采集申请时先写过一份专用的（2026-09-29，`3b5d037`）。�
 | 网页端测试 | 63 过，2 跳过 | 66 过，2 跳过 | 65 过，2 跳过 | 90 过，2 跳过 |
 | 网页端类型检查、代码检查、文案检查、构建 | 过 | 过 | 过 | 过 |
 
-info 换掉原来那一份之后，用本机联调把「申请 → 批准 → 采集 → 建库 → 可用」真跑了一遍（`run.sh requested 600276`）：280 秒走到可用；专家的位置上经工具核对 30 项，全过。
+knowfeed 换掉原来那一份之后，用本机联调把「申请 → 批准 → 采集 → 建库 → 可用」真跑了一遍（`run.sh requested 600276`）：280 秒走到可用；专家的位置上经工具核对 30 项，全过。
 
 ## 七、没有验证的
 

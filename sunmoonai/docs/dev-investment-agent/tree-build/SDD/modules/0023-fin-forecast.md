@@ -2,7 +2,7 @@
 
 > 2026-10-14：现网事故（定范围误选 600009 财报、取数超时）已修成第 2 版（investment-backend `c0f99e4`）；同日成稿步在 Windows 上耗满时限，工作台修在 `f89de88`、`ee5ee62`；底稿按次分开存与工作底稿栏在 `61f0266`、`a4f5396`；一起走发布卡 45，10-14 12:26 上线（晋级 `0c220052`）；会合点 `/service` 走卡 46，12:35 上线（晋级 `e9fd5285`）。真人验收待所有者；见第 5.2 节末的事故记录。
 > 状态（2026-10-13 收尾）：**已实施并上线**——数据集、专家包五步、十题与固定数据都在 fable；发布卡 44 上线（投资后端 `15769d5`、集群登记样例）；集群真跑演示题过（判定见 [`0023-fin-forecast-answer-key.md`](0023-fin-forecast-answer-key.md)）。**没做的**：其余 9 题没有真跑（所有者定不再单独跑），所以「十题过 ≥ 8」这条线没有量过；失败去向（交人、退回）只有单元测试，没有在真跑里触发过。依据：任务清单 opus-001（已撤，原文在 git 历史 `c8eecd22`）、账 96、[决策](../../decisions.md) 2026-10-13 一条。
-> 起点：investment-backend `e73ffa5`（`FIN_FORECAST` 版本 0，`status="preparing"`），knowledge-backend `548e84a`，k8s `451b3fae`。
+> 起点：investment-backend `e73ffa5`（`FIN_FORECAST` 版本 0，`status="preparing"`），knowbase-backend `548e84a`，k8s `451b3fae`。
 > 先读：[`0009-semantic`](0009-semantic.md)（口径与 SQL 怎么走）、[`0015`](0015-files-not-dossiers.md)（成稿落文件）、[`0018`](0018-advisor-market.md)（专家 = 知识库 + skill）、[审批](../architecture/approval.md)（工具级三档）。
 > 分工（所有者 2026-10-13 定，以这一条为准）：**Opus 主导**这位专家，从设计到切真；自己做的部分不经 fable 审读，每段自己写回执。远程机上能做的 Opus 自己做（设计、数据集、脚本、测试、专家包、评测题与跑分）；只有所有者本地才能做的（KIND 本地联调链、浏览器里的页面、真机演示）写任务页给 Qwen（`switch-test/inbox/qwen/`），**Qwen 的回执由 Opus 审**。fable 不再给 Opus 派任务；全部调好后由 fable **只做合并**（不审、不改），**发布也由 Opus 来做**。
 
@@ -12,7 +12,7 @@
 
 | 范围 | 内容 |
 | --- | --- |
-| 做 | 一份数据集（Olist 巴西电商样例，九张表）进 knowledge；十道金标准题；专家包五步的方法；切成可用 |
+| 做 | 一份数据集（Olist 巴西电商样例，九张表）进 knowbase；十道金标准题；专家包五步的方法；切成可用 |
 | 不做 | 改专家包机制（`StepContract`、验收判定、顾问、审批三档）；改评测判定；A 股公司的财务预测（以后接，方法现在就写成不绑定这份数据）；估值；买卖建议 |
 
 ## 二、数据摸底（2026-10-13，直接读九个 parquet）
@@ -180,14 +180,14 @@
 
 | 处 | 做什么 |
 | --- | --- |
-| knowledge-backend `app/datasets/olist/olist.yml`（新） | 声明：九个文件的地址与 sha256、表名对照、主键、关系、字段字典、口径、说明。**数据集的定义只有这一份** |
-| knowledge-backend `app/scripts/build_olist_dataset.py`（新） | `--cache <目录> --out <文件>`：缺文件就下载，sha256 不对就停；用已有依赖（DuckDB）读 parquet、写 SQLite；写完用 `read_description()` 自检、生成一次语义模型；打印 `data_version`、`sha256`、`size_bytes`、起止日期，供登记 |
+| knowbase-backend `app/datasets/olist/olist.yml`（新） | 声明：九个文件的地址与 sha256、表名对照、主键、关系、字段字典、口径、说明。**数据集的定义只有这一份** |
+| knowbase-backend `app/scripts/build_olist_dataset.py`（新） | `--cache <目录> --out <文件>`：缺文件就下载，sha256 不对就停；用已有依赖（DuckDB）读 parquet、写 SQLite；写完用 `read_description()` 自检、生成一次语义模型；打印 `data_version`、`sha256`、`size_bytes`、起止日期，供登记 |
 | 测试 | 用几行合成数据造小 parquet（测试里现造，不进仓、不联网）：生成、自述校验、语义模型、口径行原样返回且不可查、类型映射、地理表无关系、两次生成 `data_version` 相同、sha256 不对时停 |
-| k8s `sunmoonai/scripts/local-integration/dataset-chain/`（Qwen 在本地做） | 加一个样例桶 `development-knowledge-samples`（只给知识服务读）、`run.sh sample olist`（生成 → 上传样例桶 → 登记）、`driver.py verify-sample olist`（第四节的检查）。登记直接调知识服务的登记接口，用替身发的服务令牌，`source_app = knowledge-sample` |
+| k8s `sunmoonai/scripts/local-integration/dataset-chain/`（Qwen 在本地做） | 加一个样例桶 `development-knowbase-samples`（只给知识服务读）、`run.sh sample olist`（生成 → 上传样例桶 → 登记）、`driver.py verify-sample olist`（第四节的检查）。登记直接调知识服务的登记接口，用替身发的服务令牌，`source_app = knowledge-sample` |
 
 数据文件、parquet、生成出的 SQLite 都不进 git。生产上谁来登记、桶叫什么，留到发布时定（第九节）。
 
-**集群里怎么登记（2026-10-13 发布卡 44 定）**：知识服务能登记、能读的桶与前缀只有 `info-originals/info/`，所以样例放 `info-originals/info/samples/olist-ecommerce/<版本>/`，由 info 后端 API 容器里的 `gitops/components/app-platform/knowledge-app/knowledge-backend/samples/register-olist.py` 用 info 的对象存储写权限上传、用 info 的服务身份登记（`source_app = knowledge-sample`）。不重建知识服务镜像、不动它的 config。单开知识服务自己的样例桶要改对象存储策略与 provider Job，样例不止一份时再做。
+**集群里怎么登记（2026-10-13 发布卡 44 定）**：知识服务能登记、能读的桶与前缀只有 `knowfeed-originals/knowfeed/`，所以样例放 `knowfeed-originals/knowfeed/samples/olist-ecommerce/<版本>/`，由 knowfeed 后端 API 容器里的 `gitops/components/app-platform/knowbase-app/knowbase-backend/samples/register-olist.py` 用 knowfeed 的对象存储写权限上传、用 knowfeed 的服务身份登记（`source_app = knowledge-sample`）。不重建知识服务镜像、不动它的 config。单开知识服务自己的样例桶要改对象存储策略与 provider Job，样例不止一份时再做。
 
 ## 四、知识服务这一侧怎么验
 
@@ -329,7 +329,7 @@
 | `C-A8` WrenAI 只用引擎 | 只借它的样例数据与说明文字；知识后端里引擎的用法不变 |
 | `C-A9` 供应商不调模型 | 不变 |
 | `C-D1` 一个权威主档 | 主档是对象存储里登记的那份 SQLite；parquet 是外部来源，生成脚本按 sha256 钉住 |
-| `C-D4` 对象存储按领域拥有 | 样例放知识服务自己的样例桶，不放 info 的桶 |
+| `C-D4` 对象存储按领域拥有 | 样例放知识服务自己的样例桶，不放 knowfeed 的桶 |
 | `F-POS` 不给买卖建议 | 成稿步骤加 `no_positioning_advice` 验收；边界写进六问 |
 | 用户字面无代号、无 JSON | 现有测试会拦；`preparing_note` 清空、标题去掉「筹备中」时一起过 |
 
@@ -337,9 +337,9 @@
 
 | 段 | 谁做 | 做什么 | 停点怎么算过 |
 | --- | --- | --- | --- |
-| 1 数据 | Opus（远程）；Qwen（本地联调链） | 第三节；联调链加样例 | 远程：knowledge 后端三件套过；生成脚本对真实数据跑两次 `data_version` 相同；经知识服务的 MCP 处理链（语义层开着）第四节五项全过。本地：联调链 `run.sh sample olist` 与 `driver verify-sample olist` 原文 |
+| 1 数据 | Opus（远程）；Qwen（本地联调链） | 第三节；联调链加样例 | 远程：knowbase 后端三件套过；生成脚本对真实数据跑两次 `data_version` 相同；经知识服务的 MCP 处理链（语义层开着）第四节五项全过。本地：联调链 `run.sh sample olist` 与 `driver verify-sample olist` 原文 |
 | 2 评测题 | Opus | 第六节十题 | 真值查询在数据集上逐条跑通、结果贴回执；`run_eval.py --cases fin_forecast_10 --profile FIN_FORECAST` 能跑（专家包还是占位时允许全不过） |
-| 3 方法 | Opus | 第五节 | 专家包规矩测试全过；用真 Codex 对本地 knowledge 跑一遍五步；十题过 ≥ 8（按第六节的算法） |
+| 3 方法 | Opus | 第五节 | 专家包规矩测试全过；用真 Codex 对本地 knowbase 跑一遍五步；十题过 ≥ 8（按第六节的算法） |
 | 4 切真 | Opus；Qwen（本地 KIND 完整委托与浏览器） | `status="ready"`、`version="1"`、标题去「筹备中」、`preparing_note` 清空 | 后端全量测试过；回执附一次完整委托的事件摘要与成稿文件；本地浏览器里专家页与成稿 |
 
 **第 4 段提前切了代码**（所有者 2026-10-13：「现在好像要把筹备中改了吧，否则点击不了啊」）：investment-backend `FIN_FORECAST` 已是 `ready`、版本 `1`、标题去掉「筹备中」、`preparing_note` 清空。本地十题的线（第 3 段）照样要过；没过线就改方法、升版本。要在站点上点得到，还要合并与发布。
@@ -352,6 +352,6 @@
 | --- | --- | --- |
 | 任务清单里的「品类利润率」 | 数据里没有成本，改成第 5 题那样的边界题：考专家会不会照实说「算不出来」 | **已定**（所有者 2026-10-13：「这正是我们要的不硬算、不冒充」） |
 | 「10 题过 ≥ 8」的算法 | 三栏都过才算过（第六节） | **已定**（所有者 2026-10-13：「内部门槛比发布门严没坏处」） |
-| 生产上的样例桶与登记身份 | 先用 `info-originals/info/samples/` 与 info 的服务身份（见 3.8 末段）；单开样例桶留到样例不止一份时 | 已定（发布卡 44） |
+| 生产上的样例桶与登记身份 | 先用 `knowfeed-originals/knowfeed/samples/` 与 knowfeed 的服务身份（见 3.8 末段）；单开样例桶留到样例不止一份时 | 已定（发布卡 44） |
 | 专家包标语「收入、成本、现金流」 | 专家包是通用的，以后接 A 股要用；对 Olist 照实说没有成本与现金流。标语不改 | 已定（本文） |
 | 预测题用固定方法出真值 | 方法一旦改，真值跟着改；方法改了要重定第 9、10 题 | 已定（本文） |

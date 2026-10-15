@@ -16,10 +16,10 @@ require_service_identity_relation() {
     local client_id_key client_secret_key caller_discovery_key caller_backchannel_key
     local application_key discovery_key backchannel_key audience_key subjects_key scope_key
     if [[ "$relation_kind" == "retrieve" ]]; then
-        client_id_key="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_ID"
-        client_secret_key="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_SECRET"
-        caller_discovery_key="KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL"
-        caller_backchannel_key="KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT"
+        client_id_key="KNOWBASE_RETRIEVAL_SERVICE_CLIENT_ID"
+        client_secret_key="KNOWBASE_RETRIEVAL_SERVICE_CLIENT_SECRET"
+        caller_discovery_key="KNOWBASE_RETRIEVAL_SERVICE_DISCOVERY_URL"
+        caller_backchannel_key="KNOWBASE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT"
         application_key="RETRIEVAL_AUTH_CASDOOR_APPLICATION"
         discovery_key="RETRIEVAL_AUTH_DISCOVERY_URL"
         backchannel_key="RETRIEVAL_AUTH_BACKCHANNEL_ENDPOINT"
@@ -27,10 +27,10 @@ require_service_identity_relation() {
         subjects_key="RETRIEVAL_AUTH_SUBJECT_ALLOWLIST"
         scope_key="RETRIEVAL_AUTH_REQUIRED_SCOPE"
     elif [[ "$relation_kind" == "ingest" ]]; then
-        client_id_key="KNOWLEDGE_APP_SERVICE_CLIENT_ID"
-        client_secret_key="KNOWLEDGE_APP_SERVICE_CLIENT_SECRET"
-        caller_discovery_key="KNOWLEDGE_APP_SERVICE_DISCOVERY_URL"
-        caller_backchannel_key="KNOWLEDGE_APP_SERVICE_BACKCHANNEL_ENDPOINT"
+        client_id_key="KNOWBASE_APP_SERVICE_CLIENT_ID"
+        client_secret_key="KNOWBASE_APP_SERVICE_CLIENT_SECRET"
+        caller_discovery_key="KNOWBASE_APP_SERVICE_DISCOVERY_URL"
+        caller_backchannel_key="KNOWBASE_APP_SERVICE_BACKCHANNEL_ENDPOINT"
         application_key="INTERNAL_AUTH_CASDOOR_APPLICATION"
         discovery_key="INTERNAL_AUTH_DISCOVERY_URL"
         backchannel_key="INTERNAL_AUTH_BACKCHANNEL_ENDPOINT"

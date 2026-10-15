@@ -10,8 +10,8 @@
       - services_relay_enabled | bool
       - sandbox_provisioner_port | int == 8080
       - sandbox_pvc_size is match('^[1-9][0-9]*Gi$')
-      - knowledge_mcp_url | urlsplit('scheme') in ['http', 'https']
-      - knowledge_mcp_url | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
+      - knowbase_mcp_url | urlsplit('scheme') in ['http', 'https']
+      - knowbase_mcp_url | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
       - sandbox_image.harbor_project | default('platform') is match('^[a-z][a-z0-9-]+$')
       - sandbox_image.repository == 'sandbox-provisioner'
       - sandbox_image.digest is match('^sha256:[a-f0-9]{64}$')
