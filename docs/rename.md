@@ -508,7 +508,7 @@ $K -n sandbox-platform-dev get deploy -l app=sandbox -o yaml | grep -E 'name: (K
 | RabbitMQ、Redis | 旧 vhost `info`、`knowledge` 与旧用户；旧 Redis 用户及其 ACL |
 | Casdoor | 旧应用 `sunmoonai-info-web/admin`、`sunmoonai-knowledge-web/admin`，旧服务身份与组织 |
 | 秘密 | 旧私有目录 `/etc/sunmoon/applications/sunmoon-kind/info`、`…/knowledge` 与旧备份目录 |
-| 镜像 | Harbor 里 `info-*`、`knowledge-*` 镜像仓库 |
+| 镜像 | Harbor 里 `info-*`、`knowledge-*` 镜像仓库（先删完集群里还在跑的旧对象，否则它们拉不到镜像）；删后跑一次 Harbor 垃圾回收再核对释放量（只删不回收，磁盘不释放）。investment、tpl、沙箱、供给器的旧版本是它们各自的回退版本，不在本次删除范围，等所有者定 Harbor 保留策略后另行处理（所有者 2026-10-15 定） |
 | 检出 | 两台机器上 `~/rename-backup/` 下的旧检出（都已推送过） |
 
 **停点**：Opus 审回执，在本节写「改名完成」，冻结解除，Cursor 恢复接卡（用新名字）。
