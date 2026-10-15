@@ -70,6 +70,8 @@ Opus 与 Qwen 互相发不了消息，但都直接推、直接拉 origin。所�
 
 R1 的数据迁移两种 `source_app` 旧值都换，两个库里凡存它的表都覆盖；对象键前缀与库里存的对象键在 R5.2 复制桶时一起换。
 
+**存储从空的开始**（所有者 2026-10-15 定：两个应用的现有数据都不要）：上表存储类的新名字都是**新建**的，不是把旧的改名搬过去；旧库、旧桶等原样留作备份。
+
 「knowledge」作普通词（本地知识库、云上知识库、知识检索工具）**不改**；R1 逐处判断，拿不准的列进 R1 回执，标「保留原词」，不改。
 
 ## R1 改与留的界线（2026-10-14 远程盘点，三处由所有者同日定）
@@ -137,6 +139,8 @@ for n in info-app knowledge-app info-backend info-web-frontend info-admin-fronte
 | `investment-app` | 跨应用键 `info` / `knowledge`、`destinations.ts`、`cross_app.py`、`KNOWLEDGE_*` 环境变量名 |
 | `k8s` | gitops `info-app/` → `knowcollector-app/` 等目录、`infrastructure/applications/` 的应用名表与 `deploy.yaml` / `verify.yaml`、`sources.yaml` 两块、存储名、Casdoor 声明、域名、`switch-test/human-local.sh`、`human-remote.sh` 的仓名表、各仓 `AGENTS.md` 里「五个协作仓」的名字 |
 | `tpl-app`、`runtime` | 只改提到这两个应用名的说明与脚本 |
+
+**改名后的 knowcollector、knowbase 组件目录里，旧的 `*.sops.yaml` 一律 `git rm`**：存储从空的开始、秘密按新名全新生成，而 stage 看到组件目录里已有 `database/bootstrap.sops.yaml` 就按「已有库不许换口令」拒绝生成（`common/backend/prepare.yaml`）。
 
 **k8s 里只改真源，不手改渲染产物。** gitops 每个组件目录里，`config.yaml`、`stage.yaml`、`README.md` 是真源，R1 改；`workload.yaml`、`kustomization.yaml`、`*.sops.yaml`（加密的秘密）、`image.lock.yaml` 是 `platform-stage` / 构建链生成的，R1 只让它们跟着目录 `git mv`、内容不动——它们要靠所有者机器上的私有目录与 SOPS 私钥重新生成（远程机没有 ansible、sops，也没有私钥），新秘密也是那时按新名生成，放在 R5。所以 R1 提交后、R5 发布前，这些渲染产物里还是旧名字，属正常；R1 的提交在 R5 发布前不会进现网。
 
@@ -280,27 +284,27 @@ git -C ~/master/$NEW remote -v
 
 ## R5 集群切换 — Qwen（本地机）
 
-> **逐条命令由 Opus 在 R1 完成后填入下面各小节。本段状态写成「可执行」之前，不得开始。** 顺序与核对标准已定（0025 第四节 4.1）：
+> **逐条命令由 Opus 在 R1 完成后填入下面各小节。本段状态写成「可执行」之前，不得开始。** 所有者 2026-10-15 定现有数据都不要，所以本段不备份、不改库名、不搬桶，新应用从空的开始。
 
-### R5.1 备份（不停服）
+### R5.1 渲染与渲染比对
 
-两个库 `pg_dump`、两个桶的对象清单与校验和、私有目录打包（不出机器）；记各表行数、对象数、总字节。
+`platform-stage` 依次处理 knowcollector、knowbase、investment（以及沙箱镜像，MCP 服务名改了）：新私有目录 `/etc/sunmoon/applications/sunmoon-kind/knowcollector`、`…/knowbase` 与备份目录由 stage 全新生成；渲染出全部新声明 → **渲染比对**：把改名前（R0 时的提交）与 stage 后的渲染产物逐个对象比对，列出除名字以外的差异（比对命令由 Opus 填）。
 
-**停点**：Opus 审备份完整。
+**停点**：Opus 审比对结果。
 
-### R5.2 停服与搬迁
+### R5.2 构建、发布、晋级
 
-旧名字的 API / Worker / Scheduler 停到 0 副本 → 等队列排空 → 库与角色改名，归属注释改成 `sunmoon-kind/<新名>` → 桶复制并把对象键前缀换新、逐对象核对 → 新私有目录照抄旧目录的秘密值（**沿用旧口令**，只换文件名与键名；所有者 2026-10-14 定）。新 vhost、Redis 用户、Casdoor 应用与服务身份由 R5.3 部署时的开通任务按新名、用这些旧值建；数据迁移由 R5.3 的迁移任务跑。
+构建新镜像（knowcollector、knowbase 的后端与两个网页，investment 的后端与网页，沙箱镜像）→ 提交 → `flux-release` → 晋级 → `flux-source-apply`。晋级后 Flux 随旧目录消失自动删除旧应用的 k8s 对象；新应用的库初始化、开通（Casdoor 应用与服务身份、桶、vhost、Redis 用户）、迁移任务按新名在空的基础上跑。
 
-**停点**：Opus 审行数、对象数、校验和一致。
+**停点**：Opus 审回执（各任务完成、迁移头 = `20261015_0014` / knowbase 现头）。
 
-### R5.3 起新服与验证
+### R5.3 验证
 
-`platform-stage` 按新名重新生成全部渲染产物 → **渲染比对**：Qwen 把改名前（R0 时的提交）与 stage 后的渲染产物逐个对象比对，列出除名字以外的差异（比对命令由 Opus 填），**Opus 审过才部署**；→ 构建新镜像（knowcollector、knowbase 的后端与两个网页，**以及 investment 的后端与网页**——它的跨应用键与环境变量名也改了）→ 部署新名字（新 Casdoor 应用与客户端、新服务身份）→ `application-check APP=knowcollector`、`APP=knowbase`、`APP=investment` → 浏览器打开两个新域名能登录、能看到原有数据 → 投资里跨应用跳转与知识检索可用。
+`application-check APP=knowcollector`、`APP=knowbase`、`APP=investment` → 浏览器打开两个新域名能登录（管理员作用域 `knowcollector:admin` / `knowbase:admin`）→ 投资里跨应用跳转可用、知识检索工具能连上（此时还没有数据集，查不到内容属正常）。
 
 **停点**：Qwen 在浏览器上逐项核对（截图只截页面，不截令牌与口令），Opus 审回执。
 
-回退（任一小节失败）：见 0025 第四节「回退」；Qwen 只执行 Opus 在本节写好的回退命令。
+回退：R5.2 失败或 R5.3 不过——把 `sources.yaml`、应用名表等回到 R0 的提交重新发布即可回到旧应用；旧库、旧桶、旧 Casdoor 应用都没动过，旧应用起来后数据还在。
 
 **状态**：
 
@@ -308,7 +312,7 @@ git -C ~/master/$NEW remote -v
 
 ## R6 下线旧对象 — Qwen（本地机）
 
-旧 Deployment / Job / Secret、旧 Casdoor 应用与客户端、旧 vhost 与 Redis 用户下线（命令由 Opus 填）。**旧桶、旧私有目录、Harbor 旧镜像仓库、`~/rename-backup/` 下的旧检出保留**，删除不在本手册里。
+旧应用的 k8s 对象已在 R5.2 由 Flux 删除；本段只核对确实删干净了（命令由 Opus 填）。旧库与旧角色、旧桶、旧 vhost 与 Redis 用户、旧 Casdoor 应用与服务身份、旧私有目录、Harbor 旧镜像仓库、`~/rename-backup/` 下的旧检出**都保留**，删除不在本手册里。
 
 **停点**：Opus 审回执，在本节写「改名完成」，冻结解除，Cursor 恢复接卡（用新名字）。
 **状态**：
