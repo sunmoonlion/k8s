@@ -1,13 +1,20 @@
 # 改名工具（R1 用；k8s/docs/rename.md）
 
-R1 之前由 Opus 在远程机草稿目录里准备、验证，存这里备查。R1 时照此执行，执行结果进 `docs/rename-receipts/R1-opus.*.md`。
+R1 之前由 Opus 在远程机草稿目录里准备，在五组仓的副本上验证，存这里备查。R1 时照此执行：
 
-| 文件 | 是什么 | 2026-10-14 验证 |
-| --- | --- | --- |
-| `rename_rules.py` | 替换引擎：按「改与留的界线」逐类规则 + 保留清单（占位保护），套到路径上即得要 `git mv` 的目录与文件；`--apply` 才写盘，`--report` 出每类每文件的处数 | 在五组仓的副本上：518 个文件；路径改名 13 处（6 个子仓目录、gitops 两个应用目录、3 个契约文件、2 份仓说明）；抽查无误伤（提示框类型 `'info'`、代理接口 `/local/v1/info`、需求编号 `F-INFO-*`、`cninfo` 都未动） |
-| `scan.sh` | 盘点用的 grep（排除依赖、历史、样例） | — |
-| `migrations/knowcollector_20261015_0014_rename.py` | 采集后端新迁移：四张 `info_*` 表改名，名字带它们的约束 / 索引 / 序列改名；桶与对象键前缀；`source_app` | 临时 PostgreSQL 上：旧末端 + 模拟行 → 升级（4 表、22 个对象改名，三表桶与键、source_app 换新）→ 回退（全部复原）→ 再升级，均通过 |
-| `migrations/knowbase_20261015_0008_rename.py` | 知识后端新迁移：表名不动，只换两种 `source_app`、数据集桶与键前缀、`source_uri`、`canonical_url` 里的旧桶 / 前缀 / 域名 | 同上：升级、回退均通过 |
-| `tests/test_knowcollector.sh`、`tests/test_knowbase.sh` | 上面两条验证的脚本（参数：装好依赖的后端目录；需本机 55440 口的临时 PostgreSQL） | — |
+```bash
+python3 rename_rules.py <五组仓的上一级目录> --apply --report r1-report.json   # 内容替换（真仓里分仓提交；目录改名见 rename.md R1）
+python3 manual_patch.py <改名后的采集后端 app 目录>                            # 规则做不对、要看上下文的几处
+```
 
-还要在 R1 里人工处理的：页面上英文文案里的应用名（Info crawl、Knowledge Admin 等，自动规则分不清领域词与应用名）；gitops `config.yaml` 的 `expected_schema_revision` 改为 `20261015_0014` / `20261015_0008`、`migration_job_revision` 加一。
+| 文件 | 是什么 |
+| --- | --- |
+| `rename_rules.py` | 替换引擎：按「改与留的界线」逐类规则 + 保留清单（占位保护）；套到路径上得出要 `git mv` 的目录与文件（**目录下全部跟踪文件都随目录走**，含不在替换范围里的已有迁移、图片、锁文件）；`uv.lock` 只改项目自身名字那一行；冻结件（已有迁移、为 0008 冻结的 `info_identity_v1.py` 扫描）不改 |
+| `manual_patch.py` | 手工补丁：放入新迁移、迁移链清单测试补上它；测历史迁移 0007 / 0008 的测试——把新迁移包在外面、旧结构时段的 SQL 用旧表名、预检挪到降级后、写入前把查找路径限定在本测试的模式 |
+| `migrations/knowfeed_20261015_0014_rename.py` | 采集后端新迁移：只改结构——四张 `info_*` 表改 `knowfeed_*`，名字带它们的约束 / 索引 / 序列改名（在 `current_schema()` 里找）。不改数据（所有者定：现有数据都不要，新库从空的开始） |
+| `tests/test_knowfeed.sh` | 新迁移的独立验证：旧末端 + 模拟行 → 升级 → 回退 → 再升级 |
+| `scan.sh` | 盘点用的 grep |
+
+2026-10-15 验证（最终名字 knowfeed / knowbase，采集器仍叫 collector）：新迁移独立验证通过（4 表、22 个对象改名，回退复原）；采集后端全量测试改名前后对照见 `R1-opus` 回执。
+
+仍要在 R1 里人工处理的：gitops `config.yaml` 的 `expected_schema_revision` 改 `20261015_0014`、`migration_job_revision` 加一；改名后的 knowfeed、knowbase 组件目录里旧的 `*.sops.yaml` `git rm`。

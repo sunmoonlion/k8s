@@ -1,4 +1,4 @@
-# 改名执行手册：info → knowcollector、knowledge → knowbase
+# 改名执行手册：info → knowfeed、knowledge → knowbase
 
 > 为什么改、改哪些、深度为什么选乙，见 [0025](../sunmoonai/docs/dev-investment-agent/tree-build/SDD/modules/0025-know-names.md)。本文只管**谁、按什么顺序、执行哪条命令、在哪停下等审**。
 >
@@ -49,24 +49,24 @@ Opus 与 Qwen 互相发不了消息，但都直接推、直接拉 origin。所�
 | --- | --- | --- | --- |
 | **Opus**（远程机 qwen 工位） | 远程机 | R0 核远程机、发开工令；R1 改全部代码、配置、gitops、同步脚本，写好 R5、R6 的逐条命令；R3、R4 远程机那一份；审每段回执、在各段写「通过」；R7 文档 | 不碰所有者本地集群；不替 Qwen 执行本地命令 |
 | **Qwen**（所有者机器） | 本地机、GitHub、gitee | R0 核本地机；R2 在 GitHub / gitee 上改 8 个仓的名字；每段之间跑同步脚本；R3、R4 本地机那一份；R5 集群切换（备份 → 停服搬迁 → 起新服 → 浏览器核对）；R6 下线旧对象 | 不改代码、不改本文、不自己写命令；不删任何旧东西 |
-| **Cursor** | 本地机 | **开工前发完卡 47、48**（R0 的前提）；之后**冻结**：不执行任何发布卡、不碰 info / knowledge / knowcollector / knowbase 相关的仓与集群对象。R6 通过后，Cursor 以后的卡一律用新名字 | 改名的任何一步 |
+| **Cursor** | 本地机 | **开工前发完卡 47、48**（R0 的前提）；之后**冻结**：不执行任何发布卡、不碰 info / knowledge / knowfeed / knowbase 相关的仓与集群对象。R6 通过后，Cursor 以后的卡一律用新名字 | 改名的任何一步 |
 | 其他工位（fable、kimi、luna、astra） | — | 冻结期间不提交这两组仓、不改 k8s 的 gitops；R3 后各自工位按新名字重新挂出 | — |
 
 ## 名字对照（全文以此为准）
 
 | 类 | 旧 | 新 |
 | --- | --- | --- |
-| 父仓（GitHub `sunmoonlion/`、gitee `sunmoonlion/`） | `info-app` | `knowcollector-app` |
+| 父仓（GitHub `sunmoonlion/`、gitee `sunmoonlion/`） | `info-app` | `knowfeed-app` |
 |  | `knowledge-app` | `knowbase-app` |
-| 子仓（GitHub `sunmoonlion/`，仅 GitHub） | `info-backend`、`info-web-frontend`、`info-admin-frontend` | `knowcollector-backend`、`knowcollector-web-frontend`、`knowcollector-admin-frontend` |
+| 子仓（GitHub `sunmoonlion/`，仅 GitHub） | `info-backend`、`info-web-frontend`、`info-admin-frontend` | `knowfeed-backend`、`knowfeed-web-frontend`、`knowfeed-admin-frontend` |
 |  | `knowledge-backend`、`knowledge-web-frontend`、`knowledge-admin-frontend` | `knowbase-backend`、`knowbase-web-frontend`、`knowbase-admin-frontend` |
-| 应用名（部署） | `info`、`knowledge` | `knowcollector`、`knowbase` |
-| 域名 | `info.`、`info-admin.`、`knowledge.`、`knowledge-admin.sunmoonai.com` | `knowcollector.`、`knowcollector-admin.`、`knowbase.`、`knowbase-admin.sunmoonai.com` |
-| 数据库 / 角色 | `info`、`info_runtime`、`info_migrator`；`knowledge`、`knowledge_runtime`、`knowledge_migrator` | `knowcollector`、`knowcollector_runtime`、`knowcollector_migrator`；`knowbase`、`knowbase_runtime`、`knowbase_migrator` |
-| 对象存储 | 桶 `info-originals`——**只有这一个桶**：knowledge 没有自己的桶，它用账号 `knowledge_source_reader` 读这个桶的 `info/` 前缀（配置 `KNOWLEDGE_DATASET_ALLOWED_BUCKETS`、`source_bucket`、`source_prefix`）；`/tmp/knowledge-datasets` 只是容器里的缓存目录，不改不搬。桶内对象键前缀 `info/`（原文 `info/original/…`、登记的数据集 `info/securities/…/datasets/…`，两个库里都存着这些键） | 桶 `knowcollector-originals`；键前缀 `knowcollector/`；账号 `knowbase_source_reader`；三项配置随之改 |
-| vhost、队列、Redis | vhost `info`、队列 `info.default`、键前缀 `info:*`；knowledge 侧 vhost `knowledge` 等 | `knowcollector`、`knowcollector.default`、`knowcollector:*`；knowbase 侧同理 |
-| 私有目录 / 备份目录 | `/etc/sunmoon/applications/sunmoon-kind/info`、`/mnt/sunmoon-data/backups/applications/sunmoon-kind/info`；knowledge 同理 | `…/knowcollector`、`…/knowbase` |
-| `source_app` 值（有两种） | `info-app`（采集服务写入，`info_crawl_service.py`）；`info`（数据集登记器默认值 `knowledge_registrar.py`，knowledge 的登记记录与样例里也是它） | `knowcollector-app`；`knowcollector`（各自对应，不顺手合并——合并是另一个改动） |
+| 应用名（部署） | `info`、`knowledge` | `knowfeed`、`knowbase` |
+| 域名 | `info.`、`info-admin.`、`knowledge.`、`knowledge-admin.sunmoonai.com` | `knowfeed.`、`knowfeed-admin.`、`knowbase.`、`knowbase-admin.sunmoonai.com` |
+| 数据库 / 角色 | `info`、`info_runtime`、`info_migrator`；`knowledge`、`knowledge_runtime`、`knowledge_migrator` | `knowfeed`、`knowfeed_runtime`、`knowfeed_migrator`；`knowbase`、`knowbase_runtime`、`knowbase_migrator` |
+| 对象存储 | 桶 `info-originals`——**只有这一个桶**：knowledge 没有自己的桶，它用账号 `knowledge_source_reader` 读这个桶的 `info/` 前缀（配置 `KNOWLEDGE_DATASET_ALLOWED_BUCKETS`、`source_bucket`、`source_prefix`）；`/tmp/knowledge-datasets` 只是容器里的缓存目录，不改不搬。桶内对象键前缀 `info/`（原文 `info/original/…`、登记的数据集 `info/securities/…/datasets/…`，两个库里都存着这些键） | 桶 `knowfeed-originals`；键前缀 `knowfeed/`；账号 `knowbase_source_reader`；三项配置随之改 |
+| vhost、队列、Redis | vhost `info`、队列 `info.default`、键前缀 `info:*`；knowledge 侧 vhost `knowledge` 等 | `knowfeed`、`knowfeed.default`、`knowfeed:*`；knowbase 侧同理 |
+| 私有目录 / 备份目录 | `/etc/sunmoon/applications/sunmoon-kind/info`、`/mnt/sunmoon-data/backups/applications/sunmoon-kind/info`；knowledge 同理 | `…/knowfeed`、`…/knowbase` |
+| `source_app` 值（有两种） | `info-app`（采集服务写入，`info_crawl_service.py`）；`info`（数据集登记器默认值 `knowledge_registrar.py`，knowledge 的登记记录与样例里也是它） | `knowfeed-app`；`knowfeed`（各自对应，不顺手合并——合并是另一个改动） |
 
 R1 的数据迁移两种 `source_app` 旧值都换，两个库里凡存它的表都覆盖；对象键前缀与库里存的对象键在 R5.2 复制桶时一起换。
 
@@ -84,10 +84,10 @@ R1 的数据迁移两种 `source_app` 旧值都换，两个库里凡存它的表
 | 存储名 | 上面「名字对照」表里的库、角色、桶、键前缀、vhost、队列、Redis、私有目录、备份目录、`source_app` | **改**（乙） |
 | 指向应用的配置与环境变量 | 共 76 个：knowbase 自己的配置前缀 `KNOWLEDGE_MCP_*`、`KNOWLEDGE_DATASET_*`；调用方的 `KNOWLEDGE_APP_*`、`KNOWLEDGE_RETRIEVAL_*`、`INFO_*`；`CASDOOR_INFO_*`、`CASDOOR_KNOWLEDGE_*`；部署里的 `service_env_prefix` | **改名不改值**。特别是 `KNOWLEDGE_DOCUMENT_NAMESPACE` / `KNOWLEDGE_VERSION_NAMESPACE` 是生成固定 ID 用的 UUID，**值一个字都不能动**，否则已有文档的 ID 全对不上 |
 | MCP 服务名（所有者定：改） | `sunmoon_knowledge`：沙箱镜像 `sandbox-platform/image/entrypoint.sh` 写进 Codex 配置；模型看到的工具名由它拼出（`sunmoon_knowledge/run_sql`）；评测提示词、单测、工具调用记录里都有 | **改**为 `sunmoon_knowbase`（它是应用身份）。R5 要多重建、多发一次沙箱镜像；改名前后的工具调用记录名字不同，历史记录不改 |
-| 带应用名前缀的内部标识（所有者定：改） | 采集库的表 `info_collector`、`info_document`、`info_document_version`、`info_source`；事件类型 `info.security.ingest.v1`、`info.index.v1`；这里的 `info` 是应用名，不是领域词 | **改**为 `knowcollector_*`、`knowcollector.*`：表用迁移 `ALTER TABLE … RENAME`（连同索引、约束、序列名，带回退）；事件类型随停服切换一起换，切换前队列已排空。代价：多一组迁移和一轮核对 |
+| 带应用名前缀的内部标识（所有者定：改） | 采集库的表 `info_collector`、`info_document`、`info_document_version`、`info_source`；事件类型 `info.security.ingest.v1`、`info.index.v1`；这里的 `info` 是应用名，不是领域词 | **改**为 `knowfeed_*`、`knowfeed.*`：表用迁移 `ALTER TABLE … RENAME`（连同索引、约束、序列名，带回退）；事件类型随停服切换一起换，切换前队列已排空。代价：多一组迁移和一轮核对 |
 | knowledge 作领域词（所有者定：留） | 知识库的表 `knowledge_document`、`knowledge_ingestion_job`、`knowledge_dataset` 等；类名 `KnowledgeDocument`；API 路径 `/api/knowledge/…`、`/api/internal/v1/knowledge/datasets`；事件类型 `knowledge.ingest.v1`；Python 模块名 | **留**：这里的 knowledge 说的是「存的是知识文档」，改名后 knowbase 存的仍是知识。改它要改表、改所有调用方的接口与令牌作用域，代价大、收益只是字面统一 |
 | 设计文档的文件名 | `0006-knowledge.md`、`0008-info*.md`、`PRD/apps/info.md` 等 | 文件名当编号用，**不改**（改了几十处链接全断）；内容在 R7 换新名 |
-| 令牌作用域（所有者 2026-10-14 改定：改） | `info:admin` → `knowcollector:admin`；`knowledge:admin` / `knowledge:ingest` / `knowledge:retrieve` → `knowbase:admin` / `knowbase:ingest` / `knowbase:retrieve`。作用域是「应用名:动作」（`identity.md`：各 App 的 Admin scope 是 `info:admin` / `knowledge:admin` / `investment:admin`；验收脚本 `check-browser.py` 按「应用名 + `:admin`」检查）。远程起初把 `knowledge:*` 误归为领域词，所有者据此选过「留」，查实后改定 | **改**。R5 本来就按新名重建 Casdoor 应用与服务身份，作用域随之换。出站去重键 `knowledge:ingest:<任务>` 是库里已存的内部键，不改 |
+| 令牌作用域（所有者 2026-10-14 改定：改） | `info:admin` → `knowfeed:admin`；`knowledge:admin` / `knowledge:ingest` / `knowledge:retrieve` → `knowbase:admin` / `knowbase:ingest` / `knowbase:retrieve`。作用域是「应用名:动作」（`identity.md`：各 App 的 Admin scope 是 `info:admin` / `knowledge:admin` / `investment:admin`；验收脚本 `check-browser.py` 按「应用名 + `:admin`」检查）。远程起初把 `knowledge:*` 误归为领域词，所有者据此选过「留」，查实后改定 | **改**。R5 本来就按新名重建 Casdoor 应用与服务身份，作用域随之换。出站去重键 `knowledge:ingest:<任务>` 是库里已存的内部键，不改 |
 | 冻结的旧体系与历史记录 | `k8s/sunmoonai/` 下的旧体系目录 `app-platform`、`cicd-platform`、`data-platform`、`deploy-sunmoonai-all`、`infrastructure`、`ingress-platform`、`kind-infrastructure`、`messaging-platform`、`operations`、`ops-platform`、`registry-platform` 与 `CHECKPOINT-old-system-*.md`（2026-10-06 起冻结，只作查阅；新体系只引用 `sunmoonai/relay-platform`、`sunmoonai/sandbox-platform`）；各处的 `results/`、`thread/`、`history/`、`switch-test/done/`、`hold/`、评测报告 `eval/reports/`、录下来的样例 `preview/fixtures/` | **不改**。去掉这些后要改的约 720 个文件 |
 | 无关的 info | `logger.info`、`component_info`、`st_mode`、**`cninfo` / `CNINFO`（巨潮资讯网，数据来源）** | **不碰** |
 
@@ -137,10 +137,10 @@ for n in info-app knowledge-app info-backend info-web-frontend info-admin-fronte
 | 6 个子仓 | 构建脚本、`mybuild/`、说明、代码里的应用名与域名、环境变量名、`source_app` 与桶名的数据迁移（带回退） |
 | `info-app` / `knowledge-app` 父仓 | `.gitmodules`（子仓路径与 URL 换新名，submodule 的 name 一并换）、子仓目录 `git mv`、`AGENTS.md` 等说明、`.cursor/rules` |
 | `investment-app` | 跨应用键 `info` / `knowledge`、`destinations.ts`、`cross_app.py`、`KNOWLEDGE_*` 环境变量名 |
-| `k8s` | gitops `info-app/` → `knowcollector-app/` 等目录、`infrastructure/applications/` 的应用名表与 `deploy.yaml` / `verify.yaml`、`sources.yaml` 两块、存储名、Casdoor 声明、域名、`switch-test/human-local.sh`、`human-remote.sh` 的仓名表、各仓 `AGENTS.md` 里「五个协作仓」的名字 |
+| `k8s` | gitops `info-app/` → `knowfeed-app/` 等目录、`infrastructure/applications/` 的应用名表与 `deploy.yaml` / `verify.yaml`、`sources.yaml` 两块、存储名、Casdoor 声明、域名、`switch-test/human-local.sh`、`human-remote.sh` 的仓名表、各仓 `AGENTS.md` 里「五个协作仓」的名字 |
 | `tpl-app`、`runtime` | 只改提到这两个应用名的说明与脚本 |
 
-**改名后的 knowcollector、knowbase 组件目录里，旧的 `*.sops.yaml` 一律 `git rm`**：存储从空的开始、秘密按新名全新生成，而 stage 看到组件目录里已有 `database/bootstrap.sops.yaml` 就按「已有库不许换口令」拒绝生成（`common/backend/prepare.yaml`）。
+**改名后的 knowfeed、knowbase 组件目录里，旧的 `*.sops.yaml` 一律 `git rm`**：存储从空的开始、秘密按新名全新生成，而 stage 看到组件目录里已有 `database/bootstrap.sops.yaml` 就按「已有库不许换口令」拒绝生成（`common/backend/prepare.yaml`）。
 
 **k8s 里只改真源，不手改渲染产物。** gitops 每个组件目录里，`config.yaml`、`stage.yaml`、`README.md` 是真源，R1 改；`workload.yaml`、`kustomization.yaml`、`*.sops.yaml`（加密的秘密）、`image.lock.yaml` 是 `platform-stage` / 构建链生成的，R1 只让它们跟着目录 `git mv`、内容不动——它们要靠所有者机器上的私有目录与 SOPS 私钥重新生成（远程机没有 ansible、sops，也没有私钥），新秘密也是那时按新名生成，放在 R5。所以 R1 提交后、R5 发布前，这些渲染产物里还是旧名字，属正常；R1 的提交在 R5 发布前不会进现网。
 
@@ -152,7 +152,7 @@ for n in info-app knowledge-app info-backend info-web-frontend info-admin-fronte
 
 ```bash
 # R1 已在父仓里 git mv 了子仓目录，父仓目录本身要到 R3 才换名，所以此刻的路径是「旧父仓/新子仓」
-for d in info-app/knowcollector-backend info-app/knowcollector-web-frontend info-app/knowcollector-admin-frontend \
+for d in info-app/knowfeed-backend info-app/knowfeed-web-frontend info-app/knowfeed-admin-frontend \
          knowledge-app/knowbase-backend knowledge-app/knowbase-web-frontend knowledge-app/knowbase-admin-frontend; do
   git -C ~/worktrees/qwen/$d push origin HEAD:refs/heads/qwen   # remote 仍是旧仓名，R2 后由 GitHub 认到新仓
 done
@@ -173,17 +173,17 @@ for r in investment-app runtime tpl-app k8s; do git -C ~/worktrees/qwen/$r push 
 
 | 平台 | 旧 → 新 |
 | --- | --- |
-| GitHub | `info-app` → `knowcollector-app`；`knowledge-app` → `knowbase-app`；6 个子仓按「名字对照」表 |
-| gitee | `info-app` → `knowcollector-app`；`knowledge-app` → `knowbase-app`（子仓在 gitee 上没有，不用管）。**gitee 的「仓库名称」和「仓库路径」是两个字段，两个都要改**，地址看的是路径；gitee 不一定转发旧地址，所以改完旧地址打不开属正常 |
+| GitHub | `info-app` → `knowfeed-app`；`knowledge-app` → `knowbase-app`；6 个子仓按「名字对照」表 |
+| gitee | `info-app` → `knowfeed-app`；`knowledge-app` → `knowbase-app`（子仓在 gitee 上没有，不用管）。**gitee 的「仓库名称」和「仓库路径」是两个字段，两个都要改**，地址看的是路径；gitee 不一定转发旧地址，所以改完旧地址打不开属正常 |
 
 改完核对（地址的协议跟着本机，从旧检出里取前缀）：
 
 ```bash
 GH=$(git -C ~/master/info-app remote get-url origin); GH=${GH%info-app.git}
 GE=$(git -C ~/master/info-app remote get-url gitee);  GE=${GE%info-app.git}
-for n in knowcollector-app knowbase-app knowcollector-backend knowcollector-web-frontend knowcollector-admin-frontend knowbase-backend knowbase-web-frontend knowbase-admin-frontend; do
+for n in knowfeed-app knowbase-app knowfeed-backend knowfeed-web-frontend knowfeed-admin-frontend knowbase-backend knowbase-web-frontend knowbase-admin-frontend; do
   printf '%-28s github qwen=%s master=%s\n' "$n" "$(git ls-remote ${GH}$n.git refs/heads/qwen | cut -c1-8)" "$(git ls-remote ${GH}$n.git refs/heads/master | cut -c1-8)"; done
-for n in knowcollector-app knowbase-app; do printf '%-28s gitee  qwen=%s\n' "$n" "$(git ls-remote ${GE}$n.git refs/heads/qwen | cut -c1-8)"; done
+for n in knowfeed-app knowbase-app; do printf '%-28s gitee  qwen=%s\n' "$n" "$(git ls-remote ${GE}$n.git refs/heads/qwen | cut -c1-8)"; done
 ```
 
 要看到：每个新地址都能列出分支，`qwen` 等于 `R1-opus` 记下的提交号，`master` 与改名前相同。
@@ -195,16 +195,16 @@ for n in knowcollector-app knowbase-app; do printf '%-28s gitee  qwen=%s\n' "$n"
 
 ## R3 检出换名 — 远程机 Opus，本地机 Qwen
 
-两台机器做同样的事，**远程机先做**（Opus），`R3-opus` 审过、本节写进远程机的实际情况后，Qwen 再做本地机。**旧目录挪到 `~/rename-backup/`，不删。** 以 `info-app` → `knowcollector-app` 为例，`knowledge-app` → `knowbase-app` 同样做一遍：
+两台机器做同样的事，**远程机先做**（Opus），`R3-opus` 审过、本节写进远程机的实际情况后，Qwen 再做本地机。**旧目录挪到 `~/rename-backup/`，不删。** 以 `info-app` → `knowfeed-app` 为例，`knowledge-app` → `knowbase-app` 同样做一遍：
 
 为什么不用 `mb worktree remove`：它底层是 `git worktree remove`，而 git 不允许摘下带子仓的工位（`working trees containing submodules cannot be moved or removed`，2026-10-14 实测）。所以旧检出整目录挪开；R0 已证明它们都干净且已推，挪开的只是备份。以下流程 2026-10-14 已在草稿仓里演练通过（旧内容分支与新内容分支各一个，结果见 `R1-opus`）。
 
 ```bash
 set -e
-OLD=info-app NEW=knowcollector-app        # 第二遍：OLD=knowledge-app NEW=knowbase-app
+OLD=info-app NEW=knowfeed-app        # 第二遍：OLD=knowledge-app NEW=knowbase-app
 WS="cursor fable kimi luna qwen"   # 某台机器上没有哪个工位，就从这里去掉，并写进回执
 B=~/rename-backup/$(date +%Y%m%d-%H%M)-$OLD; mkdir -p "$B"
-newname() { basename "$1" | sed -e 's/^info-/knowcollector-/' -e 's/^knowledge-/knowbase-/'; }
+newname() { basename "$1" | sed -e 's/^info-/knowfeed-/' -e 's/^knowledge-/knowbase-/'; }
 # 子仓：remote 指向新仓名（前缀 $SUB 取自旧检出）；拨回给定分支（与工位同名）并设上游——现在的子仓就是这样，同步脚本按此推 HEAD:<工位>
 fix_subs() { local top=$1 branch=$2 p
   for p in $(git -C "$top" submodule foreach --quiet 'echo $sm_path'); do
@@ -270,8 +270,8 @@ git -C ~/master/$NEW remote -v
 
 两台机器各改两个文件（都不在 Git 里，各机一份）：
 
-1. `~/five-repos-sync/config.sh` 的 `REPOS=(…)`：`"knowledge-app"` → `"knowbase-app"`，`"info-app"` → `"knowcollector-app"`。改前 `cp config.sh config.sh.bak-rename`。
-2. `mb` 的 `repos.conf`：R3 的 `mb repo remove` / `add` 已经改好，这里只核对：`grep -n know ~/toolboxes/Vlinux/utils/set-up-tools/model-switch/repos.conf` 应只有 `knowcollector-app`、`knowbase-app` 两行。
+1. `~/five-repos-sync/config.sh` 的 `REPOS=(…)`：`"knowledge-app"` → `"knowbase-app"`，`"info-app"` → `"knowfeed-app"`。改前 `cp config.sh config.sh.bak-rename`。
+2. `mb` 的 `repos.conf`：R3 的 `mb repo remove` / `add` 已经改好，这里只核对：`grep -n know ~/toolboxes/Vlinux/utils/set-up-tools/model-switch/repos.conf` 应只有 `knowfeed-app`、`knowbase-app` 两行。
 
 `~/switch-test/human-*.sh` 是转发器，不用改；它转发到的 k8s 仓里那两份已在 R1 改好。
 
@@ -288,19 +288,19 @@ git -C ~/master/$NEW remote -v
 
 ### R5.1 渲染与渲染比对
 
-`platform-stage` 依次处理 knowcollector、knowbase、investment（以及沙箱镜像，MCP 服务名改了）：新私有目录 `/etc/sunmoon/applications/sunmoon-kind/knowcollector`、`…/knowbase` 与备份目录由 stage 全新生成；渲染出全部新声明 → **渲染比对**：把改名前（R0 时的提交）与 stage 后的渲染产物逐个对象比对，列出除名字以外的差异（比对命令由 Opus 填）。
+`platform-stage` 依次处理 knowfeed、knowbase、investment（以及沙箱镜像，MCP 服务名改了）：新私有目录 `/etc/sunmoon/applications/sunmoon-kind/knowfeed`、`…/knowbase` 与备份目录由 stage 全新生成；渲染出全部新声明 → **渲染比对**：把改名前（R0 时的提交）与 stage 后的渲染产物逐个对象比对，列出除名字以外的差异（比对命令由 Opus 填）。
 
 **停点**：Opus 审比对结果。
 
 ### R5.2 构建、发布、晋级
 
-构建新镜像（knowcollector、knowbase 的后端与两个网页，investment 的后端与网页，沙箱镜像）→ 提交 → `flux-release` → 晋级 → `flux-source-apply`。晋级后 Flux 随旧目录消失自动删除旧应用的 k8s 对象；新应用的库初始化、开通（Casdoor 应用与服务身份、桶、vhost、Redis 用户）、迁移任务按新名在空的基础上跑。
+构建新镜像（knowfeed、knowbase 的后端与两个网页，investment 的后端与网页，沙箱镜像）→ 提交 → `flux-release` → 晋级 → `flux-source-apply`。晋级后 Flux 随旧目录消失自动删除旧应用的 k8s 对象；新应用的库初始化、开通（Casdoor 应用与服务身份、桶、vhost、Redis 用户）、迁移任务按新名在空的基础上跑。
 
 **停点**：Opus 审回执（各任务完成、迁移头 = `20261015_0014` / knowbase 现头）。
 
 ### R5.3 验证
 
-`application-check APP=knowcollector`、`APP=knowbase`、`APP=investment` → 浏览器打开两个新域名能登录（管理员作用域 `knowcollector:admin` / `knowbase:admin`）→ 投资里跨应用跳转可用、知识检索工具能连上（此时还没有数据集，查不到内容属正常）。
+`application-check APP=knowfeed`、`APP=knowbase`、`APP=investment` → 浏览器打开两个新域名能登录（管理员作用域 `knowfeed:admin` / `knowbase:admin`）→ 投资里跨应用跳转可用、知识检索工具能连上（此时还没有数据集，查不到内容属正常）。
 
 **停点**：Qwen 在浏览器上逐项核对（截图只截页面，不截令牌与口令），Opus 审回执。
 
@@ -340,7 +340,7 @@ PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 换名；0018 改写为 knowmar
 
 ## 冻结解除之后（不属于改名，但要有人做）
 
-1. fable 照常把 `qwen` 的改名提交并进 `master`（五组仓都要：knowcollector-app、knowbase-app 及子仓、investment-app、k8s、runtime、tpl-app 里 R1 改过的）。
+1. fable 照常把 `qwen` 的改名提交并进 `master`（五组仓都要：knowfeed-app、knowbase-app 及子仓、investment-app、k8s、runtime、tpl-app 里 R1 改过的）。
 2. 其他工位（cursor、fable、kimi、luna）各自把 `master` 并进自己的分支，或用 `mb worktree add --from-master <工位> <仓>` 拨回 master——拨回会丢掉该工位相对 master 的提交，用前确认已并进 master。
 3. 远程机 `~/rename-backup/` 与本地机同名目录保留，删除另行决定。
 

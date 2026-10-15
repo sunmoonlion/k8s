@@ -34,9 +34,11 @@ print("\n".join(out))
 PY
 docker exec -i opus-rename-pg psql -U postgres -d info -q -v ON_ERROR_STOP=1 < ${SEED:-/tmp/rename-seed.sql}
 snap() {
-  echo "  tables: $(P "select string_agg(tablename,' ' order by tablename) from pg_tables where schemaname='public' and (tablename like 'info%' or tablename like 'knowcollector%')")"
+  echo "  tables: $(P "select string_agg(tablename,' ' order by tablename) from pg_tables where schemaname='public' and (tablename like 'info%' or tablename like 'knowfeed%')")"
   echo "  names with info_:       $(P "select count(*) from (select conname n from pg_constraint union all select relname from pg_class where relkind in ('i','S')) x where n ~ '(^|_)info_(source|collector|document)'")"
-  echo "  names with knowcollector_: $(P "select count(*) from (select conname n from pg_constraint union all select relname from pg_class where relkind in ('i','S')) x where n ~ '(^|_)knowcollector_(source|collector|document)'")"
+  echo "  names with knowfeed_: $(P "select count(*) from (select conname n from pg_constraint union all select relname from pg_class where relkind in ('i','S')) x where n ~ '(^|_)knowfeed_(source|collector|document)'")"
+  echo "  columns: $(P "select string_agg(table_name||'.'||column_name,' ' order by 1) from information_schema.columns where column_name in ('collector_type','collector_id','crawler_type','crawler_id')")"
+  echo "  collector in names: $(P "select string_agg(n,' ') from (select conname n from pg_constraint union all select relname from pg_class where relkind in ('i','S')) x where n ~ 'collector|crawler_'")"
   for t in raw_artifact extracted_content security_dataset; do echo "  $t: $(P "select bucket||' '||object_key from $t")"; done
   echo "  requester source_app: $(P "select source_app from security_request_requester")"
 }

@@ -1,4 +1,4 @@
-"""改名替换引擎（k8s/docs/rename.md R1）。info → knowcollector、knowledge → knowbase。
+"""改名替换引擎（k8s/docs/rename.md R1）。info → knowfeed、knowledge → knowbase。
 
 用法：python3 rename_rules.py <五组仓的上一级目录> [--apply] [--report 报告.json]
 不加 --apply 只统计、不写盘。规则按「改与留的界线」分类，按顺序套用；先把要留的写法换成占位符保护起来，
@@ -24,8 +24,9 @@ SKIP = re.compile(
     r"|^k8s/sunmoonai/CHECKPOINT-old-system"
     r"|/(results|thread|history|hold|node_modules|\.venv|\.next|dist)/|/switch-test/done/"
     r"|/eval/reports/|/preview/fixtures/|/alembic/versions/"
+    r"|/app/infrastructure/repositories/info_identity_v1\.py$"  # 为 0008 迁移冻结的扫描，跟已有迁移一样记录历史表名
     r"|^k8s/docs/rename|^k8s/docs/(竞品比较分析|专家市场架构对比分析和借鉴)\.md$"  # 手册自身；两份讨论稿在 R7 手工改
-    r"|(^|/)(pnpm-lock\.yaml|uv\.lock|package-lock\.json)$"
+    r"|(^|/)(pnpm-lock\.yaml|package-lock\.json)$"
 )
 # gitops 组件目录里的渲染产物：只随目录 git mv，内容由 R5 的 stage / 构建重新生成
 RENDERED = re.compile(
@@ -33,7 +34,7 @@ RENDERED = re.compile(
 )
 TEXT_SUFFIX = {
     ".py", ".ts", ".tsx", ".js", ".mjs", ".cjs", ".json", ".yaml", ".yml", ".j2", ".toml", ".md", ".sh",
-    ".txt", ".cfg", ".ini", ".env", ".example", ".conf", ".mdc", ".html", ".css", ".sql", "",
+    ".txt", ".cfg", ".ini", ".env", ".example", ".conf", ".mdc", ".html", ".css", ".sql", ".lock", "",
 }
 
 # ---------------------------------------------------------------- 要留的写法（占位保护）
@@ -58,7 +59,7 @@ KEEP = [
     r"\d{4}-knowledge[\w-]*", r"\d{4}-info[\w-]*",  # 设计文档编号
     r"apps/(knowledge|info)\.md",
     # 无关的 info
-    r"\b[Cc][Nn][Ii][Nn][Ff][Oo]\w*", r"\w+_info\b", r"\binfo\.st_\w+", r"\b(log|logger|logging|console)\.info\b",
+    r"[Cc][Nn][Ii][Nn][Ff][Oo]", r"\w+_info\b", r"\binfo\.st_\w+", r"\b(log|logger|logging|console)\.info\b",
     r"\bexc_info\b", r"\bversion_info\b", r"(dist|egg)-info", r"userinfo", r"USERINFO", r"terminfo",
     r"Client-Cert-Info", r"cluster-info", r"node-exports-info",
 ]
@@ -74,109 +75,123 @@ def rule(cls: str, pattern: str, repl: Any) -> None:
 # 1 域名
 rule("域名", r"knowledge-admin\.(sunmoonai\.com|example\.test)", r"knowbase-admin.\1")
 rule("域名", r"(?<![\w.-])knowledge\.(sunmoonai\.com|example\.test)", r"knowbase.\1")
-rule("域名", r"info-admin\.(sunmoonai\.com|example\.test)", r"knowcollector-admin.\1")
-rule("域名", r"(?<![\w.-])info\.(sunmoonai\.com|example\.test)", r"knowcollector.\1")
+rule("域名", r"info-admin\.(sunmoonai\.com|example\.test)", r"knowfeed-admin.\1")
+rule("域名", r"(?<![\w.-])info\.(sunmoonai\.com|example\.test)", r"knowfeed.\1")
 # 1b 令牌作用域（所有者改定：改；它是「应用名:动作」）
 rule("作用域", r"(?<![\w.-])knowledge:(admin|ingest|retrieve|read)\b", r"knowbase:\1")
-rule("作用域", r"(?<![\w.-])info:admin\b", "knowcollector:admin")
-rule("域名", r"(?<=//)info\.example\b", "knowcollector.example")
+rule("作用域", r"(?<![\w.-])info:admin\b", "knowfeed:admin")
+rule("域名", r"(?<=//)info\.example\b", "knowfeed.example")
 rule("域名", r"(?<=//)knowledge\.example\b", "knowbase.example")
-rule("域名", r"(?<=//)info(?=[:/\"'])", "knowcollector")
+rule("域名", r"(?<=//)info(?=[:/\"'])", "knowfeed")
 rule("域名", r"(?<=//)knowledge(?=[:/\"'])", "knowbase")
-rule("应用身份", r"\bInfoAppBot\b", "KnowcollectorBot")
-rule("应用身份", r"\bInfoBot\b", "KnowcollectorBot")
+rule("应用身份", r"\bInfoAppBot\b", "KnowfeedBot")
+rule("应用身份", r"\bInfoBot\b", "KnowfeedBot")
 # 2 两个应用之间的身份（成对出现，先于单个规则）
 for old, new in [
-    ("sunmoonai-info-knowledge-ingest", "sunmoonai-knowcollector-knowbase-ingest"),
-    ("sunmoon-info-knowledge-ingest", "sunmoon-knowcollector-knowbase-ingest"),
-    ("sunmoon-workload-info-knowledge", "sunmoon-workload-knowcollector-knowbase"),
-    ("info-knowledge-ingest-client", "knowcollector-knowbase-ingest-client"),
-    ("info-knowledge-artifact", "knowcollector-knowbase-artifact"),
-    ("info-knowledge-service", "knowcollector-knowbase-service"),
-    ("knowledge-info-ingest-service-binding", "knowbase-knowcollector-ingest-service-binding"),
-    ("CASDOOR_INFO_KNOWLEDGE_", "CASDOOR_KNOWCOLLECTOR_KNOWBASE_"),
+    ("sunmoonai-info-knowledge-ingest", "sunmoonai-knowfeed-knowbase-ingest"),
+    ("sunmoon-info-knowledge-ingest", "sunmoon-knowfeed-knowbase-ingest"),
+    ("sunmoon-workload-info-knowledge", "sunmoon-workload-knowfeed-knowbase"),
+    ("info-knowledge-ingest-client", "knowfeed-knowbase-ingest-client"),
+    ("info-knowledge-artifact", "knowfeed-knowbase-artifact"),
+    ("info-knowledge-service", "knowfeed-knowbase-service"),
+    ("knowledge-info-ingest-service-binding", "knowbase-knowfeed-ingest-service-binding"),
+    ("CASDOOR_INFO_KNOWLEDGE_", "CASDOOR_KNOWFEED_KNOWBASE_"),
 ]:
     rule("跨应用身份", re.escape(old), new)
 # 3 MCP 服务名（所有者定：改）
 rule("MCP", r"(?<![\w-])sunmoon_knowledge(?![\w-])", "sunmoon_knowbase")
 # 4 登录 cookie
 rule("cookie", r"sunmoonai_knowledge_", "sunmoonai_knowbase_")
-rule("cookie", r"sunmoonai_info_", "sunmoonai_knowcollector_")
+rule("cookie", r"sunmoonai_info_", "sunmoonai_knowfeed_")
 # 5 环境变量（改名不改值）
 rule("环境变量", r"(?<![A-Za-z0-9])KNOWLEDGE_", "KNOWBASE_")
 rule("环境变量", r"(?<![A-Za-z0-9])KNOWLEDGE\b", "KNOWBASE")
-rule("环境变量", r"(?<![A-Za-z0-9])INFO_(?=[A-Z0-9])", "KNOWCOLLECTOR_")
-rule("环境变量", r"(?<=[A-Z]_)INFO\b", "KNOWCOLLECTOR")
+rule("环境变量", r"(?<![A-Za-z0-9])INFO_(?=[A-Z0-9])", "KNOWFEED_")
+rule("环境变量", r"(?<=[A-Z]_)INFO\b", "KNOWFEED")
 # 6 配置字段（pydantic 字段名 = 环境变量名小写）
 rule("配置字段", r"(?<![\w-])knowledge_(app|mcp|semantic|catalog|web_base_url)(?=_|\b)", r"knowbase_\1")
 rule("配置字段", r"(?<![\w-])knowledge_dataset_(path|id|title|object|sha256|registry_enabled|allowed_buckets|cache_dir)\b", r"knowbase_dataset_\1")
 # 7 部署配置键与应用名（gitops / ansible / Makefile）
 rule("部署键", r"(?<![\w-])(info|knowledge)_(backend|web|admin)_deployment\b",
-     lambda m: ("knowcollector" if m[1] == "info" else "knowbase") + f"_{m[2]}_deployment")
-rule("部署键", r"(?<![\w-])info_deployment\b", "knowcollector_deployment")
+     lambda m: ("knowfeed" if m[1] == "info" else "knowbase") + f"_{m[2]}_deployment")
+rule("部署键", r"(?<![\w-])info_deployment\b", "knowfeed_deployment")
 rule("部署键", r"(?<![\w-])knowledge_deployment\b", "knowbase_deployment")
 rule("部署键", r"(?<![\w-])knowledge_service(_receiver)?\b", r"knowbase_service\1")
 rule("部署键", r"service_access_hosts\.knowledge\b", "service_access_hosts.knowbase")
-rule("部署键", r"service_access_hosts\.info\b", "service_access_hosts.knowcollector")
+rule("部署键", r"service_access_hosts\.info\b", "service_access_hosts.knowfeed")
 rule("部署键", r"applications\.knowledge\b", "applications.knowbase")
-rule("部署键", r"applications\.info\b", "applications.knowcollector")
-rule("应用名", r"\bAPP=info\b", "APP=knowcollector")
+rule("部署键", r"applications\.info\b", "applications.knowfeed")
+rule("应用名", r"\bAPP=info\b", "APP=knowfeed")
 rule("应用名", r"\bAPP=knowledge\b", "APP=knowbase")
-rule("应用名", r"applications-info\b", "applications-knowcollector")
+rule("应用名", r"applications-info\b", "applications-knowfeed")
 rule("应用名", r"applications-knowledge\b", "applications-knowbase")
 # 8 组件与 k8s 对象名（kebab）
-rule("组件", r"(?<![\w.-])info-app\b", "knowcollector-app")
+rule("组件", r"(?<![\w.-])info-app\b", "knowfeed-app")
 rule("组件", r"(?<![\w.-])knowledge-app\b", "knowbase-app")
 rule("组件", r"(?<![\w.])knowledge-(?=[a-z0-9])", "knowbase-")
-rule("组件", r"(?<![\w.])info-(?=(backend|web|admin|api|runtime|worker|scheduler|producer|migration|migrate|tls|database|redis|rabbitmq|identity|storage|service|browser|celery|domain|r5|development|production|originals|sandboxes|source|smoke|object|derived|rw|ro|write|requests|crawl|securities|watchlist|scanner|user|password|information|schema)\b)", "knowcollector-")
+rule("组件", r"(?<![\w.])info-(?=(backend|web|admin|api|runtime|worker|scheduler|producer|migration|migrate|tls|database|redis|rabbitmq|identity|storage|service|browser|celery|domain|r5|development|production|originals|sandboxes|source|smoke|object|derived|rw|ro|write|requests|crawl|securities|watchlist|scanner|user|password|information|schema)\b)", "knowfeed-")
 # 9 存储名（乙）
-rule("存储", r"(?<![\w-])info_(runtime|migrator|storage|source_reader)\b", r"knowcollector_\1")
+rule("存储", r"(?<![\w-])info_(runtime|migrator|storage|source_reader)\b", r"knowfeed_\1")
 rule("存储", r"(?<![\w-])knowledge_(runtime|migrator|source_reader|password)\b", r"knowbase_\1")
 rule("存储", r"(?<![\w-])knowledge_token\b", "knowbase_token")
-rule("存储", r"(?<=[\"' ])info:\*", "knowcollector:*")
-rule("存储", r"(?<=[\"' ])info:(?=[a-z])", "knowcollector:")
-rule("存储", r"(?<![\w-])info\.(default|admin\.default)\b", r"knowcollector.\1")
+rule("存储", r"(?<=[\"' ])info:\*", "knowfeed:*")
+rule("存储", r"(?<=[\"' ])info:(?=[a-z])", "knowfeed:")
+rule("存储", r"(?<![\w-])info\.(default|admin\.default)\b", r"knowfeed.\1")
 rule("存储", r"(?<![\w-])knowledge\.(default|admin\.default)\b", r"knowbase.\1")
 rule("存储", r"://knowledge:knowledge@", "://knowbase:knowbase@")
-rule("存储", r"://info:info@", "://knowcollector:knowcollector@")
+rule("存储", r"://info:info@", "://knowfeed:knowfeed@")
 rule("存储", r"(?<=:5432/)knowledge\b", "knowbase")
-rule("存储", r"(?<=:5432/)info\b", "knowcollector")
+rule("存储", r"(?<=:5432/)info\b", "knowfeed")
 rule("存储", r"(?<![\w-])knowledge_backend\b", "knowbase_backend")
-rule("存储", r"(?<![\w-])info_backend(?=_user\b|\b)", "knowcollector_backend")
-rule("存储", r"(?<=[\"'`/ ])info/(?=(original|securities)\b)", "knowcollector/")
-rule("存储", r"source_prefix: info/", "source_prefix: knowcollector/")
-rule("存储", r"/sunmoon-kind/info\b", "/sunmoon-kind/knowcollector")
+rule("存储", r"(?<![\w-])info_backend(?=_user\b|\b)", "knowfeed_backend")
+rule("存储", r"(?<=[\"'`/ ])info/(?=(original|securities)\b)", "knowfeed/")
+rule("存储", r"source_prefix: info/", "source_prefix: knowfeed/")
+rule("存储", r"/sunmoon-kind/info\b", "/sunmoon-kind/knowfeed")
 rule("存储", r"/sunmoon-kind/knowledge\b", "/sunmoon-kind/knowbase")
-rule("存储", r"(database|rabbitmq_vhost): info\b", r"\1: knowcollector")
+rule("存储", r"(database|rabbitmq_vhost): info\b", r"\1: knowfeed")
 rule("存储", r"(database|rabbitmq_vhost): knowledge\b", r"\1: knowbase")
 # 10 source_app 的两种旧值（各自对应，不合并）
-rule("source_app", r"(?<=[\"'])info-app(?=[\"'])", "knowcollector-app")
-rule("source_app", r"(source_app\W{1,12}[\"'])info(?=[\"'])", r"\1knowcollector")
+rule("source_app", r"(?<=[\"'])info-app(?=[\"'])", "knowfeed-app")
+rule("source_app", r"(source_app[^\n\"'=]{0,24}=?\s*[\"'])info(?=[\"'])", r"\1knowfeed")
 # 11 采集库带应用名前缀的表与事件（所有者定：改）
-rule("表与事件", r"(?<![\w-])info_(collector|document_version|document|source)\b", r"knowcollector_\1")
-rule("表与事件", r"(?<![\w-])(uq|ix|ck)_info_", r"\1_knowcollector_")
-rule("表与事件", r"(?<![\w-])info\.((?:[a-z_]+\.)*[a-z_]+)\.v(\d+)\b", r"knowcollector.\1.v\2")
+rule("表与事件", r"(?<![\w-])info_(collector|document_version|document|source)\b", r"knowfeed_\1")
+rule("表与事件", r"(?<![\w-])(uq|ix|ck)_info_", r"\1_knowfeed_")
+rule("表与事件", r"(?<![\w-])info\.((?:[a-z_]+\.)*[a-z_]+)\.v(\d+)\b", r"knowfeed.\1.v\2")
 # 12 代码里指向另一个应用的名字
 for old, new in [
     ("KnowledgeAppClient", "KnowbaseAppClient"), ("KnowledgeAppNotConfiguredError", "KnowbaseAppNotConfiguredError"),
     ("get_knowledge_app_client", "get_knowbase_app_client"), ("require_knowledge_admin", "require_knowbase_admin"),
-    ("require_info_admin", "require_knowcollector_admin"), ("require_knowledge_ingest_service", "require_knowbase_ingest_service"),
+    ("require_info_admin", "require_knowfeed_admin"), ("require_knowledge_ingest_service", "require_knowbase_ingest_service"),
     ("require_knowledge_retrieve_service", "require_knowbase_retrieve_service"),
 ]:
     rule("代码名", rf"\b{old}\b", new)
 # 13 中文句子里夹着的 info / knowledge 几乎都指应用（「向 knowledge 重新登记」「只给 info 管理员」）
 CJK = r"[\u3000-\u303f\u4e00-\u9fff\uff00-\uffef]"
 rule("中文里的应用名", rf"(?<={CJK})\s?\bknowledge\b(?!-|_|\.)|\bknowledge\b(?=\s?{CJK})", lambda m: m[0].replace("knowledge", "knowbase"))
-rule("中文里的应用名", rf"(?<={CJK})\s?\binfo\b(?!-|_|\.)|\binfo\b(?=\s?{CJK})", lambda m: m[0].replace("info", "knowcollector"))
+rule("中文里的应用名", rf"(?<={CJK})\s?\binfo\b(?!-|_|\.)|\binfo\b(?=\s?{CJK})", lambda m: m[0].replace("info", "knowfeed"))
 # 14 采集管理端的页面路径（info 是应用名；知识库管理端的 /knowledge/… 是领域词，留）
-rule("页面路径", r"(?<=/)info(?=/(crawl|securities|watchlist|requests)\b)", "knowcollector")
+rule("页面路径", r"(?<=/)info(?=/(crawl|securities|watchlist|requests)\b)", "knowfeed")
+# 14b 页面英文文案里的应用名（只在网页的文案与页面文件里；「Knowledge ingestions」「Knowledge retrieval」是领域词，不在这里）
+UI_FILES = re.compile(r"-frontend/app/(messages/[^/]+\.json|app/.*\.(tsx|ts)|components/.*\.tsx|features/.*\.tsx)$")
+rule("页面文案", r"\bInfo Admin\b", "Knowfeed Admin")
+rule("页面文案", r"\bKnowledge Admin\b", "Knowbase Admin")
+rule("页面文案", r"(?<=['\"])info App(?=['\"])", "knowfeed App")
+rule("页面文案", r"(?<=['\"])knowledge App(?=['\"])", "knowbase App")
+rule("页面文案", r"\binfo web application\b", "knowfeed web application")
+rule("页面文案", r"\bknowledge web application\b", "knowbase web application")
+rule("页面文案", r"\bInfo crawl\b", "Knowfeed crawl")
+rule("页面文案", r"\bfor Info sources\b", "for Knowfeed sources")
+rule("页面文案", r"\bRegistered with knowledge\b", "Registered with knowbase")
+rule("页面文案", r"\binfo(?= registers datasets| admin\b|”| \(|\.\s)", "knowfeed")
+rule("页面文案", r"(?<=on )info\b", "knowfeed")
+UI_RULES = set(range(len(R) - 11, len(R)))
 # 15 应用名作单词的配置值（只在部署机制里）：'info' / "knowledge"
 DEPLOY_FILES = re.compile(r"^k8s/(infrastructure|gitops/components/app-platform/common|gitops/clusters)/|Makefile$"
                           r"|/core/config\.py$|/domain/cross_app\.py$|/tests/test_cross_app\.py$|/env/server-schema\.ts$|/lib/cross-app/[^/]+\.ts$"
-                          r"|/tests/test_security_request_routes_db\.py$|/tests/test_preview_fixtures\.py$")
-rule("应用名", r"(?<=[\"'])info(?=[\"'])", "knowcollector")
+                          r"|-backend/app/tests/[^/]+\.py$")  # 各后端的测试里，带引号的 info / knowledge 都指应用
+rule("应用名", r"(?<=[\"'])info(?=[\"'])", "knowfeed")
 rule("应用名", r"(?<=[\"'])knowledge(?=[\"'])", "knowbase")
-rule("应用名", r"(?m)^(\s*)info:(?=\s*$|\s+[\"'{])", r"\1knowcollector:")
+rule("应用名", r"(?m)^(\s*)info:(?=\s*$|\s+[\"'{])", r"\1knowfeed:")
 rule("应用名", r"(?m)^(\s*)knowledge:(?=\s*$|\s+[\"'{])", r"\1knowbase:")
 ONLY_DEPLOY = {len(R) - 4, len(R) - 3, len(R) - 2, len(R) - 1}
 
@@ -197,7 +212,15 @@ def scope(root: Path) -> list[str]:
     return files
 
 
+LOCK_NAME = re.compile(r'(?m)^name = "(info|knowledge)-(backend)"$')
+
+
 def apply(text: str, rel: str, counts: dict) -> str:
+    if rel.endswith("uv.lock"):  # 锁文件只改项目自身名字那一行，其余锁定内容不碰
+        new, n = LOCK_NAME.subn(lambda m: f'name = "{"knowfeed" if m[1] == "info" else "knowbase"}-{m[2]}"', text)
+        if n:
+            counts["锁文件"][rel] += n
+        return new
     kept: list[str] = []
 
     def hide(m: re.Match) -> str:
@@ -209,10 +232,47 @@ def apply(text: str, rel: str, counts: dict) -> str:
     for i, (cls, pat, repl) in enumerate(R):
         if i in ONLY_DEPLOY and not DEPLOY_FILES.search(rel):
             continue
+        if i in UI_RULES and not UI_FILES.search(rel):
+            continue
         text, n = re.subn(pat, repl, text)
         if n:
             counts[cls][rel] += n
     return re.sub(r"\x00(\d+)\x00", lambda m: kept[int(m[1])], text)
+
+
+def moves(root: Path) -> dict[str, str]:
+    """要 git mv 的：旧路径 → 新路径（仓的顶层目录名不在这里改，那是 R3）。
+
+    先把规则套到范围内文件的路径上，得出每一级被改名的目录；再把这些目录对应关系套到**全部**跟踪文件上
+    （不在替换范围里的文件——已有迁移、图片、锁文件——也要随目录走），每个文件按最近的已改名上级目录走。
+    """
+    dirs: dict[str, str] = {}
+    renamed: dict[str, str] = {}
+    for rel in scope(root):
+        repo, rest = rel.split("/", 1)
+        new = apply(rest, rel, defaultdict(lambda: defaultdict(int)))
+        if new == rest:
+            continue
+        renamed[rel] = f"{repo}/{new}"
+        old_parts, new_parts = rel.split("/"), f"{repo}/{new}".split("/")
+        for i in range(1, len(old_parts)):
+            if old_parts[:i] != new_parts[:i]:
+                dirs["/".join(old_parts[:i])] = "/".join(new_parts[:i])
+    out = {}
+    for repo in REPOS:
+        listing = subprocess.run(["git", "-C", str(root / repo), "ls-files"], capture_output=True, text=True).stdout
+        for n in listing.splitlines():
+            rel = f"{repo}/{n}"
+            if rel in renamed:
+                out[rel] = renamed[rel]
+                continue
+            parts = rel.split("/")
+            for i in range(len(parts) - 1, 0, -1):  # 最近的已改名上级目录
+                head = "/".join(parts[:i])
+                if head in dirs:
+                    out[rel] = dirs[head] + "/" + "/".join(parts[i:])
+                    break
+    return out
 
 
 def main() -> None:
@@ -229,6 +289,10 @@ def main() -> None:
         new = apply(old, rel, counts)
         if write and new != old:
             path.write_text(new, encoding="utf-8")
+    if "--move" in sys.argv:  # 只用于单一 git 仓的副本；真仓里子仓目录由父仓 git mv（见 rename.md R1）
+        for old_rel, new_rel in sorted(moves(root).items()):
+            (root / new_rel).parent.mkdir(parents=True, exist_ok=True)
+            subprocess.run(["git", "-C", str(root), "mv", old_rel, new_rel], check=True)
     summary = {cls: {"files": len(v), "hits": sum(v.values())} for cls, v in counts.items()}
     print(json.dumps(summary, ensure_ascii=False, indent=1))
     if report:
