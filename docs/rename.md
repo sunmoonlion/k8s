@@ -525,4 +525,10 @@ PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 换名；0018 改写为 knowmar
 1. fable 照常把 `qwen` 的改名提交并进 `master`（五组仓都要：knowfeed-app、knowbase-app 及子仓、investment-app、k8s、runtime、tpl-app 里 R1 改过的）。
 2. 其他工位（cursor、fable、kimi、luna）各自把 `master` 并进自己的分支，或用 `mb worktree add --from-master <工位> <仓>` 拨回 master——拨回会丢掉该工位相对 master 的提交，用前确认已并进 master。
 3. 远程机 `~/rename-backup/` 与本地机同名目录保留，删除另行决定。
+4. **把 `k8s/sunmoonai/` 整体移出**（所有者 2026-10-15 定）：它大部分是 10-06 起冻结的旧体系，计划删掉。先把还活着的四块搬出去，再 `git rm` 其余（历史在 Git 里）：
+   - `sunmoonai/docs/dev-investment-agent/`（手册、回执、派活卡、同步脚本、门禁工具）→ `k8s/docs/dev-investment-agent/`：连带改 k8s 里 26 个、runtime 里 6 个引用；`.githooks` 的 `doc-gate.py`、`anchor-gate.py` 路径与「只查 `sunmoonai/docs/`」的范围；两台机器的 `~/switch-test/human-*.sh` 转发器（跑一次 `human-local.sh` 自动重新生成）；
+   - `sunmoonai/docs/project-guide/` 与所有者挑出的通用文档 → `k8s/docs/`：连带改各仓 `AGENTS.md` 的指针；
+   - `sunmoonai/relay-platform/`、`sunmoonai/sandbox-platform/`（三个自研镜像的源码）→ 新位置：`infrastructure/applications/component-images.yaml` 的 `context` 与钉的提交要一起改，在下一次重建这几个镜像时生效；
+   - `sunmoonai/scripts/` 里还在用的（本地联调脚本、发布卡回执目录 `results/`）挑出来搬，其余随目录删；
+   - 冻结的旧体系目录（`app-platform`、`cicd-platform`、`data-platform`、`deploy-sunmoonai-all`、`infrastructure`、`ingress-platform`、`kind-infrastructure`、`messaging-platform`、`operations`、`ops-platform`、`registry-platform`、`CHECKPOINT-old-system-*.md`）直接 `git rm`。
 
