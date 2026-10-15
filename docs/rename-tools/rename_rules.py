@@ -26,6 +26,7 @@ SKIP = re.compile(
     r"|/eval/reports/|/preview/fixtures/|/alembic/versions/"
     r"|/app/infrastructure/repositories/info_identity_v1\.py$"  # 为 0008 迁移冻结的扫描，跟已有迁移一样记录历史表名
     r"|^k8s/docs/rename|^k8s/docs/(竞品比较分析|专家市场架构对比分析和借鉴)\.md$"  # 手册自身；两份讨论稿在 R7 手工改
+    r"|/tree-build/(decisions|owner-decisions-now)\.md$|/SDD/modules/0025-|/switch-test/inbox/[^/]+/[^/]*rename"  # 决定记录（原话与当时的名字）、改名方案与改名卡本身
     r"|(^|/)(pnpm-lock\.yaml|package-lock\.json)$"
 )
 # gitops 组件目录里的渲染产物：只随目录 git mv，内容由 R5 的 stage / 构建重新生成
@@ -48,7 +49,6 @@ KEEP = [
     r"(uq|ix|ck)_knowledge_\w+",
     r"knowledge(Ingestions|Datasets|Catalog|Hint)\w*",
     r"knowledge-(ingestions|catalog|retrieval-request|retrieval-response|upload|semantic|sample|v1|shell)\b[\w-]*",
-    r"knowledge:ingest:(?=\{|\w)",  # 出站去重键前缀：库里已存的内部键，不改
     r"knowledge\.(ingest|dataset|catalog)\.?v?\d*",
     r"/api/(internal/v1/|admin/v1/)?knowledge\b",
     r"KNOWLEDGE_(DOCUMENT|VERSION)_NAMESPACE",  # 生成固定 ID 的 UUID 命名空间：名字也不动，值更不能动
@@ -62,6 +62,11 @@ KEEP = [
     r"[Cc][Nn][Ii][Nn][Ff][Oo]", r"\w+_info\b", r"\binfo\.st_\w+", r"\b(log|logger|logging|console)\.info\b",
     r"\bexc_info\b", r"\bversion_info\b", r"(dist|egg)-info", r"userinfo", r"USERINFO", r"terminfo",
     r"Client-Cert-Info", r"cluster-info", r"node-exports-info",
+    r"'error' \| 'info'",  # 网页提示框的类型
+    r"notify\('info'",  # 网页提示框的调用
+    r"\bt\('knowledge'\)",  # 投资设置页「本地知识库」的文案键
+    r"for purpose in \['knowledge'",
+    r"(?i)\blog[_.]?level\s*[:=]\s*[\"']?info\b",  # 日志级别  # ragflow 里两个超级用户的用途名（共享服务的既有账号，不随应用改名）
 ]
 
 # ---------------------------------------------------------------- 改：按类按序
@@ -72,6 +77,9 @@ def rule(cls: str, pattern: str, repl: Any) -> None:
     R.append((cls, pattern, repl))
 
 
+# 0 开发连接串里「用户:口令」都是应用名：先于域名规则
+rule("存储", r"://knowledge:knowledge@", "://knowbase:knowbase@")
+rule("存储", r"://info:info@", "://knowfeed:knowfeed@")
 # 1 域名
 rule("域名", r"knowledge-admin\.(sunmoonai\.com|example\.test)", r"knowbase-admin.\1")
 rule("域名", r"(?<![\w.-])knowledge\.(sunmoonai\.com|example\.test)", r"knowbase.\1")
@@ -96,10 +104,16 @@ for old, new in [
     ("info-knowledge-service", "knowfeed-knowbase-service"),
     ("knowledge-info-ingest-service-binding", "knowbase-knowfeed-ingest-service-binding"),
     ("CASDOOR_INFO_KNOWLEDGE_", "CASDOOR_KNOWFEED_KNOWBASE_"),
+    ("sunmoon-workload-investment-knowledge", "sunmoon-workload-investment-knowbase"),
+    ("'-knowledge-'", "'-knowbase-'"),  # 校验里按应用名拼出的身份名：'sunmoonai-' + application_name + '-knowledge-' + service_relation
+    ("'-knowledge'", "'-knowbase'"),
+    ("'knowledge:' + ", "'knowbase:' + "),  # 作用域按关系拼出
+    (":knowledge:managed-by-gitops", ":knowbase:managed-by-gitops"),
 ]:
     rule("跨应用身份", re.escape(old), new)
 # 3 MCP 服务名（所有者定：改）
 rule("MCP", r"(?<![\w-])sunmoon_knowledge(?![\w-])", "sunmoon_knowbase")
+rule("MCP", r"(?<![\w-])sunmoon-knowledge\b", "sunmoon-knowbase")  # MCP 服务对外报的名字
 # 4 登录 cookie
 rule("cookie", r"sunmoonai_knowledge_", "sunmoonai_knowbase_")
 rule("cookie", r"sunmoonai_info_", "sunmoonai_knowfeed_")
@@ -135,21 +149,30 @@ rule("存储", r"(?<![\w-])info_(runtime|migrator|storage|source_reader)\b", r"k
 rule("存储", r"(?<![\w-])knowledge_(runtime|migrator|source_reader|password)\b", r"knowbase_\1")
 rule("存储", r"(?<![\w-])knowledge_token\b", "knowbase_token")
 rule("存储", r"(?<=[\"' ])info:\*", "knowfeed:*")
+rule("存储", r"(?<=[\"' ])knowledge:\*", "knowbase:*")
 rule("存储", r"(?<=[\"' ])info:(?=[a-z])", "knowfeed:")
 rule("存储", r"(?<![\w-])info\.(default|admin\.default)\b", r"knowfeed.\1")
 rule("存储", r"(?<![\w-])knowledge\.(default|admin\.default)\b", r"knowbase.\1")
-rule("存储", r"://knowledge:knowledge@", "://knowbase:knowbase@")
-rule("存储", r"://info:info@", "://knowfeed:knowfeed@")
 rule("存储", r"(?<=:5432/)knowledge\b", "knowbase")
 rule("存储", r"(?<=:5432/)info\b", "knowfeed")
 rule("存储", r"(?<![\w-])knowledge_backend\b", "knowbase_backend")
 rule("存储", r"(?<![\w-])info_backend(?=_user\b|\b)", "knowfeed_backend")
-rule("存储", r"(?<=[\"'`/ ])info/(?=(original|securities)\b)", "knowfeed/")
+rule("存储", r"(?<=[\"'`/ =])info/(?=(original|securities|samples)\b)", "knowfeed/")
+rule("存储", r"\^info/(?=\()", "^knowfeed/")
+rule("存储", r"(?<=-originals/)info/", "knowfeed/")  # 桶名先由组件规则改好，桶里的前缀跟着改  # 知识库只读前缀的校验：source_prefix is match('^info/(…)')
 rule("存储", r"source_prefix: info/", "source_prefix: knowfeed/")
 rule("存储", r"/sunmoon-kind/info\b", "/sunmoon-kind/knowfeed")
 rule("存储", r"/sunmoon-kind/knowledge\b", "/sunmoon-kind/knowbase")
 rule("存储", r"(database|rabbitmq_vhost): info\b", r"\1: knowfeed")
 rule("存储", r"(database|rabbitmq_vhost): knowledge\b", r"\1: knowbase")
+rule("应用名", r"(?m)^((?:AUTH_APP|APP_SLUG|NEXT_PUBLIC_APP_NAME|APP_DB_NAME)=)info$", r"\1knowfeed")
+rule("应用名", r"(?m)^((?:AUTH_APP|APP_SLUG|NEXT_PUBLIC_APP_NAME|APP_DB_NAME)=)knowledge$", r"\1knowbase")
+rule("应用名", r'(?<="app": ")info(?=")', "knowfeed")
+rule("应用名", r'(?<="app": ")knowledge(?=")', "knowbase")
+# 投资网页设置里 MCP 来源的键（后端 MCP_SOURCES 随引号规则改成 knowbase，网页这头是不带引号的属性名）
+rule("应用名", r"mcp_sources\?\.knowledge\b", "mcp_sources?.knowbase")
+rule("应用名", r"(?<=mcp_sources \?\? \{\}\), )knowledge(?=: )", "knowbase")
+rule("应用名", r"(?<=mcp_sources: \{ )knowledge(?=: )", "knowbase")
 # 10 source_app 的两种旧值（各自对应，不合并）
 rule("source_app", r"(?<=[\"'])info-app(?=[\"'])", "knowfeed-app")
 rule("source_app", r"(source_app[^\n\"'=]{0,24}=?\s*[\"'])info(?=[\"'])", r"\1knowfeed")
@@ -185,21 +208,44 @@ rule("页面文案", r"\bRegistered with knowledge\b", "Registered with knowbase
 rule("页面文案", r"\binfo(?= registers datasets| admin\b|”| \(|\.\s)", "knowfeed")
 rule("页面文案", r"(?<=on )info\b", "knowfeed")
 UI_RULES = set(range(len(R) - 11, len(R)))
+rule("标题", r"\bInfo(?= (Backend|Admin Front|Web Front|App)\b)", "Knowfeed")
+rule("标题", r"\bKnowledge(?= (Backend|Admin Front|Web Front)\b)", "Knowbase")
+rule("标题", r"\bInfo(?= (->|to) Knowledge\b)", "Knowfeed")
+rule("标题", r"\b((?:Knowfeed|Investment) (?:->|to) )Knowledge\b", r"\1Knowbase")
 # 15 应用名作单词的配置值（只在部署机制里）：'info' / "knowledge"
-DEPLOY_FILES = re.compile(r"^k8s/(infrastructure|gitops/components/app-platform/common|gitops/clusters)/|Makefile$"
+DEPLOY_FILES = re.compile(r"^k8s/(infrastructure|gitops)/(?!.*/crds\.yaml$)|Makefile$"
                           r"|/core/config\.py$|/domain/cross_app\.py$|/tests/test_cross_app\.py$|/env/server-schema\.ts$|/lib/cross-app/[^/]+\.ts$"
-                          r"|-backend/app/tests/[^/]+\.py$")  # 各后端的测试里，带引号的 info / knowledge 都指应用
+                          r"|-backend/app/tests/[^/]+\.py$"  # 各后端的测试里，带引号的 info / knowledge 都指应用
+                          r"|-backend/app/(app|core|scripts)/.+\.py$"
+                          r"|-frontend/app/preview/preview\.config\.mjs$"
+                          r"|-frontend/app/(?!messages/|node_modules/|preview/).+\.(ts|tsx)$")  # 网页代码里也是（AUTH_APP、expectedApp、契约、跨应用目标）；例外见保留清单  # 各后端代码里也是（2026-10-15 逐条核过：跨应用键、app_slug、app=、MCP 受众与来源、注释示例）
+_deploy_start = len(R)
+# 排序后比对的应用清单：改名后顺序变了，整句换（先于单个引号规则）
+rule("应用名", r"\['casdoor','info','investment','knowledge','tpl'\]", "['casdoor','investment','knowbase','knowfeed','tpl']")
 rule("应用名", r"(?<=[\"'])info(?=[\"'])", "knowfeed")
 rule("应用名", r"(?<=[\"'])knowledge(?=[\"'])", "knowbase")
 rule("应用名", r"(?m)^(\s*)info:(?=\s*$|\s+[\"'{])", r"\1knowfeed:")
 rule("应用名", r"(?m)^(\s*)knowledge:(?=\s*$|\s+[\"'{])", r"\1knowbase:")
-ONLY_DEPLOY = {len(R) - 4, len(R) - 3, len(R) - 2, len(R) - 1}
+# 不带引号的写法：YAML 流式值与清单、Makefile 的取值表、标签值
+rule("应用名", r"(?<=application_name: )info\b", "knowfeed")
+rule("应用名", r"(?<=application_name: )knowledge\b", "knowbase")
+rule("应用名", r"\btpl, info, knowledge\b", "tpl, knowfeed, knowbase")
+rule("应用名", r"\btpl info knowledge\b", "tpl knowfeed knowbase")
+rule("应用名", r"(?<=part-of: )knowledge\b", "knowbase")
+rule("应用名", r"(?<=from=)info\b", "knowfeed")  # 地址参数 from=
+rule("应用名", r"(?<=from=)knowledge\b", "knowbase")
+ONLY_DEPLOY = set(range(_deploy_start, len(R)))
+# 网页的预览配置与测试里，应用名作对象键：{ info: …, knowledge: … }（别处的「, info: 类型」是参数名，不碰）
+FRONT_FILES = re.compile(r"-frontend/app/(tests/.+|preview/preview\.config\.mjs)$")
+rule("应用名", r"(?<=[{,] )info(?=: )", "knowfeed")
+rule("应用名", r"(?<=[{,] )knowledge(?=: )", "knowbase")
+FRONT_ONLY = {len(R) - 2, len(R) - 1}
 
 
 def scope(root: Path) -> list[str]:
     files: list[str] = []
     for repo in REPOS:
-        out = subprocess.run(["git", "-C", str(root / repo), "ls-files"], capture_output=True, text=True)
+        out = subprocess.run(["git", "-C", str(root / repo), "ls-files", "--recurse-submodules"], capture_output=True, text=True)
         names = out.stdout.splitlines() if out.returncode == 0 else [
             str(p.relative_to(root / repo)) for p in (root / repo).rglob("*") if p.is_file()]
         for n in names:
@@ -234,6 +280,8 @@ def apply(text: str, rel: str, counts: dict) -> str:
             continue
         if i in UI_RULES and not UI_FILES.search(rel):
             continue
+        if i in FRONT_ONLY and not FRONT_FILES.search(rel):
+            continue
         text, n = re.subn(pat, repl, text)
         if n:
             counts[cls][rel] += n
@@ -260,7 +308,7 @@ def moves(root: Path) -> dict[str, str]:
                 dirs["/".join(old_parts[:i])] = "/".join(new_parts[:i])
     out = {}
     for repo in REPOS:
-        listing = subprocess.run(["git", "-C", str(root / repo), "ls-files"], capture_output=True, text=True).stdout
+        listing = subprocess.run(["git", "-C", str(root / repo), "ls-files", "--recurse-submodules"], capture_output=True, text=True).stdout
         for n in listing.splitlines():
             rel = f"{repo}/{n}"
             if rel in renamed:

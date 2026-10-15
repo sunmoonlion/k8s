@@ -1,4 +1,4 @@
-"""R1 的手工补丁：替换规则跑完之后执行（k8s/docs/rename.md R1）。参数：改名后的采集后端 app 目录。
+"""R1 的手工补丁：替换规则跑完之后执行（k8s/docs/rename.md R1）。参数：改名后的采集后端 app 目录、知识后端 app 目录、五组仓的上一级目录（重算契约哈希用）。
 
 规则只能按字面改；这里是规则做不对、要看上下文的几处：
 1. 采集后端的新迁移文件放进去；迁移链清单测试补上它。
@@ -7,6 +7,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -24,7 +27,61 @@ def edit(path: Path, pairs: list[tuple[str, str]]) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def main(backend: Path) -> None:
+def _sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _write_json(path: Path, data: dict) -> None:
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def rehash_contracts(root: Path) -> None:
+    """契约文件内容随改名变了：knowbase 的契约清单与两个下游锁文件里的 sha256 按改完的文件重算（仓目录名到 R3 才改）。"""
+    contracts = root / "knowledge-app/contracts"
+    for manifest in sorted(contracts.rglob("contract-manifest.json")):
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+        if "schema" in data:
+            data["sha256"] = _sha(manifest.parent / data["schema"])
+        for name in data.get("files", {}):
+            data["files"][name] = _sha(manifest.parent / name)
+        _write_json(manifest, data)
+    lock = root / "info-app/contracts/knowbase-provider-lock.json"
+    data = json.loads(lock.read_text(encoding="utf-8"))
+    data["sha256"] = _sha(root / "knowledge-app" / data["schema"])
+    _write_json(lock, data)
+    lock = root / "investment-app/contracts/knowbase-retrieval-provider-lock.json"
+    data = json.loads(lock.read_text(encoding="utf-8"))
+    for name in data["schemas"]:
+        data["schemas"][name] = _sha(contracts / "retrieval/v1" / name)
+    _write_json(lock, data)
+
+
+def rename_mcp_in_fixtures(root: Path) -> int:
+    """投资网页录下来的样例里，工具调用事件带 MCP 服务名（"server": "sunmoon_knowledge"），网页测试按改名后的名字断言。
+
+    样例整体不重录（早已过时，重录会带进大量无关变化）；这里只把服务名这一个词换成改名后后端会发的名字。
+    """
+    pattern = re.compile(r"(?<![\w-])sunmoon_knowledge(?![\w-])")
+    hits = 0
+    for path in sorted((root / "investment-app/investment-web-frontend/app/preview/fixtures").rglob("*.json")):
+        text = path.read_text(encoding="utf-8")
+        new, n = pattern.subn("sunmoon_knowbase", text)
+        if n:
+            path.write_text(new, encoding="utf-8")
+            hits += n
+    return hits
+
+
+def main(backend: Path, knowbase: Path | None = None, root: Path | None = None) -> None:
+    if root is not None:
+        rehash_contracts(root)
+        if rename_mcp_in_fixtures(root) == 0:
+            raise SystemExit("投资网页样例里没找到 sunmoon_knowledge：样例变了，先看清再改")
+    if knowbase is not None:
+        # 数据集登记的期望键里那段是 source_app 的值（采集应用登记时发的 'info' → 'knowfeed'）
+        edit(knowbase / "tests/test_dataset_registry_db.py", [
+            ('f"active/600009/info/ingestion-1/{BY}"', 'f"active/600009/knowfeed/ingestion-1/{BY}"'),
+        ])
     tests = backend / "tests"
     shutil.copy(HERE / "migrations/knowfeed_20261015_0014_rename.py", backend / "alembic/versions" / NEW_MIGRATION)
 
@@ -170,4 +227,4 @@ async def migrate(db, action):
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]).expanduser())
+    main(*[Path(a).expanduser() for a in sys.argv[1:]])

@@ -49,7 +49,7 @@
 
 | 存储 | 怎么做 |
 | --- | --- |
-| PostgreSQL | 新库 `knowfeed`、`knowbase` 与新角色由部署时的库初始化任务按新名建；迁移链从头跑，采集库的新迁移 `0014` 把 `info_*` 表、`info_collector` → `knowfeed_crawler`、两列与约束索引改成新名 |
+| PostgreSQL | 新库 `knowfeed`、`knowbase` 与新角色由部署时的库初始化任务按新名建；迁移链从头跑，采集库的新迁移 `0014` 只改结构：四张 `info_*` 表（`info_source`、`info_collector`、`info_document`、`info_document_version`）改成 `knowfeed_*`，名字带它们的约束、索引、序列跟着改名；列不改（采集器继续叫 collector） |
 | 对象存储 | 新桶 `knowfeed-originals` 由存储开通任务建；对象键前缀用新的 `knowfeed/` |
 | RabbitMQ、Redis | 新 vhost、队列、用户、键前缀由开通任务按新名建 |
 | 秘密 | 新私有目录按新名**全新生成**（stage 的初始化），取代前述「沿用旧口令」。为此 R1 删掉改名后组件目录里旧的 `*.sops.yaml`——它们在，stage 会按「已有库不许换口令」拒绝生成 |

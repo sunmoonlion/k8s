@@ -134,11 +134,13 @@ for n in info-app knowledge-app info-backend info-web-frontend info-admin-fronte
 
 | 仓 | 改什么 |
 | --- | --- |
-| 6 个子仓 | 构建脚本、`mybuild/`、说明、代码里的应用名与域名、环境变量名、`source_app` 与桶名的数据迁移（带回退） |
+| 6 个子仓 | 构建脚本、`mybuild/`、说明、代码里的应用名与域名、环境变量名、`source_app`；采集后端新迁移 `0014`（只改表结构：四张 `info_*` 表与相关约束、索引、序列改名，带回退；不搬数据） |
 | `info-app` / `knowledge-app` 父仓 | `.gitmodules`（子仓路径与 URL 换新名，submodule 的 name 一并换）、子仓目录 `git mv`、`AGENTS.md` 等说明、`.cursor/rules` |
 | `investment-app` | 跨应用键 `info` / `knowledge`、`destinations.ts`、`cross_app.py`、`KNOWLEDGE_*` 环境变量名 |
 | `k8s` | gitops `info-app/` → `knowfeed-app/` 等目录、`infrastructure/applications/` 的应用名表与 `deploy.yaml` / `verify.yaml`、`sources.yaml` 两块、存储名、Casdoor 声明、域名、`switch-test/human-local.sh`、`human-remote.sh` 的仓名表、各仓 `AGENTS.md` 里「五个协作仓」的名字 |
-| `tpl-app`、`runtime` | 只改提到这两个应用名的说明与脚本 |
+| `tpl-app`（含三个子仓）、`runtime` | 提到这两个应用名的说明、脚本、网页的跨应用配置与测试 |
+
+执行：工具在 `docs/rename-tools/`（用法见其 README）：`r1_apply.py` 一次做完改名计划、子仓目录与其余文件的 `git mv`、内容替换、手工补丁和下面两项 k8s 收尾；之后用改名后的知识后端重录知识库管理端的预览样例，`residual.py` 逐行过残留。
 
 **改名后的 knowfeed、knowbase 组件目录里，旧的 `*.sops.yaml` 一律 `git rm`**：存储从空的开始、秘密按新名全新生成，而 stage 看到组件目录里已有 `database/bootstrap.sops.yaml` 就按「已有库不许换口令」拒绝生成（`common/backend/prepare.yaml`）。
 
@@ -158,7 +160,10 @@ for d in info-app/knowfeed-backend info-app/knowfeed-web-frontend info-app/knowf
 done
 git -C ~/worktrees/qwen/info-app push origin qwen
 git -C ~/worktrees/qwen/knowledge-app push origin qwen
-for d in investment-app/investment-backend investment-app/investment-web-frontend; do git -C ~/worktrees/qwen/$d push origin HEAD:refs/heads/qwen; done
+for d in investment-app/investment-backend investment-app/investment-web-frontend investment-app/investment-admin-frontend \
+         tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend; do
+  git -C ~/worktrees/qwen/$d push origin HEAD:refs/heads/qwen   # 只推有改名提交的（R1 回执列出）
+done
 for r in investment-app runtime tpl-app k8s; do git -C ~/worktrees/qwen/$r push origin qwen; done
 ```
 
