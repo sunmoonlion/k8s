@@ -58,13 +58,13 @@ LOGIN 状态；knowfeed 与 knowbase 无此步。
 `application/services/durable_tasks.py` 与 `infrastructure/messaging/durable_delivery.py`
 提供事务意图、有限投递、租约/epoch、提交前 fencing、Inbox、死信、显式重放和对账。
 API 只接受持久意图；Beat 发 pump 提示，数据库 pump/consume 由 Worker 执行。
-Info 采集/索引/分发、Knowledge 摄入/轮询均已接入；Investment 在公共策略上扩展会话
-执行与 Redis 通知，不另建 publisher/死信真源。旧 Info 分发日志和旧 Agent 死信仅保留
+Knowfeed 采集/索引/分发、Knowbase 摄入/轮询均已接入；Investment 在公共策略上扩展会话
+执行与 Redis 通知，不另建 publisher/死信真源。旧 Knowfeed 分发日志和旧 Agent 死信仅保留
 受保护的回滚档案，不再接受新业务写入。
 
 broker ACK、控制探针 pong、已提交 Inbox、Provider 业务成功是不同证据。释放租约保留
 epoch 墓碑并显式标失效，立即重排不再依赖墙钟门槛；真实预约/退避仍按 DB 时间执行。
-Knowledge 对未知外部写入结果保留操作账并阻断盲目重传。**不能按固定天数直接删
+Knowbase 对未知外部写入结果保留操作账并阻断盲目重传。**不能按固定天数直接删
 Outbox/Inbox/死信/租约**：去重、回滚、Provider 回执和迟到执行者仍可能引用它们。
 归档或删除前必须先冻结重试/恢复/调查保护窗口，盘点全部逻辑引用，关闭新增引用并发，
 验证归档读取与隔离恢复；未知外部写、权限不足或归档损坏一律保留保护。
@@ -75,8 +75,8 @@ Outbox/Inbox/死信/租约**：去重、回滚、Provider 回执和迟到执行�
 | --- | --- | --- |
 | Agent run 幂等 | investment `infrastructure/agent/repositories.py` | `session_id` + `idempotency_key` |
 | Pilot run 幂等 | investment `pilot_repository.py` | `owner_actor_id` + `idempotency_key` |
-| 摄入任务幂等 | knowledge `knowledge_ingestion_service.py` | `idempotency_key` 命中则返回已有 job |
-| 分发幂等键 | info | `knowfeed-app:{version_id}:{dataset_key}:artifact-v1` |
+| 摄入任务幂等 | knowbase `knowledge_ingestion_service.py` | `idempotency_key` 命中则返回已有 job |
+| 分发幂等键 | knowfeed | `knowfeed-app:{version_id}:{dataset_key}:artifact-v1` |
 | 副作用一次性 | investment `side_effect_service.record_once` | `tool_call_id` 为 PK + `ON CONFLICT DO NOTHING` |
 | Resume 令牌一次性 | investment `pilot_repository.consume_resume` | 置位后不可复用 |
 

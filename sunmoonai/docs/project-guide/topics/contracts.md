@@ -17,7 +17,7 @@ DTO / Port / 前端 zod 都齐全，却仍能在**每个实例里各自未接线
 
 | 契约 | provider（schema 真源） | consumer（锁文件） | 传输 |
 | --- | --- | --- | --- |
-| **artifact v1** | `knowbase-app/contracts/artifact/v1/knowfeed-knowbase-artifact.schema.json` | `knowfeed-app/contracts/knowbase-provider-lock.json` | info → knowbase，HTTP 摄入 |
+| **artifact v1** | `knowbase-app/contracts/artifact/v1/knowfeed-knowbase-artifact.schema.json` | `knowfeed-app/contracts/knowbase-provider-lock.json` | knowfeed → knowbase，HTTP 摄入 |
 | **retrieval v1** | `knowbase-app/contracts/retrieval/v1/`（request / response / citation 三份 schema） | `investment-app/contracts/knowbase-retrieval-provider-lock.json` | investment → knowbase，HTTP 检索 |
 | **web-interaction v1** | `tpl-app/contracts/web-interaction-v1.consumer-vectors.json` | 各 App 后端 DTO + 各 Web 前端 zod | **同 App 内**后端 ↔ Web 前端 |
 

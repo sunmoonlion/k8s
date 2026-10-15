@@ -99,8 +99,8 @@ apply_file(args, "40-ingress.yaml")       # 5
    **不含 `10-migration`**（Job 跑完即删，不是稳态资源）。`drift` 只比对这四份。
    `server-dry-run` 又按 `release.json.resources` 数组顺序走，**与 apply 顺序不同**。
 
-三 App 差异：Investment 与 Knowledge 有步骤 0a 外部对账（RabbitMQ vhost / Redis ACL /
-knowledge active binding），Info 没有；Investment 在迁移前另有一步用 SQL 改 PG 角色 LOGIN 状态。
+三 App 差异：Investment 与 Knowbase 有步骤 0a 外部对账（RabbitMQ vhost / Redis ACL /
+knowledge active binding），Knowfeed 没有；Investment 在迁移前另有一步用 SQL 改 PG 角色 LOGIN 状态。
 
 ### 4.3 `release.json` 是发布的不可变输入
 
@@ -119,7 +119,7 @@ knowledge active binding），Info 没有；Investment 在迁移前另有一步�
 | `renderer_inputs_sha256` | render 输入文件指纹 |
 | `contains_credentials` | 须 `false` |
 
-App 特有：Investment 有 `knowledge_binding`；Knowledge 有 `retrieval_dataset_allowlist`
+App 特有：Investment 有 `knowledge_binding`；Knowbase 有 `retrieval_dataset_allowlist`
 与 `protected_provider_resources`。
 
 ## 5. 门禁
@@ -175,7 +175,7 @@ App 特有：Investment 有 `knowledge_binding`；Knowledge 有 `retrieval_datas
 ### 监控与告警：未接线，接线时按这几条判
 
 k8s 是采集与规则的主载体；tpl-app 提供公共受保护观测能力，按**模板优先**、
-Info → Knowledge → Investment **串行**同步；四个 App 只在接线确需改代码或配置时才改，不跨域读库。
+Knowfeed → Knowbase → Investment **串行**同步；四个 App 只在接线确需改代码或配置时才改，不跨域读库。
 
 **动手前先冻结**：目标环境、资源与存储预算、采集周期与保留期、负责人、告警阈值、
 通知接收渠道；核对有没有可复用的现成监控；确定受保护指标接口的**精确服务身份**、

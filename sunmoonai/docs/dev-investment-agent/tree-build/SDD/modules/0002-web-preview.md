@@ -34,8 +34,8 @@ pnpm preview            # 开发模式：改了页面马上看到
 | 应用 | 地址 |
 | --- | --- |
 | investment | `http://localhost:3100/__preview` |
-| info | `http://localhost:3110/__preview` |
-| knowledge | `http://localhost:3120/__preview` |
+| knowfeed | `http://localhost:3110/__preview` |
+| knowbase | `http://localhost:3120/__preview` |
 | 模板 | `http://localhost:3190/__preview` |
 
 远程机上开着的预览，所有者要在自己的浏览器里看，需要把端口转出来（例如 SSH 端口转发）。远程自己看页面用无头浏览器截图。
@@ -58,7 +58,7 @@ pnpm preview            # 开发模式：改了页面马上看到
 | 编号 | 换成固定的。重新录一遍，地址不变 |
 | 增量事件 | 没有录。账里不记它（账本 H27）；页面要流式显示时再补 |
 
-### info
+### knowfeed
 
 | 情景 | 内容 | 接口返回 |
 | --- | --- | --- |
@@ -67,7 +67,7 @@ pnpm preview            # 开发模式：改了页面马上看到
 
 管理端（审批、证券采集、关注清单）的样例没有录：管理端是另一个前端，第 8 步做它的页面时用同一个记录器录。
 
-### knowledge
+### knowbase
 
 只有机制，没有业务样例。数据目录的接口要到第 9 步才做，做出来之后再录。
 
@@ -135,8 +135,8 @@ PREVIEW_FIXTURES_OUT=<investment-web-frontend>/app/preview/fixtures \
 | 仓库 | 后端 | 网页端 | 上级仓库 |
 | --- | --- | --- | --- |
 | 模板 | `61d45d3` | `c5a6095` | `3f0d142` |
-| info | `c0152f9` | `2e3ab59` | `549d8c3` |
-| knowledge | `f31755e` | `b9c0d60` | `1e50def` |
+| knowfeed | `c0152f9` | `2e3ab59` | `549d8c3` |
+| knowbase | `f31755e` | `b9c0d60` | `1e50def` |
 | investment | `30afd8b` | `d60498d` | `8f032a8` |
 
 ## 八、预览说明不了什么

@@ -104,13 +104,13 @@ KIND 开发包新增 `./sunmoon app prepare-input` 准备入口：显式选基�
 该 manifest 原文不随目录清理重写；`test_evidence` 中的旧路径按
 [v5 历史索引](v5-history.md#architecture-v2-目录清退) 的固定提交查询。
 
-**实例同步顺序锁定为 `info → knowledge → investment`。**
+**实例同步顺序锁定为 `knowfeed → knowbase → investment`。**
 
 变更顺序固定（约束第 12 条「模板优先」）：
 
 ```
 模板设计与实现 → 模板过门禁 → 冻结 release manifest
-  → Info → Knowledge → Investment 串行同步 → 每个实例独立验收
+  → Knowfeed → Knowbase → Investment 串行同步 → 每个实例独立验收
 ```
 
 **公共缺陷必须先修模板、过门禁，再同步实例**；不得先改实例，也不得用模板覆盖实例的领域代码。
@@ -149,7 +149,7 @@ python3 -c "import json;print(json.load(open('k8s/sunmoonai/app-platform/knowfee
 ## 8. 当前 KIND 切换事实与剩余验收
 
 数据库 API/Worker/Scheduler/Migration 权限策略、独立连接键与 broker 预声明拓扑候选
-已在本机 KIND 完成 Info → Knowledge → Investment 串行切换：停写备份、每 App 两次
+已在本机 KIND 完成 Knowfeed → Knowbase → Investment 串行切换：停写备份、每 App 两次
 实际隔离恢复、独立迁移、运行身份授权与探针、新服务就绪后精确退出旧身份。
 三个 head 分别为 `20260913_0009`、`20260911_0006`、`20260911_0007`；三个 App
 API 2 / Worker 1 / Scheduler 1 / 两个前端各 2 就绪，drift 无差异。9 个新 DB 登录

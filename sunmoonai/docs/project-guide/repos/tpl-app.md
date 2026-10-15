@@ -10,7 +10,7 @@
 
 它也没有 `interfaces/endpoints/`（那是实例放领域路由的地方）。
 
-三个领域 App 从它实例化，同步顺序锁定为 `info → knowledge → investment`。
+三个领域 App 从它实例化，同步顺序锁定为 `knowfeed → knowbase → investment`。
 
 ## 2. 结构
 

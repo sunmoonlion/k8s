@@ -7,7 +7,7 @@
 知识域：消费 knowfeed 分发的不可变制品，校验后送入 RAGFlow 索引；向 investment 提供受契约
 约束的检索与引用。
 
-它是 Info→Knowledge→Investment 链的**中枢**，也是**两套跨仓契约的唯一提供方**——
+它是 Knowfeed→Knowbase→Investment 链的**中枢**，也是**两套跨仓契约的唯一提供方**——
 `contracts/` 下的 schema 是可编辑真源，另外两个仓只持锁文件。
 
 **RAGFlow 是派生系统**（约束第 5 条）：
@@ -201,7 +201,7 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 [Provider 内部解耦证据与历史入口](../topics/v5-history.md#knowbase-provider-内部解耦)；
 适配义务与兼容边界由 Knowbase Backend 的 `docs/knowbase-provider.md` 维护。
 
-运行身份隔离使用 Knowledge 自身的表列策略，包含 provider operation journal 的权限
+运行身份隔离使用 Knowbase 自身的表列策略，包含 provider operation journal 的权限
 边界；本机 KIND 已迁移至 `20260911_0006`，完成分角色身份切换和旧身份退出；既有
 codex-smoke 摄入绑定已应用，没有重放历史任务，不代表完整 Provider 业务验收。续作见
 [发布与门禁](../topics/release.md)。

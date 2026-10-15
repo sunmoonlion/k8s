@@ -169,7 +169,7 @@
 | 关注清单的表 | 见第四节 |
 | 关注清单的接口 | `GET /api/admin/security-watchlist`；`POST /api/admin/security-watchlist`（加入）；`POST /api/admin/security-watchlist/{代码}/removal`（移出） |
 | 批准接口多一个选项 | 批准时可同时加入关注清单 |
-| 配置：别的应用的名单 | 每个应用一项：名字、回跳地址的模板。默认有 `investment`、`knowledge` |
+| 配置：别的应用的名单 | 每个应用一项：名字、回跳地址的模板。默认有 `investment`、`knowbase` |
 | 配置：knowbase 网页端的地址 | 用来拼「去看这个数据集」的链接 |
 
 自动批准的申请，批准人记为「系统（关注清单）」。

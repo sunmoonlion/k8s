@@ -19,8 +19,8 @@
 | 应用 | 一句话 | 用户来这里做什么 | 管理员来这里做什么 |
 | --- | --- | --- | --- |
 | investment | 用数据做研究 | 聊天、让代理干活、请专家 | —（第一期没有管理页） |
-| knowledge | 有什么数据、怎么定义、怎么给 | 看有哪些公司的数据、数据到哪一天、口径怎么算 | 看数据集的版本、工具的调用情况 |
-| info | 把数据弄进来 | 申请「我要这家公司的数据」，看进度 | 批准申请、发起采集、看批次 |
+| knowbase | 有什么数据、怎么定义、怎么给 | 看有哪些公司的数据、数据到哪一天、口径怎么算 | 看数据集的版本、工具的调用情况 |
+| knowfeed | 把数据弄进来 | 申请「我要这家公司的数据」，看进度 | 批准申请、发起采集、看批次 |
 
 分工的原则：一件事只在一个应用里办。别的应用要用，就用链接把用户带过去，不各做一份。
 
@@ -30,10 +30,10 @@
 公开网站（巨潮、东方财富）
       │ 采集
       ▼
-    info ──原件、数据集文件──→ 对象存储
+    knowfeed ──原件、数据集文件──→ 对象存储
       │ 登记「有一个新版本」
       ▼
-  knowledge ──按登记的位置取文件
+  knowbase ──按登记的位置取文件
       │ 工具（MCP）
       ▼
   沙箱里的 Codex ←── 方向盘在用户或专家手里
@@ -90,20 +90,20 @@
 | --- | --- | --- | --- |
 | investment | knowfeed 申请页 | `/<语言>/requests/new?code=&from=investment&ref=` | 工具答复没有数据时；导航 |
 | investment | knowbase 数据目录 | `/<语言>/catalog?from=investment` | 导航 |
-| knowledge | knowfeed 申请页 | `/<语言>/requests/new?code=&from=knowledge&ref=` | 数据目录里找不到公司时 |
-| info | knowbase 数据集页 | `/<语言>/catalog/<数据集>` | 申请变成「可用」之后 |
+| knowbase | knowfeed 申请页 | `/<语言>/requests/new?code=&from=knowbase&ref=` | 数据目录里找不到公司时 |
+| knowfeed | knowbase 数据集页 | `/<语言>/catalog/<数据集>` | 申请变成「可用」之后 |
 | knowfeed、knowbase | investment | 配置里登记的回跳地址 | 「回到原处」 |
 
 ### 4.2 后端之间的调用
 
 | 从 | 到 | 做什么 | 状态 |
 | --- | --- | --- | --- |
-| info | knowledge | 登记数据集的新版本 | 已做 |
-| knowledge | 对象存储 | 按登记的位置取数据集文件 | 已做 |
-| 沙箱里的 Codex | knowledge | 工具（MCP），用工作台签发的令牌 | 已做 |
+| knowfeed | knowbase | 登记数据集的新版本 | 已做 |
+| knowbase | 对象存储 | 按登记的位置取数据集文件 | 已做 |
+| 沙箱里的 Codex | knowbase | 工具（MCP），用工作台签发的令牌 | 已做 |
 | 沙箱里的 Codex | investment 工作台 | 读项目里别的对话的记录（MCP） | **新增**，见 [`investment.md`](investment.md) |
-| investment 工作台 | info | 问「这家有没有数据」、在自己的页面里显示申请进度 | 第二期 |
-| investment | knowledge | 文档检索 | 已撤销（旧运行时的，2026-09-29） |
+| investment 工作台 | knowfeed | 问「这家有没有数据」、在自己的页面里显示申请进度 | 第二期 |
+| investment | knowbase | 文档检索 | 已撤销（旧运行时的，2026-09-29） |
 
 第一期三个应用的后端之间不新增调用，只新增「沙箱到工作台」这一条。
 
@@ -190,14 +190,14 @@
 | 步 | 内容 | 应用 | 依赖 |
 | --- | --- | --- | --- |
 | 1 | 对话库的试验，定下用哪个。**已做**（2026-09-29）：shadcn 自己的聊天组件 | investment | — |
-| 2 | 采集申请的后端：两张表、七个接口、关注清单、测试。**已做**（2026-09-29），见 [`0008-info-intake`](../../SDD/modules/0008-info-intake.md) | info | — |
+| 2 | 采集申请的后端：两张表、七个接口、关注清单、测试。**已做**（2026-09-29），见 [`0008-info-intake`](../../SDD/modules/0008-info-intake.md) | knowfeed | — |
 | 3 | 本机联调：申请 → 批准 → 采集 → 专家查得到。**已做**（2026-09-29） | knowfeed、knowbase | 第 2 步 |
 | 4 | 工作台后端：项目、对话的种类、专家入口、项目记录的工具、「没有数据」的事件。**已做**（2026-09-29），见 [`0001-workbench-projects`](../../SDD/modules/0001-workbench-projects.md) | investment | — |
 | 5 | 跨应用跳转的约定写进模板，同步到三个应用。**已做**（2026-09-29），见 [跨应用跳转](../../SDD/architecture/cross-app-links.md) | 模板 | — |
 | 6 | 预览模式与样例数据。**已做**（2026-10-04），见 [`0002-web-preview`](../../SDD/modules/0002-web-preview.md)。knowbase 只有机制，样例等第 9 步的接口。**补充（2026-10-04）**：实时花费与随时停止的后端，见 [`0001-workbench-projects`](../../SDD/modules/0001-workbench-projects.md) 第十节 | 三个应用 | 第 2、4 步的接口定稿 |
 | 7 | investment 的页面：框架与导航 → 聊天 → 工作 → 专家 → 项目 → 底稿 → 机器与设置。**已做**（2026-10-04，六段），见 [`0002-web-pages`](../../SDD/modules/0002-web-pages.md)。只在预览里看过；细节清单在那一份的第八节 | investment | 第 1、4、6 步 |
-| 8 | knowfeed 的页面：申请、我的申请、审批、证券采集、关注清单。**已做**（2026-10-04），见 [`0008-info-pages`](../../SDD/modules/0008-info-pages.md)。用户的三页在预览里看过；所有者的三页只有测试，没有在浏览器里看过 | info | 第 2、5、6 步 |
-| 9 | knowbase 的页面：数据目录、数据集、口径。**已做**（2026-10-04），见 [`0006-knowledge-pages`](../../SDD/modules/0006-knowledge-pages.md)。用户的两页在预览里看过；所有者的一页只有测试，没有在浏览器里看过 | knowledge | 第 5、6 步；一个新的只读接口 |
+| 8 | knowfeed 的页面：申请、我的申请、审批、证券采集、关注清单。**已做**（2026-10-04），见 [`0008-info-pages`](../../SDD/modules/0008-info-pages.md)。用户的三页在预览里看过；所有者的三页只有测试，没有在浏览器里看过 | knowfeed | 第 2、5、6 步 |
+| 9 | knowbase 的页面：数据目录、数据集、口径。**已做**（2026-10-04），见 [`0006-knowledge-pages`](../../SDD/modules/0006-knowledge-pages.md)。用户的两页在预览里看过；所有者的一页只有测试，没有在浏览器里看过 | knowbase | 第 5、6 步；一个新的只读接口 |
 | 10 | 在集群上验 | 全部 | 集群迁移完成 |
 
 每一步做完停下汇报。会动部署的地方（数据库迁移、配置项、沙箱里多一个工具服务）做的时候记进 [迁移账本](../../pending-after-migration.md)，不动部署目录。
@@ -207,7 +207,7 @@
 | 规则 | 出处 |
 | --- | --- |
 | 四条分层规则，自动检查拦着 | [工程结构](../../SDD/architecture/engineering.md) |
-| 改动先在模板里做，再同步，顺序 knowfeed → knowledge → investment | 同上 |
+| 改动先在模板里做，再同步，顺序 knowfeed → knowbase → investment | 同上 |
 | 集群迁移期间不动部署目录；影响迁移的只记账 | [迁移账本](../../pending-after-migration.md) |
 | 留待后面做的事记进账本，做完改状态，不删行 | [工程结构整改的账本](../../structure-ledger.md) |
 | 只推 `fable` 分支；合入 `master` 要所有者明说 | 工作约定 |

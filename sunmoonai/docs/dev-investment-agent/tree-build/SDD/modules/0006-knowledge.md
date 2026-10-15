@@ -32,7 +32,7 @@ A 股非金融三大表与附注：入库的三大表、附注表提取工具、
 
 数据集来源（2026-09-25）：本地路径优先；容器里从对象存储按 `s3://bucket/key` 加 sha256 钉版取到 `/tmp`（`dataset_store.py`），第一次工具调用时取，不匹配不用。KIND 开发包：ConfigMap 五个 `KNOWBASE_DATASET_*`/`KNOWBASE_MCP_RATE_PER_MINUTE` 键、api 容器可选引用 Secret `knowbase-mcp-tokens`、api 出站加 80（MinIO）；桶 `development-knowbase-datasets` 只读进 `storage-access-bootstrap/config/access.json`。
 
-令牌（2026-09-25，D10）：配了 `KNOWBASE_MCP_JWT_PUBLIC_KEY`（Secret `knowbase-mcp-tokens/jwt-public-key.pem`）时，三段式令牌按 ES256 验签，`aud=knowledge`、`exp`、可选 `iss`，`sub`/`sandbox`/`tools` 即授权；静态表共存。工作台每次拉起或撤换沙箱都按用户签一枚，经供给器进沙箱 Secret（`F-KNOW-03` 完成）。未做：`F-KNOW-04` 用户资料入库；检索与领域工具（第一切口）；异常调用上报只到日志与计数。
+令牌（2026-09-25，D10）：配了 `KNOWBASE_MCP_JWT_PUBLIC_KEY`（Secret `knowbase-mcp-tokens/jwt-public-key.pem`）时，三段式令牌按 ES256 验签，`aud=knowbase`、`exp`、可选 `iss`，`sub`/`sandbox`/`tools` 即授权；静态表共存。工作台每次拉起或撤换沙箱都按用户签一枚，经供给器进沙箱 Secret（`F-KNOW-03` 完成）。未做：`F-KNOW-04` 用户资料入库；检索与领域工具（第一切口）；异常调用上报只到日志与计数。
 
 ## 多数据集（2026-09-27，已做，未部署）
 

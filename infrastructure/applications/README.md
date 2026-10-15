@@ -85,7 +85,7 @@ bootstrap对已晋级版本串联render/validate→Flux apply→check，Jobs先�
 
 check除Ready/镜像/Job/真实账号权限外，还验API→Celery Worker、Scheduler限定tick、浏览器PKCE/SSR/session/跨surface拒绝/CSRF/logout。普通check连接内部候选后端，public检查走正式30443；真实浏览器UI点击、所有业务功能不由该协议模拟覆盖。入口切换按[entry维护](../entry/README.md#配置或域名切换)。
 
-Info S3检查通过实际适配器写两个随机版本读回摘要并核权限；Knowledge启用关系时走真实Info HTTP身份→Outbox/Worker/RAG→Investment HTTPS领域检索。探针会写入随机数据并精确清理，provider失败记录和原文保留直到可安全处理，禁止整桶/整库删除。
+Knowfeed S3检查通过实际适配器写两个随机版本读回摘要并核权限；Knowbase启用关系时走真实Knowfeed HTTP身份→Outbox/Worker/RAG→Investment HTTPS领域检索。探针会写入随机数据并精确清理，provider失败记录和原文保留直到可安全处理，禁止整桶/整库删除。
 
 ## 恢复、代次与边界
 

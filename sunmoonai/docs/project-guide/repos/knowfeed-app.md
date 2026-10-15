@@ -26,7 +26,7 @@
 | --- | --- |
 | `application/collectors/` | 采集器族 + 注册表，见 §4.1 |
 | `application/services/info_crawl_service.py` | **本仓最大单文件**（约 1.8k 行），采集/去重/治理/分发编排 |
-| `application/services/delivery_outbox.py` | 公共 Outbox 的 Info 分发领域适配 |
+| `application/services/delivery_outbox.py` | 公共 Outbox 的 Knowfeed 分发领域适配 |
 | `interfaces/endpoints/info_routes.py` | 领域路由（模板面在 `interfaces/http/`） |
 | `interfaces/schemas/info.py` | 领域 schema |
 | `infrastructure/messaging/delivery_handlers.py` | 采集、索引、分发的领域 handler 注册 |
@@ -34,9 +34,9 @@
 | `infrastructure/search/` | ES/OpenSearch 索引适配（**默认关闭**） |
 | `infrastructure/external/knowbase_app.py` | 调 knowbase 摄入的客户端 |
 | `infrastructure/external/crawl_http.py` | 正文、RSS/API discovery 的公网抓取策略；不用于受信内部服务 |
-| `infrastructure/storage/crawl_concurrency.py` | Info 专用跨进程来源准入；独立 PostgreSQL 事务锁 |
+| `infrastructure/storage/crawl_concurrency.py` | Knowfeed 专用跨进程来源准入；独立 PostgreSQL 事务锁 |
 | `domain/info_identity_v1.py` / `cli/identity_preflight.py` | 冻结的 URL 身份策略、迁移前只读冲突核查 |
-| `application/services/artifact_reconciliation.py` / `cli/reconcile_artifacts.py` | Info S3 与 RawArtifact 双向、分页只读对账；无自动清理 |
+| `application/services/artifact_reconciliation.py` / `cli/reconcile_artifacts.py` | Knowfeed S3 与 RawArtifact 双向、分页只读对账；无自动清理 |
 | `cli/drain_delivery_outbox.py` | 兼容公共 pump，仅接受批量上限 100 |
 | `contracts/knowbase-provider-lock.json` | artifact 契约的**消费锁** |
 
@@ -113,7 +113,7 @@ B4 源码候选：S3 写后严格按回执 VersionId 核验，拒绝无版本写
 创建作业时 `enqueue=false` 只建单；`run` 接口持久排队，不在请求内采集。
 索引重建响应 `queued` 表示排队数，`indexed=0` 不宣称后台已完成。
 
-### 4.3 分发 → knowledge
+### 4.3 分发 → knowbase
 
 ```
 校验制品可分发性 → 组装 artifact v1 payload
@@ -157,7 +157,7 @@ B7c 创建按版本、目标 App 和 dataset 复用同一逻辑交付；NULL/空
 | `outbox_dead_letter` / `outbox_execution` | 公共死信与执行租约 | 有限重试、恢复与 fencing |
 
 迁移保留旧消息 ID 和完成回执；历史 pending 采集需盘点后显式排队，不能猜测 enqueue。
-降级拒绝未排空领域命令；详细切换、备份与回滚见 Info 后端 `docs/durable-delivery-luna.md`。
+降级拒绝未排空领域命令；详细切换、备份与回滚见 Knowfeed 后端 `docs/durable-delivery-luna.md`。
 
 `knowfeed_document.metadata_json` 是治理审计的载体（review_history / audit_log，
 含 correlation_id / actor / reason）。治理动作用 `expected_updated_at` 做乐观并发。
@@ -190,7 +190,7 @@ subject/audience 绑定与 `delivery:observe` 授权；不接受浏览器 Cookie
 | 内置 Scrapy/Playwright 爬虫 | 不内嵌，须外部注入结果 |
 | Web interaction 生产可用 | 同模板：默认 503 |
 
-共享健康、进展指标与身份策略沿用模板。Info 的领域表列权限需用本仓策略，不能照搬
+共享健康、进展指标与身份策略沿用模板。Knowfeed 的领域表列权限需用本仓策略，不能照搬
 模板空领域授权；本机 KIND 已迁移至 `20260913_0009`，完成分角色身份切换和旧身份退出。
 完整业务 UAT 仍未闭合，详见 [发布现状](../topics/release.md#8-当前-kind-切换事实与剩余验收)。
 最新边界与续作入口见[发布与门禁](../topics/release.md)。
@@ -205,7 +205,7 @@ uv run pytest tests/test_kernel_invariants.py -q      # 6 项
 # 单次 outbox 扫描
 uv run python -m app.cli.drain_delivery_outbox --limit 100
 
-# 受权 Info S3/DB 只读配置下运行；报告/cursor 可能含文件名，不公开传播
+# 受权 Knowfeed S3/DB 只读配置下运行；报告/cursor 可能含文件名，不公开传播
 uv run python -m app.cli.reconcile_artifacts --mode inventory --limit 50
 uv run python -m app.cli.reconcile_artifacts --mode references --limit 50
 ```

@@ -30,14 +30,14 @@
 
 | 配置 | 含义 | 例 |
 | --- | --- | --- |
-| `CROSS_APP_SOURCES_JSON` | 哪些应用可以把用户带到这里，各自的回跳地址。没写回跳地址的，页面上不显示「回到原处」 | `{"investment": {"return_url": "https://…/zh-CN/workbench?ref={ref}"}, "knowledge": {}}` |
-| `CROSS_APP_TARGETS_JSON` | 这个应用会把用户带去哪些应用，各自网页端的地址。没配的，页面上不显示去那里的链接 | `{"info": {"web_base_url": "https://knowfeed.example"}}` |
+| `CROSS_APP_SOURCES_JSON` | 哪些应用可以把用户带到这里，各自的回跳地址。没写回跳地址的，页面上不显示「回到原处」 | `{"investment": {"return_url": "https://…/zh-CN/workbench?ref={ref}"}, "knowbase": {}}` |
+| `CROSS_APP_TARGETS_JSON` | 这个应用会把用户带去哪些应用，各自网页端的地址。没配的，页面上不显示去那里的链接 | `{"knowfeed": {"web_base_url": "https://knowfeed.example"}}` |
 
 | 应用 | 默认认谁带来的用户 | 默认带用户去哪 |
 | --- | --- | --- |
 | 模板 | 谁都不认 | 哪都不去 |
-| info | investment、knowbase，都没有回跳地址 | 哪都不去 |
-| knowledge | investment、knowfeed，都没有回跳地址 | 哪都不去 |
+| knowfeed | investment、knowbase，都没有回跳地址 | 哪都不去 |
+| knowbase | investment、knowfeed，都没有回跳地址 | 哪都不去 |
 | investment | 谁都不认 | 哪都不去 |
 
 | 配置写错了 | 后果 |
@@ -78,12 +78,12 @@
 
 | 应用 | 键 | 去哪 | 路径 | 业务参数 |
 | --- | --- | --- | --- | --- |
-| investment | `info.request` | info | `requests/new` | `code` |
-| investment | `knowledge.catalog` | knowledge | `catalog` | — |
-| investment | `knowledge.dataset` | knowledge | `catalog/<数据集>` | — |
-| knowledge | `info.request` | info | `requests/new` | `code` |
-| info | `knowledge.dataset` | knowledge | `catalog/<数据集>` | — |
-| info | `knowledge.catalog` | knowledge | `catalog` | — |
+| investment | `info.request` | knowfeed | `requests/new` | `code` |
+| investment | `knowledge.catalog` | knowbase | `catalog` | — |
+| investment | `knowledge.dataset` | knowbase | `catalog/<数据集>` | — |
+| knowbase | `info.request` | knowfeed | `requests/new` | `code` |
+| knowfeed | `knowledge.dataset` | knowbase | `catalog/<数据集>` | — |
+| knowfeed | `knowledge.catalog` | knowbase | `catalog` | — |
 
 用法：
 
@@ -111,15 +111,15 @@ knowfeed 做采集申请时先写过一份专用的（2026-09-29，`3b5d037`）�
 | 仓库 | 后端 | 网页端 | 上级仓库 |
 | --- | --- | --- | --- |
 | 模板 | `742fc11` | `0030678` | `f2546d7` |
-| info | `c55b2a8` | `9127094` | `64df53d` |
-| knowledge | `966d6d5` | `4af70ec` | `470b1b9` |
+| knowfeed | `c55b2a8` | `9127094` | `64df53d` |
+| knowbase | `966d6d5` | `4af70ec` | `470b1b9` |
 | investment | `f99c398` | `f4be400` | `8618343` |
 
 都在 `fable` 分支。四个网页端的仓库原来没有 `fable` 分支，这次建了。
 
 ## 六、验证
 
-| 检查 | 模板 | info | knowledge | investment |
+| 检查 | 模板 | knowfeed | knowbase | investment |
 | --- | --- | --- | --- | --- |
 | 后端全部测试 | 316 过，5 跳过 | 1131 过，13 跳过 | 908 过，5 跳过 | 752 过，5 跳过 |
 | 后端代码检查、类型检查、分层四条规则 | 过 | 过 | 过 | 过 |
