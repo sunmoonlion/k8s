@@ -245,7 +245,7 @@ FRONT_ONLY = {len(R) - 2, len(R) - 1}
 def scope(root: Path) -> list[str]:
     files: list[str] = []
     for repo in REPOS:
-        out = subprocess.run(["git", "-C", str(root / repo), "ls-files", "--recurse-submodules"], capture_output=True, text=True)
+        out = subprocess.run(["git", "-c", "core.quotepath=off", "-C", str(root / repo), "ls-files", "--recurse-submodules"], capture_output=True, text=True)
         names = out.stdout.splitlines() if out.returncode == 0 else [
             str(p.relative_to(root / repo)) for p in (root / repo).rglob("*") if p.is_file()]
         for n in names:
@@ -308,7 +308,7 @@ def moves(root: Path) -> dict[str, str]:
                 dirs["/".join(old_parts[:i])] = "/".join(new_parts[:i])
     out = {}
     for repo in REPOS:
-        listing = subprocess.run(["git", "-C", str(root / repo), "ls-files", "--recurse-submodules"], capture_output=True, text=True).stdout
+        listing = subprocess.run(["git", "-c", "core.quotepath=off", "-C", str(root / repo), "ls-files", "--recurse-submodules"], capture_output=True, text=True).stdout
         for n in listing.splitlines():
             rel = f"{repo}/{n}"
             if rel in renamed:
