@@ -468,6 +468,17 @@ cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen && git log --oneline -
 
 要看到：快进成功（不能快进就停，贴输出）；`git status` 仍是 R5.1 留下的那些改动。
 
+**0.5 补工作区工具**（`.tools` 不进 Git，R3 重新检出后可能缺——R5.1 就缺过 `helm`。`flux-release` 要 `flux`，`entry-deploy` 要 `docker-compose`，检查要 `mc`；两条都从本地物料装、核字节、不连外网，已装好的照样核一遍）：
+
+```bash
+ls infrastructure/.tools/bin/
+make -C infrastructure install-flux; echo "flux exit=$?"
+make -C infrastructure install-binaries BINARIES=kubectl,compose,mc; echo "binaries exit=$?"
+ls infrastructure/.tools/bin/
+```
+
+要看到：两个 `exit=0`；`.tools/bin/` 里有 `flux`、`kubectl`、`docker-compose`、`mc`。
+
 **1. Windows hosts**（四个新域名跟旧名同一行；会弹一次 UAC，请所有者点「是」）：
 
 ```bash
