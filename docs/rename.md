@@ -341,18 +341,19 @@ pins = {
 }
 p = pathlib.Path("infrastructure/applications/sources.yaml"); s = p.read_text()
 for app, (parent, backend, web, admin) in pins.items():
-    m = re.search(rf"(?ms)^  {app}:\n(?:(?!^  \S).*\n?)*", s); assert m, app
+    m = re.search(rf"(?m)^  {app}:\n(?:(?!^  \S).*\n?)*", s); assert m, app
     block = new = m.group(0)
     for field, value in [("parent_revision", parent), ("backend_parent_revision", backend), ("backend_revision", backend),
                          ("web_parent_revision", web), ("web_revision", web), ("admin_parent_revision", admin), ("admin_revision", admin)]:
-        new, n = re.subn(rf"(?m)^(    {field}: )\w+", rf"\g<1>{value}", new); assert n == 1, (app, field)
+        new, n = re.subn(rf"(?m)^(    {field}: )\w+", rf"\g<1>{value}", new); assert n == 1, (app, field, n)
     s = s.replace(block, new, 1)
 p.write_text(s)
 PY
+echo "第 1 步 python exit=$?"
 git diff --stat infrastructure/applications/sources.yaml
 ```
 
-要看到：只动 `sources.yaml`，28 行（tpl、knowfeed、knowbase、investment 各 7 行）。
+要看到：`第 1 步 python exit=0`（不是 0 就停：末行的 `git diff` 会把整段的退出码盖成 0，以这一行为准）；只动 `sources.yaml`，28 行（tpl、knowfeed、knowbase、investment 各 7 行）。
 
 **2. 沙箱与供给器改钉到 R1 的 k8s 提交**（会合点不动）：
 
@@ -362,15 +363,16 @@ import re, pathlib
 p = pathlib.Path("infrastructure/applications/component-images.yaml"); s = p.read_text()
 R1 = "c5905fe2e8ab16a0bc2deddd57bd3fee30907578"
 for name in ("sandbox-provisioner", "sandbox"):
-    m = re.search(rf"(?ms)^  {name}:\n(?:(?!^  \S).*\n?)*", s); assert m, name
-    block = m.group(0); new, n = re.subn(r"(?m)^(    revision: )\w+", rf"\g<1>{R1}", block); assert n == 1, name
+    m = re.search(rf"(?m)^  {name}:\n(?:(?!^  \S).*\n?)*", s); assert m, name
+    block = m.group(0); new, n = re.subn(r"(?m)^(    revision: )\w+", rf"\g<1>{R1}", block); assert n == 1, (name, n)
     s = s.replace(block, new, 1)
 p.write_text(s)
 PY
+echo "第 2 步 python exit=$?"
 git diff infrastructure/applications/component-images.yaml | grep '^[-+] ' ; git merge-base --is-ancestor c5905fe2 HEAD && echo "HEAD 是 R1 的后代"
 ```
 
-要看到：只有 `sandbox-provisioner`、`sandbox` 两行 `revision` 变；`relay` 与顶层 `revision` 不变。
+要看到：`第 2 步 python exit=0`；只有 `sandbox-provisioner`、`sandbox` 两行 `revision` 变；`relay` 与顶层 `revision` 不变。
 
 **3. 构建**（六个对象；时间长，挨个来，哪个不是 0 就停）：
 
@@ -408,6 +410,8 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 ```
 
 要看到：第 1 节「不可变 Job」**0 条**（有一条就停：Flux 套用时会被拒）。报告整份随回执提交，Opus 逐条审第 3–6 节。
+
+> 2026-10-15 第一次执行停在第 1 步（`R5.1-qwen.20261015-1531.md`）：块正则带了 `s`（dotall），第一个块吞掉了全部四个应用，`assert` 拦住、文件未改。已改为 `(?m)`，第 1、2 步在 `sources.yaml`、`component-images.yaml` 的副本上实跑核过（28 行、两行，各应用各自的提交）。从第 1 步重跑。
 
 **停点**：**不提交 stage 结果**（工作区保持原样，R5.2 再提交）。回执 `R5.1-qwen.<时间>.md`（R5.0 与 1–5 步的输出）连同比对报告只把这两个文件提交、直接推：`git add docs/rename-receipts/R5.1-* && git -c core.editor=true commit -m "rename: R5.1 回执（Qwen）" && git push origin qwen`。Opus 审过在本节写「R5.1 通过」才做 R5.2。
 
