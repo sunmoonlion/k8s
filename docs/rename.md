@@ -297,39 +297,208 @@ bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh knowledge-app knowbas
 
 ## R5 集群切换 — Qwen（本地机）
 
-> **逐条命令由 Opus 在 R1 完成后填入下面各小节。本段状态写成「可执行」之前，不得开始。** 所有者 2026-10-15 定现有数据都不要，所以本段不备份、不改库名、不搬桶，新应用从空的开始。
+> **状态写「可执行」之前不得开始。** 所有者 2026-10-15 定现有数据都不要：不备份、不改库名、不搬桶，knowfeed、knowbase 按新名从空的开始；investment、tpl 的数据不动。R5 期间 Opus 不往 k8s 推任何东西（回执直接 `git push`，不用先拉；被拒就停）。
+>
+> 命令块都在 **bash** 里跑（先敲 `bash` 进去再贴，规矩 9）；任何一步 `exit` 不是 0 就停在那一步，输出原样进回执，不重试、不退回。
 
-### R5.1 渲染与渲染比对
+**这一轮动什么**（Opus 2026-10-15 核过）：
+- 四个应用都改钉到 R1 的提交（tpl 也要：R1 改了它的跨应用配置与后端配置）。除改名外只多带了两样已审过的东西：0014 U2「按令牌所属组织把关两个入口」（investment 现网早已有，`WEB_CASDOOR_ORGANIZATIONS` 由共用身份模板给全部应用）与 knowbase 的 Olist 样例数据集代码（只是定义与脚本，不跑）。
+- 沙箱镜像与沙箱供给器重建：MCP 服务名 `sunmoon_knowbase`、环境变量 `KNOWBASE_MCP_URL` / `KNOWBASE_MCP_TOKEN` 两边要一起换。会合点不动。
+- 重新 stage 的共享组件：traefik（内部访问的键 `knowbase`）、elk 日志采集（应用名单）、沙箱供给器。
+- 宿主入口 HAProxy 按新域名分流（`entry-deploy`）；Windows hosts 加四个新域名。
+- **旧对象不会被自动删**：Flux 根与各阶段都是 `prune: false`。晋级后旧应用的 Deployment / Job / Secret 照常留在集群里继续跑（这正是退路），旧阶段 `info-*` / `knowledge-*` 的 Flux Kustomization 因路径不在了会显示失败——**属预期，R5 不碰**，R6 按清单删。
 
-`platform-stage` 依次处理 knowfeed、knowbase、investment（以及沙箱镜像，MCP 服务名改了）：新私有目录 `/etc/sunmoon/applications/sunmoon-kind/knowfeed`、`…/knowbase` 与备份目录由 stage 全新生成；渲染出全部新声明 → **渲染比对**：把改名前（R0 时的提交）与 stage 后的渲染产物逐个对象比对，列出除名字以外的差异（比对命令由 Opus 填）。
+### R5.0 前提（只读）
 
-**停点**：Opus 审比对结果。
+```bash
+cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen && git log --oneline -1 && git status --short | head -3
+for d in knowfeed-app knowfeed-app/knowfeed-backend knowfeed-app/knowfeed-web-frontend knowfeed-app/knowfeed-admin-frontend \
+         knowbase-app knowbase-app/knowbase-backend knowbase-app/knowbase-web-frontend knowbase-app/knowbase-admin-frontend \
+         investment-app investment-app/investment-backend investment-app/investment-web-frontend investment-app/investment-admin-frontend \
+         tpl-app tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend; do
+  printf '%-42s %s\n' "$d" "$(git -C ~/worktrees/qwen/$d rev-parse HEAD)"; done
+make -C infrastructure platform-status; echo "exit=$?"
+systemctl cat sunmoon-platform.target | grep -E '^(Requires|Wants)='
+grep -n "sunmoonai" /mnt/c/Windows/System32/drivers/etc/hosts
+df -h / | tail -1
+```
 
-### R5.2 构建、发布、晋级
+要看到：k8s 干净、含本节；十六个提交号等于 R5.1 第 1 步脚本里的值（R1 提交）；`platform-status` 0；`sunmoon-platform.target` 那一行是 **`Wants=`**（是 `Requires=` 就停——那时单独停入口会把 Harbor 和集群一起停掉，见 `infrastructure/entry/README.md`）；Windows hosts 里含 `info.sunmoonai.com`、含 `knowledge.sunmoonai.com` 的有效行**各恰好一行**（不是就停，把这几行贴进回执）。
 
-构建新镜像（knowfeed、knowbase 的后端与两个网页，investment 的后端与网页，沙箱镜像）→ 提交 → `flux-release` → 晋级 → `flux-source-apply`。晋级后 Flux 随旧目录消失自动删除旧应用的 k8s 对象；新应用的库初始化、开通（Casdoor 应用与服务身份、桶、vhost、Redis 用户）、迁移任务按新名在空的基础上跑。
+### R5.1 改钉、构建、暂存、渲染比对
 
-**停点**：Opus 审回执（各任务完成、迁移头 = `20261015_0014` / knowbase 现头）。
+**1. 改钉**（四个应用各七行）：
 
-### R5.3 验证
+```bash
+cd ~/worktrees/qwen/k8s
+python3 - <<'PY'
+import re, pathlib
+pins = {
+  "tpl":        ["af00d65906a993dbaa7166b54ff9133b2ceab45b", "3c3d252be417a52b2e2bfb0a3cb09e68c6d1cb0f", "3b83285eeac599af5779276d2de7ba3bed3d4364", "8f8338e8685bd4d0b1bc17d472687b7d2e630045"],
+  "knowfeed":   ["1fd9da0f3d8fa23255eca669abe8d34afce69a3b", "ecce5c797d69565c1d24b903d4d4d61615e99a63", "327c5260af227aed664ae8cfca7a5f9a08a093d4", "3f01f34bb308c2c7d200d2ffa18847386490c3d2"],
+  "knowbase":   ["ba6c77cdd2e8da59e60fa97ddc72d93d99ff8d21", "1d8fa105cf4469df507c50664ba4c2ead37cac1a", "3fd93126052b6519b9a34c4e956b9784852b1499", "1ae7ed73d576290558a31a0d20ec28eb57125b54"],
+  "investment": ["eb1f80074c1a3d15b24018c002edd9812d0e34c8", "a6e6ceb2c0c70204ec11295fa9088e5eb53701ac", "0dd55a564615a29c43e394890b427c0886352f8c", "c3c1e1d0524816df006acf250d8767282d8d8ac7"],
+}
+p = pathlib.Path("infrastructure/applications/sources.yaml"); s = p.read_text()
+for app, (parent, backend, web, admin) in pins.items():
+    m = re.search(rf"(?ms)^  {app}:\n(?:(?!^  \S).*\n?)*", s); assert m, app
+    block = new = m.group(0)
+    for field, value in [("parent_revision", parent), ("backend_parent_revision", backend), ("backend_revision", backend),
+                         ("web_parent_revision", web), ("web_revision", web), ("admin_parent_revision", admin), ("admin_revision", admin)]:
+        new, n = re.subn(rf"(?m)^(    {field}: )\w+", rf"\g<1>{value}", new); assert n == 1, (app, field)
+    s = s.replace(block, new, 1)
+p.write_text(s)
+PY
+git diff --stat infrastructure/applications/sources.yaml
+```
 
-`application-check APP=knowfeed`、`APP=knowbase`、`APP=investment` → 浏览器打开两个新域名能登录（管理员作用域 `knowfeed:admin` / `knowbase:admin`）→ 投资里跨应用跳转可用、知识检索工具能连上（此时还没有数据集，查不到内容属正常）。
+要看到：只动 `sources.yaml`，28 行（tpl、knowfeed、knowbase、investment 各 7 行）。
 
-**停点**：Qwen 在浏览器上逐项核对（截图只截页面，不截令牌与口令），Opus 审回执。
+**2. 沙箱与供给器改钉到 R1 的 k8s 提交**（会合点不动）：
 
-回退：R5.2 失败或 R5.3 不过——把 `sources.yaml`、应用名表等回到 R0 的提交重新发布即可回到旧应用；旧库、旧桶、旧 Casdoor 应用都没动过，旧应用起来后数据还在。
+```bash
+python3 - <<'PY'
+import re, pathlib
+p = pathlib.Path("infrastructure/applications/component-images.yaml"); s = p.read_text()
+R1 = "c5905fe2e8ab16a0bc2deddd57bd3fee30907578"
+for name in ("sandbox-provisioner", "sandbox"):
+    m = re.search(rf"(?ms)^  {name}:\n(?:(?!^  \S).*\n?)*", s); assert m, name
+    block = m.group(0); new, n = re.subn(r"(?m)^(    revision: )\w+", rf"\g<1>{R1}", block); assert n == 1, name
+    s = s.replace(block, new, 1)
+p.write_text(s)
+PY
+git diff infrastructure/applications/component-images.yaml | grep '^[-+] ' ; git merge-base --is-ancestor c5905fe2 HEAD && echo "HEAD 是 R1 的后代"
+```
 
-**状态**：
+要看到：只有 `sandbox-provisioner`、`sandbox` 两行 `revision` 变；`relay` 与顶层 `revision` 不变。
+
+**3. 构建**（六个对象；时间长，挨个来，哪个不是 0 就停）：
+
+```bash
+for o in app-platform/tpl-app app-platform/knowfeed-app app-platform/knowbase-app app-platform/investment-app sandbox-platform/sandbox sandbox-platform/provisioner; do
+  echo "===== build $o"; make -C infrastructure platform-build OBJECT=$o 2>&1 | tail -n 12; rc=${PIPESTATUS[0]}; echo "exit=$rc"; [ "$rc" = 0 ] || break
+done
+for f in $(git diff --name-only gitops | grep image.lock); do echo "$f: $(grep -E '^source_revision' $f)"; done
+```
+
+要看到：六个都是 `exit=0`；变了的镜像锁 14 个——四个应用各后端、网页、管理端（`source_revision` 等于第 1 步对应的提交）、沙箱与供给器（`source_revision` = `c5905fe2…`）。
+
+**4. 暂存**（七个对象）：
+
+```bash
+for o in app-platform/tpl-app app-platform/knowfeed-app app-platform/knowbase-app app-platform/investment-app sandbox-platform/provisioner ingress-platform/traefik data-platform/elk/collector; do
+  echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
+done
+grep -rn "BEGIN PRIVATE KEY\|BEGIN PUBLIC KEY" gitops/ | head -3   # 必须没有
+ls gitops/components/app-platform/knowfeed-app/knowfeed-backend/database/ gitops/components/app-platform/knowbase-app/knowbase-backend/database/
+sudo ls /etc/sunmoon/applications/sunmoon-kind/
+for a in tpl knowfeed knowbase investment; do
+  echo "===== plan $a"; make -C infrastructure application-deployment-plan APP=$a 2>&1 | grep -E "schema|revision|ok=|failed=" | tail -4; echo "exit=${PIPESTATUS[0]}"
+done
+```
+
+要看到：七个 stage 都是 0；没有 PEM；knowfeed、knowbase 的 `database/` 下重新有了 `bootstrap.sops.yaml`、`runtime.sops.yaml`（按新名全新生成）；私有目录多出 `knowfeed`、`knowbase` 两个（旧的 `info`、`knowledge` 还在，不动）；计划：knowfeed 核到 `20261015_0014`、迁移 Job 结尾 `-v3`，knowbase 核到 `20260927_0007`，investment 核到 `20261012_0018`，tpl 核到 `20260911_0003`。
+
+**5. 渲染比对**（改名前的渲染产物 vs 这次 stage 的，逐个 k8s 对象）：
+
+```bash
+T=$(date +%Y%m%d-%H%M)
+infrastructure/.venv/bin/python docs/rename-tools/r5_render_diff.py 4be661df > docs/rename-receipts/R5.1-render-diff.$T.txt; echo "exit=$?"
+sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
+```
+
+要看到：第 1 节「不可变 Job」**0 条**（有一条就停：Flux 套用时会被拒）。报告整份随回执提交，Opus 逐条审第 3–6 节。
+
+**停点**：**不提交 stage 结果**（工作区保持原样，R5.2 再提交）。回执 `R5.1-qwen.<时间>.md`（R5.0 与 1–5 步的输出）连同比对报告只把这两个文件提交、直接推：`git add docs/rename-receipts/R5.1-* && git -c core.editor=true commit -m "rename: R5.1 回执（Qwen）" && git push origin qwen`。Opus 审过在本节写「R5.1 通过」才做 R5.2。
+
+### R5.2 hosts、提交、发布、晋级、入口、检查
+
+**1. Windows hosts**（四个新域名跟旧名同一行；会弹一次 UAC，请所有者点「是」）：
+
+```bash
+cp docs/rename-tools/r5_windows_hosts.ps1 /mnt/c/Users/zymun/rename-hosts.ps1
+powershell.exe -NoProfile -Command "Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','C:\Users\zymun\rename-hosts.ps1'"
+cat "/mnt/c/Users/zymun/AppData/Local/Temp/rename-hosts-result.txt"
+```
+
+要看到：第一行 `OK backup …`，`active sunmoonai lines now:` 下面四个新名字都在、旧名字还在。是 `STOP:` 就停。
+
+**2. 提交、发布、晋级**：
+
+```bash
+git add infrastructure/applications/sources.yaml infrastructure/applications/component-images.yaml gitops
+git -c core.editor=true commit -m "deploy: 改名上线——knowfeed、knowbase 新名从空的开始，investment、tpl 改钉，沙箱与供给器重建（0025 R5）"
+make -C infrastructure flux-release; echo "exit=$?"
+sudo cat infrastructure/.build/flux/source-candidate.yaml; git rev-parse HEAD
+sudo cat infrastructure/.build/flux/source-candidate.yaml | sudo tee infrastructure/environments/kind/flux-source.yaml >/dev/null
+sudo chown "$(id -u):$(id -g)" infrastructure/environments/kind/flux-source.yaml 2>/dev/null; git diff infrastructure/environments/kind/flux-source.yaml
+git add infrastructure/environments/kind/flux-source.yaml && git -c core.editor=true commit -m "release(kind): 晋级到 $(git rev-parse --short HEAD)（0025 R5）"
+make -C infrastructure flux-source-apply; echo "exit=$?"
+make -C infrastructure flux-source-status; echo "exit=$?"
+```
+
+**3. 等新阶段就绪、看旧阶段**：
+
+```bash
+export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl)
+$K -n flux-system get kustomizations -o name | grep -E '/(knowfeed|knowbase)-' | xargs $K -n flux-system wait --for=condition=Ready --timeout=40m; echo "exit=$?"
+$K -n flux-system get kustomizations | grep -E '^(knowfeed|knowbase|investment|tpl|sandbox|traefik|elk)'
+$K -n flux-system get kustomizations | grep -E '^(info|knowledge)-'     # 预期失败（路径不在了），不碰
+$K -n app-platform-dev get pods | grep -E '^(knowfeed|knowbase|investment)-' | head -30
+```
+
+**4. 应用检查**：
+
+```bash
+for a in tpl knowfeed knowbase investment; do echo "===== check $a"; make -C infrastructure application-check APP=$a; echo "exit=$?"; done
+```
+
+**5. 宿主入口**（会断一下所有经入口的访问，含 Harbor——构建已在前面做完）：
+
+```bash
+make -C infrastructure entry-plan 2>&1 | grep -E "knowfeed|knowbase|info\.|knowledge\." | head
+make -C infrastructure entry-preview; echo "exit=$?"
+make -C infrastructure entry-stop; echo "exit=$?"
+make -C infrastructure entry-deploy; echo "exit=$?"
+make -C infrastructure entry-status; echo "exit=$?"
+make -C infrastructure platform-status; echo "exit=$?"
+```
+
+要看到：计划里出现四个新域名、不再有 `info.` / `knowledge.`；四个 `exit=0`；`platform-status` 0（Harbor、集群都在）。
+
+**停点**：回执 `R5.2-qwen.<时间>.md`（各步输出；旧阶段那几行照贴），提交推送同上，Opus 审过写「R5.2 通过」。
+
+### R5.3 验证（浏览器，Qwen 做；截图只截页面，不截令牌与口令）
+
+1. `https://knowfeed-admin.sunmoonai.com:30443`：能登录（admin），进得去「采集」「证券」「需求」等页面（空的属正常）。
+2. `https://knowbase-admin.sunmoonai.com:30443`：能登录，「数据集登记」「数据目录」页面打开（空的属正常）。
+3. `https://knowfeed.sunmoonai.com:30443`、`https://knowbase.sunmoonai.com:30443`：首页打开、能登录。
+4. investment 管理端「缺数据的需求」页：发起采集的链接指向 `knowfeed-admin.sunmoonai.com`。
+5. investment 工作台开一个新对话，让模型「列出能用的数据集」：工具调用显示 `sunmoon_knowbase`（没有数据集，回答「没有」属正常）。然后看沙箱用的是新镜像：
+
+```bash
+$K -n sandbox-platform-dev get deploy -l app=sandbox -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.spec.template.spec.containers[0].image}{"\n"}{end}'
+grep -E '^digest' gitops/components/sandbox-platform/sandbox/image.lock.yaml
+$K -n sandbox-platform-dev get deploy -l app=sandbox -o yaml | grep -E 'name: (KNOWBASE|KNOWLEDGE)_MCP' | sort -u
+```
+
+   要看到：沙箱镜像摘要等于锁里的、环境变量是 `KNOWBASE_MCP_*`（没有 `KNOWLEDGE_MCP_*`）。
+
+**停点**：回执 `R5.3-qwen.<时间>.md`，Opus 审过写「R5 通过」，再做 R6。
+
+**回退**（R5.2 或 R5.3 不过时，由 Opus 写具体命令后再做，Qwen 不自行回退）：旧应用的对象一直在跑、旧库旧桶旧 Casdoor 应用都没动，所以回退是：把 `infrastructure/environments/kind/flux-source.yaml` 退回上一次晋级的提交再 `flux-source-apply`（旧阶段回来、接上还在跑的旧对象），入口按上一次的配置重新 `entry-deploy`，Windows hosts 用 `hosts.bak-rename-*` 还原。
+
+**状态**：**可执行** · 2026-10-15 · Opus。R5.1 做完停下等 Opus 审，R5.2、R5.3 同样一段一停。
 
 ---
 
 ## R6 下线旧对象 — Qwen（本地机）
 
-只在 R5.3 写了「通过」之后做（所有者 2026-10-15 定旧的不必备份）。命令由 Opus 填；每一类**先列出、再删、再列出核对**，删前删后的清单进回执：
+只在 R5 写了「通过」之后做（所有者 2026-10-15 定旧的不必备份）。逐条命令由 Opus 在 R5 通过后按现场清单填；每一类**先列出、再删、再列出核对**，删前删后的清单进回执：
 
 | 类 | 删什么 |
 | --- | --- |
-| k8s 对象 | 核对旧应用的对象已在 R5.2 被 Flux 删干净；有残留按清单删 |
+| k8s 对象 | 旧阶段的 Flux Kustomization（`info-*`、`knowledge-*`，R5.2 后显示失败）与它们留下的全部对象——Flux 是 `prune: false`，不会自动删 |
 | PostgreSQL | 库 `info`、`knowledge`；角色 `info_runtime`、`info_migrator`、`knowledge_runtime`、`knowledge_migrator`、`knowledge_source_reader` 等旧角色 |
 | 对象存储 | 桶 `info-originals`（含开发环境前缀那个）及其旧用户、旧策略 |
 | RabbitMQ、Redis | 旧 vhost `info`、`knowledge` 与旧用户；旧 Redis 用户及其 ACL |

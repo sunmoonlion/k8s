@@ -28,6 +28,9 @@ PREVIEW_ADMIN_FIXTURES_OUT=~/worktrees/qwen/knowledge-app/knowbase-admin-fronten
 | `migrations/knowfeed_20261015_0014_rename.py` | 采集后端新迁移：只改结构——四张 `info_*` 表改 `knowfeed_*`，名字带它们的约束 / 索引 / 序列改名（在 `current_schema()` 里找）。不改数据（所有者定：现有数据都不要，新库从空的开始） |
 | `tests/test_knowfeed.sh` | 新迁移的独立验证：旧末端 + 模拟行 → 升级 → 回退 → 再升级 |
 | `residual.py` | 残留盘点：同一范围、同一保留清单下还单独出现 `info` / `knowledge` 的行 |
+| `r3_checkout.sh` | R3 检出换名（一台机器上一组仓：备份、按新名 clone、remote 照旧布局、挂出五个工位）；必须 bash 跑 |
+| `r5_render_diff.py` | R5.1 渲染比对：改名前后的渲染产物逐个 k8s 对象比，「原样同名、内容变了」的 Job 单列（有就停） |
+| `r5_windows_hosts.ps1` | R5.2 Windows hosts：四个新域名加到旧名所在行；先备份；纯 ASCII（Windows PowerShell 5.1 按 ANSI 读无 BOM 脚本） |
 | `scan.sh` | 盘点用的 grep |
 
 2026-10-15 验证（最终名字 knowfeed / knowbase，采集器仍叫 collector）：新迁移独立验证通过（4 表、22 个对象改名，回退复原）；复刻上整套跑通；stage 图改名前后（名字换算后）一致；各仓测试改名前后对照见 `R1-opus` 回执。
