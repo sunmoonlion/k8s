@@ -70,7 +70,7 @@ def main():
                         require(result.get('status') != 'error', 'S3 API rejected: ' + argv[0])
                 return out.stdout
             if args.application:
-                require(re.fullmatch(r'(info|knowledge|investment)', args.application), 'Unsupported storage application')
+                require(re.fullmatch(r'(knowfeed|knowbase|investment)', args.application), 'Unsupported storage application')
                 require(args.bucket == args.application + '-originals', 'Unexpected domain bucket')
                 runtime = subprocess.run([args.kubectl, '--kubeconfig=' + args.kubeconfig, '--context=kind-sunmoon-kind', '-n', args.app_namespace, 'exec', '-i', 'deployment/' + args.application + '-api', '--', 'python', '-'], input=Path(args.runtime_check).read_text(), text=True, capture_output=True, env=env, timeout=90)
                 result = json.loads(runtime.stdout)

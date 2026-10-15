@@ -421,6 +421,14 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 
 ### R5.2 hosts、提交、发布、晋级、入口、检查
 
+**0. 拉到最新**（Opus 审 R5.1 时可能推了修正；工作区里 stage 的结果不动，只快进）：
+
+```bash
+cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen && git log --oneline -3 && git status --short | wc -l
+```
+
+要看到：快进成功（不能快进就停，贴输出）；`git status` 仍是 R5.1 留下的那些改动。
+
 **1. Windows hosts**（四个新域名跟旧名同一行；会弹一次 UAC，请所有者点「是」）：
 
 ```bash
