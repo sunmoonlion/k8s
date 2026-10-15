@@ -275,7 +275,7 @@ bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh knowledge-app knowbas
 要看到：每个工位 `branch` = 工位名、`head` = `origin`、`dirty=0`；子仓 `branch` = 工位名、`up` = `origin/<工位>`、`url` 是新仓名、下面两行 `push` 分别是 GitHub 与 gitee 的新仓名，`head` 与 `origin` 相同（不同说明父仓记的子仓提交不是该分支的头，照实写进回执交 Opus 判断，不要动）；主目录 remote（新）与备份的（旧）相比只有仓名变了（协议、主机、推送地址个数都相同）；`repos.conf` 里是 `$HOME/master/<新名>`。
 
 **停点**：Opus 写 `R3-opus`（远程机）、Qwen 写 `R3-qwen`（本地机），Opus 审。
-**状态**：
+**状态**：远程机**完成** · 2026-10-15 · Opus（`R3-opus.20261015-1302.md`）：两组各 `exit=0`，十个工位全部「挂出」、`head`=`origin`、`dirty=0`，子仓推送地址 GitHub + gitee，`repos.conf` 保持 `$HOME` 写法。远程机实际情况：cursor、kimi、luna 的 `knowledge-backend` 子仓 `head=e30525f`、`origin=548e84a`——父仓记的比 GitHub 子仓分支新两个提交（冻结前没推），可快进、无丢失，不用处理；本地机若出现同样情况照写即可。**本地机 Qwen 现在可以做**：照上面两行命令跑，写 `R3-qwen`，Opus 审过后写「通过」。
 
 ---
 
