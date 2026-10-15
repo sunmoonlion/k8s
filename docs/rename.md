@@ -516,21 +516,79 @@ $K -n sandbox-platform-dev get deploy -l app=sandbox -o yaml | grep -E 'name: (K
 
 ## R6 下线旧对象 — Qwen（本地机）
 
-只在 R5 写了「通过」之后做（所有者 2026-10-15 定旧的不必备份）。逐条命令由 Opus 在 R5 通过后按现场清单填；每一类**先列出、再删、再列出核对**，删前删后的清单进回执：
+只在 R5 写了「通过」之后做（所有者 2026-10-15 定旧的不必备份）。删完就没有退路了（R5 的回退靠的正是这些旧对象），所以 R5.3 浏览器验证过了才做。
 
-| 类 | 删什么 |
-| --- | --- |
-| k8s 对象 | 旧阶段的 Flux Kustomization（`info-*`、`knowledge-*`，R5.2 后显示失败）与它们留下的全部对象——Flux 是 `prune: false`，不会自动删 |
-| PostgreSQL | 库 `info`、`knowledge`；角色 `info_runtime`、`info_migrator`、`knowledge_runtime`、`knowledge_migrator`、`knowledge_source_reader` 等旧角色 |
-| 对象存储 | 桶 `info-originals`（含开发环境前缀那个）及其旧用户、旧策略 |
-| RabbitMQ、Redis | 旧 vhost `info`、`knowledge` 与旧用户；旧 Redis 用户及其 ACL |
-| Casdoor | 旧应用 `sunmoonai-info-web/admin`、`sunmoonai-knowledge-web/admin`，旧服务身份与组织 |
-| 秘密 | 旧私有目录 `/etc/sunmoon/applications/sunmoon-kind/info`、`…/knowledge` 与旧备份目录 |
-| 镜像 | Harbor 里 `info-*`、`knowledge-*` 镜像仓库（先删完集群里还在跑的旧对象，否则它们拉不到镜像）；删后跑一次 Harbor 垃圾回收再核对释放量（只删不回收，磁盘不释放）。investment、tpl、沙箱、供给器的旧版本是它们各自的回退版本，不在本次删除范围，等所有者定 Harbor 保留策略后另行处理（所有者 2026-10-15 定） |
-| 检出 | 两台机器上 `~/rename-backup/` 下的旧检出（都已推送过） |
+工具 `docs/rename-tools/r6_cleanup.py`：清单是写死的旧名字（Opus 2026-10-15 从改名前的配置 `4be661df` 逐个抄出），默认只列不删；删一次只删一类，要 `--confirm <类>`；每类删前先核归属记号（PostgreSQL 的注释 `sunmoon-kind/info`、RabbitMQ vhost 的说明、Casdoor 服务应用的说明与 clientId、k8s 对象的旧阶段标签），对不上整类不删；列出来但不在清单里的标 `?? 不在清单，不删`，交 Opus 看。不打印口令、令牌、哈希。
 
-**停点**：Opus 审回执，在本节写「改名完成」，冻结解除，Cursor 恢复接卡（用新名字）。
-**状态**：
+| 类（工具里的名字） | 删什么 | 怎么删 |
+| --- | --- | --- |
+| `k8s` | 旧阶段的 Flux Kustomization（`info-*` 10 个、`knowledge-*` 9 个，R5.2 后显示失败）与它们留下的对象 | 先删 Kustomization（各阶段 `deletionPolicy: Orphan`，对象留下），再按标签 `kustomize.toolkit.fluxcd.io/name` 删对象（先 Deployment/Job，后其余），等旧 Pod 退净。没带旧标签、名字以 `info-`/`knowledge-` 开头的只列不删 |
+| `postgresql` | 库 `info`、`knowledge`；角色 `info_runtime`、`info_migrator`、`knowledge_runtime`、`knowledge_migrator` | `DROP DATABASE … WITH (FORCE)`、`DROP ROLE` |
+| `redis` | 用户 `info_runtime`、`knowledge_runtime` 与键 `info:*`、`knowledge:*` | 扫描后 `UNLINK`、`ACL DELUSER`、`ACL SAVE` |
+| `rabbitmq` | vhost `info`、`knowledge`（连同队列 `*.default`）与用户 `info_runtime`、`knowledge_runtime` | `rabbitmqctl delete_vhost / delete_user` |
+| `object-storage` | 桶 `info-originals`（全部版本）；用户 `info_storage`、`knowledge_source_reader`；策略 `info-originals`、`knowledge-source-read` | 宿主 `mc` 经 port-forward（同 `object-storage/verify.py`） |
+| `ragflow` | 数据集 `sunmoon-kind-knowledge-default` | RAGFlow 官方 API（在 `ragflow-api` 里跑，同 knowbase provider 的 prepare） |
+| `casdoor` | 应用 `sunmoonai-info-web/admin`、`sunmoonai-knowledge-web/admin`、服务身份 `sunmoonai-info-knowledge-ingest`、`sunmoonai-investment-knowledge-retrieve`；组织 `sunmoon-workload-info-knowledge`、`sunmoon-workload-investment-knowledge`（里面不能有用户） | Casdoor 管理 API |
+| `private` | 私有目录 `/etc/sunmoon/applications/sunmoon-kind/{info,knowledge}`、备份 `/mnt/sunmoon-data/backups/applications/sunmoon-kind/{info,knowledge}`、构建候选 `infrastructure/.build/components/app-platform/{info,knowledge}-app` | 删目录 |
+| `harbor` | `platform` 项目里的 `info-backend`、`info-web-frontend`、`info-admin-frontend`、`knowledge-*` 三个仓库 | Harbor API；必须在 `k8s` 之后（否则还在跑的旧对象拉不到镜像） |
+| `harbor-gc` | 上一步删掉的镜像层 | 手动触发一次垃圾回收，`delete_untagged=false`（investment、tpl 等按摘要部署、多半没有标签，不能顺手清掉），前后报 `/data/harbor/platform-kind-v1` 占用。investment、tpl、沙箱、供给器的旧版本是它们的回退版本，不在范围，等所有者定 Harbor 保留策略再说（所有者 2026-10-15 定） |
+| Windows hosts | 旧域名 `info.`、`info-admin.`、`knowledge.`、`knowledge-admin.sunmoonai.com` | `docs/rename-tools/r6_windows_hosts.ps1`：只从有效行里去掉这四个名字，且要求同一行已有对应新名字，否则不改；先备份 |
+
+不在 R6 里：两台机器的 `~/rename-backup/`（「冻结解除之后」第 3 条：保留，删除另行决定）；ELK 里旧应用的历史日志（按时间滚动，不按应用分）。
+
+### R6.1 列清单（只读）
+
+```bash
+cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen && git log --oneline -1
+R6='sudo -n nsenter --target 1 --mount --wd=/home/zymun/worktrees/qwen/k8s -- infrastructure/.venv/bin/python docs/rename-tools/r6_cleanup.py'
+T=$(date +%Y%m%d-%H%M); $R6 list > docs/rename-receipts/R6.1-list.$T.txt 2>&1; echo "exit=$?"
+grep -E "^=====|\?\?" docs/rename-receipts/R6.1-list.$T.txt
+```
+
+要看到：`exit=0`（哪一类 `STOP` 就停，原样进回执）。清单整份随回执提交：`git add docs/rename-receipts/R6.1-* && git -c core.editor=true commit -m "rename: R6.1 清单（Qwen）" && git push origin qwen`。**停点**：Opus 逐类审（尤其 `??` 那几行），写「R6.1 通过」才删。
+
+### R6.2 删（按顺序，一类一类）
+
+```bash
+cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+R6='sudo -n nsenter --target 1 --mount --wd=/home/zymun/worktrees/qwen/k8s -- infrastructure/.venv/bin/python docs/rename-tools/r6_cleanup.py'
+T=$(date +%Y%m%d-%H%M)
+for c in k8s postgresql redis rabbitmq object-storage ragflow casdoor private harbor harbor-gc; do
+  $R6 delete $c --confirm $c 2>&1 | tee -a docs/rename-receipts/R6.2-delete.$T.txt; rc=${PIPESTATUS[0]}; echo "== $c exit=$rc"; [ "$rc" = 0 ] || break
+done
+```
+
+要看到：十个 `exit=0`；每类「删后」里清单内的项都没了（`??` 项原样还在）。任何一类不是 0 就停，后面的不做。
+
+**Windows hosts**（先在副本上演练，再真改；真改会弹一次 UAC，请所有者点「是」）：
+
+```bash
+cp docs/rename-tools/r6_windows_hosts.ps1 /mnt/c/Users/zymun/rename-hosts-r6.ps1
+cp /mnt/c/Windows/System32/drivers/etc/hosts /mnt/c/Users/zymun/hosts-r6-rehearsal
+powershell.exe -NoProfile -Command '$env:RENAME_HOSTS_FILE="C:\Users\zymun\hosts-r6-rehearsal"; $env:RENAME_HOSTS_OUT="C:\Users\zymun\hosts-r6-rehearsal.txt"; powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\zymun\rename-hosts-r6.ps1; "exit=$LASTEXITCODE"'
+cat /mnt/c/Users/zymun/hosts-r6-rehearsal.txt; diff /mnt/c/Windows/System32/drivers/etc/hosts /mnt/c/Users/zymun/hosts-r6-rehearsal
+powershell.exe -NoProfile -Command "Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','C:\Users\zymun\rename-hosts-r6.ps1'"
+cat "/mnt/c/Users/zymun/AppData/Local/Temp/rename-hosts-r6-result.txt"
+rm /mnt/c/Users/zymun/hosts-r6-rehearsal /mnt/c/Users/zymun/hosts-r6-rehearsal.bak-r6-* /mnt/c/Users/zymun/hosts-r6-rehearsal.txt
+```
+
+要看到：演练 `exit=0`，`diff` 只有那一行少了四个旧名字；真改第一行 `OK backup …`，新名字都在、旧名字没了。是 `STOP:` 就停。
+
+**删后核对**（新应用不受影响）：
+
+```bash
+$R6 list 2>&1 | tee docs/rename-receipts/R6.2-after.$T.txt | grep -E "^=====|\?\?|exit="
+export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl)
+$K -n flux-system get kustomizations | grep -v True     # 只剩表头
+for a in tpl knowfeed knowbase investment; do echo "===== check $a"; make -C infrastructure application-check APP=$a; echo "exit=$?"; done
+make -C infrastructure platform-status; echo "exit=$?"
+```
+
+要看到：清单只剩 R6.1 审过的 `??` 项；没有不 Ready 的 Kustomization；四个 `application-check` 与 `platform-status` 都是 0。
+
+**停点**：回执 `R6.2-qwen.<时间>.md` 连同 `R6.2-*.txt` 提交推送，Opus 审过在本节写「改名完成」，冻结解除，Cursor 恢复接卡（用新名字）。
+
+**状态**：草稿 · 2026-10-15 · Opus。R5 通过后按现场核一遍再改「可执行」。
 
 ---
 
@@ -538,7 +596,7 @@ $K -n sandbox-platform-dev get deploy -l app=sandbox -o yaml | grep -E 'name: (K
 
 PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 换名；0018 改写为 knowmart（知识市场；吸收《专家市场架构对比分析和借鉴》第二、五、七节）；`docs/竞品比较分析.md`、`docs/专家市场架构对比分析和借鉴.md` 里的应用名换新；历史回执与冻结原件不改。
 
-**状态**：
+**状态**：**完成** · 2026-10-15 · Opus。PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 的应用名在 R1 已随内容替换换新；R7 另做：0018 改写为 knowmart（k8s `a4ac8202`），两份讨论稿换名（`17fdb464`），其余 41 份活文档里剩下作应用名的旧名换新（`486b7ce7`，四个应用仓各父仓、子仓同名提交）；历史回执、冻结原件、领域词（如 Knowledge provider、`info.request`）、代码名（wheel `advisor`）与 PRD 文件名不动。
 
 ---
 

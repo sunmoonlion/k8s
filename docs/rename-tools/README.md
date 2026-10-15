@@ -31,6 +31,8 @@ PREVIEW_ADMIN_FIXTURES_OUT=~/worktrees/qwen/knowledge-app/knowbase-admin-fronten
 | `r3_checkout.sh` | R3 检出换名（一台机器上一组仓：备份、按新名 clone、remote 照旧布局、挂出五个工位）；必须 bash 跑 |
 | `r5_render_diff.py` | R5.1 渲染比对：改名前后的渲染产物逐个 k8s 对象比，「原样同名、内容变了」的 Job 单列（有就停） |
 | `r5_windows_hosts.ps1` | R5.2 Windows hosts：四个新域名加到旧名所在行；先备份；纯 ASCII（Windows PowerShell 5.1 按 ANSI 读无 BOM 脚本） |
+| `r6_cleanup.py` | R6 下线旧对象：清单写死（改名前配置 `4be661df` 抄出的旧名字），默认只列；`delete <类> --confirm <类>` 一次删一类，删前核归属记号、删后再列；不在清单的只列不删 |
+| `r6_windows_hosts.ps1` | R6 Windows hosts：从有效行去掉四个旧域名，要求同行已有对应新名字；先备份；可用 `RENAME_HOSTS_FILE` 在副本上演练 |
 | `scan.sh` | 盘点用的 grep |
 
 2026-10-15 验证（最终名字 knowfeed / knowbase，采集器仍叫 collector）：新迁移独立验证通过（4 表、22 个对象改名，回退复原）；复刻上整套跑通；stage 图改名前后（名字换算后）一致；各仓测试改名前后对照见 `R1-opus` 回执。
