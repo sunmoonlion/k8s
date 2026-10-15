@@ -284,7 +284,7 @@ bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh knowledge-app knowbas
 两台机器各核对两个文件：
 
 1. `~/five-repos-sync/config.sh` 的 `REPOS=(…)`：`"knowledge-app"` → `"knowbase-app"`，`"info-app"` → `"knowfeed-app"`。改前 `cp config.sh config.sh.bak-rename`。
-2. `mb` 的 `repos.conf`：R3 脚本已改好，这里只核对：`grep -n know ~/toolboxes/Vlinux/utils/set-up-tools/model-switch/repos.conf` 应只有 `$HOME/master/knowfeed-app`、`$HOME/master/knowbase-app` 两行。这份文件在 `toolboxes` 仓里受版本管理。所有者 2026-10-15 已在远程机提交推送（`toolboxes` `e8f584e`，只改这两行）。本地机：R3 之前拉没拉 `toolboxes` 都行（脚本两种情况都认：还是旧名就改，已是新名就跳过）；R3 之后若本地有未提交的这两行改动，先 `git -C ~/toolboxes checkout -- Vlinux/utils/set-up-tools/model-switch/repos.conf` 再拉，拉完核对同上。`~/five-repos-sync/config.sh` 不在 Git 里，各机一份。
+2. `mb` 的 `repos.conf`：R3 脚本已改好，这里只核对：`grep -n know ~/toolboxes/Vlinux/utils/set-up-tools/model-switch/repos.conf` 应只有 `$HOME/master/knowfeed-app`、`$HOME/master/knowbase-app` 两行。这份文件在 `toolboxes` 仓里受版本管理。所有者 2026-10-15 已在远程机提交推送（`toolboxes` `e8f584e`，只改这两行）。**本地机的 `toolboxes` 由所有者自己拉，Qwen 不提交、不拉、不还原 `toolboxes`**；R3 脚本两种状态都认（还是旧名就改这两行，已是新名就跳过），所以所有者在 Qwen 跑 R3 之前或之后拉都行——之后拉的话先还原这两行再拉（`git -C ~/toolboxes checkout -- Vlinux/utils/set-up-tools/model-switch/repos.conf`）。Qwen 在 R4 只核对上面那条 `grep`。`~/five-repos-sync/config.sh` 不在 Git 里，各机一份。
 
 `~/switch-test/human-*.sh` 是转发器，不用改；它转发到的 k8s 仓里那两份已在 R1 改好。
 
