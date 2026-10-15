@@ -387,12 +387,17 @@ for f in $(git diff --name-only gitops | grep image.lock); do echo "$f: $(grep -
 
 要看到：六个都是 `exit=0`；变了的镜像锁 14 个——四个应用各后端、网页、管理端（`source_revision` 等于第 1 步对应的提交）、沙箱与供给器（`source_revision` = `c5905fe2…`）。
 
-**4. 暂存**（整套一次，`OBJECT=all`）：
+**4. 暂存**（先排齐拓扑，再逐个 stage 七个对象）：
 
-> 2026-10-15 第二次执行停在这里（`R5.1-qwen.20261015-1641.md`）：原写法逐个对象 stage，但阶段图里带着各阶段的镜像摘要，四个应用与供给器都换了镜像，只选一个对象时其余变了的阶段落在「未选中」里，拓扑守卫（`infrastructure/components/topology.yaml`「Require unselected stage declarations to remain unchanged」）按设计拦下。守卫在 `OBJECT=all` 时不比对；整套 stage 只对内容变了的秘密重新加密（`components/tasks/encrypt.yaml`「Encrypt only changed input」），没变的组件不会出差异。第 4 步上次跑出的 tpl 部分产物不用清，会被这次覆盖。
+> 2026-10-15 第二次执行停在这里（`R5.1-qwen.20261015-1641.md`）：逐个对象 stage 时，阶段图里带着各阶段的镜像摘要，四个应用与供给器都换了镜像，只选一个对象时其余变了的阶段落在「未选中」里，拓扑守卫（`infrastructure/components/topology.yaml`「Require unselected stage declarations to remain unchanged」）拦下。第三次改成 `OBJECT=all`，停在 ragflow（`R5.1-qwen.20261015-1704.md`）：`infrastructure/components/stages.py` 按目录字母序排 prepare，`data-platform/ragflow` 排在 `data-platform/valkey` 前面，ragflow 要用的 `valkey_credentials` 还没备好——ragflow 自 10-05 换渲染器后从没重新 stage 过，这是既有隐患，与改名无关（记在「冻结解除之后」第 5 条）；而且 `OBJECT=all` 会把本轮不动的组件都重新渲一遍，超出范围。
+>
+> 现在的做法：拓扑图（`gitops/clusters/kind/stages.yaml`）只由各 `stage.yaml`、配置和镜像锁算出，不看各组件 stage 出来的文件，与选了哪个对象无关；守卫比的是**工作区里的** `stages.yaml`。所以先 `topology-stage OBJECT=all` 单独把拓扑排齐（它不跑任何组件的 prepare），之后逐个 stage 七个对象时「未选中」部分就与工作区一致，守卫通过。上两次留下的产物（tpl 的 7 个声明、`/etc/sunmoon/applications/sunmoon-kind/` 下新建的 `knowfeed`、`knowbase`）不用清：前者会被覆盖，后者是这次要用的私有输入，会被原样读回。
 
 ```bash
-make -C infrastructure platform-stage OBJECT=all; echo "stage exit=$?"
+make -C infrastructure topology-stage OBJECT=all; echo "topology exit=$?"
+for o in app-platform/tpl-app app-platform/knowfeed-app app-platform/knowbase-app app-platform/investment-app sandbox-platform/provisioner ingress-platform/traefik data-platform/elk/collector; do
+  echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
+done
 git status --short gitops | awk '{print $2}' | sed -E 's#^gitops/(components/[^/]+/[^/]+(/[^/]+)?|clusters/kind)/.*#\1#' | sort | uniq -c
 grep -rn "BEGIN PRIVATE KEY\|BEGIN PUBLIC KEY" gitops/ | head -3   # 必须没有
 ls gitops/components/app-platform/knowfeed-app/knowfeed-backend/database/ gitops/components/app-platform/knowbase-app/knowbase-backend/database/
@@ -402,7 +407,7 @@ for a in tpl knowfeed knowbase investment; do
 done
 ```
 
-要看到：`stage exit=0`；改动的组件目录只在这几处：四个应用、`sandbox-platform/provisioner`、`sandbox-platform/sandbox`（镜像锁）、`ingress-platform/traefik`、`data-platform/elk`、`clusters/kind`（别处也有改动不必停，照贴，第 5 步的比对会逐个对象列出来）；没有 PEM；knowfeed、knowbase 的 `database/` 下重新有了 `bootstrap.sops.yaml`、`runtime.sops.yaml`（按新名全新生成）；私有目录多出 `knowfeed`、`knowbase` 两个（旧的 `info`、`knowledge` 还在，不动）；计划：knowfeed 核到 `20261015_0014`、迁移 Job 结尾 `-v3`，knowbase 核到 `20260927_0007`，investment 核到 `20261012_0018`，tpl 核到 `20260911_0003`。
+要看到：`topology exit=0`、七个 stage 都是 `exit=0`；改动的组件目录只在这几处：四个应用、`sandbox-platform/provisioner`、`sandbox-platform/sandbox`（镜像锁）、`ingress-platform/traefik`、`data-platform/elk`、`clusters/kind`（别处也有改动不必停，照贴，第 5 步的比对会逐个对象列出来）；没有 PEM；knowfeed、knowbase 的 `database/` 下重新有了 `bootstrap.sops.yaml`、`runtime.sops.yaml`（按新名全新生成）；私有目录多出 `knowfeed`、`knowbase` 两个（旧的 `info`、`knowledge` 还在，不动）；计划：knowfeed 核到 `20261015_0014`、迁移 Job 结尾 `-v3`，knowbase 核到 `20260927_0007`，investment 核到 `20261012_0018`，tpl 核到 `20260911_0003`。
 
 **5. 渲染比对**（改名前的渲染产物 vs 这次 stage 的，逐个 k8s 对象）：
 
@@ -414,6 +419,7 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 
 要看到：第 1 节「不可变 Job」**0 条**（有一条就停：Flux 套用时会被拒）。报告整份随回执提交，Opus 逐条审第 3–6 节。
 
+> 2026-10-15 第三次执行：停在第 4 步的 ragflow（见第 4 步说明），已改为先排齐拓扑再逐个 stage，从第 4 步续跑，第 1–3 步不重来。
 > 2026-10-15 第二次执行：第 1–3 步通过（14 个镜像锁正确），停在第 4 步，已改为整套 stage，从第 4 步续跑。
 > 2026-10-15 第一次执行停在第 1 步（`R5.1-qwen.20261015-1531.md`）：块正则带了 `s`（dotall），第一个块吞掉了全部四个应用，`assert` 拦住、文件未改。已改为 `(?m)`，第 1、2 步在 `sources.yaml`、`component-images.yaml` 的副本上实跑核过（28 行、两行，各应用各自的提交）。从第 1 步重跑。
 
@@ -551,4 +557,4 @@ PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 换名；0018 改写为 knowmar
    - **`k8s/utils/` 整个删**（所有者 2026-10-15 定，Opus 逐项核过：新体系的 `infrastructure/`、`gitops/` 没有引用它，内容全是旧体系的配套——`./sunmoon` 命令行、共享部署函数库、旧密钥与证书生成、旧镜像清单与门禁脚本、SSH 隧道连接工具）。其中 `packages-management` 的脚本与配置在 `toolboxes/Vlinux/utils/packages-management/` 有逐字节相同的备份（只多的 `export-component-image-tars.sh` 依赖旧镜像清单）；`db-provisioner` 各后端各有自己的一份（`<后端>/db-provisioner/`），被引用的是那几份，`utils/` 里这份没人引用；OIDC 接入模板已被 `tpl-app` 取代；没有通用到要留的；
    - 根目录随之删：`sunmoon`（只是转调 `sunmoonai/operations/cli.py`）、`legacy/`（自述「达到退出条件后删除」）、`image-management-design.md`（旧体系镜像管理设计）；`k8s持久化方式及本项目持久化方案设计.md` 先把仍成立、新文档里没有的内容并进 `infrastructure/host/README.md` 与 `gitops/components/foundations/README.md` 再删；根 `README.md`、`AGENTS.md` 里指向 `utils/`、`./sunmoon` 的话改掉。保留 `CHECKPOINT.md`；`scripts/test_switch_test_sync.py` 保留，随 `dev-investment-agent` 搬家改它里面的路径；
    - 冻结的旧体系目录（`app-platform`、`cicd-platform`、`data-platform`、`deploy-sunmoonai-all`、`infrastructure`、`ingress-platform`、`kind-infrastructure`、`messaging-platform`、`operations`、`ops-platform`、`registry-platform`、`CHECKPOINT-old-system-*.md`）直接 `git rm`。
-
+5. **组件 prepare 的先后顺序**（R5.1 第三次执行撞上，`R5.1-qwen.20261015-1704.md`）：`infrastructure/components/stages.py` 收集 prepare 按目录字母序，`render.yaml` 也只跑「选中对象」的 prepare。`data-platform/ragflow` 的 prepare 要用 `data-platform/valkey` 的 prepare 备下的 `valkey_credentials`，所以 `OBJECT=all`（ragflow 排在 valkey 前）与 `OBJECT=data-platform/ragflow`（valkey 根本不跑）都会报 `'valkey_credentials' is undefined`。ragflow 自 10-05 换渲染器后没再 stage 过，一直没暴露。修法二选一，修后用 `OBJECT=data-platform/ragflow` 实跑一次核对：ragflow 的 prepare 自己读 valkey 的私有输入（同 `component-input.yaml`，只读不新建）；或 prepare 按阶段依赖排序并带上依赖对象的 prepare。修之前别跑 `platform-stage OBJECT=all`。
