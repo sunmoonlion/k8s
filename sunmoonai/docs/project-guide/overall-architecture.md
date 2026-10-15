@@ -1,490 +1,232 @@
 # SunMoonAI 项目总览
 
-> 最后更新：2026-09-22 ｜ 目标态按已结束的架构讨论改写；运行投影补入 2026-09-20 本机 KIND 切换事实。
+> 最后更新：2026-10-15 ｜ 按新体系（架构 C：公网边缘 + 内网站点 + 本地代理，网页是产品界面）全文重写，取代 2026-09-22 的旧体系版本。
 >
-> **本文件是进入这个项目的唯一入口。**读完它，你应当知道：改动落在哪个仓、
-> 那里有什么不可违反的规则、以及去哪里查更细的东西。
+> **本文件是进入这个项目的入口。**读完它，你应当知道：这个产品是什么、改动落在哪个仓、东西跑在哪里、怎么发布、去哪里查更细的。
+> 细节都在指路的文档里；本文不写易腐的值（提交号、镜像摘要、迁移头、版本号、副本数）。与代码冲突时**永远以代码为准**，并请指出本文件需要更新。
 >
-> 它**不**试图覆盖全部细节——细节按主题分在同目录的 [`README.md`](README.md)
-> 所列各处，每节末尾也给出指路。
-> 与代码冲突时**永远以代码为准**，并请指出本文件需要更新。
+> 改名进行中（2026-10-14 起，见 [`k8s/docs/rename.md`](../../../docs/rename.md)）：`info-app` → `knowfeed-app`、`knowledge-app` → `knowbase-app`、`advisor-app` → `knowmart-app`。仓与代码已是新名字；本机集群在改名 R5 晋级之后才换成新名字，在那之前跑的仍是 `info-*`、`knowledge-*`。
 
 ---
 
 ## 1. 这个项目是什么
 
-**先区分现状与目标**：当前源码是 Next.js（Admin/Web）＋单领域 FastAPI Backend，
-共享可靠投递与 Knowledge Provider 内部解耦已落到源码；不再沿用 Vue/Nest 多套主线。
-本机 KIND 已切换 `kind-b7-20260919` 固定候选、独立数据库与 broker 运行身份；这只证明
-该开发候选完成受控切换，不代表 production 晋级或完整产品 UAT。当前边界见
-[发布与门禁](topics/release.md#8-当前-kind-切换事实与剩余验收)。
+**投研专家。**用户已经能用 AI 助手（Codex）做很多事；我们存在的理由是在裸 AI 做不好的地方做好。"做好"靠三样捆在一起：**专业知识**（数据、口径、引用，经 MCP 给 Codex）、**方法**（专家包：怎么拆步、每步给什么料、何时停下问人、做对没有）、**评测闭环**（金标准、分段判定、改动回归）。**不做投资咨询**：产出是研究底稿，结论由用户填。
 
-**架构讨论已经结束**，目标态定在 [需求](../dev-investment-agent/tree-build/PRD/requirement.md) 与
-[`tree-build/`](../dev-investment-agent/tree-build/)（2026-09-23 重写）：网页是产品界面，本地只装一个小代理
-（`codex exec-server` + 出站桥 + 本地上限），Codex 的模型循环跑在我们内网的沙箱里（用户自己的 key），
-工作台后端是确定性控制面；公网只有薄边缘。现有 Next.js 前端**改回产品界面**；Electron 与 `desktop-app` 退役。
+一句话：**用户在网页里用自己的 Codex 做研究；做不好时请专家驾驶同一个 Codex，把可验收的底稿交回，结果就在用户的工作区里。循环在我们的沙箱，工具在用户机器，界面是网页，公网只有薄边缘。**
 
-**但这些都还没有源码。**本指南只投影现有源码：当前仍是 Next.js ＋ 单领域 FastAPI，
-Investment LangGraph Pilot 仍在跑，沙箱池、会合点、本地代理一行都还没有。
-**不得据目标合同把现状描述成已完成。**旧 v5 的 N1～N6 已按当前合同完成接收裁定，
-不再形成单独待办，也不从旧计划恢复技术方案；历史来源只按
-[v5 索引](topics/v5-history.md)取证。
+| 前提（定了不再讨论） | 意思 |
+| --- | --- |
+| 两层决策权，同一个 Codex 实例 | 第一层用户自驾；第二层专家（顾问）按方法驾驶同一个 thread、同一个工作区、同一个模型账户；方向盘显式交接 |
+| 不垫付 token（BYOK） | 用户的模型 key 加密存在工作台，只进他自己的沙箱 |
+| 工作区在本地 | 用户的文件在他的电脑上；本地代理只让沙箱读写他加进白名单的目录 |
+| 循环在云、执行在本机 | Codex app-server 跑在我们内网的每用户沙箱里，exec-server 跑在用户电脑上 |
+| 界面是网页 | 只装一个小的本地代理，不做桌面应用 |
+| 边缘 + 内网 | 公网只有无状态的薄边缘；业务在内网，深处只出站 |
 
-一条内容流水线，加上消费它的智能体：
+需求的真源是 [需求](../dev-investment-agent/tree-build/PRD/requirement.md)；用户看得见的三个应用见 [`PRD/apps/`](../dev-investment-agent/tree-build/PRD/apps/README.md)；一次求助的九站见 [流水线](../dev-investment-agent/pipeline.md)。
 
-```
-外部信息源 ──采集──▶ 治理/去重 ──分发──▶ 知识库索引 ──检索──▶ 投资研究智能体
-             knowfeed-app                  knowbase-app          investment-app
-```
+**现在有什么**（2026-10-15）：网页里的聊天、工作、专家三种对话与项目；每用户一个沙箱、会合点、供给器；Windows 本地代理（经网页一行命令安装、配对）；专家包 `DATA_QUERY`（问数）、`FIN_REVIEW`（财报体检）、`FIN_FORECAST`（财务预测），按版本上架；knowfeed 的证券采集（巨潮、东方财富）与申请审批；knowbase 的数据集登记、语义层与 MCP 工具；公网边缘已上线三个域名。**还没有**：knowmart（专家市场，只有设计 [0018](../dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md)）、评测三道门的自动化、机器外备份。
 
-三个领域 App **共享同一正式模板骨架**，因为它们都从同一个模板实例化；另有一个仓只负责把它们部署到
-Kubernetes。**平台五仓，必须并列放置**（部署脚本按同级相对路径互相引用）。另有**客户端仓** `runtime` 与 `desktop-app`——它们不参与 k8s 部署，没有并列要求（`C-T6`）。
+## 2. 仓
 
-"顶层"不是措辞洁癖：其中四个 App 父仓各自再用 gitlink 引用三个**组件子模块**，
-所以整个项目的 Git 仓不止五个。这个区别直接关系到——推送要**子仓先、父仓后**；
-为什么一个工作树会出现"父仓在、组件源码未初始化"；以及门禁锁的到底是父仓、
-组件 commit 还是二者。
+**平台各仓必须并列放置**（部署与构建按同级相对路径互相引用）。四个应用父仓各用 gitlink 引三个组件子仓，所以 Git 仓不止这几个：推送**子仓先、父仓后**；一个工作树可能出现「父仓在、子仓未初始化」。
 
-| 仓 | 职责 | 含业务源码 |
+| 仓 | 职责 | 子仓 |
 | --- | --- | --- |
-| `tpl-app` | 模板：定义"一个标准 App 长什么样"，并提供部署脚手架 | 是（无领域） |
-| [`knowfeed-app`](repos/knowfeed-app.md) | 资讯域：采集、抽取、去重、治理，向 knowbase 分发 | 是 |
-| [`knowbase-app`](repos/knowbase-app.md) | 知识域：摄入与检索，两套跨仓契约的**唯一提供方** | 是 |
-| `investment-app` | 智能体域：投资研究 run、检索证据、人机交互 | 是 |
-| `k8s` | 部署编排：全部平台的部署声明、发布门禁；本文档也在此 | **否** |
+| `tpl-app` | 模板：一个标准应用长什么样，其余应用由它实例化；公共缺陷先修模板再同步实例 | 后端、网页、管理端 |
+| [`knowfeed-app`](repos/knowfeed-app.md) | 采集：从公开来源取原件、建数据集、质量检查、向 knowbase 登记；采集申请与审批 | 同上 |
+| [`knowbase-app`](repos/knowbase-app.md) | 知识：数据集目录、口径、语义层，经 MCP 给 Codex；文档入库与检索（RAGFlow）；两套跨仓契约的提供方 | 同上 |
+| `investment-app` | 产品主应用：网页、工作台后端（会话、方向盘、专家包、账、验收、交付）、给沙箱的投资记录 MCP、本地代理安装包的发放 | 同上 |
+| `knowmart-app` | 专家市场（未建，0018 设计；由 tpl-app 实例化） | — |
+| `k8s` | 部署：宿主、仓库、入口、建群、Flux、全部平台组件与应用的部署声明；本文档也在此 | 无业务源码 |
+| `runtime` | 本地代理 `sunmoon-agent`（Node，装在用户电脑；将改名 `agent`） | 不参与集群部署，不要求并列 |
 
-规模（量级）：后端合计 2–3 万行 Python；八个前端约 570 个 ts/tsx；
-`k8s` 仓约 1k 个 yaml，另有数百个 shell 与 python。
+工位与同步：主目录 `~/master/<仓>`，工位 `~/worktrees/<工位>/<仓>`（`mb` 管理，见 `toolboxes` 里的 `model-switch`）；两台机器之间只经 Git origin 往来，所有者用 `~/switch-test/human-local.sh` / `human-remote.sh` 同步（转发到 k8s 仓里的同名脚本）。
 
-## 2. 依赖方向
+## 3. 东西跑在哪里
 
-```
-tpl-app ──实例化──▶ knowfeed-app ──artifact v1──▶ knowbase-app ──retrieval v1──▶ investment-app
-                        │                          │                              │
-                        └──────────── 都经 Casdoor 取身份 ──────────────────────────┘
+### 3.1 正式拓扑（所有者 2026-09-26 定，开发期与服务用户都这样）
 
-k8s ──构建镜像 / 渲染 bundle / apply──▶ 三个 App 的运行态
-```
+两条不变量：**深处只出站**（内网与用户电脑只发起连接），**边缘无状态**（任一台可替换）。
 
-**没有反向依赖**：knowbase 不调 knowfeed，knowfeed 不知道 investment 存在，tpl 不知道任何实例存在。
-跨 App 只经受版本控制的 HTTP 契约，**禁止跨 App 直接读写数据库**。
-
-契约的规律：**schema 真源放在被调方（provider），锁文件放在调用方（consumer）**。
-
-→ 细节：[`topics/contracts.md`](topics/contracts.md)
-
-## 3. 一个标准 App 长什么样
-
-四个 App 仓**共享同一父仓拓扑**——四运行角色、安全边界、发布脚手架都由模板规定；
-**领域目录、路由、迁移、依赖各不相同**，那是受控的扩展点，不是违规漂移
-（判据见 [`repos/tpl-app.md`](repos/tpl-app.md) 的模板同步一节）。各含三个 Git 子模块：
-
-```
-<app>-app/
-├── <app>-backend/          FastAPI，Admin/Web/Internal 三面共用一个工程
-├── <app>-admin-frontend/   Next.js 管理端
-└── <app>-web-frontend/     Next.js 用户端
+```text
+用户电脑                公网边缘（云 VM，无状态）            内网站点（只出站）
+──────────              ──────────────────────              ────────────────────────────────
+浏览器 ──https 443──▶   Traefik（TLS、证书）──▶ frps  ◀──隧道（frpc 主动连出）── frpc ─▶ 内网 Traefik ─▶ 应用、Casdoor
+本地代理 ─wss 443──▶    会合点 relay  ◀──wss 出站──────────────────────────── 沙箱 Pod（每用户一个）
+                                       ◀──wss 出站（管理通道）──────────────── investment runner
+                                                                               供给器 ─▶ Kubernetes API（建/删沙箱）
+                                                                               沙箱 ─MCP─▶ investment-api、knowbase-api
+                                                                               沙箱 ─https 出站─▶ 模型厂商
 ```
 
-### 3.1 一个镜像，四个运行角色
+### 3.2 现网（2026-10-15）
 
-后端**同一个不可变镜像**按不同命令启动四种进程，有独立 ServiceAccount 与部署角色。
-源码渲染已分开数据库/broker Secret 键；2026-09-20 本机 KIND 的 API/Worker/Scheduler
-已经切换为独立 principal/ACL，旧数据库登录与旧 broker vhost 权限已实测拒绝。
-这不替云端或后续版本背书，具体版本与剩余验收见[发布与门禁](topics/release.md)。
+- **内网站点 = 所有者机器的 WSL**：宿主上的 Harbor 与入口 HAProxy（`30443`，只看 SNI 分流、不解密），一个三节点 KIND 集群 `sunmoon-kind`，数据盘挂在 `/mnt/sunmoon-data`。集群里跑全部平台组件与四个应用、会合点（暂在集群里）、供给器与沙箱。
+- **公网边缘 = 东京云 VM**（远程助手所在的机器）：Traefik + frps，2026-10-10 上线。对公网只放三个域名：`investment`、`casdoor`、`relay.sunmoonai.com`，经 frp 隧道回到集群。其余域名（knowfeed、knowbase、各管理端、Harbor）只在所有者机器上经 hosts 访问。要再暴露域名：DNS、`infrastructure/edge/config.yaml` 的 `edge_domains` 与 `gitops/components/ingress-platform/frpc/config.yaml` 的 `frpc_domains`（两份名单相同）、边缘重新部署、frpc 发布。
+- 集群里的后端**不按公网名互连**：访问 Casdoor、会合点、供给器一律走集群内 Service（`*_BACKCHANNEL_ENDPOINT` 等）；公网名只出现在交给浏览器与本地代理的地址里。
 
-| 角色 | 入口 | K8s 形态 |
+拓扑的图、各组件管什么、一次「工作」的顺序：[`k8s/docs/拓扑.md`](../../../docs/拓扑.md)；裁定与风险：[拓扑设计](../dev-investment-agent/tree-build/SDD/architecture/topology.md)；边缘：[0013](../dev-investment-agent/tree-build/SDD/modules/0013-edge.md) 与 `k8s/infrastructure/edge/`。
+
+## 4. 三个应用与数据怎么流
+
+| 应用 | 用户来做什么 | 管理员来做什么 |
 | --- | --- | --- |
-| API | `app/bootstrap/api.py` | Deployment + Service |
-| Worker | `app/bootstrap/worker.py`（Celery） | Deployment |
-| Scheduler | `app/bootstrap/scheduler.py`（Celery beat） | 单副本 Deployment |
-| Migration | `app/bootstrap/migration.py` | 一次性 Job，跑完即删 |
+| investment | 聊天、让代理干活、请专家；管工作区与项目 | 「缺数据的需求」（链去 knowfeed 管理端发起采集）、研究运行时 |
+| knowbase | 看有哪些公司的数据、数据到哪一天、口径怎么算 | 数据集版本、登记、工具调用情况 |
+| knowfeed | 申请「我要这家公司的数据」、看进度 | 批准申请、发起采集、看批次、关注清单 |
 
-`app/main.py` 只有 5 行，是向后兼容的 ASGI 转发，**不是真正的入口**。
-
-### 3.2 后端分层与两套接口面
-
-```
-app/app/
-├── domain/          领域模型、状态机、命令
-├── application/     服务编排、DTO、Port（接口定义）
-├── infrastructure/  ORM、外部适配、Celery、存储（Port 实现）
-└── interfaces/
-    ├── http/        ← 模板面：admin/web 认证、diagnostics、web interaction
-    └── endpoints/   ← 领域面：各实例自己的业务路由
+```text
+公开网站 ──采集──▶ knowfeed ──原件、数据集文件──▶ 对象存储（knowfeed 的桶）
+                      │ 登记「有一个新版本」（服务身份 knowbase:ingest）
+                      ▼
+                  knowbase ──按登记的位置只读取文件 ──▶ 语义层 / RAGFlow 索引（可重建的派生物）
+                      │ MCP 工具（sunmoon_knowbase）
+                      ▼
+沙箱里的 Codex ◀── 方向盘在用户或专家手里 ──── investment runner（工作台管理者）
+                      │ 事件
+                      ▼
+                investment 的页面
 ```
 
-**`http/` 与 `endpoints/` 的分工是本项目的实际约定**：模板提供的通用面在 `http/`，
-实例自己的领域路由在 `endpoints/`。`tpl-app` 没有 `endpoints/`，因为它没有领域。
+| 规则 | 说明 |
+| --- | --- |
+| 一件事只在一个应用里办 | 别的应用要用，就用普通链接把人带过去（新标签页，带业务参数、`from`、`ref`），不各做一份 |
+| Codex 不直接连 knowfeed | 只经 knowbase 的工具拿数据；没过质量检查的数据 knowfeed 不登记，knowbase 就没有 |
+| 每个结果带出处 | 数据集、版本、数据时点 |
+| 跨应用只经版本化 HTTP 契约 | **禁止跨应用直接读写对方的库、桶、Redis 键**；契约的 schema 真源在提供方，锁文件在调用方（[契约](topics/contracts.md)） |
+| 每步只写自己的库 | 跨应用不用分布式事务；投递走 Outbox/Inbox，消费方幂等；broker ACK 不等于业务提交 |
 
-依赖方向单向：`application` 不得 import `app.interfaces`（由不变量测试断言）。
+investment 内部：三种对话（聊天、工作、专家，[0017](../dev-investment-agent/tree-build/SDD/modules/0017-three-kinds-of-conversation.md)）；工作区 = 本地代理里加的白名单目录，项目是其下子目录（[0024](../dev-investment-agent/tree-build/SDD/modules/0024-new-project.md)）；后端进程 `runner`（工作台管理者，将改名 `manager`）连沙箱、下指令、收事件、算费用、管项目与专家流程；专家包按版本上架，新委托绑定委托当时上架的版本；本地代理的安装包经 investment 的 `agent-releases` 发放。设计按块在 [`SDD/modules/`](../dev-investment-agent/tree-build/SDD/modules/)。
 
-### 3.3 前端
+## 5. 一个标准应用长什么样
 
-两个前端技术栈同构（Next.js 16 + React 19 + Tailwind v4 + shadcn + next-intl，
-`output: 'standalone'`），源码在内层 `app/` 目录：
+四个应用父仓拓扑相同（由模板规定）；领域目录、路由、迁移、依赖各不相同，是受控的扩展点（判据见 [`repos/tpl-app.md`](repos/tpl-app.md)）。
 
-- 路由：`app/[locale]/(auth|dashboard)/...`，`proxy.ts` 是 Next 16 的路由边界
-  （**不是 `middleware.ts`**，Next 16 已改名）
-- 请求：`lib/common/api-client.ts`，只允许同源 `/api/` 路径（**未使用 axios**）
-- 会话：`lib/server/auth-session.ts` 经 server-only `BACKEND_INTERNAL_URL` 读取；
-  **token 永不落 localStorage**
-- **OIDC 全部在后端**，前端没有 auth 的 API Route
-
-→ 细节：[`repos/tpl-app.md`](repos/tpl-app.md)
-
-## 4. 平台层（`k8s/sunmoonai/`）
-
-**八个平台目录 + 三个非平台目录**：
-
-| 平台 | 装什么 | **明确不负责** | 命名空间 |
-| --- | --- | --- | --- |
-| `app-platform` | 三个 App 的正式 bundle + auth-app（Casdoor） | 不定义领域数据所有权——那在各 App 内 | `app-platform-dev` |
-| `data-platform` | postgresql、redis、mongodb、neo4j、elasticsearch、kibana、logstash、object-storage | **不决定业务表结构**，不拥有任何领域事实 | `data-platform-dev` |
-| `messaging-platform` | RabbitMQ（Celery broker） | 不做投递语义与幂等——那是消费方的事 | `messaging-platform-dev` |
-| `ingress-platform` | Traefik，TLS 终止 | **不做授权**。鉴权在 Backend，网关只路由与终止 TLS | `ingress-platform-dev` |
-| `cicd-platform` | Harbor、Jenkins | **不在已发布业务的同步关键路径上**——它挂掉不应打断在跑的业务 | `cicd-platform-dev` |
-| `ops-platform` | pgAdmin、RedisInsight、Flower 等 | 同上，运维工具不进业务关键路径 | `ops-platform-dev` |
-| `infrastructure` | 远程 kubeadm 分步脚本 | 不含 cert-manager 等组件（常见误解） | — |
-| `kind-infrastructure` | 本地 KIND 集群定义 | **不执行 NetworkPolicy**（kindnet 不 enforce） | — |
-
-非平台：`deploy-sunmoonai-all/`（总控）、`utils/`（跨平台工具）、`docs/`（含本文档）。
-
-App 侧实际用到的数据组件只有：PostgreSQL、Redis、object-storage、RabbitMQ、
-Elasticsearch（knowfeed 索引，**默认关闭**）。mongodb / neo4j / kibana / logstash 未见 App 引用。
-
-→ 细节：[`repos/k8s.md`](repos/k8s.md)
-
-### 4.1 平台之间怎么依赖
-
-地图之外还有三条**依赖方向上的禁令**。它们在源码里没有单一符号可 grep，
-只读文件树会系统性漏掉——但它们是搭平台时定下的运行合同：
-
-1. **基础能力向上提供，领域所有权不向下泄漏。**
-   Data / Messaging / Ingress 提供能力，**不拥有** info / knowledge / investment
-   的业务事实。
-2. **部署顺序 ≠ 运行时耦合。**总控按 infra → data → messaging → app → ops 排，
-   那只满足**启动前置**。每个 App 仍必须自备超时、有界重试、幂等、
-   Outbox/Inbox 或对账、readiness 与降级。
-   **CI/CD 或 Ops 挂掉不应立刻打断已发布业务**；Ingress / 数据 / 消息 / 身份
-   挂掉才必须由 SLO 与降级覆盖。
-3. **`deploy-sunmoonai-all` 只做编排，不拥有领域。**它是总控脚本，
-   不是"可以改 App 内部所有权"的入口。
-
-依赖方向有三类，**全部单向**：
-
-```
-模板 ──────────▶ 实例          tpl-app 定形态，三个实例继承
-                               （反向不成立：实例不得改模板以迁就自己）
-
-提供方 ─────────▶ 消费方        info ──artifact──▶ knowledge ──retrieval──▶ investment
-                               （schema 真源在提供方，消费方持锁）
-
-平台 ──能力──▶ App            Data / Messaging / Ingress 提供能力
-                               （所有权不反向泄漏）
+```text
+<名>-app/
+├── <名>-backend/          FastAPI，Admin / Web / Internal 三面共用一个工程
+├── <名>-admin-frontend/   Next.js 管理端
+└── <名>-web-frontend/     Next.js 网页端
 ```
 
-## 5. 三条主链
+- **后端一个不可变镜像，多个运行角色**：API（Deployment + Service）、Worker（Celery）、Scheduler（Celery beat，单副本）、Migration（一次性 Job）；investment 另有 `runner`。各角色有独立 ServiceAccount、数据库与 broker 身份。入口在 `app/bootstrap/`。
+- **分层**：`domain/`、`application/`（服务、DTO、Port）、`infrastructure/`（ORM、外部适配、Celery、存储）、`interfaces/`（`http/` 是模板面，`endpoints/` 是领域面）；`application` 不得 import `interfaces`。
+- **前端**：Next.js 16 + React 19 + Tailwind v4 + shadcn + next-intl，`output: 'standalone'`，源码在内层 `app/`；路由边界是 `proxy.ts`；请求只走同源 `/api/`；会话经 server-only 的 `BACKEND_INTERNAL_URL` 读；**OIDC 全在后端，token 不进浏览器存储**；网页的预览模式用录下来的样例回放（`preview/fixtures/`）。
 
-### 5.1 请求链（在线）
+## 6. 部署（`k8s` 仓）
 
-```
-浏览器 ──HTTPS──▶ Traefik ──┬─ Host 匹配 ──▶ Admin/Web Next.js（SSR）
-                            └─ 同源 /api ──▶ 统一 Backend ──▶ PG / Redis / RabbitMQ
-                                                    │
-SSR 经 BACKEND_INTERNAL_URL ────────────────────────┘
-```
+单机 WSL 里的 KIND 是第一期；同一套组件声明以后用于云端建群。Make 是公开入口，Ansible 编排，Flux 拥有集群声明；不另设 CLI 或部署状态机。职责与约束见 [`docs/platform-kind-v1/architecture.md`](../../../docs/platform-kind-v1/architecture.md)，实际验证过的范围见 [`verification.md`](../../../docs/platform-kind-v1/verification.md)，日常导航见 `infrastructure/README.md`。
 
-浏览器拿不到内部地址、client secret、服务令牌或数据库凭据。
-Next.js 可以做 SSR 与同源交互，但**最终授权永远在 Backend**。
+| 目录 | 管什么 |
+| --- | --- |
+| `infrastructure/host`、`registry`、`entry`、`cluster`、`flux` | 宿主（WSL、挂盘、容量、开机恢复）、Harbor、入口 HAProxy、KIND 建群、Flux 与发布源 |
+| `infrastructure/services`、`applications`、`components` | 平台组件、四个应用、组件阶段图的 Make / Ansible 入口；`applications/sources.yaml` 钉各应用父仓与子仓的提交，`component-images.yaml` 钉自研镜像（会合点、沙箱、供给器）的源码提交 |
+| `infrastructure/edge` | 公网边缘（只在边缘机上跑） |
+| `infrastructure/artifacts`、`environments` | 物料与镜像锁；环境（`site.yaml` 的命名空间、根路径，`flux-source.yaml` 的已晋级源） |
+| `gitops/components/<平台>/…` | 组件声明：每个组件目录里 `config.yaml`、`stage.yaml`、`README.md` 是真源，`workload.yaml`、`kustomization.yaml`、`*.sops.yaml`、`image.lock.yaml` 是生成的 |
+| `gitops/clusters/kind` | 集群根：阶段图 `stages.yaml`（由各组件 `stage.yaml` 汇总生成） |
 
-### 5.2 数据链（异步，跨 App）
+| 平台目录 | 装什么 | 命名空间 |
+| --- | --- | --- |
+| `app-platform` | `auth-app/casdoor`；四个应用；`common/`（应用共用的部署机制，不经 tpl 转接） | `app-platform-dev` |
+| `data-platform` | PostgreSQL、Redis / Valkey、对象存储、RAGFlow（+ Infinity、text-embeddings）、ELK、Neo4j、MongoDB；应用的建库 Job | `data-platform-dev` |
+| `messaging-platform` | RabbitMQ 与应用的 vhost 初始化 | `messaging-platform-dev` |
+| `ingress-platform` | 内网 Traefik（TLS 终止、按 Host 路由；**不做授权**）、frpc | `ingress-platform-dev` |
+| `ops-platform` | pgAdmin、RedisInsight、Flower、Mongo Express | `ops-platform-dev` |
+| `relay-platform` / `sandbox-platform` | 会合点 / 供给器与沙箱镜像 | `relay-platform-dev` / `sandbox-platform-dev` |
+| `foundations` | 跨命名空间的基础对象（网络策略、拉取凭据、存储） | — |
 
-```
-knowfeed 采集 → 治理/去重 → distribution_record + 事务 outbox_message
-  → Beat 发 pump 提示 → Worker 发布/消费命令 → POST knowbase 摄入
-  → knowledge job + Outbox → 上传/解析回执 + 单次持久轮询 → RAGFlow 派生索引
-  → investment 检索取证据 → Citation 投影回浏览器
-```
+**发布链**（一张发布卡的标准动作，样板见 `switch-test/done/` 里的卡）：
 
-约束：每一步只写自己 App 的库；跨 App 不用分布式事务；消费方必须幂等；
-RAGFlow / Elasticsearch / 缓存都是**可重建的派生系统，不是权威主档**。
-公共投递由 Outbox/Inbox、执行租约/epoch、死信/重放/对账组成；broker ACK 不等于
-业务事务提交。旧 Info 分发日志已归档；旧直接 Celery 业务入口不再接受新投递。
-Knowledge 保留 Provider 操作意图/回执与未知结果阻断，Investment 保留会话执行扩展。
-
-### 5.3 发布链
-
-```
-源码 → 镜像推 Harbor → render.py 解析 digest 写入 bundle → deploy.py apply
-```
-
-一次发布 = 一份 `deployment/bundle/`，含**五份 YAML + 一份 `release.json`**。
-`release.json` 是不可变输入：镜像 digest、五文件 sha256、副本数、Ingress 结构、
-须预先存在的 Secret 名、禁止出现的字符串。
-
-**apply 的真实顺序**（`deployment/deploy.py` 的 `apply()`，三 App 一致）：
-
-```
-0  external_secret_gate         检查 release.external_secrets 全部存在
-1  00-prerequisites.yaml        ServiceAccount / ConfigMap / Service
-2  30-network-policies.yaml     ← 网络策略在迁移之前
-3  10-migration.yaml            删旧 Job → apply → 等完成 → 删 Job
-4  20-runtime.yaml              Deployment / PDB / HPA
-5  40-ingress.yaml              IngressRoute
-6  rollout status               等各 Deployment 就绪
-7  legacy_deployments 缩容至 0
+```text
+改 sources.yaml / component-images.yaml 的钉
+  → make platform-build OBJECT=…        构建镜像推 Harbor，改写 image.lock
+  → make platform-stage OBJECT=…        渲染声明、按私有目录里的输入生成 SOPS 密文（有副作用：可能建私有目录、远端数据集）
+  → make application-deployment-plan    核迁移头、Job 代次
+  → git commit                           固定 Git 对象
+  → make flux-release                    打成不可变 OCI 候选推 Harbor
+  → 晋级：改 environments/kind/flux-source.yaml 并提交
+  → make flux-source-apply / flux-source-status
+  → make application-check APP=…
 ```
 
-两个易错点：**网络策略先于迁移**；`server-dry-run` 按 `release.json.resources`
-数组顺序走，**与 apply 的真实顺序不同**。
+要点：秘密在宿主私有目录里主备两份、逐字节一致，已有身份丢失就停、不重新生成；Flux 根与各阶段都是 **`prune: false`**，删掉的声明不会自动删集群对象（要精确退役）；完成的 Job 由 Flux 持有，内容不可改，改了要换代次；回退 = 把 `flux-source.yaml` 退回已验证的源再 apply，数据库 schema 与持久数据不随 Git 回退。
 
-→ 细节：[`topics/release.md`](topics/release.md)
+**`k8s/sunmoonai/`** 是 2026-10-06 起冻结的旧体系，计划整体移出（[改名手册「冻结解除之后」](../../../docs/rename.md#冻结解除之后不属于改名但要有人做)）；其中还活着的只有 `docs/dev-investment-agent/`（手册、派活卡、回执、同步脚本、门禁工具）、`docs/project-guide/`（本文档集）、`relay-platform/` 与 `sandbox-platform/`（自研镜像源码）、`scripts/` 里的联调脚本与发布卡回执。
 
-## 6. 身份
+## 7. 身份
 
-**两类身份，互不通用**：浏览器 cookie 不能用于服务间调用，服务 token 也不构成用户身份。
+**两类身份，互不通用**：浏览器会话不能用于服务间调用，服务令牌不构成用户身份。身份提供方是 Casdoor（`auth-app`）。
 
 | 类别 | 机制 |
 | --- | --- |
-| 浏览器身份 | Casdoor OIDC（授权码 + PKCE）→ 后端会话 cookie |
-| 服务身份 | 签名的 workload JWT，或 OAuth client credentials |
+| 浏览器 | Casdoor OIDC（授权码 + PKCE）→ 后端会话 cookie。每个应用的 Admin 与 Web 是两个独立的安全边界：各有 client、回调、cookie 名、会话命名空间、Origin 策略 |
+| 作用域 | 「应用名:动作」：Admin 必须有 `<名>:admin`（如 `knowfeed:admin`），Web 不要求作用域；管理端只收 built-in 组织的令牌，网页端只收配置的用户组织（0014 U2） |
+| 服务间 | client credentials，按关系各一个身份与组织：knowfeed → knowbase `knowbase:ingest`，investment → knowbase `knowbase:retrieve`；接收方核 audience、主体绑定表、作用域 |
+| 沙箱 | investment 给每个沙箱签发短期令牌：调投资记录 MCP 与 knowbase MCP；模型 key 只在沙箱进程环境里 |
+| 本地代理 | 网页里一行命令安装与配对；连会合点用 investment 签发、会合点就地验签的令牌 |
 
-Casdoor 由 `auth-app` 以 Helm 单独部署，**不进入三个领域 App 的 bundle / release.json 门禁**
-——其 chart、version、image 的固定与晋级由 auth-app 自己的 Helm 发布链负责。
-⚠ 这是"不受那套门禁管"，不是"无需不可变制品治理"；若它当前仍用可变 tag，
-那是**未覆盖风险**，不是架构豁免。
-不能因此豁免 auth-app 自身的不可变制品治理。
+细节：[身份](topics/identity.md)（部分仍是旧体系的写法，以代码为准）；组织与入口把关：[0014](../dev-investment-agent/tree-build/SDD/modules/0014-user-organization.md)。
 
-**Admin 与 Web 是两个独立的安全边界**（`BrowserSurfaceProfile`，不可变）：
-各有独立 client、redirect、cookie 名、session namespace、Origin 策略。
-关键不对称：**Admin 强制要求 `{app}:admin` scope，Web 不要求任何 scope**。
-
-服务身份校验链：验 audience → subject 必须命中精确绑定表 →
-`token_scopes ⊆ 允许集` 且 `required ⊆ token_scopes`。
-
-→ 细节：[`topics/identity.md`](topics/identity.md)
-
-## 7. 硬规则来自哪里
-
-改动前要知道"什么会让我失败"。本项目的强制分三层，**强度递增**：
+## 8. 规则来自哪里
 
 | 层 | 在哪 | 违反后果 |
 | --- | --- | --- |
-| **结构不变量** | 各仓 `app/tests/test_kernel_invariants.py`（5–6 项） | CI 失败 |
-| **启动期配置校验** | 各仓 `core/config.py`（约 35 处 `raise ValueError`） | **进程起不来** |
-| **部署门禁** | `k8s` 仓的 `verify-formal-instance.py`、`deployment_config.py` 等 | 部署被拒 |
+| 动代码前必读的规则 `C-*` | [`rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) | 方案不进入讨论 |
+| 不变量 `I1`–`I14` | [`SDD/architecture/invariants.md`](../dev-investment-agent/tree-build/SDD/architecture/invariants.md) | 同上 |
+| 结构不变量测试 | 各后端 `app/tests/test_kernel_invariants.py` | 测试失败 |
+| 启动期配置校验 | 各后端 `core/config.py` | **进程起不来**，不降级运行 |
+| 部署准备的断言 | 各组件 `prepare.yaml`（名字、作用域、路径、身份按应用名拼出并核对） | stage 失败 |
+| 人的批准点 | [`turn/approvals.md`](../dev-investment-agent/turn/approvals.md) | 不能自动通过 |
 
-注意一个常见误解：`test_kernel_invariants.py` 大多是**文件存在性与字符串缺席断言**
-（例如"`app.interfaces` 不出现在 application/ 目录"），是结构性冒烟测试，
-**不是深度架构校验**。真正严格的是第二层——配置错了服务直接起不来，不会降级运行。
-
-→ 细节：各仓 `repos/*.md` 的「硬规则」一节
-
-## 8. 动手前必知的红线
+## 9. 动手前必知的红线
 
 | 红线 | 违反会怎样 |
 | --- | --- |
-| 跨 App 直接读写对方数据库 / bucket / Redis key | 破坏领域所有权，无门禁能救 |
-| 用可变 tag 代替 `repo@sha256:` digest | 部署门禁拒收 |
-| 契约 schema 在 consumer 仓另建副本 | 产生第二真源；升级必须 provider 先改、双端测试通过后才动锁 |
-| 生产开启 `REFERENCE_INTERACTION_ENABLED` | 启动 `ValueError`（四仓一致） |
-| 生产 `ALLOWED_HOSTS` 用 `*`、`APP_ORIGIN` 非 HTTPS | 启动即失败（后端与前端各自校验） |
-| **把 `research-app` 当成现行仓** | 它不是。投资研究与 Agent 归 `investment-app`；见下 |
-| 先改实例再改模板 | 违反"模板先行"；公共缺陷必须先修模板过门禁再同步实例 |
-| 迁移链分叉 / 与测试清单不一致 | CI 失败 |
+| 跨应用直接读写对方的库、桶、Redis 键 | 破坏领域所有权，没有门禁能救 |
+| 用可变 tag 代替固定摘要部署 | 发布链拒收；部署只认 `image.lock` 里的摘要 |
+| 手改渲染产物（`workload.yaml`、`*.sops.yaml`、`image.lock.yaml`） | 下一次 stage 覆盖或校验失败；改真源再 stage |
+| 契约 schema 在调用方另建副本 | 第二真源；升级必须提供方先改、两端测试过后才动锁 |
+| 先改实例再改模板 | 公共缺陷必须先修 tpl-app 再同步实例 |
+| 迁移链分叉或与测试里的清单不一致 | 测试失败 |
+| 重新生成已有身份、清私有目录、为清状态删 PVC 或 force apply | 身份与数据对不上，可能不可恢复 |
+| 集群内组件按公网名互连 | 公网解析一变就连错；要连就加 backchannel 变量 |
+| 把评测、验收、批准写成「系统会自动」 | 不得假设还不存在的自动化（[流水线](../dev-investment-agent/pipeline.md)） |
+| 秘密进日志、回执、Git | 口令、令牌、私钥只在私有目录与 SOPS 里 |
 
-### 8.1 `research` 这个词怎么用
-
-三个不同的东西，别混：
-
-| 说的是 | 现状 |
-| --- | --- |
-| 历史 `research-app` | **不是活动 App**。投资研究与 Agent 能力在 `investment-app`。历史文档（v4/v5 计划、handoff、evidence）里大量出现该名，**那是残留，不是现行仓** |
-| investment 内部的"研究" | 业务模块，不是独立 App |
-| 将来若真建 `research-app` | 通用跨领域研究，是**新的有界上下文**：独立仓、身份、库、契约。**不得复用历史身份**，也不得把 investment 的数据自动划过去 |
-
-复核现行部署里已无该 App：
-
-```bash
-grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include='*.json'
-# 应无结果
-```
-
-### 8.2 能力状态：四个词，别用"文件在不在"判断
-
-本文档集描述某项能力时，用这四个词。**它们是递进的**，后一个不蕴含前一个成立以外的东西：
-
-| 状态 | 含义 |
-| --- | --- |
-| **defined** | schema、DTO、Port 或表已存在 |
-| **wired** | 有生产调用方或适配器，主链可达 |
-| **deployable** | 配置、Secret、profile 与门禁允许部署 |
-| **runtime-verified** | 有对应环境的运行态证据 |
-
-**"文件存在"只到 defined。**这是本集最容易被误读的地方。
-
-`runtime-verified` 必须绑定环境、版本与场景；隔离 PostgreSQL/RabbitMQ/Calico 验证
-不等于业务 KIND 已升级，更不等于生产或完整用户旅程验收。运行快照从 §10 的真源重取。
-
-各能力的实际状态在 §9.2 与 §9.3 标注，本节只定义词，不重复列举。
-
-## 9. 当前状态与已知缺口
-
-**这一节记录的是"看起来做完了、其实没有"的东西**，是新来者最需要先知道的。
-
-### 9.1 版本口径
-
-源码包版本仍为 `2.0.0`；它不是本轮镜像或部署已更新的证明。
-
-| 层 | 取值 |
-| --- | --- |
-| 源码 | 四后端 `pyproject.toml` + `uv.lock`、八前端 `package.json` 均 `2.0.0` |
-| 镜像别名 | R7 的 `:2.0.0` 是历史正式别名；后续开发镜像不可覆盖它 |
-| 部署 | bundle 固定 digest，但可能落后当前源码；发布锁、bundle 与实际 imageID 分别核验 |
-| 发布记录 | `formal_release` / 模板 manifest 是其锁定发布的声明，不能替后续改动背书 |
-
-**发布采用 `exact-digest-alias`**（manifest `release_policy.promotion_method`）：
-不重建镜像，给已过 R7 门禁的 digest 打 `2.0.0` 别名。Dockerfile 逐字
-`COPY app/`、无版本注入，镜像内的版本字符串来自构建时的源码。
-
-两点会绊人，动版本号前须知道：
-
-- **源码版本与已发布镜像不同步**：源码于 2026-08-29 对齐为 `2.0.0`，
-  未为此重建镜像。R7 锁定的 digest 构建自 `2.0.0.dev0` 时期的源码，
-  而 `/api/version` 读 `importlib.metadata`——**下次构建才会带入新版本**。
-  后续开发镜像已有单独部署历史；具体 imageID 以现场和运行预检证据为准。
-  本次源码同步没有构建镜像、重渲染 bundle 或更新业务部署
-- **改源码版本必须同时改 `uv.lock`**，否则 Dockerfile 的 `uv sync --frozen`
-  会在构建阶段失败。`test_package_version_matches_the_formal_release` 会拦
-
-### 9.2 共享能力：源码接线与仍留白项
-
-源码能力按固定提交与测试记录，运行能力按 2026-09-20 本机 KIND 固定候选更新；
-下面不以声明或源码存在向其他环境外推。
-
-| 项 | 实际状态 |
-| --- | --- |
-| **web-interaction 契约** | **defined，未 wired**：DTO、Port、前端 zod 齐全，但默认适配器返回 **503**；唯一替代实现是 reference fixture，且**生产禁止开启**。即生产环境该契约面**必定不可用** |
-| **共享 Outbox/Inbox 原语** | 源码已接线：命令与领域事务同提交，Worker 使用持久租约和 Inbox，支持死信/重放/对账；不再是零调用骨架，后续环境仍按具体 release 验收 |
-| **Celery 周期任务** | 源码已配置每 5 秒可靠投递 pump；Investment 保留领域调度。配置存在不证明 Scheduler 活性或 Worker 消费进展 |
-| **`/api/internal/v1` 入站面** | B7h 四仓共享受保护投递指标入口 `GET /api/internal/v1/delivery/metrics`，需独立服务主体及 `delivery:observe`；Knowledge/Investment 原领域 Internal 路由保留。尚未为指标接实际采集器 |
-| **健康与进展** | API ready 校验本镜像迁移 head；Worker 探针核队列/路由/注册；Beat 活动与已提交 Inbox 进展分别观测，不能互相冒充 |
-| **进程权限** | 四角色 PG 列 ACL、三角色 broker 预建拓扑、联合故障恢复及数据库恢复已验证；本机 KIND 已完成真实业务账号、启动 definitions 与数据切换，云端及后续 release 仍须重验 |
-| **保留与监控** | 无自动回执/租约墓碑 GC；Prometheus/Alertmanager 安装、采集、告警送达留未来计划，不能将 HTTP 指标存在当接线完成 |
-
-产品留白先查[需求](../dev-investment-agent/tree-build/PRD/requirement.md)与 [`tree-build/`](../dev-investment-agent/tree-build/README.md)；
-旧 N1～N6 已完成接收裁定，不再用 v5 清单补需求。源码/运行态边界见
-[发布与门禁](topics/release.md)。
-
-### 9.3 各 App 的具体缺口
-
-| App | 缺口 |
-| --- | --- |
-| info | Elasticsearch 索引默认关闭（`SEARCH_BACKEND=disabled`），索引任务直接跳过；分发运行时**只接受 `knowbase-app`** 一个下游 |
-| knowledge | Admin 入库运维页是**静态占位**，无 fetch 无操作 |
-| investment | `RunBudget` 四维限额已实现，但**两条生产链都不调用**（全仓仅三处引用：定义处、非生产图、其测试），故 `budget_exceeded` 状态在生产中**不可达**；Web 面未接 Pilot 链 |
-
-### 9.4 组件级助手指令
-
-各组件目录下有 8 份 `CLAUDE.md`（四仓 × 后端/web 前端），**会被 Claude Code
-进入目录时自动注入**。当前内容是「局部编码规则 + 指向本文档集与
-[`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) 的指针」。
-
-⚠ 这类文件自动注入、不易被察觉，**改动组件结构时必须同步检查它们**。
+描述能力状态用四个递进的词：**defined**（schema、表、Port 在）→ **wired**（有生产调用方）→ **deployable**（配置与门禁允许部署）→ **runtime-verified**（有对应环境、版本、场景的运行证据）。「文件存在」只到 defined。
 
 ## 10. 去哪查
 
-| 我要做什么 | 读 |
-| --- | --- |
-| 改某个仓的代码 | [`repos/`](repos/) 下对应文件 |
-| 加或改跨 App 契约 | [`topics/contracts.md`](topics/contracts.md) |
-| 动登录、权限、服务间调用 | [`topics/identity.md`](topics/identity.md) |
-| 加表、改迁移 | [`topics/data.md`](topics/data.md) |
-| 发版、改部署清单 | [`topics/release.md`](topics/release.md) |
-| **动代码前必读的规则** | [`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md)（按主题分组） |
-| 提一个开发请求 | [`../dev-investment-agent/tree-build/PRD/requirement.md`](../dev-investment-agent/tree-build/PRD/requirement.md) |
-| 查当前 digest / release_id | `k8s/sunmoonai/app-platform/<app>-app/deployment/bundle/release.json` |
-| 查某仓迁移 head | 该仓 `app/alembic/versions/` 里最新的 revision |
-| 查契约 schema 的 sha256 | consumer 仓的 `*-provider-lock.json`，或 provider 的 `contract-manifest.json` |
-| 查集群里实际跑的副本与镜像 | 活集群 `kubectl -n app-platform-dev get deploy -o wide` |
-
-**易腐值一律不写进文档正文**（镜像 digest、schema sha256、commit、迁移 head、副本数）——
-它们变化比文档维护快，写进来必然先于文档失效。文档只写规则并指向真源。
-
-## 按任务找
-
 | 我要… | 读 |
 | --- | --- |
-| **动手前必读的规矩** | [`governance.md`](governance.md) |
-| 改某个仓的代码 | [`repos/`](repos/) 下对应文件的「硬规则」+「已知未实现」两节 |
-| 加或改跨 App 契约 | [`topics/contracts.md`](topics/contracts.md) |
-| 动登录、权限、服务间调用 | [`topics/identity.md`](topics/identity.md) |
-| 加表、改迁移 | [`topics/data.md`](topics/data.md) |
-| 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
-| 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
-| **动代码前必读的规则** | [`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md)（按主题分组） |
-| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-investment-agent/turn/protocol/competition-protocol.md`](../dev-investment-agent/turn/protocol/competition-protocol.md) |
-| 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) C-T4 |
-| 知道接下来要建什么 | [`../dev-investment-agent/tree-build/`](../dev-investment-agent/tree-build/) |
-| 继续发布与运行验收 | [发布与门禁](topics/release.md)，按当前 release 和现场事实工作 |
-| 确认目标产品还要建什么 | [需求](../dev-investment-agent/tree-build/PRD/requirement.md)与 [`tree-build/`](../dev-investment-agent/tree-build/README.md) |
-| 查旧修复的测试或原文 | [v5 历史索引](topics/v5-history.md)，按固定版本取证 |
-| 复核本文档集的某条断言 | **读代码**，别的都不算数 |
-| 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
+| 知道这个产品要什么 | [需求](../dev-investment-agent/tree-build/PRD/requirement.md)、[`PRD/apps/`](../dev-investment-agent/tree-build/PRD/apps/README.md)、[待定决策](../dev-investment-agent/tree-build/decisions.md) |
+| 知道某块怎么设计 | [`SDD/architecture/`](../dev-investment-agent/tree-build/SDD/architecture/README.md)、[`SDD/modules/`](../dev-investment-agent/tree-build/SDD/modules/) |
+| 动代码前必读的规则 | [`rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) |
+| 一次求助 / 一次委托怎么走 | [流水线](../dev-investment-agent/pipeline.md)、[`turn/`](../dev-investment-agent/turn/README.md) |
+| 拓扑、谁连谁 | [`k8s/docs/拓扑.md`](../../../docs/拓扑.md) |
+| 部署、发版、某个组件怎么维护 | `k8s/infrastructure/README.md`、各组件目录的 `README.md`、[平台架构](../../../docs/platform-kind-v1/architecture.md)、[验收边界](../../../docs/platform-kind-v1/verification.md) |
+| 派活卡、回执、两台机器怎么同步 | `../dev-investment-agent/switch-test/`（`inbox/`、`done/`、`human-*.sh`） |
+| 改某个仓的代码 | [`repos/`](repos/) 对应文件（部分仍是旧体系的写法，以代码为准） |
+| 跨应用契约、数据、身份 | [`topics/`](topics/) 对应文件（同上） |
+| 改名进行到哪 | [`k8s/docs/rename.md`](../../../docs/rename.md) |
+| 查当前钉的提交 / 镜像摘要 / 已晋级的源 | `infrastructure/applications/sources.yaml`、各组件 `image.lock.yaml`、`infrastructure/environments/kind/flux-source.yaml` |
+| 查集群里实际跑的 | `export KUBECONFIG=~/.kube/sunmoon-kind.config; kubectl -n app-platform-dev get deploy -o wide`（所有者机器） |
+| 复核本文的某条断言 | **读代码**，别的都不算数 |
 
-## 本集之外：`docs/` 下的其他目录是什么
-
-本目录自称"现状的权威投影"，但 `docs/` 下并存着若干历史材料。
-**不声明它们的关系，入口声明就是空话**——读者会同时撞到多份看起来权威的文档。
-逐项定性如下（均**不是现状权威**，与本集冲突时以本集与代码为准）：
-
-| 位置 | 是什么 | 最近变动 | 定性 |
-| --- | --- | --- | --- |
-| 旧 `architecture-v2/` | 旧重构目录已清退，7 个复用工具/测试迁至 app-platform/scripts/validation | 2026-09-19 | 历史发布证据按 [v5 历史索引](topics/v5-history.md#architecture-v2-目录清退) 读取；旧 R7 脚本不是当前开发发布门禁 |
-| 旧 `legacy-backlog/`、`tasks/` | 架构接收与本机 KIND 收尾已完成，最后一项（监控接线）已并入 [`repos/k8s.md`](repos/k8s.md)「已知未实现或易误解」，整个目录退役 | 2026-09-22 | 当前目标看 [需求](../dev-investment-agent/tree-build/PRD/requirement.md) 与 `tree-build/`，当前发布事实看发布页，历史原文按 [v5 索引](topics/v5-history.md) 的固定提交读取 |
-| 旧 `evidence/` | 78 份 v5 历史验收材料已退出当前工作树 | 2026-09-19 | 原文按 [v5 历史索引](topics/v5-history.md#旧-evidence-目录清退) 查询，不代表当前版本已验收 |
-| 旧 `mooc-manus-v5/` | 111 份旧 ADR、契约和脚本已退出当前工作树 | 2026-09-19 | 仅按 [v5 历史索引](topics/v5-history.md) 查询，不作现行契约或部署入口 |
-| `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
-| 旧 v4/v5 计划、实施计划、handoff 与 24 份旧账散报告 | 已退出当前工作树 | 2026-09-19 | 旧目标已完成接收裁定，完整原文按 [v5 历史索引](topics/v5-history.md) 取回，不再另建备份目录 |
-| 旧 Architecture v2 重构计划、Knowledge Provider 解耦报告 | 已退出当前工作树 | 2026-09-19 | 当前架构看本指南，完整过程按 [v5 历史索引](topics/v5-history.md) 的固定 Git 版本查询 |
-| `docs/` 下其余散落 md | Harbor、Celery、YAML 生成、k8s 连接等主题笔记 | 不一 | **参考，未逐条与代码核对**。主题都还活着，但断言可能已漂移——用之前先回代码验一遍 |
-| `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
-
-**2026-08-29 已清理一轮**：删掉 10 项 6989 行，判据是"描述的对象已不存在"——
-
-- 六份环境变量说明写的是 NestJS BFF / Nuxt / Vite 时代；现行八个前端全是
-  Next.js 16，后端全是 FastAPI（admin/web backend 早已并成单一 backend）
-- `APP组件开发.md`、`bff-config-differences-analysis.md` 全文以
-  `incubator-app-bff` / `llmops-app-bff` 为例，二者已不是活组件
-- `Dockerfile构建优化-从inboard到标准Python镜像.md`：inboard 时代已过
-- `recursive-architecture/`：2025-12 旧设计，本表原已定性"已失效"
-
-删的都是**活引用为 0** 的。取回：`git log --diff-filter=D -- sunmoonai/docs/<路径>`。
-
-当前复用工具见 [validation](../../app-platform/scripts/validation/README.md)，发布入口仍为
-`app-platform/scripts/` 与各 App 的 `deployment/`。冻结 turn 及主题笔记保留；旧 evidence 已转 Git 历史查询。
-旧计划中仍有效的交互目标与 Profile 概念已接收入 [需求](../dev-investment-agent/tree-build/PRD/requirement.md) 和 `tree-build/`；
-删除旧散文档不删除代码或 Git 历史。
-
-## 两种修改语义，别混
+## 两种修改语义
 
 | 目录 | 语义 | 怎么改 |
 | --- | --- | --- |
-| `overall-architecture.md` `repos/` `topics/` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
-| 协作机制（请求流程、推送、文档约定、评审） | **已移出** | 见 [`../dev-investment-agent/turn/`](../dev-investment-agent/turn/) |
-| `governance.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
-
-## 写作约定
-
-见 [人的批准点](../dev-investment-agent/turn/approvals.md)「改判」与 [turn 的投影](../dev-investment-agent/turn/turn-project.md)「交给 agent 的活，八条都成立」。
-本处不复述——引用而非复制，是那份文件自己的第二条维护约定。
+| 本文、`repos/`、`topics/` | **现状投影** | 覆盖式重写：直接替换旧条文，只写当前有效的事实；历史由 Git 承担 |
+| `governance.md` | **规则** | 改动前要有共识；改完检查依赖它的文档 |
+| `tree-build/decisions.md` 等决定记录 | **记录** | 只追加；所有者的原话保持原样 |
 
 ## 已知缺口
 
-- **部署不等于完整验收**：本机 KIND 已部署 `kind-b7-20260919` 并完成独立身份切换，
-  见 [发布现状](topics/release.md#8-当前-kind-切换事实与剩余验收)；完整业务 UAT 与
-  NetworkPolicy 包级验收仍有缺口。独立环境历史证据见
-  [v5 历史索引](topics/v5-history.md)，不自动替当前版本背书；继续工作时重查。
-- **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
-- 本文档集**不写进度**。哪些缺口修过、怎么修的，见 git 历史。
+- `repos/`、`topics/`、`governance.md` 还有旧体系（`k8s/sunmoonai/` 下的平台目录、`bundle/` 与 `deploy.py` 发布链）的写法，待按本文重写。
+- 公网边缘只暴露三个域名；knowfeed、knowbase 与各管理端只在所有者机器上可用。
+- 单机 KIND：数据主备同在一块物理盘，机器外备份未落地；真实 KIND 删除重建、DNS 与系统证书信任等仍在 [验收边界](../../../docs/platform-kind-v1/verification.md#未完成项) 的未完成项里。
+- knowmart（专家市场）只有设计；评测的自动化门未接。
