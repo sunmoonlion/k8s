@@ -168,7 +168,7 @@ for r in investment-app runtime tpl-app k8s; do git -C ~/worktrees/qwen/$r push 
 ```
 
 **停点**：Opus 写回执 `R1-opus`（含各仓推上去的提交号）并在本节写「通过」。
-**状态**：
+**状态**：**通过** · 2026-10-15 · Opus。回执 `rename-receipts/R1-opus.20261015-1200.md`：18 个仓的改名提交已推到旧名字的仓的 `qwen` 分支（两个父仓 GitHub、gitee 都已核对）；k8s `c5905fe2`。Qwen 可以开始 R2。R5、R6 的逐条命令在 R5 前补齐。
 
 ---
 
