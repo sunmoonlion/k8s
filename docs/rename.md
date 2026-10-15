@@ -527,7 +527,9 @@ PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 换名；0018 改写为 knowmar
 3. 远程机 `~/rename-backup/` 与本地机同名目录保留，删除另行决定。
 4. **把 `k8s/sunmoonai/` 整体移出**（所有者 2026-10-15 定）：它大部分是 10-06 起冻结的旧体系，计划删掉。先把还活着的四块搬出去，再 `git rm` 其余（历史在 Git 里）：
    - `sunmoonai/docs/dev-investment-agent/`（手册、回执、派活卡、同步脚本、门禁工具）→ `k8s/docs/dev-investment-agent/`：连带改 k8s 里 26 个、runtime 里 6 个引用；`.githooks` 的 `doc-gate.py`、`anchor-gate.py` 路径与「只查 `sunmoonai/docs/`」的范围；两台机器的 `~/switch-test/human-*.sh` 转发器（跑一次 `human-local.sh` 自动重新生成）；
-   - `sunmoonai/docs/project-guide/` 与所有者挑出的通用文档 → `k8s/docs/`：连带改各仓 `AGENTS.md` 的指针；
+   - `sunmoonai/docs/project-guide/` → `k8s/docs/project-guide/`：连带改各仓 `AGENTS.md` 的指针；
+   - 所有者 2026-10-15 挑定的通用参考资料原样搬进 `k8s/docs/reference/`：`行业/` ← `docs/ai-tools/mcp-touyan-comparison.md`；`采集与数据/` ← `app-platform/info-app/docs/spider-reference/`（三份）、`app-platform/info-app/docs/仿wind的数据库报表体系设计.md`；`技术笔记/` ← `docs/Celery监控机制说明.md`、`ops-platform/flower/Flower使用文档.md`、`docs/文档转换服务技术栈对比.md`（文首加一句「这两个服务新体系里没有，仅作选型参考」）；`运维笔记/` ← `ingress-platform/traefik/KUBERNETES-PORT-FORWARDING-GUIDE.md`。WSL 三份已改写并入 `infrastructure/host/`，三份原则已吸收进 `rules/constraints.md`（`C-D12`–`C-D15`、`C-C9`–`C-C11`、`C-R10`）与总览，原件随目录删；云上 kubeadm 那几份不搬，到做云端建群时按新体系另写；
+   - `sunmoonai/kind-infrastructure/mount/wsl_interop.py`（新体系的开机服务 `sunmoon-wsl-interop.service` 还靠它，源码目前只在这里）**必须**收进 `infrastructure/host/`；同目录的扩盘、备份、压缩脚本（`resize_data.py`、`resize_backup.py`、`system_compaction.py`）评估后决定是否一并收进；
    - `sunmoonai/relay-platform/`、`sunmoonai/sandbox-platform/`（三个自研镜像的源码）→ 新位置：`infrastructure/applications/component-images.yaml` 的 `context` 与钉的提交要一起改，在下一次重建这几个镜像时生效；
    - `sunmoonai/scripts/` 里还在用的（本地联调脚本、发布卡回执目录 `results/`）挑出来搬，其余随目录删；
    - 冻结的旧体系目录（`app-platform`、`cicd-platform`、`data-platform`、`deploy-sunmoonai-all`、`infrastructure`、`ingress-platform`、`kind-infrastructure`、`messaging-platform`、`operations`、`ops-platform`、`registry-platform`、`CHECKPOINT-old-system-*.md`）直接 `git rm`。

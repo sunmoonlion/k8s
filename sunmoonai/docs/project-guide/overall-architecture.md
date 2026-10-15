@@ -97,6 +97,7 @@
 | 每个结果带出处 | 数据集、版本、数据时点 |
 | 跨应用只经版本化 HTTP 契约 | **禁止跨应用直接读写对方的库、桶、Redis 键**；契约的 schema 真源在提供方，锁文件在调用方（[契约](topics/contracts.md)） |
 | 每步只写自己的库 | 跨应用不用分布式事务；投递走 Outbox/Inbox，消费方幂等；broker ACK 不等于业务提交 |
+| 新数据先定归属 | 新增数据实体先答五问（领域、唯一所有者、哪一类、版本与审计、下游怎么失效重建，`C-D12`）；原始证据先存再处理、不覆盖（`C-D13`）；关键数据可按历史时点重现（`C-D14`） |
 
 investment 内部：三种对话（聊天、工作、专家，[0017](../dev-investment-agent/tree-build/SDD/modules/0017-three-kinds-of-conversation.md)）；工作区 = 本地代理里加的白名单目录，项目是其下子目录（[0024](../dev-investment-agent/tree-build/SDD/modules/0024-new-project.md)）；后端进程 `runner`（工作台管理者，将改名 `manager`）连沙箱、下指令、收事件、算费用、管项目与专家流程；专家包按版本上架，新委托绑定委托当时上架的版本；本地代理的安装包经 investment 的 `agent-releases` 发放。设计按块在 [`SDD/modules/`](../dev-investment-agent/tree-build/SDD/modules/)。
 
@@ -195,6 +196,7 @@ investment 内部：三种对话（聊天、工作、专家，[0017](../dev-inve
 | 集群内组件按公网名互连 | 公网解析一变就连错；要连就加 backchannel 变量 |
 | 把评测、验收、批准写成「系统会自动」 | 不得假设还不存在的自动化（[流水线](../dev-investment-agent/pipeline.md)） |
 | 秘密进日志、回执、Git | 口令、令牌、私钥只在私有目录与 SOPS 里 |
+| 把「部署了」当成「可以对外服务」 | 对外前逐项过上线门（`C-R10`）：备份要真恢复过，单机 KIND 不是生产高可用 |
 
 描述能力状态用四个递进的词：**defined**（schema、表、Port 在）→ **wired**（有生产调用方）→ **deployable**（配置与门禁允许部署）→ **runtime-verified**（有对应环境、版本、场景的运行证据）。「文件存在」只到 defined。
 
