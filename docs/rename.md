@@ -8,7 +8,7 @@
 
 1. **只执行本文写下的命令。** 本文没写的、写得和现场对不上的，一律停下报告，不临场发挥、不「顺手修一下」。
 2. **按段走，一段一停。** 每段末尾有「停点」：执行人写回执，Opus 审过、在本文该段的「状态」里写上「通过 + 日期 + 审读人」，下一段才开始。
-3. **不删旧东西，只挪开。** 旧目录、旧桶、旧秘密目录、旧镜像、旧 Casdoor 应用一律保留；**删除不在本手册里**，R6 验收、下一次例行备份之后另行决定。注意 R3 挪进 `~/rename-backup/` 的**工位**检出不能直接 `git log`：工位里父仓与子仓的 `.git` 是指向主目录的相对路径（如 `../../../../master/info-app/.git/worktrees/…`），挪开后指向断了；对象都还在备份的 `master/.git` 里，要找回时先手工改 `.git` 文件里的 `gitdir:`。备份的 `master/` 本身完整可用。
+3. **R5.3 验证通过之前不删任何旧东西。** 旧库、旧桶、旧 Casdoor 应用等是 R5 失败时退回旧应用的唯一退路。所有者 2026-10-15 定旧的不必备份（「旧库，旧桶好像也没必要备份」），所以验证通过后在 **R6 按清单删除**：先列出、再删、再核对，删前删后的清单都进回执。注意 R3 挪进 `~/rename-backup/` 的**工位**检出不能直接 `git log`：工位里父仓与子仓的 `.git` 是指向主目录的相对路径（如 `../../../../master/info-app/.git/worktrees/…`），挪开后指向断了；对象都还在备份的 `master/.git` 里，要找回时先手工改 `.git` 文件里的 `gitdir:`。备份的 `master/` 本身完整可用。
 4. **秘密不进回执、不进日志、不进 Git。** 口令、令牌、私钥只在本机生成、只进 SOPS。
 5. **出错先停，不重试成功了再报。** 失败的输出原样（去掉秘密）贴进回执。
 6. 回执统一放 `k8s/docs/rename-receipts/R<段号>-<执行人>.<时间>.md`，最后一行 `exit=<码>`。
@@ -312,7 +312,18 @@ git -C ~/master/$NEW remote -v
 
 ## R6 下线旧对象 — Qwen（本地机）
 
-旧应用的 k8s 对象已在 R5.2 由 Flux 删除；本段只核对确实删干净了（命令由 Opus 填）。旧库与旧角色、旧桶、旧 vhost 与 Redis 用户、旧 Casdoor 应用与服务身份、旧私有目录、Harbor 旧镜像仓库、`~/rename-backup/` 下的旧检出**都保留**，删除不在本手册里。
+只在 R5.3 写了「通过」之后做（所有者 2026-10-15 定旧的不必备份）。命令由 Opus 填；每一类**先列出、再删、再列出核对**，删前删后的清单进回执：
+
+| 类 | 删什么 |
+| --- | --- |
+| k8s 对象 | 核对旧应用的对象已在 R5.2 被 Flux 删干净；有残留按清单删 |
+| PostgreSQL | 库 `info`、`knowledge`；角色 `info_runtime`、`info_migrator`、`knowledge_runtime`、`knowledge_migrator`、`knowledge_source_reader` 等旧角色 |
+| 对象存储 | 桶 `info-originals`（含开发环境前缀那个）及其旧用户、旧策略 |
+| RabbitMQ、Redis | 旧 vhost `info`、`knowledge` 与旧用户；旧 Redis 用户及其 ACL |
+| Casdoor | 旧应用 `sunmoonai-info-web/admin`、`sunmoonai-knowledge-web/admin`，旧服务身份与组织 |
+| 秘密 | 旧私有目录 `/etc/sunmoon/applications/sunmoon-kind/info`、`…/knowledge` 与旧备份目录 |
+| 镜像 | Harbor 里 `info-*`、`knowledge-*` 镜像仓库 |
+| 检出 | 两台机器上 `~/rename-backup/` 下的旧检出（都已推送过） |
 
 **停点**：Opus 审回执，在本节写「改名完成」，冻结解除，Cursor 恢复接卡（用新名字）。
 **状态**：
