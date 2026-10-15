@@ -291,7 +291,7 @@ bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh knowledge-app knowbas
 两台机器都改完、Opus 核过远程机之后，改名窗口结束：Qwen 跑一次 `WS=qwen bash ~/switch-test/human-local.sh`，要能正常走完（不报找不到仓），本地 qwen 工位的 `investment-app`、`runtime`、`tpl-app`、`k8s` 也随之拉到 R1 的提交。
 
 **停点**：Opus、Qwen 各写回执（Qwen 的含同步脚本最后一句），Opus 写「通过」。
-**状态**：
+**状态**：远程机**完成** · 2026-10-15 · Opus（`R4-opus.20261015-1425.md`：`config.sh` 两行已改、`repos.conf` 已核）。**本地机 Qwen 现在可以做**：只改 `~/five-repos-sync/config.sh` 两行（先备份）、用 `grep` 核对 `repos.conf`（不碰 `toolboxes`），然后跑 `WS=qwen bash ~/switch-test/human-local.sh`，写 `R4-qwen`。
 
 ---
 
