@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'info-redis-provision-v2', namespace: data-platform-dev}
+metadata: {name: 'knowfeed-redis-provision-v2', namespace: data-platform-dev}
 data:
   provision.py: |
     """Provision one bounded Redis identity and verify its real access, without secret output."""
@@ -16,7 +16,7 @@ data:
     def run():
         username = os.environ['APP_REDIS_USER']
         pattern = os.environ['APP_REDIS_KEY_PATTERN']
-        if not re.fullmatch(r'[a-z][a-z0-9_]{1,40}', username) or username == 'default' or pattern != 'info:*':
+        if not re.fullmatch(r'[a-z][a-z0-9_]{1,40}', username) or username == 'default' or pattern != 'knowfeed:*':
             raise RuntimeError('Unexpected identity boundary')
         password = Path('/run/app/password').read_text()
         digest = hashlib.sha256(password.encode()).hexdigest()
@@ -24,7 +24,7 @@ data:
                             decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
         client = redis.Redis(host=os.environ['REDIS_HOST'], username=username, password=password,
                              decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
-        key = 'info:acceptance:' + uuid.uuid4().hex
+        key = 'knowfeed:acceptance:' + uuid.uuid4().hex
         foreign = 'other-app:acceptance:' + uuid.uuid4().hex
         try:
             assert admin.config_get('aclfile') == {'aclfile': '/data/users.acl'}
@@ -79,20 +79,20 @@ data:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: info-redis-provision-in, namespace: data-platform-dev}
+metadata: {name: knowfeed-redis-provision-in, namespace: data-platform-dev}
 spec:
   podSelector: {matchLabels: {app.kubernetes.io/name: redis}}
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: info-redis-provision}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-redis-provision}}
       ports: [{protocol: TCP, port: 6379}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: info-redis-provision-out, namespace: data-platform-dev}
+metadata: {name: knowfeed-redis-provision-out, namespace: data-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: info-redis-provision}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-redis-provision}}
   policyTypes: [Egress]
   egress:
     - to:
@@ -102,13 +102,13 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'info-redis-b470e2fd4f17-v2', namespace: data-platform-dev}
+metadata: {name: 'knowfeed-redis-1d02d7ec153a-v2', namespace: data-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
   template:
     metadata:
-      labels: {app.kubernetes.io/name: info-redis-provision, app.kubernetes.io/part-of: info}
+      labels: {app.kubernetes.io/name: knowfeed-redis-provision, app.kubernetes.io/part-of: knowfeed}
     spec:
       restartPolicy: Never
       serviceAccountName: platform-runtime
@@ -116,13 +116,13 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:b470e2fd4f17a65c038bd9547626dc6a822675c3d2ad47e1fbbad62f3268546c
+          image: harbor.sunmoonai.com:30443/platform/knowfeed-backend@sha256:1d02d7ec153a02235845758833f1957cdc06e84ef395968d491513ab345ffd7c
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:
             - {name: REDIS_HOST, value: 'redis.data-platform-dev.svc.cluster.local'}
-            - {name: APP_REDIS_USER, value: 'info_runtime'}
-            - {name: APP_REDIS_KEY_PATTERN, value: 'info:*'}
+            - {name: APP_REDIS_USER, value: 'knowfeed_runtime'}
+            - {name: APP_REDIS_KEY_PATTERN, value: 'knowfeed:*'}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
           volumeMounts:
@@ -131,7 +131,7 @@ spec:
             - {name: app, mountPath: /run/app, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: script, configMap: {name: 'info-redis-provision-v2'}}
+        - {name: script, configMap: {name: 'knowfeed-redis-provision-v2'}}
         - {name: admin, secret: {secretName: redis-auth, items: [{key: password, path: password}], defaultMode: 0440}}
-        - {name: app, secret: {secretName: info-redis-provision, defaultMode: 0440}}
+        - {name: app, secret: {secretName: knowfeed-redis-provision, defaultMode: 0440}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

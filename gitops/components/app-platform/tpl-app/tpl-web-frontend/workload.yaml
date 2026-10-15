@@ -20,7 +20,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/tpl-web-frontend@sha256:39650d73027cecb76cf0bb9b883edde36131739cbca01667a6a0334e7d828cfb
+          image: harbor.sunmoonai.com:30443/platform/tpl-web-frontend@sha256:aeeb2074cfea60583e3f909ff74bb5ff6fcaa703cea4f781a54bac7d4a8bfe35
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
@@ -29,7 +29,7 @@ spec:
             - {name: AUTH_APP, value: tpl}
             - {name: APP_ORIGIN, value: "https://tpl.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://tpl-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "tpl-web-frontend-39650d73027cecb7"}
+            - {name: DEPLOYMENT_ID, value: "tpl-web-frontend-aeeb2074cfea6058"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}

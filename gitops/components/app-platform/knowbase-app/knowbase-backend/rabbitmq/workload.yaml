@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'knowledge-rabbitmq-provision-v2', namespace: messaging-platform-dev}
+metadata: {name: 'knowbase-rabbitmq-provision-v2', namespace: messaging-platform-dev}
 data:
   provision.py: |
     """Provision one application's RabbitMQ boundary; emit no credentials or hashes."""
@@ -33,7 +33,7 @@ data:
         require(username not in ('guest', 'admin') and vhost != '/', 'Reserved identity')
         host = os.environ['RABBITMQ_HOST']
         password = Path('/run/app/password').read_text()
-        marker = 'sunmoon:knowledge:managed-by-gitops'
+        marker = 'sunmoon:knowbase:managed-by-gitops'
         permissions = {'configure': '.*', 'write': '.*', 'read': '.*'}
         with httpx.Client(base_url=f'http://{host}:15672/api/',
                           auth=(Path('/run/admin/username').read_text(), Path('/run/admin/password').read_text()),
@@ -60,7 +60,7 @@ data:
                 granted = request('GET', user_path + '/permissions')
                 require(all(p['vhost'] == vhost for p in granted), 'Identity has foreign vhost permissions')
             if existing_vhost is None:
-                request('PUT', vhost_path, {'description': marker, 'tags': 'sunmoon,knowledge', 'default_queue_type': 'classic'})
+                request('PUT', vhost_path, {'description': marker, 'tags': 'sunmoon,knowbase', 'default_queue_type': 'classic'})
             if user is None:
                 salt = os.urandom(4)
                 encoded = base64.b64encode(salt + hashlib.sha256(salt + password.encode()).digest()).decode()
@@ -99,7 +99,7 @@ data:
             # Passive declarations never recreate or consume the application's task queue.
             channel.exchange_declare(exchange=queue_name, type='direct', durable=True, passive=True)
             channel.queue_declare(queue=queue_name, durable=True, passive=True)
-            probe_name = 'knowledge.acceptance.' + uuid.uuid4().hex
+            probe_name = 'knowbase.acceptance.' + uuid.uuid4().hex
             probe = Queue(probe_name, exchange=Exchange('', type='direct'), routing_key=probe_name,
                           exclusive=True, auto_delete=True, durable=False, channel=channel)
             try:
@@ -135,20 +135,20 @@ data:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: knowledge-rabbitmq-provision-in, namespace: messaging-platform-dev}
+metadata: {name: knowbase-rabbitmq-provision-in, namespace: messaging-platform-dev}
 spec:
   podSelector: {matchLabels: {app.kubernetes.io/name: rabbitmq}}
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-rabbitmq-provision}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowbase-rabbitmq-provision}}
       ports: [{protocol: TCP, port: 5672}, {protocol: TCP, port: 15672}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: knowledge-rabbitmq-provision-out, namespace: messaging-platform-dev}
+metadata: {name: knowbase-rabbitmq-provision-out, namespace: messaging-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-rabbitmq-provision}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowbase-rabbitmq-provision}}
   policyTypes: [Egress]
   egress:
     - to:
@@ -158,13 +158,13 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'knowledge-rabbitmq-d88fee857408-v2', namespace: messaging-platform-dev}
+metadata: {name: 'knowbase-rabbitmq-2047b5ba3716-v2', namespace: messaging-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
   template:
     metadata:
-      labels: {app.kubernetes.io/name: knowledge-rabbitmq-provision, app.kubernetes.io/part-of: knowledge}
+      labels: {app.kubernetes.io/name: knowbase-rabbitmq-provision, app.kubernetes.io/part-of: knowbase}
     spec:
       restartPolicy: Never
       serviceAccountName: platform-runtime
@@ -172,14 +172,14 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:d88fee857408281a6d5188bd48e58d42f6662f6a5bf50a10b84703613a4b69a3
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:2047b5ba3716b6564f5a3d9e1203b0ba1a42adec90ae13501ec98227fcdc7a1c
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:
             - {name: RABBITMQ_HOST, value: 'rabbitmq.messaging-platform-dev.svc.cluster.local'}
-            - {name: APP_RABBITMQ_USER, value: 'knowledge_runtime'}
-            - {name: APP_RABBITMQ_VHOST, value: 'knowledge'}
-            - {name: APP_RABBITMQ_QUEUE, value: 'knowledge.default'}
+            - {name: APP_RABBITMQ_USER, value: 'knowbase_runtime'}
+            - {name: APP_RABBITMQ_VHOST, value: 'knowbase'}
+            - {name: APP_RABBITMQ_QUEUE, value: 'knowbase.default'}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
           volumeMounts:
@@ -188,7 +188,7 @@ spec:
             - {name: app, mountPath: /run/app, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: script, configMap: {name: 'knowledge-rabbitmq-provision-v2'}}
+        - {name: script, configMap: {name: 'knowbase-rabbitmq-provision-v2'}}
         - {name: admin, secret: {secretName: rabbitmq-auth, items: [{key: username, path: username}, {key: password, path: password}], defaultMode: 0440}}
-        - {name: app, secret: {secretName: knowledge-rabbitmq-provision, defaultMode: 0440}}
+        - {name: app, secret: {secretName: knowbase-rabbitmq-provision, defaultMode: 0440}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

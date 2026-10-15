@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowbase-database-bootstrap
+    namespace: data-platform-dev
+stringData:
+    migrator_password: ENC[AES256_GCM,data:Xf4Zs5Y71wP0b1WnurwQu0BoFAp/CsfwSqeg0YGTC0kM+TwGMpQEog==,iv:DStn+6jwYTNIuqiqacKjRXWRL7BD3L9TgOl0XNPQ1uQ=,tag:rsoM8YA/A/Q4a4QGb111mg==,type:str]
+    runtime_password: ENC[AES256_GCM,data:/KUhaooRNSPlhONRESKWjwuXnnAPbGp0XhyRy4o+a8rryWUpKo/5uA==,iv:0q0574yZhnAked9zH1H2dZFKGrOoIBaD/+4rumRr5SE=,tag:lLrwJ2EtzVu4j5mhDmlLsA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBSMGJoa1JKVlZvRFJmR25P
+            SXVQcEpnYkJUVGtLN0FJRlRNbEF1VUI4amswClYzZ3NPL1AwK3hRUHpLTUFJVVVK
+            WmRmdW9vcm1hajl4UlloTysrNjNVdzAKLS0tIDhQVHllWnFzU2VyVnZ2bnJRRGF0
+            WlRWVXZEWWZyZ0ZHK01IUFJ2NS9WVWsK4UF+TQv4ISsZWductSy3yLCx40btTFb0
+            5e5bbmBiWir8E9HzlxdmbG1+cwXpX+GcISu+5qYzlDqXPdk/khEaPg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-15T08:51:59Z"
+    mac: ENC[AES256_GCM,data:80gNmLt/W55xtAwzypvg4rDqcpfQ9g/36i3lKWf5bTyFYGd40aFZjuwWujrPEtti1PCyANnhkHU7xZiKLUNzbt/3mF3dBTuyu+DYGRRZX+rxmqTUSBOL6w6tSG3vycr+aR81D/u3o0tnIK7pFLb7HRlLI+GursfnUF6EwM3ZMYU=,iv:+OPeFLhZ+AwlHCrzKH/25rFGr4VqFIbiext4Q44WS48=,tag:/6Z8ewi7IixOA6wl0T4MUg==,type:str]
+    version: 3.13.3

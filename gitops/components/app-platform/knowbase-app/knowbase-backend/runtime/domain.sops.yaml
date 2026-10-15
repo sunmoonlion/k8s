@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowbase-domain-runtime
+    namespace: app-platform-dev
+stringData:
+    KNOWBASE_MCP_JWT_PUBLIC_KEY: ENC[AES256_GCM,data:+aP8wtpVkdZH5gACmtLJSWlVZgVT4hzepWO4KkSsLVjE3phhs6xu5oJLVCdJWqOgxWB8X44Vu+lahly8qC8YFP276CZbghkGVq2FylO/vVNoFxXto8/sn9VjnQE1+c9dWWYMWa5xMZghyIVeO8x7w0vJmZFxYGgPvJ4dXgXWQDw4PjuBNynX6h9CX4xawTZQm5chW0HTlVHAqNi1OytQzBfbRI9x3wlvR4Yr5fgToGf3sw==,iv:Xdws4Wp/8zAgwlhTpiQmiVG+VkpQCu4N50WNTqq5V1c=,tag:0faui5bi3+y3W+ltfbfHlA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBxbUczUHNiQzI1QzBEL3ps
+            YTd1cUdwa2dwcVpadG5OdHg0OFhvM0RCbm5nCnZrU0pjL0JZZDEwTHBBM2ZvTlZF
+            K2RCWUo2ZWswM1ZBYVNhK0NuV1NKTTQKLS0tIFJ0bHhGejJZajNEdXdlOEhWQzVH
+            ajhMVHUyNkViT1dPczJITFBLWGxlS1EKEEhxvGC0XnwuNVLS9FJWFhzijYCJ6v4q
+            8IATmOQLVFVDnO9OnT8bJmFoO/MWOZLaWvkgYXZavY3RMqbC2wZBfw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-15T09:17:31Z"
+    mac: ENC[AES256_GCM,data:9zByMIiRhtiEmMuZTZzK0D+ykzhtHLyyjHPzkFlObOud+8WHUdDtIg4PNhMw8AnZ1wDfWQT6ndYUXmckuYqpdenQF7V8touATyikAzv3wAUw6pdMhyrhjzA4YU9dkH/py9hl6w+K+gFkfXgGUyNkdzxbGSyauO7s99XPtywqA+4=,iv:AGDJygspMGEu2GBsYmKYzGW8lycVZqeXitCX3mLT6vQ=,tag:js/UFnVgXLS+6UOBGFc3Jw==,type:str]
+    version: 3.13.3

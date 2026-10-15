@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: info-runtime, namespace: app-platform-dev}
+metadata: {name: knowfeed-runtime, namespace: app-platform-dev}
 data:
   ENV: production
-  APP_SLUG: info
-  DEPLOYMENT_ID: "info-backend-b470e2fd4f17a65c"
-  ALLOWED_HOSTS: "localhost,127.0.0.1,info-api,info-api.app-platform-dev.svc.cluster.local,info.sunmoonai.com,info-admin.sunmoonai.com"
+  APP_SLUG: knowfeed
+  DEPLOYMENT_ID: "knowfeed-backend-1d02d7ec153a0223"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,knowfeed-api,knowfeed-api.app-platform-dev.svc.cluster.local,knowfeed.sunmoonai.com,knowfeed-admin.sunmoonai.com"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
   REDIS_DB: '0'
-  CELERY_QUEUE: info.default
+  CELERY_QUEUE: knowfeed.default
   CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
   CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor.app-platform-dev.svc.cluster.local:8000
   CASDOOR_VERIFY_SSL: 'true'
@@ -17,26 +17,26 @@ data:
   REFERENCE_INTERACTION_ENABLED: 'false'
   S3_ENDPOINT: https://object-storage.data-platform-dev.svc.cluster.local:9000
   S3_REGION: us-east-1
-  S3_BUCKET: info-originals
+  S3_BUCKET: knowfeed-originals
   S3_FORCE_PATH_STYLE: 'true'
   S3_USE_TLS: 'true'
   AWS_CA_BUNDLE: /etc/sunmoon/object-storage/ca.crt
-  KNOWLEDGE_APP_INGEST_URL: https://knowledge-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowledge/ingestions
-  KNOWLEDGE_APP_SERVICE_APPLICATION: "sunmoonai-info-knowledge-ingest"
-  KNOWLEDGE_APP_SERVICE_CLIENT_ID: "sunmoon-info-knowledge-ingest"
-  KNOWLEDGE_APP_SERVICE_SCOPE: "knowledge:ingest"
-  KNOWLEDGE_APP_SERVICE_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
-  KNOWLEDGE_APP_SERVICE_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  KNOWBASE_APP_INGEST_URL: https://knowbase-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowledge/ingestions
+  KNOWBASE_APP_SERVICE_APPLICATION: "sunmoonai-knowfeed-knowbase-ingest"
+  KNOWBASE_APP_SERVICE_CLIENT_ID: "sunmoon-knowfeed-knowbase-ingest"
+  KNOWBASE_APP_SERVICE_SCOPE: "knowbase:ingest"
+  KNOWBASE_APP_SERVICE_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  KNOWBASE_APP_SERVICE_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
   SSL_CERT_FILE: /etc/sunmoon/service/ca.crt
   STORAGE_BACKEND: "s3"
   SEARCH_BACKEND: "disabled"
-  CROSS_APP_TARGETS_JSON: "{\"knowledge\": {\"web_base_url\": \"https://knowledge.sunmoonai.com:30443\"}}"
-  CROSS_APP_SOURCES_JSON: "{\"investment\": {\"return_url\": \"https://investment.sunmoonai.com:30443/zh-CN/workbench?ref={ref}\"}, \"knowledge\": {}}"
-  KNOWLEDGE_APP_DATASET_URL: "https://knowledge-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowledge/datasets"
+  CROSS_APP_TARGETS_JSON: "{\"knowbase\": {\"web_base_url\": \"https://knowbase.sunmoonai.com:30443\"}}"
+  CROSS_APP_SOURCES_JSON: "{\"investment\": {\"return_url\": \"https://investment.sunmoonai.com:30443/zh-CN/workbench?ref={ref}\"}, \"knowbase\": {}}"
+  KNOWBASE_APP_DATASET_URL: "https://knowbase-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowledge/datasets"
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: info-celery-config, namespace: app-platform-dev}
+metadata: {name: knowfeed-celery-config, namespace: app-platform-dev}
 data:
   celeryconfig.py: |
     # Native Celery 5.6 configuration; transient per-connection queues only.
@@ -47,35 +47,35 @@ data:
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: info-api, namespace: app-platform-dev}
+metadata: {name: knowfeed-api, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: info-api}
+    matchLabels: {app.kubernetes.io/name: knowfeed-api}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: info-api
-        app.kubernetes.io/part-of: info
+        app.kubernetes.io/name: knowfeed-api
+        app.kubernetes.io/part-of: knowfeed
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 8d19ae43b7abc8df5fbfc1b2742b22603fda69d41ba89b5fdc56fc00e2e6665c
+        sunmoonai.com/config-sha256: 8785acbcd123b79a84cf579e9c962ab9298e79bfa30c29c548faf3f8b86b4f52
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: info-runtime
+      serviceAccountName: knowfeed-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:b470e2fd4f17a65c038bd9547626dc6a822675c3d2ad47e1fbbad62f3268546c
+          image: harbor.sunmoonai.com:30443/platform/knowfeed-backend@sha256:1d02d7ec153a02235845758833f1957cdc06e84ef395968d491513ab345ffd7c
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -85,19 +85,19 @@ spec:
           livenessProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 3, periodSeconds: 20}
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
-            - {name: SERVICE_NAME, value: info-api}
+            - {name: SERVICE_NAME, value: knowfeed-api}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
             - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
             - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
-            - {configMapRef: {name: info-runtime}}
-            - {configMapRef: {name: info-browser-identity}}
-            - {secretRef: {name: info-database-runtime}}
-            - {secretRef: {name: info-rabbitmq-runtime}}
-            - {secretRef: {name: info-redis-runtime}}
-            - {secretRef: {name: info-browser-secrets}}
-            - {secretRef: {name: info-storage-runtime}}
-            - {secretRef: {name: info-knowledge-service}}
+            - {configMapRef: {name: knowfeed-runtime}}
+            - {configMapRef: {name: knowfeed-browser-identity}}
+            - {secretRef: {name: knowfeed-database-runtime}}
+            - {secretRef: {name: knowfeed-rabbitmq-runtime}}
+            - {secretRef: {name: knowfeed-redis-runtime}}
+            - {secretRef: {name: knowfeed-browser-secrets}}
+            - {secretRef: {name: knowfeed-storage-runtime}}
+            - {secretRef: {name: knowfeed-knowbase-service}}
           resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "2", "memory": "768Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
@@ -106,41 +106,41 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
-        - {name: service-ca, configMap: {name: info-service-ca}}
-        - {name: storage-ca, secret: {secretName: info-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+        - {name: service-ca, configMap: {name: knowfeed-service-ca}}
+        - {name: storage-ca, secret: {secretName: knowfeed-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
-        - {name: celery-config, configMap: {name: info-celery-config}}
+        - {name: celery-config, configMap: {name: knowfeed-celery-config}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: info-worker, namespace: app-platform-dev}
+metadata: {name: knowfeed-worker, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: info-worker}
+    matchLabels: {app.kubernetes.io/name: knowfeed-worker}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: info-worker
-        app.kubernetes.io/part-of: info
+        app.kubernetes.io/name: knowfeed-worker
+        app.kubernetes.io/part-of: knowfeed
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 8d19ae43b7abc8df5fbfc1b2742b22603fda69d41ba89b5fdc56fc00e2e6665c
+        sunmoonai.com/config-sha256: 8785acbcd123b79a84cf579e9c962ab9298e79bfa30c29c548faf3f8b86b4f52
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: info-runtime
+      serviceAccountName: knowfeed-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:b470e2fd4f17a65c038bd9547626dc6a822675c3d2ad47e1fbbad62f3268546c
+          image: harbor.sunmoonai.com:30443/platform/knowfeed-backend@sha256:1d02d7ec153a02235845758833f1957cdc06e84ef395968d491513ab345ffd7c
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -148,17 +148,17 @@ spec:
           readinessProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 20}
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
-            - {name: SERVICE_NAME, value: info-worker}
+            - {name: SERVICE_NAME, value: knowfeed-worker}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
             - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
             - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
-            - {configMapRef: {name: info-runtime}}
-            - {configMapRef: {name: info-browser-identity}}
-            - {secretRef: {name: info-database-runtime}}
-            - {secretRef: {name: info-rabbitmq-runtime}}
-            - {secretRef: {name: info-storage-runtime}}
-            - {secretRef: {name: info-knowledge-service}}
+            - {configMapRef: {name: knowfeed-runtime}}
+            - {configMapRef: {name: knowfeed-browser-identity}}
+            - {secretRef: {name: knowfeed-database-runtime}}
+            - {secretRef: {name: knowfeed-rabbitmq-runtime}}
+            - {secretRef: {name: knowfeed-storage-runtime}}
+            - {secretRef: {name: knowfeed-knowbase-service}}
           resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "2", "memory": "1536Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
@@ -167,41 +167,41 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
-        - {name: service-ca, configMap: {name: info-service-ca}}
-        - {name: storage-ca, secret: {secretName: info-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+        - {name: service-ca, configMap: {name: knowfeed-service-ca}}
+        - {name: storage-ca, secret: {secretName: knowfeed-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
-        - {name: celery-config, configMap: {name: info-celery-config}}
+        - {name: celery-config, configMap: {name: knowfeed-celery-config}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: info-scheduler, namespace: app-platform-dev}
+metadata: {name: knowfeed-scheduler, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: Recreate}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: info-scheduler}
+    matchLabels: {app.kubernetes.io/name: knowfeed-scheduler}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: info-scheduler
-        app.kubernetes.io/part-of: info
+        app.kubernetes.io/name: knowfeed-scheduler
+        app.kubernetes.io/part-of: knowfeed
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 8d19ae43b7abc8df5fbfc1b2742b22603fda69d41ba89b5fdc56fc00e2e6665c
+        sunmoonai.com/config-sha256: 8785acbcd123b79a84cf579e9c962ab9298e79bfa30c29c548faf3f8b86b4f52
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: info-runtime
+      serviceAccountName: knowfeed-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:b470e2fd4f17a65c038bd9547626dc6a822675c3d2ad47e1fbbad62f3268546c
+          image: harbor.sunmoonai.com:30443/platform/knowfeed-backend@sha256:1d02d7ec153a02235845758833f1957cdc06e84ef395968d491513ab345ffd7c
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
@@ -209,16 +209,16 @@ spec:
           readinessProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 10}
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
-            - {name: SERVICE_NAME, value: info-scheduler}
+            - {name: SERVICE_NAME, value: knowfeed-scheduler}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
             - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
             - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
-            - {configMapRef: {name: info-runtime}}
-            - {configMapRef: {name: info-browser-identity}}
-            - {secretRef: {name: info-database-runtime}}
-            - {secretRef: {name: info-rabbitmq-runtime}}
-            - {secretRef: {name: info-storage-runtime}}
+            - {configMapRef: {name: knowfeed-runtime}}
+            - {configMapRef: {name: knowfeed-browser-identity}}
+            - {secretRef: {name: knowfeed-database-runtime}}
+            - {secretRef: {name: knowfeed-rabbitmq-runtime}}
+            - {secretRef: {name: knowfeed-storage-runtime}}
           resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
@@ -227,37 +227,37 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
-        - {name: service-ca, configMap: {name: info-service-ca}}
-        - {name: storage-ca, secret: {secretName: info-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+        - {name: service-ca, configMap: {name: knowfeed-service-ca}}
+        - {name: storage-ca, secret: {secretName: knowfeed-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
-        - {name: celery-config, configMap: {name: info-celery-config}}
+        - {name: celery-config, configMap: {name: knowfeed-celery-config}}
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: info-api, namespace: app-platform-dev}
+metadata: {name: knowfeed-api, namespace: app-platform-dev}
 spec:
-  selector: {app.kubernetes.io/name: info-api}
+  selector: {app.kubernetes.io/name: knowfeed-api}
   ports: [{name: http, port: 8000, targetPort: http}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: info-api-ingress, namespace: app-platform-dev}
+metadata: {name: knowfeed-api-ingress, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: info-api}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-api}}
   policyTypes: [Ingress]
   ingress:
     - from:
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
           podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
-        - podSelector: {matchLabels: {app.kubernetes.io/name: info-web}}
-        - podSelector: {matchLabels: {app.kubernetes.io/name: info-admin}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-web}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-admin}}
       ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: info-api-casdoor-out, namespace: app-platform-dev}
+metadata: {name: knowfeed-api-casdoor-out, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: info-api}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-api}}
   policyTypes: [Egress]
   egress:
     - to:
@@ -266,18 +266,18 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: info-api-casdoor-in, namespace: app-platform-dev}
+metadata: {name: knowfeed-api-casdoor-in, namespace: app-platform-dev}
 spec:
   podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: info-api}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-api}}
       ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: info-service-ca, namespace: app-platform-dev}
+metadata: {name: knowfeed-service-ca, namespace: app-platform-dev}
 data:
   ca.crt: |
     -----BEGIN CERTIFICATE-----
@@ -308,11 +308,11 @@ data:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: info-service-https-out, namespace: app-platform-dev}
+metadata: {name: knowfeed-service-https-out, namespace: app-platform-dev}
 spec:
   podSelector:
     matchExpressions:
-      - {key: app.kubernetes.io/name, operator: In, values: [info-api, info-worker]}
+      - {key: app.kubernetes.io/name, operator: In, values: [knowfeed-api, knowfeed-worker]}
   policyTypes: [Egress]
   egress:
     - to:
@@ -322,11 +322,11 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: info-public-sites-out, namespace: app-platform-dev}
+metadata: {name: knowfeed-public-sites-out, namespace: app-platform-dev}
 spec:
   podSelector:
     matchExpressions:
-      - {key: app.kubernetes.io/name, operator: In, values: [info-worker]}
+      - {key: app.kubernetes.io/name, operator: In, values: [knowfeed-worker]}
   policyTypes: [Egress]
   egress:
     - to:

@@ -4,34 +4,34 @@
 ---
 applications:
   tpl:
-    parent_revision: a72ada70b618660468d2c9635a64a3b5348434da
-    backend_parent_revision: 6ff511cdc094560e8980f59e4b3ce44c775c93bf
-    backend_revision: 6ff511cdc094560e8980f59e4b3ce44c775c93bf
-    web_parent_revision: a398a63b52af7e46d27a7d6837e00010434d4553
-    web_revision: a398a63b52af7e46d27a7d6837e00010434d4553
-    admin_parent_revision: 3a0c88fbe3475d2eaf38732c48f30ff53a5aa650
-    admin_revision: 3a0c88fbe3475d2eaf38732c48f30ff53a5aa650
+    parent_revision: af00d65906a993dbaa7166b54ff9133b2ceab45b
+    backend_parent_revision: 3c3d252be417a52b2e2bfb0a3cb09e68c6d1cb0f
+    backend_revision: 3c3d252be417a52b2e2bfb0a3cb09e68c6d1cb0f
+    web_parent_revision: 3b83285eeac599af5779276d2de7ba3bed3d4364
+    web_revision: 3b83285eeac599af5779276d2de7ba3bed3d4364
+    admin_parent_revision: 8f8338e8685bd4d0b1bc17d472687b7d2e630045
+    admin_revision: 8f8338e8685bd4d0b1bc17d472687b7d2e630045
   knowfeed:
-    parent_revision: 38c6d0a90f432f7584644d080c9ae0694a79b154
-    backend_parent_revision: 87062b7a673a1fbc21b34122013f5cdebede08a6
-    backend_revision: 87062b7a673a1fbc21b34122013f5cdebede08a6
-    web_parent_revision: 0ac00faf431adb6d7a31ad41f11168bbf144a65b
-    web_revision: 0ac00faf431adb6d7a31ad41f11168bbf144a65b
-    admin_parent_revision: 27bc4c9af7aa0563f4573571e7e8c81a31d6efce
-    admin_revision: 27bc4c9af7aa0563f4573571e7e8c81a31d6efce
+    parent_revision: 1fd9da0f3d8fa23255eca669abe8d34afce69a3b
+    backend_parent_revision: ecce5c797d69565c1d24b903d4d4d61615e99a63
+    backend_revision: ecce5c797d69565c1d24b903d4d4d61615e99a63
+    web_parent_revision: 327c5260af227aed664ae8cfca7a5f9a08a093d4
+    web_revision: 327c5260af227aed664ae8cfca7a5f9a08a093d4
+    admin_parent_revision: 3f01f34bb308c2c7d200d2ffa18847386490c3d2
+    admin_revision: 3f01f34bb308c2c7d200d2ffa18847386490c3d2
   knowbase:
-    parent_revision: ee6ad50db3076b73de733c98691eda2580b66c48
-    backend_parent_revision: 85409177b85bfc51bb710a68f5be3740c7dbd3e4
-    backend_revision: 85409177b85bfc51bb710a68f5be3740c7dbd3e4
-    web_parent_revision: 71e5b2e3d5a46b097a9666149c473363253d0bd3
-    web_revision: 71e5b2e3d5a46b097a9666149c473363253d0bd3
-    admin_parent_revision: df64aa5d6781c22404697eedab943792f3ddfc80
-    admin_revision: df64aa5d6781c22404697eedab943792f3ddfc80
+    parent_revision: ba6c77cdd2e8da59e60fa97ddc72d93d99ff8d21
+    backend_parent_revision: 1d8fa105cf4469df507c50664ba4c2ead37cac1a
+    backend_revision: 1d8fa105cf4469df507c50664ba4c2ead37cac1a
+    web_parent_revision: 3fd93126052b6519b9a34c4e956b9784852b1499
+    web_revision: 3fd93126052b6519b9a34c4e956b9784852b1499
+    admin_parent_revision: 1ae7ed73d576290558a31a0d20ec28eb57125b54
+    admin_revision: 1ae7ed73d576290558a31a0d20ec28eb57125b54
   investment:
-    parent_revision: dad004108eb5843f8492b960ee0bfec5b2e828d3
-    backend_parent_revision: 260c3d907cf2b5e1c7447f8c7f397a0d76c3b47f
-    backend_revision: 260c3d907cf2b5e1c7447f8c7f397a0d76c3b47f
-    web_parent_revision: 9337a2905c449d03771efb61e134e4ab6b68dbd8
-    web_revision: 9337a2905c449d03771efb61e134e4ab6b68dbd8
-    admin_parent_revision: b0f4c5de8450e6e17bb8d5ef846dcb76f4d01093
-    admin_revision: b0f4c5de8450e6e17bb8d5ef846dcb76f4d01093
+    parent_revision: eb1f80074c1a3d15b24018c002edd9812d0e34c8
+    backend_parent_revision: a6e6ceb2c0c70204ec11295fa9088e5eb53701ac
+    backend_revision: a6e6ceb2c0c70204ec11295fa9088e5eb53701ac
+    web_parent_revision: 0dd55a564615a29c43e394890b427c0886352f8c
+    web_revision: 0dd55a564615a29c43e394890b427c0886352f8c
+    admin_parent_revision: c3c1e1d0524816df006acf250d8767282d8d8ac7
+    admin_revision: c3c1e1d0524816df006acf250d8767282d8d8ac7

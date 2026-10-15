@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowfeed-database-runtime
+    namespace: app-platform-dev
+stringData:
+    DATABASE_URL: ENC[AES256_GCM,data:A0gUIxc3jX0nQVxd8mUYRhoMDlp/2PvrcuIksQowgybT4FjghEni+t96+5OSxFpe68nou6wG+i8Bp7cSWXfFCnLpYw+FH+TNqcjT+Q46Md5xnvDR9sXmb9vKuN0dZoSy8FmpC0lXn+T5btzghM3weM1b1u/Yj9liRUP3vNcBdWcyDW5BydvBI+Xo3A==,iv:mjPbHak+Tmsqcz7MZocomtuRPz3V2AmBNZ5WjCASp3k=,tag:sL2KvOcrBMfYsevj5rfF7w==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBEcENnK2FZSkd3aDRlMy9D
+            MmlvWndtZDhIeHV4ZS9rQmRLKzlqdzRYaVFNCkNDL2QzSnJXR1NIMy9XdkNNUXZl
+            Qi8vVDJ1UW1DQVVSL2UrbklmYnpmSmMKLS0tIFhQcldmWXNUdXN5R01PdTYvcDhW
+            STRMdXBqdTJwYXhnL1NobTBHWXNGY2MK7n3+pbSJ9jt8U4/GEXcSHIPtFHs81DhJ
+            4RxOxLoVVm598zkAybzzEi+CndY/ywtyW4EzyZ/qVIn5oVtm2hFKIA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-15T08:52:58Z"
+    mac: ENC[AES256_GCM,data:CPADLE0ktJTpKE6+MkKXTPtZaSV/AflrOwXoc7MpirEOzc9Nb1kkUVtxnJTdBKf0XtKJk7EMxacRtEwpGnEr5QevwA432mACZCAWvK0SqbRo61WnXw6bOhHKIhqd9wzj4j7UvIey/7D/UvjzUOO65pI7doEaTDn2SEu8N+xpquU=,iv:0YyOE2LnMxokGIt3Qq8g+Psq5uUwoXmizvlYTmE/rcg=,tag:BGa1qlYtEEh3/AZWi/nN7Q==,type:str]
+    version: 3.13.3

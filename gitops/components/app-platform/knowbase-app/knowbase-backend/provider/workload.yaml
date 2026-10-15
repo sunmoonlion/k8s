@@ -1,19 +1,19 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: knowledge-source-policy-v2, namespace: data-platform-dev}
+metadata: {name: knowbase-source-policy-v2, namespace: data-platform-dev}
 data:
   policy.json: |
-    {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": ["s3:GetObject", "s3:GetObjectVersion"], "Resource": ["arn:aws:s3:::info-originals/info/*"]}]}
+    {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": ["s3:GetObject", "s3:GetObjectVersion"], "Resource": ["arn:aws:s3:::knowfeed-originals/knowfeed/*"]}]}
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: knowledge-source-v2, namespace: data-platform-dev}
+metadata: {name: knowbase-source-v2, namespace: data-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 300
   template:
     metadata:
-      labels: {app.kubernetes.io/name: knowledge-source-provision, sunmoonai.com/object-storage-client: 'true'}
+      labels: {app.kubernetes.io/name: knowbase-source-provision, sunmoonai.com/object-storage-client: 'true'}
     spec:
       restartPolicy: Never
       serviceAccountName: platform-runtime
@@ -35,13 +35,13 @@ spec:
                   *'"status": "error"'*|*'"status":"error"'*) return 1 ;;
                 esac
               }
-              if ! mc admin user info owned 'knowledge_source_reader'; then
+              if ! mc admin user info owned 'knowbase_source_reader'; then
                 { cat /run/auth/user; printf '\n'; cat /run/auth/password; printf '\n'; } | mc admin user add owned
               fi
-              mc stat 'owned/info-originals'
-              mc admin policy create owned knowledge-source-read /run/policy/policy.json
+              mc stat 'owned/knowfeed-originals'
+              mc admin policy create owned knowbase-source-read /run/policy/policy.json
               # 重跑（代次升级、策略放宽）时策略早已挂在用户上：MinIO 对「已生效的变更」报错，这一种不算失败
-              if ! mc admin policy attach owned knowledge-source-read --user 'knowledge_source_reader'; then
+              if ! mc admin policy attach owned knowbase-source-read --user 'knowbase_source_reader'; then
                 case "$(cat /work/result.json /work/error.log)" in
                   *'already in effect'*|*AlreadyApplied*) : ;;
                   *) printf 'Policy attach failed\n' >&2; exit 1 ;;
@@ -52,7 +52,7 @@ spec:
                 *AccessDenied*|*'Access Denied'*) : ;;
                 *) printf 'Reader rejection was not AccessDenied\n' >&2; exit 1 ;;
               esac
-              printf '{"reader":"knowledge_source_reader","source":"info-originals/info/","read_only_policy":true,"management_denied":true}\n'
+              printf '{"reader":"knowbase_source_reader","source":"knowfeed-originals/knowfeed/","read_only_policy":true,"management_denied":true}\n'
           env: [{name: HOME, value: /work}, {name: NO_PROXY, value: '*'}]
           resources: {requests: {cpu: 20m, memory: 64Mi}, limits: {cpu: 500m, memory: 256Mi}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
@@ -61,6 +61,6 @@ spec:
             - {name: policy, mountPath: /run/policy, readOnly: true}
             - {name: work, mountPath: /work}
       volumes:
-        - {name: auth, secret: {secretName: knowledge-source-provision, defaultMode: 0440}}
-        - {name: policy, configMap: {name: knowledge-source-policy-v2}}
+        - {name: auth, secret: {secretName: knowbase-source-provision, defaultMode: 0440}}
+        - {name: policy, configMap: {name: knowbase-source-policy-v2}}
         - {name: work, emptyDir: {sizeLimit: 16Mi}}

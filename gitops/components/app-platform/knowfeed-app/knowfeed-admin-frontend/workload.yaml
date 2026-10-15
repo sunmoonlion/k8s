@@ -1,35 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: info-admin, namespace: app-platform-dev}
+metadata: {name: knowfeed-admin, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: info-admin}
+    matchLabels: {app.kubernetes.io/name: knowfeed-admin}
   template:
     metadata:
-      labels: {app.kubernetes.io/name: info-admin, app.kubernetes.io/part-of: info}
+      labels: {app.kubernetes.io/name: knowfeed-admin, app.kubernetes.io/part-of: knowfeed}
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: info-runtime
+      serviceAccountName: knowfeed-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/info-admin-frontend@sha256:c7c096d48d0a458e968bc98bee1ff47fb8d2cf8039991f06c7887a108b3e4194
+          image: harbor.sunmoonai.com:30443/platform/knowfeed-admin-frontend@sha256:24b08655b67f71eb77dad490f4dd974e01f6d1847161955966ab4cad6bcdfe40
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
             - {name: NODE_ENV, value: production}
             - {name: DEPLOYMENT_ENV, value: production}
-            - {name: AUTH_APP, value: info}
-            - {name: APP_ORIGIN, value: "https://info-admin.sunmoonai.com:30443"}
-            - {name: BACKEND_INTERNAL_URL, value: 'http://info-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "info-admin-frontend-c7c096d48d0a458e"}
+            - {name: AUTH_APP, value: knowfeed}
+            - {name: APP_ORIGIN, value: "https://knowfeed-admin.sunmoonai.com:30443"}
+            - {name: BACKEND_INTERNAL_URL, value: 'http://knowfeed-api.app-platform-dev.svc.cluster.local:8000'}
+            - {name: DEPLOYMENT_ID, value: "knowfeed-admin-frontend-24b08655b67f71eb"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
@@ -43,16 +43,16 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: info-admin, namespace: app-platform-dev}
+metadata: {name: knowfeed-admin, namespace: app-platform-dev}
 spec:
-  selector: {app.kubernetes.io/name: info-admin}
+  selector: {app.kubernetes.io/name: knowfeed-admin}
   ports: [{name: http, port: 3000, targetPort: http}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: info-admin, namespace: app-platform-dev}
+metadata: {name: knowfeed-admin, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: info-admin}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-admin}}
   policyTypes: [Ingress, Egress]
   ingress:
     - from:
@@ -61,27 +61,27 @@ spec:
       ports: [{protocol: TCP, port: 3000}]
   egress:
     - to:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: info-api}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-api}}
       ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: info-admin
+  name: knowfeed-admin
   namespace: app-platform-dev
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: 'true'
 spec:
   ingressClassName: sunmoon
-  tls: [{hosts: [info-admin.sunmoonai.com], secretName: info-tls}]
+  tls: [{hosts: [knowfeed-admin.sunmoonai.com], secretName: knowfeed-tls}]
   rules:
-    - host: info-admin.sunmoonai.com
+    - host: knowfeed-admin.sunmoonai.com
       http:
         paths:
           - path: /api
             pathType: Prefix
-            backend: {service: {name: info-api, port: {number: 8000}}}
+            backend: {service: {name: knowfeed-api, port: {number: 8000}}}
           - path: /
             pathType: Prefix
-            backend: {service: {name: info-admin, port: {number: 3000}}}
+            backend: {service: {name: knowfeed-admin, port: {number: 3000}}}

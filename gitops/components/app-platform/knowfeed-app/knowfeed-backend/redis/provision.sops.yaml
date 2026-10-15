@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowfeed-redis-provision
+    namespace: data-platform-dev
+stringData:
+    password: ENC[AES256_GCM,data:D1TwhZRPY8XwOhvJghuLsadV6Syu0V6ew4bLijwPOYjAy5z59LBDvg==,iv:84w2A3vSPt2PkLHX34+dXzWWczDM4e/hFbr6c9DjGsc=,tag:n9fTySQF7IlS+npYpNuaOw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBqUHFXN1NLakJkUUU2UjRG
+            VXFVRVdUQjBZK2F1MWZKZCtUK05qRG1HdURZCi9aS1FNeFQxVnhOdUU0bDdQNHBx
+            Q1VETGZtQktYcEhqcmsrR2VVWGh2VUEKLS0tIGZQcnFSQWJlN1phd2RmbVpLZmg4
+            dGkxa2xpakZqNXd6MW1LRSszY1l2TTgKlvr8k9rcFuez3gQmrku8dMxkbHnLAAAW
+            e0U0ur1nUl7JzeRxsRovu0KqdpKjKYeLi2eoAJoBj9vJ6e/EvHk1qw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-15T08:53:01Z"
+    mac: ENC[AES256_GCM,data:shppz3hHwPchNUpafWv6c5wN79BONnWeo7s/dbyhnhpqzOD2oa2oWkYD3M2unrcVQWyxbsdA2AnFql23hK9uMn+ASgmxvtChFMKuNDX92cpyK/Mu+oDny2XfRQ0Xxl+8nxvXVR80lMWG8qrthqXsUCs2p6ArewCUv+FDUG0I+FE=,iv:G+CjZkfmDPCugRWQ9Xfcafk/0wQd9yMGHzD4FescApc=,tag:P/es9hjtK4pZw6NCF0Vg9A==,type:str]
+    version: 3.13.3

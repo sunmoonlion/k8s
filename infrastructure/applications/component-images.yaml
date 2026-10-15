@@ -17,7 +17,7 @@ images:
   sandbox-provisioner:
     object: sandbox-platform/provisioner
     # 30e965a1：沙箱 Pod 带拉取凭据
-    revision: 30e965a1626270af1521c5fdc991debafa51464d
+    revision: c5905fe2e8ab16a0bc2deddd57bd3fee30907578
     context: sunmoonai/sandbox-platform/provisioner
     dockerfile: Dockerfile
     base: python
@@ -31,7 +31,7 @@ images:
     # 源的地址在 download-modes.json（不在 context 里，不用改钉的提交）；国内源用 http：slim 基础镜像没有 ca-certificates，
     # apt 走 https 会在证书上失败（2026-10-06 第 26 轮退出 100），包本身有签名
     # 2fe6652c：编排端配置加 [windows] sandbox = unelevated（Windows 代理第 1 段联调）
-    revision: 2fe6652cb99c3bb482263724ccefd42ea01532e4
+    revision: c5905fe2e8ab16a0bc2deddd57bd3fee30907578
     context: sunmoonai/sandbox-platform
     dockerfile: image/Dockerfile
     base: node-runtime

@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'info-identity-provision-v3', namespace: app-platform-dev}
+metadata: {name: 'knowfeed-identity-provision-v3', namespace: app-platform-dev}
 data:
   provision.py: |
     """Register the two browser clients through Casdoor's supported API."""
@@ -76,7 +76,7 @@ data:
                         'Frontend origin must be an exact HTTPS origin')
                 desired = {
                     'owner': 'admin', 'name': config['name'], 'organization': surface_organization[surface],
-                    'description': 'sunmoon:info:' + surface + ':managed-by-gitops',
+                    'description': 'sunmoon:knowfeed:' + surface + ':managed-by-gitops',
                     'displayName': 'SunMoon template ' + surface, 'category': 'Default', 'type': 'Web',
                     'clientId': config['client_id'], 'clientSecret': secrets[surface + '_secret'],
                     'redirectUris': [config['origin'] + '/api/auth/' + surface + '/callback'],
@@ -136,20 +136,20 @@ data:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: info-identity-provision-in, namespace: app-platform-dev}
+metadata: {name: knowfeed-identity-provision-in, namespace: app-platform-dev}
 spec:
   podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: info-identity-provision}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-identity-provision}}
       ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: info-identity-provision-out, namespace: app-platform-dev}
+metadata: {name: knowfeed-identity-provision-out, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: info-identity-provision}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-identity-provision}}
   policyTypes: [Egress]
   egress:
     - to:
@@ -159,13 +159,13 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'info-identity-b470e2fd4f17-v3', namespace: app-platform-dev}
+metadata: {name: 'knowfeed-identity-1d02d7ec153a-v3', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
   template:
     metadata:
-      labels: {app.kubernetes.io/name: info-identity-provision, app.kubernetes.io/part-of: info}
+      labels: {app.kubernetes.io/name: knowfeed-identity-provision, app.kubernetes.io/part-of: knowfeed}
     spec:
       restartPolicy: Never
       serviceAccountName: platform-runtime
@@ -173,7 +173,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:b470e2fd4f17a65c038bd9547626dc6a822675c3d2ad47e1fbbad62f3268546c
+          image: harbor.sunmoonai.com:30443/platform/knowfeed-backend@sha256:1d02d7ec153a02235845758833f1957cdc06e84ef395968d491513ab345ffd7c
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:
@@ -182,7 +182,7 @@ spec:
             - {name: CASDOOR_ORGANIZATION, value: 'built-in'}
             - {name: CASDOOR_USER_ORGANIZATION, value: 'sunmoonai'}
             - name: BROWSER_CLIENTS
-              value: "{\"web\": {\"name\": \"sunmoonai-info-web\", \"client_id\": \"sunmoon-kind-info-web\", \"origin\": \"https://info.sunmoonai.com:30443\"}, \"admin\": {\"name\": \"sunmoonai-info-admin\", \"client_id\": \"sunmoon-kind-info-admin\", \"origin\": \"https://info-admin.sunmoonai.com:30443\"}}"
+              value: "{\"web\": {\"name\": \"sunmoonai-knowfeed-web\", \"client_id\": \"sunmoon-kind-knowfeed-web\", \"origin\": \"https://knowfeed.sunmoonai.com:30443\"}, \"admin\": {\"name\": \"sunmoonai-knowfeed-admin\", \"client_id\": \"sunmoon-kind-knowfeed-admin\", \"origin\": \"https://knowfeed-admin.sunmoonai.com:30443\"}}"
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
           volumeMounts:
@@ -191,25 +191,25 @@ spec:
             - {name: app, mountPath: /run/app, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: script, configMap: {name: 'info-identity-provision-v3'}}
+        - {name: script, configMap: {name: 'knowfeed-identity-provision-v3'}}
         - {name: admin, secret: {secretName: casdoor-initial-identity, items: [{key: init_data.json, path: init_data.json}], defaultMode: 0440}}
-        - {name: app, secret: {secretName: info-identity-provision, defaultMode: 0440}}
+        - {name: app, secret: {secretName: knowfeed-identity-provision, defaultMode: 0440}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: info-browser-identity, namespace: app-platform-dev}
+metadata: {name: knowfeed-browser-identity, namespace: app-platform-dev}
 data:
   CASDOOR_ENDPOINT: 'https://casdoor.sunmoonai.com:30443'
   CASDOOR_ORGANIZATION: 'built-in'
   WEB_CASDOOR_ORGANIZATIONS: 'sunmoonai'
-  WEB_CASDOOR_APPLICATION: 'sunmoonai-info-web'
-  WEB_CASDOOR_CLIENT_ID: 'sunmoon-kind-info-web'
-  WEB_CASDOOR_REDIRECT_URI: 'https://info.sunmoonai.com:30443/api/auth/web/callback'
-  WEB_FRONTEND_BASE_URL: 'https://info.sunmoonai.com:30443'
-  WEB_FRONTEND_ALLOWED_ORIGINS: 'https://info.sunmoonai.com:30443'
-  ADMIN_CASDOOR_APPLICATION: 'sunmoonai-info-admin'
-  ADMIN_CASDOOR_CLIENT_ID: 'sunmoon-kind-info-admin'
-  ADMIN_CASDOOR_REDIRECT_URI: 'https://info-admin.sunmoonai.com:30443/api/auth/admin/callback'
-  ADMIN_FRONTEND_BASE_URL: 'https://info-admin.sunmoonai.com:30443'
-  ADMIN_FRONTEND_ALLOWED_ORIGINS: 'https://info-admin.sunmoonai.com:30443'
+  WEB_CASDOOR_APPLICATION: 'sunmoonai-knowfeed-web'
+  WEB_CASDOOR_CLIENT_ID: 'sunmoon-kind-knowfeed-web'
+  WEB_CASDOOR_REDIRECT_URI: 'https://knowfeed.sunmoonai.com:30443/api/auth/web/callback'
+  WEB_FRONTEND_BASE_URL: 'https://knowfeed.sunmoonai.com:30443'
+  WEB_FRONTEND_ALLOWED_ORIGINS: 'https://knowfeed.sunmoonai.com:30443'
+  ADMIN_CASDOOR_APPLICATION: 'sunmoonai-knowfeed-admin'
+  ADMIN_CASDOOR_CLIENT_ID: 'sunmoon-kind-knowfeed-admin'
+  ADMIN_CASDOOR_REDIRECT_URI: 'https://knowfeed-admin.sunmoonai.com:30443/api/auth/admin/callback'
+  ADMIN_FRONTEND_BASE_URL: 'https://knowfeed-admin.sunmoonai.com:30443'
+  ADMIN_FRONTEND_ALLOWED_ORIGINS: 'https://knowfeed-admin.sunmoonai.com:30443'

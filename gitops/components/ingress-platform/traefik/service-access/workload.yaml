@@ -27,7 +27,7 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: knowledge-tls, namespace: app-platform-dev}
+metadata: {name: knowbase-tls, namespace: app-platform-dev}
 spec:
   type: ExternalName
   externalName: traefik.ingress-platform-dev.svc.cluster.local
@@ -36,17 +36,17 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: knowledge-service-access
+  name: knowbase-service-access
   namespace: app-platform-dev
   annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
 spec:
   ingressClassName: sunmoon
-  tls: [{secretName: service-access-tls, hosts: [knowledge-tls.app-platform-dev.svc.cluster.local]}]
+  tls: [{secretName: service-access-tls, hosts: [knowbase-tls.app-platform-dev.svc.cluster.local]}]
   rules:
-    - host: knowledge-tls.app-platform-dev.svc.cluster.local
+    - host: knowbase-tls.app-platform-dev.svc.cluster.local
       http:
         paths:
           - path: /api/internal/v1/knowledge
             pathType: Prefix
             backend:
-              service: {name: knowledge-api, port: {name: http}}
+              service: {name: knowbase-api, port: {name: http}}

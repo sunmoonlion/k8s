@@ -1,35 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: knowledge-admin, namespace: app-platform-dev}
+metadata: {name: knowbase-admin, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: knowledge-admin}
+    matchLabels: {app.kubernetes.io/name: knowbase-admin}
   template:
     metadata:
-      labels: {app.kubernetes.io/name: knowledge-admin, app.kubernetes.io/part-of: knowledge}
+      labels: {app.kubernetes.io/name: knowbase-admin, app.kubernetes.io/part-of: knowbase}
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: knowledge-runtime
+      serviceAccountName: knowbase-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/knowledge-admin-frontend@sha256:211606e03b2ce97830ecea56d4b7fe00bb23ce198c5f64775c0877fe8899dc33
+          image: harbor.sunmoonai.com:30443/platform/knowbase-admin-frontend@sha256:c82cc80054d663274b8d64b4f79e56dfa054e61a95a5ee9c70bbaf653f75dc3e
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
             - {name: NODE_ENV, value: production}
             - {name: DEPLOYMENT_ENV, value: production}
-            - {name: AUTH_APP, value: knowledge}
-            - {name: APP_ORIGIN, value: "https://knowledge-admin.sunmoonai.com:30443"}
-            - {name: BACKEND_INTERNAL_URL, value: 'http://knowledge-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "knowledge-admin-frontend-211606e03b2ce978"}
+            - {name: AUTH_APP, value: knowbase}
+            - {name: APP_ORIGIN, value: "https://knowbase-admin.sunmoonai.com:30443"}
+            - {name: BACKEND_INTERNAL_URL, value: 'http://knowbase-api.app-platform-dev.svc.cluster.local:8000'}
+            - {name: DEPLOYMENT_ID, value: "knowbase-admin-frontend-c82cc80054d66327"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
@@ -43,16 +43,16 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: knowledge-admin, namespace: app-platform-dev}
+metadata: {name: knowbase-admin, namespace: app-platform-dev}
 spec:
-  selector: {app.kubernetes.io/name: knowledge-admin}
+  selector: {app.kubernetes.io/name: knowbase-admin}
   ports: [{name: http, port: 3000, targetPort: http}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: knowledge-admin, namespace: app-platform-dev}
+metadata: {name: knowbase-admin, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-admin}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowbase-admin}}
   policyTypes: [Ingress, Egress]
   ingress:
     - from:
@@ -61,27 +61,27 @@ spec:
       ports: [{protocol: TCP, port: 3000}]
   egress:
     - to:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-api}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowbase-api}}
       ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: knowledge-admin
+  name: knowbase-admin
   namespace: app-platform-dev
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: 'true'
 spec:
   ingressClassName: sunmoon
-  tls: [{hosts: [knowledge-admin.sunmoonai.com], secretName: knowledge-tls}]
+  tls: [{hosts: [knowbase-admin.sunmoonai.com], secretName: knowbase-tls}]
   rules:
-    - host: knowledge-admin.sunmoonai.com
+    - host: knowbase-admin.sunmoonai.com
       http:
         paths:
           - path: /api
             pathType: Prefix
-            backend: {service: {name: knowledge-api, port: {number: 8000}}}
+            backend: {service: {name: knowbase-api, port: {number: 8000}}}
           - path: /
             pathType: Prefix
-            backend: {service: {name: knowledge-admin, port: {number: 3000}}}
+            backend: {service: {name: knowbase-admin, port: {number: 3000}}}

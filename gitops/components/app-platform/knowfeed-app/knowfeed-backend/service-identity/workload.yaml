@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'info-service-provision-v1', namespace: app-platform-dev}
+metadata: {name: 'knowfeed-service-provision-v1', namespace: app-platform-dev}
 data:
   provision.py: |
     """Create a relation-specific M2M application in an otherwise empty organization."""
@@ -48,7 +48,7 @@ data:
             require(org and all(org.get(k) == v for k,v in desired_org.items()), 'Existing service organization differs')
             users = api('GET','/api/get-users',params={'owner':organization})
             require(users == [], 'Service organization contains human accounts')
-            desired = {'owner':'admin','name':definition['application'],'displayName':definition['application'],'description':'sunmoon:info:knowledge:managed-by-gitops','organization':organization,'cert':baseline['cert'],'clientId':definition['client_id'],'clientSecret':secret,'grantTypes':['client_credentials'],'redirectUris':[],'tokenFormat':'JWT','tokenSigningMethod':'RS256','expireInHours':definition['token_seconds']/3600,'refreshExpireInHours':0,'enablePassword':False,'enableSignUp':False,'enableGuestSignin':False,'enableSigninSession':False,'isShared':False,'disableSignin':True,'scopes':[{'name':definition['scope'],'displayName':definition['scope'],'description':'Exact relation capability'}]}
+            desired = {'owner':'admin','name':definition['application'],'displayName':definition['application'],'description':'sunmoon:knowfeed:knowbase:managed-by-gitops','organization':organization,'cert':baseline['cert'],'clientId':definition['client_id'],'clientSecret':secret,'grantTypes':['client_credentials'],'redirectUris':[],'tokenFormat':'JWT','tokenSigningMethod':'RS256','expireInHours':definition['token_seconds']/3600,'refreshExpireInHours':0,'enablePassword':False,'enableSignUp':False,'enableGuestSignin':False,'enableSigninSession':False,'isShared':False,'disableSignin':True,'scopes':[{'name':definition['scope'],'displayName':definition['scope'],'description':'Exact relation capability'}]}
             existing = api('GET','/api/get-application',params={'id':'admin/'+definition['application']})
             applications = api('GET','/api/get-applications',params={'owner':'admin'})
             require(all(a['name']==definition['application'] for a in applications if a.get('organization')==organization), 'Service organization is shared')
@@ -88,9 +88,9 @@ data:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: info-service-provision-out, namespace: app-platform-dev}
+metadata: {name: knowfeed-service-provision-out, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: info-service-provision}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowfeed-service-provision}}
   policyTypes: [Egress]
   egress:
     - to:
@@ -101,13 +101,13 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'info-service-identity-b470e2fd4f17-v1', namespace: app-platform-dev}
+metadata: {name: 'knowfeed-service-identity-1d02d7ec153a-v1', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
   template:
     metadata:
-      labels: {app.kubernetes.io/name: info-service-provision, app.kubernetes.io/part-of: info}
+      labels: {app.kubernetes.io/name: knowfeed-service-provision, app.kubernetes.io/part-of: knowfeed}
     spec:
       restartPolicy: Never
       serviceAccountName: platform-runtime
@@ -115,15 +115,15 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:b470e2fd4f17a65c038bd9547626dc6a822675c3d2ad47e1fbbad62f3268546c
+          image: harbor.sunmoonai.com:30443/platform/knowfeed-backend@sha256:1d02d7ec153a02235845758833f1957cdc06e84ef395968d491513ab345ffd7c
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:
             - {name: CASDOOR_INTERNAL_ENDPOINT, value: 'https://casdoor-tls.app-platform-dev.svc.cluster.local'}
             - {name: CASDOOR_ORIGIN, value: 'https://casdoor.sunmoonai.com:30443'}
-            - {name: CASDOOR_ORGANIZATION, value: 'sunmoon-workload-info-knowledge'}
+            - {name: CASDOOR_ORGANIZATION, value: 'sunmoon-workload-knowfeed-knowbase'}
             - name: SERVICE_DEFINITION
-              value: "{\"enabled\": true, \"application\": \"sunmoonai-info-knowledge-ingest\", \"client_id\": \"sunmoon-info-knowledge-ingest\", \"organization\": \"sunmoon-workload-info-knowledge\", \"scope\": \"knowledge:ingest\", \"job_revision\": \"v1\", \"token_seconds\": 900}"
+              value: "{\"enabled\": true, \"application\": \"sunmoonai-knowfeed-knowbase-ingest\", \"client_id\": \"sunmoon-knowfeed-knowbase-ingest\", \"organization\": \"sunmoon-workload-knowfeed-knowbase\", \"scope\": \"knowbase:ingest\", \"job_revision\": \"v1\", \"token_seconds\": 900}"
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
           volumeMounts:
@@ -132,7 +132,7 @@ spec:
             - {name: app, mountPath: /run/app, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: script, configMap: {name: 'info-service-provision-v1'}}
+        - {name: script, configMap: {name: 'knowfeed-service-provision-v1'}}
         - {name: admin, secret: {secretName: casdoor-initial-identity, items: [{key: init_data.json, path: init_data.json}], defaultMode: 0440}}
-        - {name: app, secret: {secretName: info-service-provision, defaultMode: 0440}}
+        - {name: app, secret: {secretName: knowfeed-service-provision, defaultMode: 0440}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

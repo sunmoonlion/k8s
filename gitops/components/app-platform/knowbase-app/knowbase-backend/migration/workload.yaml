@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'knowledge-schema-check-v2', namespace: app-platform-dev}
+metadata: {name: 'knowbase-schema-check-v2', namespace: app-platform-dev}
 data:
   verify.py: |
     """Check the deployed schema and real runtime grants without printing credentials."""
@@ -58,30 +58,30 @@ data:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'knowledge-migrate-d88fee857408-v2', namespace: app-platform-dev}
+metadata: {name: 'knowbase-migrate-2047b5ba3716-v2', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 420
   template:
     metadata:
-      labels: {app.kubernetes.io/name: knowledge-migration, app.kubernetes.io/part-of: knowledge, sunmoonai.com/postgresql-client: 'true'}
+      labels: {app.kubernetes.io/name: knowbase-migration, app.kubernetes.io/part-of: knowbase, sunmoonai.com/postgresql-client: 'true'}
     spec:
       restartPolicy: Never
-      serviceAccountName: knowledge-runtime
+      serviceAccountName: knowbase-runtime
       automountServiceAccountToken: false
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: migrate
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:d88fee857408281a6d5188bd48e58d42f6662f6a5bf50a10b84703613a4b69a3
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:2047b5ba3716b6564f5a3d9e1203b0ba1a42adec90ae13501ec98227fcdc7a1c
           imagePullPolicy: IfNotPresent
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
-          envFrom: [{secretRef: {name: knowledge-migration-auth}}]
+          envFrom: [{secretRef: {name: knowbase-migration-auth}}]
           env:
             - {name: ENV, value: production}
-            - {name: DEPLOYMENT_ID, value: '85409177b85bfc51bb710a68f5be3740c7dbd3e4'}
-            - {name: ADMIN_FRONTEND_BASE_URL, value: 'https://knowledge-admin.sunmoonai.com:30443'}
-            - {name: WEB_FRONTEND_BASE_URL, value: 'https://knowledge.sunmoonai.com:30443'}
+            - {name: DEPLOYMENT_ID, value: '1d8fa105cf4469df507c50664ba4c2ead37cac1a'}
+            - {name: ADMIN_FRONTEND_BASE_URL, value: 'https://knowbase-admin.sunmoonai.com:30443'}
+            - {name: WEB_FRONTEND_BASE_URL, value: 'https://knowbase.sunmoonai.com:30443'}
             - {name: EXPECTED_SCHEMA_REVISION, value: '20260927_0007'}
           command: [/bin/sh, -ec]
           args: ['python -m app.bootstrap.migration upgrade && python /verify/verify.py']
@@ -89,5 +89,5 @@ spec:
             - {name: verify, mountPath: /verify, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: verify, configMap: {name: 'knowledge-schema-check-v2'}}
+        - {name: verify, configMap: {name: 'knowbase-schema-check-v2'}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

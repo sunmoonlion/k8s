@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: knowledge-runtime, namespace: app-platform-dev}
+metadata: {name: knowbase-runtime, namespace: app-platform-dev}
 data:
   ENV: production
-  APP_SLUG: knowledge
-  DEPLOYMENT_ID: "knowledge-backend-d88fee857408281a"
-  ALLOWED_HOSTS: "localhost,127.0.0.1,knowledge-api,knowledge-api.app-platform-dev.svc.cluster.local,knowledge.sunmoonai.com,knowledge-admin.sunmoonai.com,knowledge-tls.app-platform-dev.svc.cluster.local"
+  APP_SLUG: knowbase
+  DEPLOYMENT_ID: "knowbase-backend-2047b5ba3716b656"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,knowbase-api,knowbase-api.app-platform-dev.svc.cluster.local,knowbase.sunmoonai.com,knowbase-admin.sunmoonai.com,knowbase-tls.app-platform-dev.svc.cluster.local"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
   REDIS_DB: '0'
-  CELERY_QUEUE: knowledge.default
+  CELERY_QUEUE: knowbase.default
   CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
   CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor.app-platform-dev.svc.cluster.local:8000
   CASDOOR_VERIFY_SSL: 'true'
@@ -17,41 +17,41 @@ data:
   REFERENCE_INTERACTION_ENABLED: 'false'
   RAGFLOW_API_BASE: https://ragflow.data-platform-dev.svc.cluster.local:9380
   RAGFLOW_PARSE_TIMEOUT_SECONDS: '300'
-  INGESTION_DATASET_BINDINGS: "{\"default\": {\"dataset_id\": \"4752d41ebfde11f19b670d4e2005906f\", \"dataset_name\": \"sunmoon-kind-knowledge-default\"}}"
+  INGESTION_DATASET_BINDINGS: "{\"default\": {\"dataset_id\": \"a63bc70cc87511f18f5929cf7a1d88ce\", \"dataset_name\": \"sunmoon-kind-knowbase-default\"}}"
   RETRIEVAL_DATASET_ALLOWLIST: "default"
   RETRIEVAL_DEFAULT_TENANT_ID: "sunmoonai"
   S3_ENDPOINT: https://object-storage.data-platform-dev.svc.cluster.local:9000
   S3_REGION: us-east-1
   S3_FORCE_PATH_STYLE: 'true'
-  ARTIFACT_S3_ALLOWED_BUCKETS: "info-originals"
-  ARTIFACT_S3_ALLOWED_PREFIXES: "info/"
+  ARTIFACT_S3_ALLOWED_BUCKETS: "knowfeed-originals"
+  ARTIFACT_S3_ALLOWED_PREFIXES: "knowfeed/"
   SSL_CERT_FILE: /etc/sunmoon/provider/ca.crt
-  INTERNAL_AUTH_CASDOOR_APPLICATION: "sunmoonai-info-knowledge-ingest"
+  INTERNAL_AUTH_CASDOOR_APPLICATION: "sunmoonai-knowfeed-knowbase-ingest"
   INTERNAL_AUTH_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
   INTERNAL_AUTH_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
-  INTERNAL_AUTH_AUDIENCE: "sunmoon-info-knowledge-ingest"
-  INTERNAL_AUTH_SUBJECT_ALLOWLIST: "admin/sunmoonai-info-knowledge-ingest"
-  INTERNAL_AUTH_REQUIRED_SCOPE: "knowledge:ingest"
-  RETRIEVAL_AUTH_CASDOOR_APPLICATION: "sunmoonai-investment-knowledge-retrieve"
+  INTERNAL_AUTH_AUDIENCE: "sunmoon-knowfeed-knowbase-ingest"
+  INTERNAL_AUTH_SUBJECT_ALLOWLIST: "admin/sunmoonai-knowfeed-knowbase-ingest"
+  INTERNAL_AUTH_REQUIRED_SCOPE: "knowbase:ingest"
+  RETRIEVAL_AUTH_CASDOOR_APPLICATION: "sunmoonai-investment-knowbase-retrieve"
   RETRIEVAL_AUTH_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
   RETRIEVAL_AUTH_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
-  RETRIEVAL_AUTH_AUDIENCE: "sunmoon-investment-knowledge-retrieve"
-  RETRIEVAL_AUTH_SUBJECT_ALLOWLIST: "admin/sunmoonai-investment-knowledge-retrieve"
-  RETRIEVAL_AUTH_REQUIRED_SCOPE: "knowledge:retrieve"
-  CROSS_APP_TARGETS_JSON: "{\"info\": {\"web_base_url\": \"https://info.sunmoonai.com:30443\"}}"
-  CROSS_APP_SOURCES_JSON: "{\"investment\": {\"return_url\": \"https://investment.sunmoonai.com:30443/zh-CN/workbench?ref={ref}\"}, \"info\": {}}"
-  KNOWLEDGE_MCP_JWT_ISSUER: "sunmoon-workbench"
-  KNOWLEDGE_MCP_RATE_PER_MINUTE: "120"
-  KNOWLEDGE_DATASET_TITLE: "\u96f6\u552e\u7ecf\u8425\u5e93\uff08\u6700\u5c0f\u5b9e\u4f8b\uff09"
-  KNOWLEDGE_DATASET_REGISTRY_ENABLED: "true"
-  KNOWLEDGE_DATASET_ALLOWED_BUCKETS: "info-originals"
-  KNOWLEDGE_DATASET_CACHE_DIR: "/tmp/knowledge-datasets"
-  KNOWLEDGE_SEMANTIC_ENGINE_ENABLED: "true"
-  KNOWLEDGE_SEMANTIC_CACHE_DIR: "/tmp/knowledge-semantic"
+  RETRIEVAL_AUTH_AUDIENCE: "sunmoon-investment-knowbase-retrieve"
+  RETRIEVAL_AUTH_SUBJECT_ALLOWLIST: "admin/sunmoonai-investment-knowbase-retrieve"
+  RETRIEVAL_AUTH_REQUIRED_SCOPE: "knowbase:retrieve"
+  CROSS_APP_TARGETS_JSON: "{\"knowfeed\": {\"web_base_url\": \"https://knowfeed.sunmoonai.com:30443\"}}"
+  CROSS_APP_SOURCES_JSON: "{\"investment\": {\"return_url\": \"https://investment.sunmoonai.com:30443/zh-CN/workbench?ref={ref}\"}, \"knowfeed\": {}}"
+  KNOWBASE_MCP_JWT_ISSUER: "sunmoon-workbench"
+  KNOWBASE_MCP_RATE_PER_MINUTE: "120"
+  KNOWBASE_DATASET_TITLE: "\u96f6\u552e\u7ecf\u8425\u5e93\uff08\u6700\u5c0f\u5b9e\u4f8b\uff09"
+  KNOWBASE_DATASET_REGISTRY_ENABLED: "true"
+  KNOWBASE_DATASET_ALLOWED_BUCKETS: "knowfeed-originals"
+  KNOWBASE_DATASET_CACHE_DIR: "/tmp/knowbase-datasets"
+  KNOWBASE_SEMANTIC_ENGINE_ENABLED: "true"
+  KNOWBASE_SEMANTIC_CACHE_DIR: "/tmp/knowledge-semantic"
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: knowledge-celery-config, namespace: app-platform-dev}
+metadata: {name: knowbase-celery-config, namespace: app-platform-dev}
 data:
   celeryconfig.py: |
     # Native Celery 5.6 configuration; transient per-connection queues only.
@@ -62,36 +62,36 @@ data:
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: knowledge-api, namespace: app-platform-dev}
+metadata: {name: knowbase-api, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: knowledge-api}
+    matchLabels: {app.kubernetes.io/name: knowbase-api}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: knowledge-api
-        app.kubernetes.io/part-of: knowledge
+        app.kubernetes.io/name: knowbase-api
+        app.kubernetes.io/part-of: knowbase
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/ragflow-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: b167158d04a3085b737ac266e405d4ca5a0df728ad8cb42183033fe1268bbced
+        sunmoonai.com/config-sha256: 5d4a31b5767c4b51d0b573b62022f1052293409fbae8bce29f9a5bacc03b7457
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: knowledge-runtime
+      serviceAccountName: knowbase-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:d88fee857408281a6d5188bd48e58d42f6662f6a5bf50a10b84703613a4b69a3
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:2047b5ba3716b6564f5a3d9e1203b0ba1a42adec90ae13501ec98227fcdc7a1c
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -101,19 +101,19 @@ spec:
           livenessProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 3, periodSeconds: 20}
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
-            - {name: SERVICE_NAME, value: knowledge-api}
+            - {name: SERVICE_NAME, value: knowbase-api}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
             - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
             - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
-            - {configMapRef: {name: knowledge-runtime}}
-            - {configMapRef: {name: knowledge-browser-identity}}
-            - {secretRef: {name: knowledge-database-runtime}}
-            - {secretRef: {name: knowledge-rabbitmq-runtime}}
-            - {secretRef: {name: knowledge-redis-runtime}}
-            - {secretRef: {name: knowledge-browser-secrets}}
-            - {secretRef: {name: knowledge-domain-runtime}}
-            - {secretRef: {name: knowledge-provider-runtime}}
+            - {configMapRef: {name: knowbase-runtime}}
+            - {configMapRef: {name: knowbase-browser-identity}}
+            - {secretRef: {name: knowbase-database-runtime}}
+            - {secretRef: {name: knowbase-rabbitmq-runtime}}
+            - {secretRef: {name: knowbase-redis-runtime}}
+            - {secretRef: {name: knowbase-browser-secrets}}
+            - {secretRef: {name: knowbase-domain-runtime}}
+            - {secretRef: {name: knowbase-provider-runtime}}
           resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "2", "memory": "768Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
@@ -121,41 +121,41 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
-        - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+        - {name: provider-ca, secret: {secretName: knowbase-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 2Gi}}
-        - {name: celery-config, configMap: {name: knowledge-celery-config}}
+        - {name: celery-config, configMap: {name: knowbase-celery-config}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: knowledge-worker, namespace: app-platform-dev}
+metadata: {name: knowbase-worker, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: knowledge-worker}
+    matchLabels: {app.kubernetes.io/name: knowbase-worker}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: knowledge-worker
-        app.kubernetes.io/part-of: knowledge
+        app.kubernetes.io/name: knowbase-worker
+        app.kubernetes.io/part-of: knowbase
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/ragflow-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: b167158d04a3085b737ac266e405d4ca5a0df728ad8cb42183033fe1268bbced
+        sunmoonai.com/config-sha256: 5d4a31b5767c4b51d0b573b62022f1052293409fbae8bce29f9a5bacc03b7457
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: knowledge-runtime
+      serviceAccountName: knowbase-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:d88fee857408281a6d5188bd48e58d42f6662f6a5bf50a10b84703613a4b69a3
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:2047b5ba3716b6564f5a3d9e1203b0ba1a42adec90ae13501ec98227fcdc7a1c
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -163,16 +163,16 @@ spec:
           readinessProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 20}
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
-            - {name: SERVICE_NAME, value: knowledge-worker}
+            - {name: SERVICE_NAME, value: knowbase-worker}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
             - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
             - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
-            - {configMapRef: {name: knowledge-runtime}}
-            - {configMapRef: {name: knowledge-browser-identity}}
-            - {secretRef: {name: knowledge-database-runtime}}
-            - {secretRef: {name: knowledge-rabbitmq-runtime}}
-            - {secretRef: {name: knowledge-provider-runtime}}
+            - {configMapRef: {name: knowbase-runtime}}
+            - {configMapRef: {name: knowbase-browser-identity}}
+            - {secretRef: {name: knowbase-database-runtime}}
+            - {secretRef: {name: knowbase-rabbitmq-runtime}}
+            - {secretRef: {name: knowbase-provider-runtime}}
           resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "2", "memory": "1Gi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
@@ -180,39 +180,39 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
-        - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+        - {name: provider-ca, secret: {secretName: knowbase-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 2Gi}}
-        - {name: celery-config, configMap: {name: knowledge-celery-config}}
+        - {name: celery-config, configMap: {name: knowbase-celery-config}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: knowledge-scheduler, namespace: app-platform-dev}
+metadata: {name: knowbase-scheduler, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: Recreate}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: knowledge-scheduler}
+    matchLabels: {app.kubernetes.io/name: knowbase-scheduler}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: knowledge-scheduler
-        app.kubernetes.io/part-of: knowledge
+        app.kubernetes.io/name: knowbase-scheduler
+        app.kubernetes.io/part-of: knowbase
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: b167158d04a3085b737ac266e405d4ca5a0df728ad8cb42183033fe1268bbced
+        sunmoonai.com/config-sha256: 5d4a31b5767c4b51d0b573b62022f1052293409fbae8bce29f9a5bacc03b7457
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: knowledge-runtime
+      serviceAccountName: knowbase-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:d88fee857408281a6d5188bd48e58d42f6662f6a5bf50a10b84703613a4b69a3
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:2047b5ba3716b6564f5a3d9e1203b0ba1a42adec90ae13501ec98227fcdc7a1c
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
@@ -220,15 +220,15 @@ spec:
           readinessProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 10}
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
-            - {name: SERVICE_NAME, value: knowledge-scheduler}
+            - {name: SERVICE_NAME, value: knowbase-scheduler}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
             - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
             - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
-            - {configMapRef: {name: knowledge-runtime}}
-            - {configMapRef: {name: knowledge-browser-identity}}
-            - {secretRef: {name: knowledge-database-runtime}}
-            - {secretRef: {name: knowledge-rabbitmq-runtime}}
+            - {configMapRef: {name: knowbase-runtime}}
+            - {configMapRef: {name: knowbase-browser-identity}}
+            - {secretRef: {name: knowbase-database-runtime}}
+            - {secretRef: {name: knowbase-rabbitmq-runtime}}
           resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
@@ -236,36 +236,36 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
-        - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+        - {name: provider-ca, secret: {secretName: knowbase-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 2Gi}}
-        - {name: celery-config, configMap: {name: knowledge-celery-config}}
+        - {name: celery-config, configMap: {name: knowbase-celery-config}}
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: knowledge-api, namespace: app-platform-dev}
+metadata: {name: knowbase-api, namespace: app-platform-dev}
 spec:
-  selector: {app.kubernetes.io/name: knowledge-api}
+  selector: {app.kubernetes.io/name: knowbase-api}
   ports: [{name: http, port: 8000, targetPort: http}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: knowledge-api-ingress, namespace: app-platform-dev}
+metadata: {name: knowbase-api-ingress, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-api}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowbase-api}}
   policyTypes: [Ingress]
   ingress:
     - from:
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
           podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
-        - podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-web}}
-        - podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-admin}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowbase-web}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowbase-admin}}
       ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: knowledge-api-casdoor-out, namespace: app-platform-dev}
+metadata: {name: knowbase-api-casdoor-out, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-api}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowbase-api}}
   policyTypes: [Egress]
   egress:
     - to:
@@ -274,20 +274,20 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: knowledge-api-casdoor-in, namespace: app-platform-dev}
+metadata: {name: knowbase-api-casdoor-in, namespace: app-platform-dev}
 spec:
   podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-api}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowbase-api}}
       ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: knowledge-ragflow-egress, namespace: app-platform-dev}
+metadata: {name: knowbase-ragflow-egress, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/part-of: knowledge, sunmoonai.com/ragflow-client: 'true'}}
+  podSelector: {matchLabels: {app.kubernetes.io/part-of: knowbase, sunmoonai.com/ragflow-client: 'true'}}
   policyTypes: [Egress]
   egress:
     - to:
@@ -298,11 +298,11 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: knowledge-service-https-out, namespace: app-platform-dev}
+metadata: {name: knowbase-service-https-out, namespace: app-platform-dev}
 spec:
   podSelector:
     matchExpressions:
-      - {key: app.kubernetes.io/name, operator: In, values: [knowledge-api]}
+      - {key: app.kubernetes.io/name, operator: In, values: [knowbase-api]}
   policyTypes: [Egress]
   egress:
     - to:
@@ -312,9 +312,9 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: knowledge-sandboxes-in, namespace: app-platform-dev}
+metadata: {name: knowbase-sandboxes-in, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-api}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowbase-api}}
   policyTypes: [Ingress]
   ingress:
     - from:
