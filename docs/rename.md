@@ -548,7 +548,7 @@ grep -E '^digest' gitops/components/sandbox-platform/sandbox/image.lock.yaml
 $K -n sandbox-platform-dev get deploy -l app=sandbox -o yaml | grep -E 'name: (KNOWBASE|KNOWLEDGE)_MCP' | sort -u
 ```
 
-   要看到：沙箱镜像摘要等于锁里的、环境变量是 `KNOWBASE_MCP_*`（没有 `KNOWLEDGE_MCP_*`）。
+   要看到：**刚才开对话的那个用户**的沙箱（`sandbox-u-<该用户>`）镜像摘要等于锁里的、环境变量是 `KNOWBASE_MCP_*`（没有 `KNOWLEDGE_MCP_*`）。其他用户的沙箱还是旧镜像、旧变量属正常：供给器只在该用户下次开工作台时整份替换他的沙箱（`provisioner.py` 的 `upsert`），不会主动批量升级；照贴即可，不必停。
 
 **停点**：回执 `R5.3-qwen.<时间>.md`，Opus 审过写「R5 通过」，再做 R6。
 
