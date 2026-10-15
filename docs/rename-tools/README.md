@@ -30,6 +30,7 @@ PREVIEW_ADMIN_FIXTURES_OUT=~/worktrees/qwen/knowledge-app/knowbase-admin-fronten
 | `residual.py` | 残留盘点：同一范围、同一保留清单下还单独出现 `info` / `knowledge` 的行 |
 | `r3_checkout.sh` | R3 检出换名（一台机器上一组仓：备份、按新名 clone、remote 照旧布局、挂出五个工位）；必须 bash 跑 |
 | `r5_render_diff.py` | R5.1 渲染比对：改名前后的渲染产物逐个 k8s 对象比，「原样同名、内容变了」的 Job 单列（有就停） |
+| `r5_reissue_service_access_tls.sh` | R5.1 traefik 内部访问证书按新名显式重签（沿用私钥，SAN `knowledge-tls` → `knowbase-tls`，私有与备份两份同换）；已含新名则不动；可用 `R5_TLS_*` 在副本上演练 |
 | `r5_windows_hosts.ps1` | R5.2 Windows hosts：四个新域名加到旧名所在行；先备份；纯 ASCII（Windows PowerShell 5.1 按 ANSI 读无 BOM 脚本） |
 | `r6_cleanup.py` | R6 下线旧对象：清单写死（改名前配置 `4be661df` 抄出的旧名字），默认只列；`delete <类> --confirm <类>` 一次删一类，删前核归属记号、删后再列；不在清单的只列不删 |
 | `r6_windows_hosts.ps1` | R6 Windows hosts：从有效行去掉四个旧域名，要求同行已有对应新名字；先备份；可用 `RENAME_HOSTS_FILE` 在副本上演练 |

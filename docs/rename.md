@@ -394,10 +394,13 @@ for f in $(git diff --name-only gitops | grep image.lock); do echo "$f: $(grep -
 > 现在的做法：拓扑图（`gitops/clusters/kind/stages.yaml`）只由各 `stage.yaml`、配置和镜像锁算出，不看各组件 stage 出来的文件，与选了哪个对象无关；守卫比的是**工作区里的** `stages.yaml`。所以先 `topology-stage OBJECT=all` 单独把拓扑排齐（它不跑任何组件的 prepare），之后逐个 stage 七个对象时「未选中」部分就与工作区一致，守卫通过。上两次留下的产物（tpl 的 7 个声明、`/etc/sunmoon/applications/sunmoon-kind/` 下新建的 `knowfeed`、`knowbase`）不用清：前者会被覆盖，后者是这次要用的私有输入，会被原样读回。
 >
 > traefik 的 prepare 读 `infrastructure/.build/components/chart-source.yaml`（固定图表的来源与摘要），它由 `services-chart` 生成；`.build` 不进 Git，R3 按新名重新检出后就没了，所以第四次执行停在 traefik（`R5.1-qwen.20261015-1726.md`）。`services-tools` 从本地物料装好工作区自己的 `helm` 并核字节，`services-chart` 用只读身份从 Harbor 拉回已发布的 traefik 图表、核哈希后写出这个文件——**不连外网**，Harbor 里已有该版本时不推送。两条都不碰集群。
+>
+> traefik 的内部访问证书（`service-access`，给 investment、沙箱经 `https://knowbase-tls…` 访问 knowbase 用）是 10-04 签的，SAN 是 `casdoor-tls`、`knowledge-tls`。签发任务（`infrastructure/components/tasks/tls-identity.yaml`）只在证书不存在时签，主机名变了不会自动重签，于是第五次执行停在「Verify all certificate hostnames」（`R5.1-qwen.20261015-1735.md`）——这是 R1 漏掉的一处。`docs/rename-tools/r5_reissue_service_access_tls.sh` 做这次显式重签：沿用原私钥，按任务里同样的参数重出 CSR、用平台 CA 重签，SAN 换成 `casdoor-tls`、`knowbase-tls`；私有目录与备份两份一起换，旧证书改名留在原处；已含新名就什么都不做。之后 traefik 的 stage 会读到新证书，只对它重新加密。其余用这个任务的证书都不受改名影响（knowfeed、knowbase 的是这次新建的）。
 
 ```bash
 make -C infrastructure services-tools; echo "tools exit=$?"
 make -C infrastructure services-chart; echo "chart exit=$?"; ls -l infrastructure/.build/components/chart-source.yaml
+sudo -n nsenter --target 1 --mount -- bash docs/rename-tools/r5_reissue_service_access_tls.sh; echo "tls exit=$?"
 make -C infrastructure topology-stage OBJECT=all; echo "topology exit=$?"
 for o in app-platform/tpl-app app-platform/knowfeed-app app-platform/knowbase-app app-platform/investment-app sandbox-platform/provisioner ingress-platform/traefik data-platform/elk/collector; do
   echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
@@ -411,7 +414,7 @@ for a in tpl knowfeed knowbase investment; do
 done
 ```
 
-要看到：`tools`、`chart`、`topology` 都是 `exit=0`、七个 stage 都是 `exit=0`；改动的组件目录只在这几处：四个应用、`sandbox-platform/provisioner`、`sandbox-platform/sandbox`（镜像锁）、`ingress-platform/traefik`、`data-platform/elk`、`clusters/kind`（别处也有改动不必停，照贴，第 5 步的比对会逐个对象列出来）；没有 PEM；knowfeed、knowbase 的 `database/` 下重新有了 `bootstrap.sops.yaml`、`runtime.sops.yaml`（按新名全新生成）；私有目录多出 `knowfeed`、`knowbase` 两个（旧的 `info`、`knowledge` 还在，不动）；计划：knowfeed 核到 `20261015_0014`、迁移 Job 结尾 `-v3`，knowbase 核到 `20260927_0007`，investment 核到 `20261012_0018`，tpl 核到 `20260911_0003`。
+要看到：`tools`、`chart`、`tls`、`topology` 都是 `exit=0`（`tls` 那段新证书的 SAN 是 `casdoor-tls`、`knowbase-tls`）、七个 stage 都是 `exit=0`；改动的组件目录只在这几处：四个应用、`sandbox-platform/provisioner`、`sandbox-platform/sandbox`（镜像锁）、`ingress-platform/traefik`、`data-platform/elk`、`clusters/kind`（别处也有改动不必停，照贴，第 5 步的比对会逐个对象列出来）；没有 PEM；knowfeed、knowbase 的 `database/` 下重新有了 `bootstrap.sops.yaml`、`runtime.sops.yaml`（按新名全新生成）；私有目录多出 `knowfeed`、`knowbase` 两个（旧的 `info`、`knowledge` 还在，不动）；计划：knowfeed 核到 `20261015_0014`、迁移 Job 结尾 `-v3`，knowbase 核到 `20260927_0007`，investment 核到 `20261012_0018`，tpl 核到 `20260911_0003`。
 
 **5. 渲染比对**（改名前的渲染产物 vs 这次 stage 的，逐个 k8s 对象）：
 
@@ -423,6 +426,17 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 
 要看到：第 1 节「不可变 Job」**0 条**（有一条就停：Flux 套用时会被拒）。报告整份随回执提交，Opus 逐条审第 3–6 节。
 
+> 2026-10-15 第五次执行：`tools`、`chart` 都过，停在 traefik 的证书主机名核对（见第 4 步说明）。**第六次只续跑这几条**（`services-tools`、`services-chart` 已做过，前五个对象不重来）：
+>
+> ```bash
+> cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+> sudo -n nsenter --target 1 --mount -- bash docs/rename-tools/r5_reissue_service_access_tls.sh; echo "tls exit=$?"
+> for o in ingress-platform/traefik data-platform/elk/collector; do
+>   echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
+> done
+> ```
+>
+> 要看到：`tls exit=0`，「新证书」的 SAN 是 `casdoor-tls…`、`knowbase-tls…`；两个 stage 都是 0。再照跑第 4 步块里 `done` 之后的核对与四个计划，然后做第 5 步。
 > 2026-10-15 第四次执行：拓扑与前五个对象（四个应用、供给器）都 `exit=0`，停在 traefik（缺 `chart-source.yaml`，见第 4 步说明）。**第五次只续跑剩下的**（前五个不重来，产物都在工作区）：
 >
 > ```bash
