@@ -8,7 +8,7 @@
 
 ## 怎么用
 
-`C-D12`–`C-D15`、`C-C9`–`C-C11`、`C-R10` 与反模式末两行（2026-10-15 从旧体系 `app-platform/docs/` 的数据所有权、集成规范、生产就绪三份吸收）。
+`C-D12`–`C-D15`、`C-C9`–`C-C11`、`C-R10` 与反模式末两行（2026-10-15 从旧体系 `app-platform/docs/` 的数据所有权、集成规范、生产就绪三份吸收）；「发布」一节同日按新体系改写。
 
 
 按**你要动什么**取对应的组，把相关条目和结论写出来，两三行的小表：
@@ -95,18 +95,22 @@
 
 ## 发布
 
+写成与执行者无关的约束：现在由人照发布卡跑 Make 入口，以后改由 Jenkins 等流水线触发，**变的只是「谁在执行」一栏与入口，规则不变**。流程见 `k8s/infrastructure/README.md` 与 [项目总览](../../../project-guide/overall-architecture.md#6-部署k8s-仓)。2026-10-15 按新体系改写，旧体系 bundle 那几条退役。
+
 | # | 规则 | 谁在执行 |
 | --- | --- | --- |
-| C-R1 | 源码、镜像、部署与数据基线共同发布 | ⚠ 自检 |
-| C-R2 | bundle 只允许 `repo@sha256:<64hex>` | 部署门禁正则 |
-| C-R3 | 晋级靠打别名，禁止重新构建 | ⚠ 自检 |
-| C-R4 | `.conf` 不得覆盖 bundle 里的镜像、副本、origin | `ConfigError` |
-| C-R5 | `1.0.0` / `2.0.0` 是发布 tag，本地构建脚本不得推 | `PROTECTED_TAGS` |
+| C-R1 | 源码、镜像、部署声明与数据基线一起发布：一次发布 = 钉住的源码提交 + 由它构建的镜像摘要 + 由它渲染的声明 + 匹配的迁移头 | ⚠ 自检 + `application-deployment-plan` 核迁移头 |
+| C-R2 | 只从**钉住的提交**构建：应用钉在 `infrastructure/applications/sources.yaml`，自研组件钉在 `component-images.yaml`；不从工作区未提交的内容构建，子仓提交须是父仓记录的那一个（或其后代） | 构建链的祖先检查（`applications/build.yaml`） |
+| C-R3 | 部署**只认固定摘要**（`sha256:<64hex>`），镜像锁 `image.lock.yaml` 只由构建链写；不用 `latest` 或可变 tag 当版本，不手改锁 | 构建链写锁；发布与晋级校验摘要格式（`flux/source.yaml`） |
+| C-R4 | 组件目录里 `config.yaml`、`stage.yaml`、模板是真源；渲染产物（`workload.yaml`、`kustomization.yaml`、`*.sops.yaml`、`image.lock.yaml`）**不手改**，改真源再 stage | 发布校验：工作区须干净、声明须与晋级的 Git 对象一致、重新渲染须与提交的一致（`components/validate-release.yaml`） |
+| C-R5 | 候选不可变、晋级显式：发布把已提交的声明打成固定摘要的 OCI 候选；只有写进环境源（`environments/kind/flux-source.yaml`）并提交才生效；晋级不重新构建、不重新打包。回退 = 把环境源退回已验证的候选，数据库 schema 与持久数据不随之回退 | `flux-release`、`flux-source-apply` 的摘要核对 |
 | C-R6 | 模板优先：公共能力先进模板过门禁，再串行同步实例 | ⚠ 自检 |
-| C-R7 | 源码版本与发布版本一致 | `test_package_version_matches_the_formal_release` |
+| C-R7 | 源码包版本与发布记录一致；改版本号必须同时改锁文件（`uv.lock`），否则冻结安装在构建时失败 | 各后端 `test_kernel_invariants.py` 的版本测试 |
 | C-R8 | **发布清单里成对钉住**：Codex 版本（app-server 与 exec-server 同版）、会合点协议版、本地代理版 | ⚠ 自检 |
 | C-R9 | 上线门里加两条不是软件的：内网站点的上行链路与冗余（`D15`）、监控告警送达（`repos/k8s.md`） | ⚠ 自检 |
 | C-R10 | **部署了不等于生产就绪**。对外服务前逐项过上线门：领域与数据所有权明确；契约变更兼容；迁移已验证；测试通过；备份可恢复且至少做过一次恢复演练（`Retain` 的卷不是备份，单机 KIND 不是生产高可用）；监控告警可送达；秘密与权限合规；容量够；回退或补偿路径明确；运维说明已更新。没满足的项写明责任人、风险与期限 | ⚠ 自检 |
+| C-R11 | 集群声明是 `prune: false`：删掉声明不会删对象，退役要列清单精确删除；完成的 Job 内容不可改，Job 的输入一变就换代次（`*_revision`），不 force apply、不为清状态删 PVC | ⚠ 自检 + Flux 套用失败即暴露 |
+| C-R12 | 秘密与身份只在宿主私有目录（主备两份、逐字节一致）与 SOPS 密文里；已有身份丢失就停，**不重新生成**；新身份按新名字全新生成，不复用别处的口令 | 各组件 `prepare.yaml` 的断言 |
 
 ## 智能体
 

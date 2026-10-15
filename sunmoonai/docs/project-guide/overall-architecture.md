@@ -153,6 +153,8 @@ investment 内部：三种对话（聊天、工作、专家，[0017](../dev-inve
   → make application-check APP=…
 ```
 
+现在由人照发布卡跑这些 Make 入口；后期改由 Jenkins 等流水线触发（所有者 2026-10-15 说的方向），变的是谁来触发，约束不变，见 [`rules/constraints.md`「发布」](../dev-investment-agent/tree-build/rules/constraints.md#发布)（`C-R1`–`C-R12`）。
+
 要点：秘密在宿主私有目录里主备两份、逐字节一致，已有身份丢失就停、不重新生成；Flux 根与各阶段都是 **`prune: false`**，删掉的声明不会自动删集群对象（要精确退役）；完成的 Job 由 Flux 持有，内容不可改，改了要换代次；回退 = 把 `flux-source.yaml` 退回已验证的源再 apply，数据库 schema 与持久数据不随 Git 回退。
 
 **`k8s/sunmoonai/`** 是 2026-10-06 起冻结的旧体系，计划整体移出（[改名手册「冻结解除之后」](../../../docs/rename.md#冻结解除之后不属于改名但要有人做)）；其中还活着的只有 `docs/dev-investment-agent/`（手册、派活卡、回执、同步脚本、门禁工具）、`docs/project-guide/`（本文档集）、`relay-platform/` 与 `sandbox-platform/`（自研镜像源码）、`scripts/` 里的联调脚本与发布卡回执。
