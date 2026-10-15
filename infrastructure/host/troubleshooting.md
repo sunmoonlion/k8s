@@ -45,6 +45,19 @@ Docker重启会重建节点`/etc/hosts`。缺少Harbor网关记录时，节点�
 
 节点IP/网桥gateway变化可能使CoreDNS或Harbor解析仍指旧地址；比较集群配置与实际Docker网络、节点hosts/containerd信任。`cluster-pull-check`检查三节点实际拉取和DNS；它需要已恢复的Harbor/入口，不替代修复开机编排。
 
+## WSL里调Windows程序报`Exec format error`
+
+现象：容量查询等调用`powershell.exe`的步骤失败，报`Exec format error`（2026-09-28出现过）。原因是`/proc/sys/fs/binfmt_misc/WSLInterop`注册项丢失（谁删的未查明）；WSL在`/run/systemd/generator`生成了恢复规则，但Ubuntu的systemd-binfmt带`ConditionVirtualization=!wsl`而跳过，规则没执行。`/etc/wsl.conf`的interop开着、`/init`在，并不能说明注册项在。
+
+```sh
+ls -l /proc/sys/fs/binfmt_misc/WSLInterop; cat /proc/sys/fs/binfmt_misc/status
+systemctl status sunmoon-wsl-interop.service; systemctl cat sunmoon-wsl-interop.service | grep ExecStart
+```
+
+开机时`sunmoon-wsl-interop.service`在Docker之前跑一次，只补缺失的注册；遇到已有但不同、停用的条目或全局禁用则拒绝，不自行覆盖。运行中又丢失时，用`ExecStart`里那份已安装的固定副本显式恢复（`sudo python3 -B <路径>/wsl_interop.py --apply`），不重启WSL、Docker或集群，并追查删除者。
+
+PowerShell的stderr可能是中文CLIXML进度消息，按UTF-8解码会报错：项目只解析stdout，不要把编码异常当成互操作仍断开。Linux能调Windows程序不等于有Windows管理员权限。该检查的源码现仍在旧目录`sunmoonai/kind-infrastructure/mount/wsl_interop.py`，移出`sunmoonai/`时收进本目录。
+
 ## Docker认证拉取失败
 
 按顺序区分DNS/代理→TCP→证书链与域名→`/v2/`401 challenge→token realm/CA→身份期限与权限→manifest→全部blob。
