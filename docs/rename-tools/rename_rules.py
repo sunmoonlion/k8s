@@ -66,7 +66,10 @@ KEEP = [
     r"notify\('info'",  # 网页提示框的调用
     r"\bt\('knowledge'\)",  # 投资设置页「本地知识库」的文案键
     r"for purpose in \['knowledge'",
-    r"(?i)\blog[_.]?level\s*[:=]\s*[\"']?info\b",  # 日志级别  # ragflow 里两个超级用户的用途名（共享服务的既有账号，不随应用改名）
+    r"(?i)\blog[_.]?level\s*[:=]\s*[\"']?info\b",  # 日志级别
+    # RAGFlow（共享服务）私有文件里的既有键：ragflow.yaml 已按 knowledge_* 存在，读它的地方不能换名（R5 前发现）
+    r"(?<=from_yaml\)\.)knowledge_(token|password)\b", r"\['knowledge_(token|password)'\]", r"\"knowledge_(token|password)\"",
+    r"\bknowledge_(token|password):", r"ragflow_credentials\.knowledge_\w+",  # ragflow 里两个超级用户的用途名（共享服务的既有账号，不随应用改名）
 ]
 
 # ---------------------------------------------------------------- 改：按类按序

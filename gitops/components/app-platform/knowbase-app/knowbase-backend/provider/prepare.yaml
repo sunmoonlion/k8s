@@ -96,7 +96,7 @@
 - name: Prepare the operator dataset through the pinned running provider API
   ansible.builtin.command:
     argv: '{{ kube + ["exec","-i","deployment/ragflow-api","-n",data_namespace,"--","python","-c",lookup("file",component_root + "/provider/provision-dataset.py")] }}'
-    stdin: '{{ {"token":(provider_platform_input.results[0].content | b64decode | from_yaml).knowbase_token,"base":"https://ragflow." + data_namespace + ".svc.cluster.local:" + (ragflow_port | string),"name":cfg.knowledge_provider.dataset_name,"prior":(provider_prior_binding.content | default("e30=") | b64decode | from_json)} | to_json }}'
+    stdin: '{{ {"token":(provider_platform_input.results[0].content | b64decode | from_yaml).knowledge_token,"base":"https://ragflow." + data_namespace + ".svc.cluster.local:" + (ragflow_port | string),"name":cfg.knowledge_provider.dataset_name,"prior":(provider_prior_binding.content | default("e30=") | b64decode | from_json)} | to_json }}'
   register: provider_dataset_result
   changed_when: provider_dataset_result.rc == 0 and (provider_dataset_result.stdout | from_json).created | default(false)
   no_log: true
@@ -116,7 +116,7 @@
   ansible.builtin.set_fact:
     provider_binding: '{{ (provider_dataset_result.stdout | from_json).binding }}'
     provider_runtime_data:
-      RAGFLOW_API_KEY: '{{ (provider_platform_input.results[0].content | b64decode | from_yaml).knowbase_token }}'
+      RAGFLOW_API_KEY: '{{ (provider_platform_input.results[0].content | b64decode | from_yaml).knowledge_token }}'
       S3_ACCESS_KEY_ID: '{{ cfg.knowledge_provider.source_user }}'
       S3_SECRET_ACCESS_KEY: '{{ (provider_input.content | b64decode | from_yaml).secret_key }}'
       ca.crt: '{{ provider_platform_input.results[2].content | b64decode }}'

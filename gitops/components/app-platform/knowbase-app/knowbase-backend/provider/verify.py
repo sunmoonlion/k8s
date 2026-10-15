@@ -86,7 +86,7 @@ try:
         result['scope']='Actual Info HTTPS ingestion with Casdoor token, real Scheduler/Outbox/Worker'
     # Clean derived content using the provider's own DML/S3 identity, not an App administrator.
     binding=json.loads(Path(secret['binding_path']).read_text())
-    cleanup={**records,'dataset_id':binding['dataset_id'],'filename':'knowledge-'+uuid.UUID(result['upload_identity']).hex+'-'+source['sha256']+'.txt','base':'https://ragflow.'+args.data_namespace+'.svc.cluster.local:9380','token':secret['ragflow']['knowbase_token']}
+    cleanup={**records,'dataset_id':binding['dataset_id'],'filename':'knowledge-'+uuid.UUID(result['upload_identity']).hex+'-'+source['sha256']+'.txt','base':'https://ragflow.'+args.data_namespace+'.svc.cluster.local:9380','token':secret['ragflow']['knowledge_token']}
     out=subprocess.run(kube+['exec','-i','deployment/ragflow-api','-n',args.data_namespace,'--','python','-c',cleanup_provider_code],input=json.dumps(cleanup),capture_output=True,text=True,env=env,timeout=90)
     assert out.returncode==0, 'Exact temporary provider cleanup failed'
     result['cleanup']=json.loads(out.stdout.strip().splitlines()[-1])
