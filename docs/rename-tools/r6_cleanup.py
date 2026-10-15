@@ -56,6 +56,12 @@ CASDOOR_HOST = cfg("gitops/components/app-platform/auth-app/casdoor/config.yaml"
 OLD_APPS = ("info", "knowledge")
 OLD_STAGES = [f"info-{s}" for s in ("admin", "database", "migration", "redis", "rabbitmq", "identity", "runtime", "storage", "service-identity", "web")] + \
              [f"knowledge-{s}" for s in ("admin", "database", "migration", "redis", "rabbitmq", "identity", "runtime", "provider", "web")]
+# 共享组件阶段里改了名的对象（新阶段不再声明它们，prune: false 不会删；旧阶段标签选不中）——R5.1 渲染比对与 4be661df 扫描得出
+K8S_RENAMED_IN_SHARED = [
+    ("services", APP_NS, "knowledge-tls", "traefik"),
+    ("ingresses.networking.k8s.io", APP_NS, "knowledge-service-access", "traefik"),
+    ("secrets", APP_NS, "investment-knowledge-service", "investment-runtime"),
+]
 PG_DATABASES = {"info": f"{CLUSTER}/info", "knowledge": f"{CLUSTER}/knowledge"}
 PG_ROLES = {"info_runtime": f"{CLUSTER}/info", "info_migrator": f"{CLUSTER}/info",
             "knowledge_runtime": f"{CLUSTER}/knowledge", "knowledge_migrator": f"{CLUSTER}/knowledge"}
@@ -174,6 +180,12 @@ def k8s_list():
         for item in json.loads(kube("get", t, "-A", "-l", selector, "-o", "json"))["items"]:
             m = item["metadata"]
             objects.append({"type": t, "namespace": m["namespace"], "name": m["name"], "stage": m["labels"]["kustomize.toolkit.fluxcd.io/name"]})
+    for t, ns, name, stage in K8S_RENAMED_IN_SHARED:
+        got = json.loads(kube("-n", ns, "get", t, "--field-selector", f"metadata.name={name}", "-o", "json"))["items"]
+        for item in got:
+            label = item["metadata"].get("labels", {}).get("kustomize.toolkit.fluxcd.io/name")
+            objects.append({"type": t, "namespace": ns, "name": name, "stage": label, "renamed_in_shared": True,
+                            "still_declared": still_declared(name), "expected_stage": label == stage})
     seen = {(o["type"], o["namespace"], o["name"]) for o in objects}
     for ns in (APP_NS, DATA_NS, MSG_NS, SITE["sandbox_namespace"], SITE["ingress_namespace"]):
         for t in ("deployments.apps", "jobs.batch", "services", "secrets", "configmaps", "networkpolicies.networking.k8s.io", "ingresses.networking.k8s.io", "serviceaccounts"):
@@ -185,7 +197,17 @@ def k8s_list():
     return {"flux_kustomizations": stages, "objects": objects, "unlabeled_same_prefix": unlabeled, "pods_part_of_old_apps": pods}
 
 
+def still_declared(name):
+    """现行 gitops 声明（含加密文件里明文的 metadata）里还有没有这个名字。"""
+    out = subprocess.run(["git", "-C", str(REPO), "grep", "-l", "-w", "-F", name, "--", "gitops/components/**/*.yaml", "gitops/clusters/**/*.yaml"],
+                         capture_output=True, text=True)
+    return bool(out.stdout.strip())
+
+
 def k8s_delete(found):
+    for o in found["objects"]:
+        if o.get("renamed_in_shared"):
+            require(not o["still_declared"] and o["expected_stage"], f'{o["type"]}/{o["name"]} 仍在现行声明里或标签不是预期阶段，整类不删')
     bad = [s["name"] for s in found["flux_kustomizations"] if s["in_current_stages"]]
     require(not bad, "这些 Kustomization 还在现行 stages.yaml 里，整类不删: " + ", ".join(bad))
     names = [s["name"] for s in found["flux_kustomizations"] if s["listed"]]

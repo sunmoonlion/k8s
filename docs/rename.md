@@ -456,6 +456,8 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 
 **停点**：**不提交 stage 结果**（工作区保持原样，R5.2 再提交）。回执 `R5.1-qwen.<时间>.md`（R5.0 与 1–5 步的输出）连同比对报告只把这两个文件提交、直接推：`git add docs/rename-receipts/R5.1-* && git -c core.editor=true commit -m "rename: R5.1 回执（Qwen）" && git push origin qwen`。Opus 审过在本节写「R5.1 通过」才做 R5.2。
 
+**R5.1 通过** · 2026-10-15 · Opus（`R5.1-qwen.20261015-1800.md`、`R5.1-render-diff.20261015-1758.txt`）。逐条审过：第 1 节不可变 Job 0 条；只在旧 / 只在新各 2 条是 knowfeed 迁移校验 ConfigMap 与迁移 Job 从 `-v2` 换到 `-v3`（新名新 Job，不撞旧的）；31 处差异全是改名带来的——`APP_SLUG`、`AUTH_APP`、`part-of`、跨应用键、数据库引导 SQL 的库名与归属注释、Redis/RabbitMQ 的记号与探针名、Casdoor 应用说明、日志采集路径——加上随镜像变的 `DEPLOYMENT_ID`；迁移 Job 的 `DEPLOYMENT_ID` 等于 R1 提交，改钉生效。两处核过：knowbase 读 `knowfeed-originals` 的 `knowfeed/` 前缀，与 knowfeed 后端写入的 `knowfeed/original/…` 一致；`INGESTION_DATASET_BINDINGS` 换成新数据集 `sunmoon-kind-knowbase-default`（stage 时 knowbase provider 的 prepare 已在 RAGFlow 里建好，旧数据集 R6 删）。共享组件里改了名、R5.2 后会留在集群里的 3 个对象（`knowledge-tls`、`knowledge-service-access`、`investment-knowledge-service`）已列入 R6。可以做 R5.2。
+
 ### R5.2 hosts、提交、发布、晋级、入口、检查
 
 **0. 拉到最新**（Opus 审 R5.1 时可能推了修正；工作区里 stage 的结果不动，只快进）：
@@ -553,7 +555,7 @@ $K -n sandbox-platform-dev get deploy -l app=sandbox -o yaml | grep -E 'name: (K
 
 | 类（工具里的名字） | 删什么 | 怎么删 |
 | --- | --- | --- |
-| `k8s` | 旧阶段的 Flux Kustomization（`info-*` 10 个、`knowledge-*` 9 个，R5.2 后显示失败）与它们留下的对象 | 先删 Kustomization（各阶段 `deletionPolicy: Orphan`，对象留下），再按标签 `kustomize.toolkit.fluxcd.io/name` 删对象（先 Deployment/Job，后其余），等旧 Pod 退净。没带旧标签、名字以 `info-`/`knowledge-` 开头的只列不删 |
+| `k8s` | 旧阶段的 Flux Kustomization（`info-*` 10 个、`knowledge-*` 9 个，R5.2 后显示失败）与它们留下的对象 | 先删 Kustomization（各阶段 `deletionPolicy: Orphan`，对象留下），再按标签 `kustomize.toolkit.fluxcd.io/name` 删对象（先 Deployment/Job，后其余），等旧 Pod 退净。另点名删共享组件阶段里改了名的 3 个：traefik 的 Service `knowledge-tls`、Ingress `knowledge-service-access`，investment-runtime 的 Secret `investment-knowledge-service`（现行声明里已没有这个名字、标签是预期阶段才删）。没带旧标签、名字以 `info-`/`knowledge-` 开头的其余对象只列不删 |
 | `postgresql` | 库 `info`、`knowledge`；角色 `info_runtime`、`info_migrator`、`knowledge_runtime`、`knowledge_migrator` | `DROP DATABASE … WITH (FORCE)`、`DROP ROLE` |
 | `redis` | 用户 `info_runtime`、`knowledge_runtime` 与键 `info:*`、`knowledge:*` | 扫描后 `UNLINK`、`ACL DELUSER`、`ACL SAVE` |
 | `rabbitmq` | vhost `info`、`knowledge`（连同队列 `*.default`）与用户 `info_runtime`、`knowledge_runtime` | `rabbitmqctl delete_vhost / delete_user` |
