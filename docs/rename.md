@@ -534,6 +534,8 @@ make -C infrastructure platform-status; echo "exit=$?"
 
 **停点**：回执 `R5.2-qwen.<时间>.md`（各步输出；旧阶段那几行照贴），提交推送同上，Opus 审过写「R5.2 通过」。
 
+**R5.2 通过** · 2026-10-15 · Opus（`R5.2-qwen.20261015-1833.md`）。上线提交 `82dc36b3`（83 个文件，只在四个应用、沙箱与供给器、traefik 内部访问、elk 采集、`clusters/kind` 与两个钉文件里，无私钥）→ 发布 `sha256:55b6c265…` → 晋级 `78dca771`；新阶段全 Ready，旧 `info-*`、`knowledge-*` 19 个阶段如预期显示失败；四个 `application-check` 与 `platform-status` 都是 0；入口只剩新域名。可以做 R5.3。
+
 ### R5.3 验证（浏览器，Qwen 做；截图只截页面，不截令牌与口令）
 
 1. `https://knowfeed-admin.sunmoonai.com:30443`：能登录（admin），进得去「采集」「证券」「需求」等页面（空的属正常）。
