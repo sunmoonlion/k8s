@@ -323,6 +323,8 @@ grep -n "sunmoonai" /mnt/c/Windows/System32/drivers/etc/hosts
 df -h / | tail -1
 ```
 
+> 磁盘：`df -h /` 看的是 WSL 根，构建前的守卫看的是 **Windows C 盘**（`infrastructure/host/README.md`「容量如何计算」，扣掉数据盘长到 230 GiB 上限的余量后要留 10 GiB）。2026-10-15 第一次构建就在这里被拦（`R5.1-qwen.20261015-1557.md`），所有者清出空间后通过。以后照此前提，先用 `make -C infrastructure preflight` 或构建本身的守卫看 C 盘。
+
 要看到：k8s 干净、含本节；十六个提交号等于 R5.1 第 1 步脚本里的值（R1 提交）；`platform-status` 0；`sunmoon-platform.target` 那一行是 **`Wants=`**（是 `Requires=` 就停——那时单独停入口会把 Harbor 和集群一起停掉，见 `infrastructure/entry/README.md`）；Windows hosts 里含 `info.sunmoonai.com`、含 `knowledge.sunmoonai.com` 的有效行**各恰好一行**（不是就停，把这几行贴进回执）。
 
 ### R5.1 改钉、构建、暂存、渲染比对
@@ -385,12 +387,13 @@ for f in $(git diff --name-only gitops | grep image.lock); do echo "$f: $(grep -
 
 要看到：六个都是 `exit=0`；变了的镜像锁 14 个——四个应用各后端、网页、管理端（`source_revision` 等于第 1 步对应的提交）、沙箱与供给器（`source_revision` = `c5905fe2…`）。
 
-**4. 暂存**（七个对象）：
+**4. 暂存**（整套一次，`OBJECT=all`）：
+
+> 2026-10-15 第二次执行停在这里（`R5.1-qwen.20261015-1641.md`）：原写法逐个对象 stage，但阶段图里带着各阶段的镜像摘要，四个应用与供给器都换了镜像，只选一个对象时其余变了的阶段落在「未选中」里，拓扑守卫（`infrastructure/components/topology.yaml`「Require unselected stage declarations to remain unchanged」）按设计拦下。守卫在 `OBJECT=all` 时不比对；整套 stage 只对内容变了的秘密重新加密（`components/tasks/encrypt.yaml`「Encrypt only changed input」），没变的组件不会出差异。第 4 步上次跑出的 tpl 部分产物不用清，会被这次覆盖。
 
 ```bash
-for o in app-platform/tpl-app app-platform/knowfeed-app app-platform/knowbase-app app-platform/investment-app sandbox-platform/provisioner ingress-platform/traefik data-platform/elk/collector; do
-  echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
-done
+make -C infrastructure platform-stage OBJECT=all; echo "stage exit=$?"
+git status --short gitops | awk '{print $2}' | sed -E 's#^gitops/(components/[^/]+/[^/]+(/[^/]+)?|clusters/kind)/.*#\1#' | sort | uniq -c
 grep -rn "BEGIN PRIVATE KEY\|BEGIN PUBLIC KEY" gitops/ | head -3   # 必须没有
 ls gitops/components/app-platform/knowfeed-app/knowfeed-backend/database/ gitops/components/app-platform/knowbase-app/knowbase-backend/database/
 sudo ls /etc/sunmoon/applications/sunmoon-kind/
@@ -399,7 +402,7 @@ for a in tpl knowfeed knowbase investment; do
 done
 ```
 
-要看到：七个 stage 都是 0；没有 PEM；knowfeed、knowbase 的 `database/` 下重新有了 `bootstrap.sops.yaml`、`runtime.sops.yaml`（按新名全新生成）；私有目录多出 `knowfeed`、`knowbase` 两个（旧的 `info`、`knowledge` 还在，不动）；计划：knowfeed 核到 `20261015_0014`、迁移 Job 结尾 `-v3`，knowbase 核到 `20260927_0007`，investment 核到 `20261012_0018`，tpl 核到 `20260911_0003`。
+要看到：`stage exit=0`；改动的组件目录只在这几处：四个应用、`sandbox-platform/provisioner`、`sandbox-platform/sandbox`（镜像锁）、`ingress-platform/traefik`、`data-platform/elk`、`clusters/kind`（别处也有改动不必停，照贴，第 5 步的比对会逐个对象列出来）；没有 PEM；knowfeed、knowbase 的 `database/` 下重新有了 `bootstrap.sops.yaml`、`runtime.sops.yaml`（按新名全新生成）；私有目录多出 `knowfeed`、`knowbase` 两个（旧的 `info`、`knowledge` 还在，不动）；计划：knowfeed 核到 `20261015_0014`、迁移 Job 结尾 `-v3`，knowbase 核到 `20260927_0007`，investment 核到 `20261012_0018`，tpl 核到 `20260911_0003`。
 
 **5. 渲染比对**（改名前的渲染产物 vs 这次 stage 的，逐个 k8s 对象）：
 
@@ -411,6 +414,7 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 
 要看到：第 1 节「不可变 Job」**0 条**（有一条就停：Flux 套用时会被拒）。报告整份随回执提交，Opus 逐条审第 3–6 节。
 
+> 2026-10-15 第二次执行：第 1–3 步通过（14 个镜像锁正确），停在第 4 步，已改为整套 stage，从第 4 步续跑。
 > 2026-10-15 第一次执行停在第 1 步（`R5.1-qwen.20261015-1531.md`）：块正则带了 `s`（dotall），第一个块吞掉了全部四个应用，`assert` 拦住、文件未改。已改为 `(?m)`，第 1、2 步在 `sources.yaml`、`component-images.yaml` 的副本上实跑核过（28 行、两行，各应用各自的提交）。从第 1 步重跑。
 
 **停点**：**不提交 stage 结果**（工作区保持原样，R5.2 再提交）。回执 `R5.1-qwen.<时间>.md`（R5.0 与 1–5 步的输出）连同比对报告只把这两个文件提交、直接推：`git add docs/rename-receipts/R5.1-* && git -c core.editor=true commit -m "rename: R5.1 回执（Qwen）" && git push origin qwen`。Opus 审过在本节写「R5.1 通过」才做 R5.2。
