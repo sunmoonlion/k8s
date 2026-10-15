@@ -179,7 +179,7 @@ for r in investment-app runtime tpl-app k8s; do git -C ~/worktrees/qwen/$r push 
 | 平台 | 旧 → 新 |
 | --- | --- |
 | GitHub | `info-app` → `knowfeed-app`；`knowledge-app` → `knowbase-app`；6 个子仓按「名字对照」表 |
-| gitee | `info-app` → `knowfeed-app`；`knowledge-app` → `knowbase-app`（gitee 上虽有 6 个同名旧子仓，但只有早期的 `master`/`opus`，提交不在现在的历史里，子仓也从不往 gitee 推——是旧拷贝，R2 不改；留还是删由所有者在 R6 定）。**gitee 的「仓库名称」和「仓库路径」是两个字段，两个都要改**，地址看的是路径；gitee 不一定转发旧地址，所以改完旧地址打不开属正常 |
+| gitee | `info-app` → `knowfeed-app`；`knowledge-app` → `knowbase-app`；6 个子仓见下面「R2.2」。**gitee 的「仓库名称」和「仓库路径」是两个字段，两个都要改**，地址看的是路径；gitee 不一定转发旧地址，所以改完旧地址打不开属正常 |
 
 改完核对（地址的协议跟着本机，从旧检出里取前缀）：
 
@@ -193,7 +193,59 @@ for n in knowfeed-app knowbase-app; do printf '%-28s gitee  qwen=%s\n' "$n" "$(g
 
 要看到：每个新地址都能列出分支，`qwen` 等于 `R1-opus` 记下的提交号，`master` 与改名前相同。
 
-**停点**：Qwen 写 `R2-qwen`（改名前后的地址、提交号对照），Opus 审过写「通过」。
+### R2.2 gitee 上的 6 个子仓与 GitHub 一致（所有者 2026-10-15 定）
+
+gitee 上原有 6 个同名旧子仓（`info-backend` 等），只有早期的 `master`（backend 两个另有 `opus`），提交不在现在的历史里；子仓过去只推 GitHub，所以它们一直没更新。所有者定：以后子仓也和父仓一样两边都有、两边一样。做法：先备份旧内容，再改名，再从 GitHub 把全部分支与标签强推过去（**会覆盖 gitee 上这 6 个仓的旧内容，所有者已同意；备份是唯一的退路，先做**）。R3 里子仓的推送地址再加上 gitee（见 R3 `fix_subs`），以后同步脚本推子仓时两边一起推。
+
+令牌照改父仓时的做法：只放本机环境变量、从标准输入读，不进命令行参数、不进日志与回执。
+
+```bash
+set -e
+read -rs GITEE_TOKEN; export GITEE_TOKEN                                   # 粘贴令牌回车，屏幕不回显
+GH=$(git -C ~/master/info-app remote get-url origin); GH=${GH%info-app.git}   # GitHub 前缀（本机协议）
+OWNER=sunmoonlion
+B=~/rename-backup/gitee-old-subrepos-$(date +%Y%m%d-%H%M); mkdir -p "$B"
+PAIRS="info-backend:knowfeed-backend info-web-frontend:knowfeed-web-frontend info-admin-frontend:knowfeed-admin-frontend
+       knowledge-backend:knowbase-backend knowledge-web-frontend:knowbase-web-frontend knowledge-admin-frontend:knowbase-admin-frontend"
+# 推 gitee 用的凭据：从环境变量取，令牌不出现在命令行
+GCRED=(-c credential.helper= -c "credential.helper=!f() { echo username=$OWNER; echo password=\$GITEE_TOKEN; }; f")
+
+# 1. 备份旧内容（每个仓一个 bundle，含全部分支；另记一份分支清单）
+for pr in $PAIRS; do old=${pr%%:*}
+  git clone -q --mirror "https://gitee.com/$OWNER/$old.git" "$B/$old.git"
+  git -C "$B/$old.git" bundle create "$B/$old.bundle" --all
+  git -C "$B/$old.git" for-each-ref --format='%(objectname:short) %(refname)' > "$B/$old.refs"
+  git bundle verify "$B/$old.bundle" >/dev/null && echo "备份  $old  $(wc -l < "$B/$old.refs") 个引用"
+done
+
+# 2. 改名：名称与路径两个字段都改
+for pr in $PAIRS; do old=${pr%%:*} new=${pr##*:}
+  code=$(printf 'access_token=%s&name=%s&path=%s' "$GITEE_TOKEN" "$new" "$new" |
+         curl -sS -o /dev/null -w '%{http_code}' -X PATCH -d @- "https://gitee.com/api/v5/repos/$OWNER/$old")
+  echo "改名  $old → $new  HTTP $code"                                     # 要 200；不是 200 就停
+done
+
+# 3. 从 GitHub 取全部分支与标签，强推到 gitee，并删掉 gitee 上 GitHub 没有的分支（旧 opus）
+M=$(mktemp -d)
+for pr in $PAIRS; do new=${pr##*:}
+  git clone -q --bare "${GH}$new.git" "$M/$new.git"
+  git -C "$M/$new.git" fetch -q origin '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*'
+  git "${GCRED[@]}" -C "$M/$new.git" push -q --force --prune "https://gitee.com/$OWNER/$new.git" 'refs/heads/*:refs/heads/*' 'refs/tags/*:refs/tags/*'
+  echo "推送  $new"
+done
+rm -rf "$M"
+
+# 4. 核对：两边的分支与标签逐条相同
+for pr in $PAIRS; do new=${pr##*:}
+  a=$(git ls-remote --heads --tags "${GH}$new.git" | sort); b=$(git ls-remote --heads --tags "https://gitee.com/$OWNER/$new.git" | sort)
+  printf '%-26s refs=%s %s\n' "$new" "$(echo "$a" | wc -l)" "$([ "$a" = "$b" ] && echo 一致 || echo 不一致)"
+done
+unset GITEE_TOKEN
+```
+
+要看到：6 个备份各有引用数；6 个改名都是 `HTTP 200`；最后 6 行都是「一致」。gitee 若因保护分支拒绝强推 `master`，停下，把报错写进回执（不要去关保护），交 Opus 定。
+
+**停点**：Qwen 写 `R2-qwen`（改名前后的地址、提交号对照；R2.2 的备份目录、改名返回码、核对结果），Opus 审过写「通过」。
 **状态**：
 
 ---
@@ -210,10 +262,15 @@ OLD=info-app NEW=knowfeed-app        # 第二遍：OLD=knowledge-app NEW=knowbas
 WS="cursor fable kimi luna qwen"   # 某台机器上没有哪个工位，就从这里去掉，并写进回执
 B=~/rename-backup/$(date +%Y%m%d-%H%M)-$OLD; mkdir -p "$B"
 newname() { basename "$1" | sed -e 's/^info-/knowfeed-/' -e 's/^knowledge-/knowbase-/'; }
-# 子仓：remote 指向新仓名（前缀 $SUB 取自旧检出）；拨回给定分支（与工位同名）并设上游——现在的子仓就是这样，同步脚本按此推 HEAD:<工位>
-fix_subs() { local top=$1 branch=$2 p
+# 子仓：remote 指向新仓名（前缀 $SUB 取自旧检出）；推送地址 GitHub、gitee 各一（R2.2 起子仓与父仓一样两边推，gitee 前缀 $GE 取自父仓）；
+# 拨回给定分支（与工位同名）并设上游——同步脚本按此推 HEAD:<工位>
+fix_subs() { local top=$1 branch=$2 p n
   for p in $(git -C "$top" submodule foreach --quiet 'echo $sm_path'); do
-    git -C "$top/$p" remote set-url origin "${SUB}$(newname "$p").git"
+    n=$(newname "$p")
+    git -C "$top/$p" remote set-url origin "${SUB}$n.git"
+    git -C "$top/$p" config --unset-all remote.origin.pushurl || true
+    git -C "$top/$p" remote set-url --add --push origin "${SUB}$n.git"
+    git -C "$top/$p" remote set-url --add --push origin "${GE}$n.git"
     git -C "$top/$p" fetch -q origin
     git -C "$top/$p" checkout -q -B "$branch"
     git -C "$top/$p" branch -q --set-upstream-to="origin/$branch"
@@ -259,12 +316,12 @@ done
 for ws in $WS; do d=~/worktrees/$ws/$NEW
   printf '%-40s branch=%s head=%s origin=%s dirty=%s\n' "$d" "$(git -C $d branch --show-current)" \
     "$(git -C $d rev-parse --short HEAD)" "$(git -C $d rev-parse --short origin/$ws)" "$(git -C $d status --porcelain --ignore-submodules=none | wc -l)"
-  git -C $d submodule foreach --quiet 'printf "  %-34s branch=%s up=%s head=%s origin=%s url=%s\n" "$sm_path" "$(git branch --show-current)" "$(git rev-parse --abbrev-ref @{u})" "$(git rev-parse --short HEAD)" "$(git rev-parse --short @{u})" "$(git remote get-url origin)"'
+  git -C $d submodule foreach --quiet 'printf "  %-34s branch=%s up=%s head=%s origin=%s url=%s\n" "$sm_path" "$(git branch --show-current)" "$(git rev-parse --abbrev-ref @{u})" "$(git rev-parse --short HEAD)" "$(git rev-parse --short @{u})" "$(git remote get-url origin)"; git remote get-url --push --all origin | sed "s/^/      push /"'
 done
 git -C ~/master/$NEW remote -v
 ```
 
-要看到：每个工位 `branch` = 工位名、`head` = `origin`、`dirty=0`；子仓 `branch` = 工位名、`up` = `origin/<工位>`、`url` 是新仓名，`head` 与 `origin` 相同（不同说明父仓记的子仓提交不是该分支的头，照实写进回执交 Opus 判断，不要动）；主目录 remote 与备份目录里 `git -C "$B/master" remote -v` 相比只有仓名变了（协议、主机、推送地址个数都相同）。
+要看到：每个工位 `branch` = 工位名、`head` = `origin`、`dirty=0`；子仓 `branch` = 工位名、`up` = `origin/<工位>`、`url` 是新仓名、下面两行 `push` 分别是 GitHub 与 gitee 的新仓名，`head` 与 `origin` 相同（不同说明父仓记的子仓提交不是该分支的头，照实写进回执交 Opus 判断，不要动）；主目录 remote 与备份目录里 `git -C "$B/master" remote -v` 相比只有仓名变了（协议、主机、推送地址个数都相同）。
 
 **停点**：Opus 写 `R3-opus`（远程机）、Qwen 写 `R3-qwen`（本地机），Opus 审。
 **状态**：
