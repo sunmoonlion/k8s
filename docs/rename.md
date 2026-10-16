@@ -600,6 +600,8 @@ grep -E "^=====|\?\?" docs/rename-receipts/R6.1-list.$T.txt
 
 **R6.1 通过** · 2026-10-16 · Opus（`R6.1-qwen.20261016-1016.md`、`R6.1-list.20261016-1013.txt`）。`exit=0`，无 `STOP`、无 `??`。逐类核过：`k8s` 旧 Kustomization 19 个全在清单、都不在现行 `stages.yaml`，带旧阶段标签的对象 151 个（含共享组件里改了名的 3 个，`still_declared` 都是 false、标签是预期阶段），无旧名无标签的游离对象，旧 Pod 47 个；`job-history` 现行声明的 34 个保留，已完成历史 Job 142 个（investment 90、tpl 15、其余是旧 info/knowledge 的——这些先随 `k8s` 一类删掉），没有未完成的；`postgresql` 库 `info`（9.6 MB）、`knowledge`（8.8 MB）与 4 个角色，归属注释都对；`redis` 2 个用户，旧键 0；`rabbitmq` 2 个 vhost（说明是本平台记号，队列消息都是 0）、2 个用户；`object-storage` 桶 `info-originals`（94 个对象、约 31 MB）、2 个用户、2 条策略；`ragflow` 旧数据集 1 个（6 份文档）；`casdoor` 应用 6 个（回执写成 4 个，以清单为准）、组织 2 个且都没有用户，clientId 与说明都对；`private` 4 个目录（构建候选目录 R3 时已不在）；`harbor` 旧仓库 6 个，占用基线 19G，没做过垃圾回收。R6.2 等所有者确认删除后开始。所有者 2026-10-16 确认删（「确认删」），R6.2 可执行。
 
+**R6.2 删除循环审过** · 2026-10-16 · Opus（`R6.2-qwen.20261016-1040.md`、`R6.2-delete.20261016-1032.txt`）。十一类都是 `exit=0`，每类「删后」清单内的项都是 0：旧 Kustomization、对象、Pod 都没了；历史 Job 0（声明的 34 个还在）；库、角色、Redis 与 RabbitMQ 账号、vhost、桶、对象存储账号与策略、RAGFlow 旧数据集、Casdoor 6 个应用 2 个组织、4 个私有目录、Harbor 6 个仓库全删；垃圾回收 id 12 成功（`delete_untagged=false`，回收约 1.54 GiB，占用 19G → 18G）。`R6.2-delete.20261016-1028.txt` 是第一次起循环时 sudo 被拒、一行没跑，留作记录。Windows hosts 演练 `STOP`：原因是手册里用 `cp` 建副本，照搬了真 hosts 的只读，PowerShell 写不进（不是内容护栏），真 hosts 没动；已改成 `cat` 新建副本并先核 `writable`。剩 hosts 与删后核对。
+
 ### R6.2 删（按顺序，一类一类）
 
 ```bash
@@ -616,16 +618,21 @@ done
 **Windows hosts**（先在副本上演练，再真改；真改会弹一次 UAC，请所有者点「是」）：
 
 ```bash
+# 演练：副本要用 cat 新建——cp 会照搬真 hosts 的只读（WSL 里显示没有写位，落到 Windows 是「只读」属性），PowerShell 写不进（2026-10-16 第一次演练就撞上）
+chmod u+w /mnt/c/Users/zymun/hosts-r6-rehearsal* 2>/dev/null; rm -f /mnt/c/Users/zymun/hosts-r6-rehearsal*
 cp docs/rename-tools/r6_windows_hosts.ps1 /mnt/c/Users/zymun/rename-hosts-r6.ps1
-cp /mnt/c/Windows/System32/drivers/etc/hosts /mnt/c/Users/zymun/hosts-r6-rehearsal
+cat /mnt/c/Windows/System32/drivers/etc/hosts > /mnt/c/Users/zymun/hosts-r6-rehearsal
+test -w /mnt/c/Users/zymun/hosts-r6-rehearsal && echo writable
 powershell.exe -NoProfile -Command '$env:RENAME_HOSTS_FILE="C:\Users\zymun\hosts-r6-rehearsal"; $env:RENAME_HOSTS_OUT="C:\Users\zymun\hosts-r6-rehearsal.txt"; powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\zymun\rename-hosts-r6.ps1; "exit=$LASTEXITCODE"'
-cat /mnt/c/Users/zymun/hosts-r6-rehearsal.txt; diff /mnt/c/Windows/System32/drivers/etc/hosts /mnt/c/Users/zymun/hosts-r6-rehearsal
+iconv -f GBK -t UTF-8 /mnt/c/Users/zymun/hosts-r6-rehearsal.txt; diff /mnt/c/Windows/System32/drivers/etc/hosts /mnt/c/Users/zymun/hosts-r6-rehearsal
+# 上面 exit=0 且 diff 对了才往下；真改（弹 UAC）
 powershell.exe -NoProfile -Command "Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','C:\Users\zymun\rename-hosts-r6.ps1'"
-cat "/mnt/c/Users/zymun/AppData/Local/Temp/rename-hosts-r6-result.txt"
-rm /mnt/c/Users/zymun/hosts-r6-rehearsal /mnt/c/Users/zymun/hosts-r6-rehearsal.bak-r6-* /mnt/c/Users/zymun/hosts-r6-rehearsal.txt
+iconv -f GBK -t UTF-8 "/mnt/c/Users/zymun/AppData/Local/Temp/rename-hosts-r6-result.txt"
+grep -nE 'sunmoonai' /mnt/c/Windows/System32/drivers/etc/hosts | grep -v '^[0-9]*:\s*#'
+rm -f /mnt/c/Users/zymun/hosts-r6-rehearsal /mnt/c/Users/zymun/hosts-r6-rehearsal.bak-r6-* /mnt/c/Users/zymun/hosts-r6-rehearsal.txt
 ```
 
-要看到：演练 `exit=0`，`diff` 只有那一行少了四个旧名字；真改第一行 `OK backup …`，新名字都在、旧名字没了。是 `STOP:` 就停。
+要看到：`writable`；演练 `exit=0`，`diff` 只有那一行少了四个旧名字；真改第一行 `OK backup …`，新名字都在、旧名字没了（`grep` 那行里没有 `info.`、`info-admin.`、`knowledge.`、`knowledge-admin.`）。是 `STOP:` 就停。结果文件是 Windows PowerShell 5.1 按系统代码页（GBK）写的，所以用 `iconv` 看。
 
 **删后核对**（新应用不受影响）：
 
