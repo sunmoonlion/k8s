@@ -74,6 +74,8 @@ data:
   CASDOOR_ENDPOINT: 'https://{{ casdoor_hostname }}:30443'
   CASDOOR_ORGANIZATION: '{{ cfg.identity_organization }}'
   WEB_CASDOOR_ORGANIZATIONS: '{{ cfg.identity_user_organization }}'
+  # 管理端业务页给 admin、operator 两个角色看（待办 98）；角色由注册脚本在 built-in 里建好
+  ADMIN_AUTH_ROLE_ALLOWLIST: 'admin,operator'
 {% for surface, client in browser_clients.items() %}
   {{ surface | upper }}_CASDOOR_APPLICATION: '{{ client.name }}'
   {{ surface | upper }}_CASDOOR_CLIENT_ID: '{{ client.client_id }}'

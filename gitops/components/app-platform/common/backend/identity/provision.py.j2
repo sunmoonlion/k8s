@@ -63,6 +63,34 @@ def run():
             org = api('GET', '/api/get-organization', params={'id': 'admin/' + user_organization})
         require(org and all(org.get(k) == v for k, v in desired_org.items()),
                 'Existing user organization differs; explicit migration required')
+        # Admin consoles show business pages to roles admin/operator (backend ADMIN_AUTH_ROLE_ALLOWLIST;
+        # Casdoor puts role objects into the token's roles claim). Roles live in built-in, shared by all
+        # applications: create when missing and add built-in/admin to admin. Additive only: never remove
+        # members or change other fields; concurrent jobs may race, so a failed add must re-read as present.
+        roles_created = []
+        role_members_added = []
+        for role_name, members in (('admin', ['built-in/admin']), ('operator', [])):
+            role_id = 'built-in/' + role_name
+            role = api('GET', '/api/get-role', params={'id': role_id})
+            if role is None:
+                try:
+                    api('POST', '/api/add-role', {'owner': 'built-in', 'name': role_name, 'displayName': role_name,
+                                                  'description': 'sunmoon:admin-console-role:managed-by-gitops',
+                                                  'users': members, 'groups': [], 'roles': [], 'domains': [],
+                                                  'isEnabled': True,
+                                                  'createdTime': datetime.now(timezone.utc).isoformat()})
+                    roles_created.append(role_name)
+                except RuntimeError:
+                    pass
+                role = api('GET', '/api/get-role', params={'id': role_id})
+            require(role and role.get('isEnabled') is True, 'Admin console role missing or disabled')
+            missing = [m for m in members if m not in (role.get('users') or [])]
+            if missing:
+                api('POST', '/api/update-role', dict(role, users=(role.get('users') or []) + missing),
+                    params={'id': role_id})
+                role = api('GET', '/api/get-role', params={'id': role_id})
+                role_members_added.append(role_name)
+            require(all(m in (role.get('users') or []) for m in members), 'Admin console role members missing')
         for surface, config in definitions.items():
             for name in ('name', 'client_id'):
                 require(re.fullmatch(r'[a-z][a-z0-9-]{2,79}', config[name]), 'Invalid browser identity')
@@ -133,6 +161,7 @@ def run():
         require(response.status_code == 200 and response.json().get('keys'), 'OIDC verification keys missing')
     print(json.dumps({'browser_clients': sorted(checked), 'created': created, 'migrated': migrated,
                       'single_sign_on_migrated': sso_migrated, 'single_sign_on': ['web'],
+                      'admin_roles_created': roles_created, 'admin_role_members_added': role_members_added,
                       'user_organization': user_organization, 'admin_organization': organization,
                       'distinct_identities': True, 'exact_redirects': True, 'client_secrets_match': True,
                       'authorization_code_only': True, 'signup_disabled': True,
