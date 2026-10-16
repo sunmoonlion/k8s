@@ -17,7 +17,7 @@
 | knowlab、knowmart | 见 SDD 0026、0018 与 `project-guide/staging.md`；102 ELK 采集加上两个新应用 |
 | Windows 本地代理 | 69 自动更新；70 托盘 pid 误判；71「允许联网」文案；72 PowerShell 执行策略；73 干净 Windows 整套走一遍；63 多台电脑同时在线（第二期）；下次发版改名 sunmoon-link（决策） |
 | 工作台功能 | 80 只剩 F1（`fs/watch`）；83 右边栏终端；85「信息采集」按合规原则重审；66 连接器；60 沙箱到模型厂商走可配置代理 |
-| 部署与平台 | 97 组件 prepare 顺序（已改，待实跑；过之前别跑 `platform-stage OBJECT=all`）；46 部署计划查出同名 Job 模板变了；48 应用随机秘密的轮换入口；64 同步脚本 rebase 改写发布提交号；65 Casdoor 管理界面不对公网（已改，待部署）；45 退役旧 kind 与旧 Harbor 数据；104–109 平台目标（开机恢复剩余验证、Harbor 持久化实测、长期空间管理、灾备、生产安全、云端建群）；11 外存储（并入 107 一起定） |
+| 部署与平台 | 97 组件 prepare 顺序（已改，待实跑；过之前别跑 `platform-stage OBJECT=all`）；112 本地机 nsenter 模式下 OBJECT 丢失（已改，待实跑）；46 部署计划查出同名 Job 模板变了；48 应用随机秘密的轮换入口；64 同步脚本 rebase 改写发布提交号；65 Casdoor 管理界面不对公网（已改，待部署）；45 退役旧 kind 与旧 Harbor 数据；104–109 平台目标（开机恢复剩余验证、Harbor 持久化实测、长期空间管理、灾备、生产安全、云端建群）；11 外存储（并入 107 一起定） |
 | 代码清理 | 110 各应用仓的旧部署文件（含 24 的转发文件）；20、21 撤 investment 的检索身份；53 `runner` 改名 `manager`；101、103 两个本来就失败的测试 |
 | 数据线 | 12 新集群上跑通采集到问数的最小闭环；15 年报抽取接进流程时要不要单独的工作进程 |
 
@@ -140,4 +140,5 @@
 | 109 | **云端建群验证**：统一声明与流程在云上建群的适配另做设计并实机验证；当前 KIND 不能证明 kubeadm 与系统离线包路径；Ubuntu 虚拟机演练排在 KIND 验收之后、另行批准 | 平台第一次重构时所有者要求的交付目标 | 平台验收记录「未完成项」（Git 历史 `53767f6a:docs/platform/verification.md`） | 待做 |
 | 110 | **清掉各应用仓里的旧体系部署文件**：父仓的 `dev-to-prod-deploy/`、tpl-app 的 `k8s-deployment/`（含旧集成测试）、各后端的 `db-provisioner/`、`*-access-bootstrap/`，以及前端 `mybuild/` 下除 `Dockerfile` 外的旧脚本（`mybuild/Dockerfile` 仍被构建链使用，留着）；之后删六个后端里的转发文件 `application/services/durable_tasks.py`（账 24） | 现行部署只在 k8s 仓，这些是旧体系留下的，容易误导；knowlab、knowmart 实例化时已从父仓去掉 | 2026-10-16 清账、project-guide 重写时发现 | 待做；先改模板再同步实例（`C-R6`） |
 | 111 | **工作台对用户开放前的合规改动**（0026「四」）：界面上「专家」改叫「分身」；内置专家包改为归属用户（「财务分析与预测」归我们这个普通用户的账号，撤掉「问数」「财报体检」，`listed_packs()` 里还在）；用户沙箱默认不接 knowbase 数据服务（`KNOWBASE_MCP_*`） | 总原则 `C-L1`–`C-L5`：平台不带自己的投资逻辑与数据 | SDD 0026、决策 2026-10-16 | 待做；工作台对用户开放前 |
+| 112 | **本地机 nsenter 模式下 `OBJECT` 丢失，单对象命令按 all 跑**：WSL 开机后用户会话和 PID 1 挂载命名空间不一致时，`infrastructure/Makefile` 改用 `sudo … nsenter … sudo … ansible-playbook`，sudo 清空环境，剧本 `lookup("env","OBJECT")` 读不到就退回 `all`；`*-selected` 的「对象等于 OBJECT」校验读的是旧选择文件，没拦住。所以这种状态下 `platform-stage/deploy/check OBJECT=x` 实际作用于全部对象。2026-10-16 已改：`ANSIBLE_ENV` 显式带 `OBJECT`、`SITE`、`PLATFORM_CONFIG_FILES`、`AGENT_ZIP`、`HTTPS_PROXY`；`platform-selection` 先删旧选择文件；`host/deployment.yaml` 读不到 `OBJECT` 就停。远程机 `make -n` 强制走 nsenter 分支核过展开、剧本断言核过。待 qwen-003 D2-0 / D2 实跑；此前在 nsenter 模式下跑过的单对象部署，实际范围要按「全部」看待 | qwen-003 D2 第二停点 | 回执 `scripts/results/qwen-003-D.20261016-1650.md` | 已改，待实跑 |
 

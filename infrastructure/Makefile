@@ -10,10 +10,14 @@ ANSIBLE := .venv/bin/ansible-playbook
 # WSL：用户会话和 systemd（PID 1）可能不在同一个挂载命名空间；开机后才附上的数据盘只在 PID 1 那边可见，
 # 从用户会话跑的预检、守卫、启停会把 /data/* 看成系统盘（2026-10-06 第一次真实开机实测）。
 # 不一致时，所有剧本都钻进 PID 1 的挂载命名空间里跑，身份仍是当前用户。
+# sudo 会清空环境：剧本用 lookup("env") 读的变量必须逐个显式带过去（$$ 让 shell 在执行时取已导出的值；
+# 这里是 := 立即展开，写 $(OBJECT) 会取到空值）。漏带 OBJECT 时剧本按 all 跑（2026-10-16 qwen-003 D2 撞上）。
+# 新增 lookup("env", …) 时同步加到 ANSIBLE_ENV。
+ANSIBLE_ENV := OBJECT="$$OBJECT" SITE="$$SITE" PLATFORM_CONFIG_FILES="$$PLATFORM_CONFIG_FILES" AGENT_ZIP="$$AGENT_ZIP" HTTPS_PROXY="$$HTTPS_PROXY"
 NS_SELF := $(shell readlink /proc/self/ns/mnt 2>/dev/null)
 NS_PID1 := $(shell sudo -n readlink /proc/1/ns/mnt 2>/dev/null)
 ifneq ($(NS_SELF),$(NS_PID1))
-ANSIBLE := sudo -n nsenter --target 1 --mount --wd=$(CURDIR) -- sudo -n -u $(shell id -un) -H env PATH="$(PATH)" $(CURDIR)/.venv/bin/ansible-playbook
+ANSIBLE := sudo -n nsenter --target 1 --mount --wd=$(CURDIR) -- sudo -n -u $(shell id -un) -H env PATH="$(PATH)" $(ANSIBLE_ENV) $(CURDIR)/.venv/bin/ansible-playbook
 endif
 ARTIFACTS ?= all
 MATERIAL_OWNER ?= all
@@ -402,7 +406,9 @@ services-ragflow-image-publish:
 SELECTION_PREFIX := .build/host/selections/$(subst /,--,$(OBJECT))
 -include $(SELECTION_PREFIX).mk
 .PHONY: platform-deploy platform-deploy-selected platform-check platform-selection
+# 先删旧的选择文件：后面各 *-selected 里「选择对象等于 OBJECT」的校验只认这次写出的文件。
 platform-selection:
+	rm -f $(SELECTION_PREFIX).json $(SELECTION_PREFIX).mk
 	$(ANSIBLE) -i host/inventory.yaml host/deployment.yaml $(CONFIG_ARGS) --extra-vars 'deployment_action=$(SELECTION_ACTION)'
 platform-deploy: SELECTION_ACTION=deploy
 platform-deploy: platform-selection

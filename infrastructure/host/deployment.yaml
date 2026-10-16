@@ -19,6 +19,8 @@
         that:
           - cluster_name == 'sunmoon-kind'
           - not ansible_check_mode
+          # make 总会导出 OBJECT（默认 all）；读不到说明环境没传进来（如 sudo 清空），不能静默按 all 跑
+          - lookup("env", "OBJECT") | length > 0
           - deployment_action in ['select','plan','config','status','stage','build','check','deploy']
           - requested_object is match('^(all|[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*)$')
     # The stage graph is read from gitops/components/**/stage.yaml only; later plays reuse the loaded facts.

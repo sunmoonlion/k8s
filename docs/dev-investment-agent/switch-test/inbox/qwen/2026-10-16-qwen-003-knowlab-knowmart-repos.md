@@ -89,6 +89,19 @@ git status --short gitops | awk '{print $2}' | sed -E 's#^gitops/(components/[^/
 
 第一次跑停在 `stages.py graph`（两个新后端少 `database`、`migration`、`redis` 三个目录，C 段漏交）；已补（各放一份说明，生成文件由 D3 的 stage 写进去），pull 后 D2 原样重跑。
 
+第二次停在 tpl-app 的 stage 读 knowlab 的 `image.lock.yaml`。根因不是缺锁，是**本地机进了 nsenter 模式**（用户会话和 PID 1 的挂载命名空间不一致，Makefile 改用 `sudo … nsenter … sudo … ansible-playbook`），sudo 清空环境，`OBJECT` 没传进剧本，剧本按 `all` 跑了全部对象；「选择对象等于 OBJECT」的校验读到的是以前留下的旧选择文件，没拦住。已修：nsenter 命令显式带上剧本读的五个环境变量；选择前先删旧选择文件；剧本读不到 `OBJECT` 就停。pull 后先跑 D2-0 留证据，再原样从头重跑 D2。工作区里 topology 改的 `gitops/clusters/kind/stages.yaml` 不用动，D2 会再写一遍同样内容。
+
+**D2-0 只读留证据**（不改任何东西）：
+
+```bash
+cd ~/worktrees/qwen/k8s
+[ "$(readlink /proc/self/ns/mnt)" = "$(sudo -n readlink /proc/1/ns/mnt)" ] && echo "ns same" || echo "ns differ（nsenter 模式）"
+ls -l --time-style=+%m-%d_%H:%M infrastructure/.build/host/selections/ | awk '{print $6, $7}'
+make -n -C infrastructure platform-selection OBJECT=app-platform/tpl-app 2>/dev/null | grep -o 'OBJECT="$OBJECT"' | head -1; echo d2-0-done
+```
+
+要看到：第一行照实（预计 `ns differ`）；第二段是选择文件和时间，照抄；第三段在 `ns differ` 时应打印 `OBJECT="$OBJECT"`（`ns same` 时不打印，属正常）。
+
 **D2b 待办 97 的修法实跑**（prepare 改为按阶段依赖排序；ragflow 单独 stage 时只读 valkey 已有的私有输入，不生成）：
 
 ```bash
