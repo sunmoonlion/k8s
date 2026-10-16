@@ -63,6 +63,8 @@
 
 ## 已定（近期，细节在正文）
 
+- **我们创建、用户使用；分身放 knowmart 私有模式，工作台对用户开放**（2026-10-16 所有者定：「把knowlab里交付的knowbot放到knowmart，一个用户可以同时在knowlab和knowmart建立账户，这样在工作台同样是请，不同两点：1，只能请自己的bot；2，一个用户可以建多个bot」「那还是对用户开放」「我们的价值本来就体现在为用户创建bot上」）：knowlab 创建（我们的价值）→ knowmart 存放（私有模式：只能请自己的、可以有多个、后端强制按所有者过滤、界面叫「我的分身」）→ 用户在工作台「请」自己的分身自己跑，不由我们替他跑出结果；改方法回 knowlab 出新版本。现在开发 knowlab 加 knowmart 私有模式，knowmart 对外上架、开发者资格、审核、交易持牌后再做。见 `SDD/modules/0026-knowlab.md`「一之二」、`0018` 状态、约束 `C-L4`。
+
 - **knowlab 是新应用 `knowlab-app`**（2026-10-16 所有者定，原话「是新应用」）：由 `tpl-app` 实例化（后端、用户网页、管理后台），自己的库、迁移链与对象存储；investment 工作台作为测试与运行平台，只存分身的标识与版本，经版本化接口取。见 `SDD/modules/0026-knowlab.md`「一之二」。
 
 - **本地代理的英文名叫 sunmoon-link**（2026-10-16 所有者定，原话「我向把本地agent换个词，它与现在的agent一样，但是我们其实是代理」「我都被改名改怕了」；同日先定 knowlink，随即改：「本地代理不能用knowlink，它和其它know不是一系列的」「就用sunmoon-link」）：中文仍叫「本地代理」，界面不改；英文 agent 在 AI 语境里指智能体（那是分身干的事），本地程序只做转发。know 系列是云端产品，装在用户电脑上的客户端用品牌前缀 `sunmoon-`，所以从 `sunmoon-agent` 改为 `sunmoon-link`。**不搬家**：runtime 仓名不改（下面 2026-10-07「runtime 仓改名 agent」作废）、协议字段（如握手 `role=agent`）与代码内部命名不改；命令 `sunmoon-agent`、安装包名、Windows 计划任务 `SunMoonAgent-*` 等到下次发 Windows 代理新版本时顺带改为 sunmoon-link（安装时清掉旧任务，工作台「接入电脑」页的安装命令同步改，走正常发布卡真机验）。以后新写的文档用 sunmoon-link。
