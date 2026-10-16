@@ -25,7 +25,7 @@
 
 1. 建镜像并核对没有 VOLUME：
    ```bash
-   cd ~/worktrees/fable/k8s/sunmoonai/sandbox-platform
+   cd ~/worktrees/fable/k8s/infrastructure/applications/component-images/sandbox-platform
    IMG=harbor.sunmoonai.com:30443/app-images/sandbox:0.155.1-r2
    docker build --build-arg NODE_IMAGE=harbor.sunmoonai.com:30443/k8s-images/node:24.18.0-alpine@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc -t $IMG -f image/Dockerfile .
    docker inspect --format '{{json .Config.Volumes}}' $IMG     # 必须是 null；不是就停

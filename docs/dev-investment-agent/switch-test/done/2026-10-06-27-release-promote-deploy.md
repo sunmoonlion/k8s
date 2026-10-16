@@ -113,7 +113,7 @@ make -C infrastructure flux-source-apply; make -C infrastructure flux-source-sta
 回传里要有：一到六节每条命令的退出码；第三节候选整份；第四节的 diff；第五节的用时与 RECAP 汇总；第六节的阶段数、Job 状态、八个检查的结论行；结论：通过 / 不通过 / 判断不了。
 
 ```bash
-git add sunmoonai/scripts/results
+git add scripts/results
 git -c core.editor=true commit -m "test(local): 2026-10-06-27-release-promote-deploy.md 结果"
 git log --oneline -3
 ```

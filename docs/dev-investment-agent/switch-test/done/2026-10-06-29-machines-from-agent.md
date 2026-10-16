@@ -111,5 +111,5 @@ node dist/cli.js start
 每步退出码与用时；第二节两把锁的 diff；第三节 workload 的三行摘录；第五节 Pod 与 runner 日志摘录、检查结论；第七节三项各看到了什么（页面上的字）。结论：通过 / 不通过。
 
 ```bash
-git add sunmoonai/scripts/results && git -c core.editor=true commit -m "test(local): 2026-10-06-29-machines-from-agent.md 结果"
+git add scripts/results && git -c core.editor=true commit -m "test(local): 2026-10-06-29-machines-from-agent.md 结果"
 ```

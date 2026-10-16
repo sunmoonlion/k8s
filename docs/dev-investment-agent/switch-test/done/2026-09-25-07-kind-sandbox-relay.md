@@ -13,7 +13,7 @@
 ## 步骤
 
 1. 推两个镜像进 KIND Harbor：
-   `cd ~/worktrees/fable/k8s/sunmoonai/sandbox-platform && docker build --build-arg NODE_IMAGE=harbor.sunmoonai.com:30443/k8s-images/node:24.18.0-alpine@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc -t harbor.sunmoonai.com:30443/app-images/sandbox:0.155.1-r1 -f image/Dockerfile . && docker push harbor.sunmoonai.com:30443/app-images/sandbox:0.155.1-r1`
+   `cd ~/worktrees/fable/k8s/infrastructure/applications/component-images/sandbox-platform && docker build --build-arg NODE_IMAGE=harbor.sunmoonai.com:30443/k8s-images/node:24.18.0-alpine@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc -t harbor.sunmoonai.com:30443/app-images/sandbox:0.155.1-r1 -f image/Dockerfile . && docker push harbor.sunmoonai.com:30443/app-images/sandbox:0.155.1-r1`
    `cd ../relay-platform/relay && docker build -t harbor.sunmoonai.com:30443/app-images/relay:v1-r1 . && docker push harbor.sunmoonai.com:30443/app-images/relay:v1-r1`
    记下两个 RepoDigests。
 2. 把 digest 写进清单（C-R2 只允许 digest）：`sandbox-platform/resources/demo-user.yaml` 与 `relay-platform/resources/relay.yaml` 里 `REPLACE_WITH_BUILT_DIGEST` 换成实际值。这两个文件改动留在工作区回传。
