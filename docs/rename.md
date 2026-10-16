@@ -550,19 +550,23 @@ grep -E '^digest' gitops/components/sandbox-platform/sandbox/image.lock.yaml
 $K -n sandbox-platform-dev get deploy -l app=sandbox -o yaml | grep -E 'name: (KNOWBASE|KNOWLEDGE)_MCP' | sort -u
 ```
 
-   要看到：**刚才开对话的那个用户**的沙箱（`sandbox-u-<该用户>`）镜像摘要等于锁里的、环境变量是 `KNOWBASE_MCP_*`（没有 `KNOWLEDGE_MCP_*`）。其他用户的沙箱还是旧镜像、旧变量属正常：供给器只在该用户下次开工作台时整份替换他的沙箱（`provisioner.py` 的 `upsert`），不会主动批量升级；照贴即可，不必停。
+   要看到：**刚才开对话的那个用户**的沙箱（`sandbox-u-<该用户>`）镜像摘要等于锁里的、环境变量是 `KNOWBASE_MCP_*`（没有 `KNOWLEDGE_MCP_*`）。其他用户的沙箱还是旧镜像、旧变量属正常：供给器只在该用户点「设置 → 云端与模型 → 拉起 / 更新沙箱」时整份替换他的沙箱（investment 后端 `provisioning.py` → 供给器 `PUT /sandboxes/<用户>`），开工作台、开对话都不会换，也不批量升级；照贴即可，不必停。
 
 **停点**：回执 `R5.3-qwen.<时间>.md`，Opus 审过写「R5 通过」，再做 R6。
 
+**R5.3 通过** · 2026-10-16 · Opus（`R5.3-qwen.20261016-1006.md`）。第 1、2、4 项：admin 登录、治理控制台正常；三个管理端的业务页（采集 / 证券 / 需求、数据集登记 / 数据目录、缺数据的需求）按应用角色 `admin`/`operator` 显示，而部署从没配 `ADMIN_AUTH_ROLE_ALLOWLIST`、Casdoor 也没给 admin 角色，改名前 `4be661df` 即如此，不是改名回归，未核（补法记入「冻结解除之后」第 6 条）；子代理那几个 403/404 是它猜地址撞的。第 3 项两个网页端登录后进 dashboard。第 5 项：所有者点「更新沙箱」后，`sandbox-u-5cdfe57e345f` generation 6→7、镜像 `sha256:8fac3fdf…` 与 `image.lock.yaml` 相同、变量只有 `KNOWBASE_MCP_TOKEN`/`KNOWBASE_MCP_URL`（供给器配置指向 `knowbase-api`），供给器日志有那次 `PUT`；`list_datasets` 返回空——新 knowbase 从空库开始，属预期。回执里「更新前一轮返回 knowbase 2 个数据集」要更正：那一轮走的是未更新的旧沙箱（`KNOWLEDGE_MCP_*`），`olist-ecommerce`、`sh600009-financials` 是旧 knowledge 库里的登记，前后对照正好说明切换生效。另一用户的 `sandbox-u-f1cee6277692` 仍是旧镜像旧变量，见 R6 开头。子代理往密码框打进指令残文、未提交一事已照实记，此后登录一律所有者手动。**R5 通过。**
+
 **回退**（R5.2 或 R5.3 不过时，由 Opus 写具体命令后再做，Qwen 不自行回退）：旧应用的对象一直在跑、旧库旧桶旧 Casdoor 应用都没动，所以回退是：把 `infrastructure/environments/kind/flux-source.yaml` 退回上一次晋级的提交再 `flux-source-apply`（旧阶段回来、接上还在跑的旧对象），入口按上一次的配置重新 `entry-deploy`，Windows hosts 用 `hosts.bak-rename-*` 还原。
 
-**状态**：**可执行** · 2026-10-15 · Opus。R5.1 做完停下等 Opus 审，R5.2、R5.3 同样一段一停。
+**状态**：**通过** · 2026-10-16 · Opus。R5.1、R5.2、R5.3 各自审过（见上面三条「通过」）。可以做 R6。
 
 ---
 
 ## R6 下线旧对象 — Qwen（本地机）
 
 只在 R5 写了「通过」之后做（所有者 2026-10-15 定旧的不必备份）。删完就没有退路了（R5 的回退靠的正是这些旧对象），所以 R5.3 浏览器验证过了才做。
+
+**旧沙箱**：R5.3 时另一用户的 `sandbox-u-f1cee6277692` 还是旧镜像、`KNOWLEDGE_MCP_URL` 指向旧 `knowledge-api`。它不带旧阶段标签，R6 不删它；但 `k8s` 类删掉旧 `knowledge-api` 之后，这个用户的数据工具会连不上，直到他在「设置 → 云端与模型」点一次「更新沙箱」。所有者能登这个账号的话，R6.2 之前点一次；R6.1 清单里沙箱一行照贴。
 
 工具 `docs/rename-tools/r6_cleanup.py`：清单是写死的旧名字（Opus 2026-10-15 从改名前的配置 `4be661df` 逐个抄出），默认只列不删；删一次只删一类，要 `--confirm <类>`；每类删前先核归属记号（PostgreSQL 的注释 `sunmoon-kind/info`、RabbitMQ vhost 的说明、Casdoor 服务应用的说明与 clientId、k8s 对象的旧阶段标签），对不上整类不删；列出来但不在清单里的标 `?? 不在清单，不删`，交 Opus 看。不打印口令、令牌、哈希。
 
@@ -663,3 +667,4 @@ PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 换名；0018 改写为 knowmar
    - 根目录随之删：`sunmoon`（只是转调 `sunmoonai/operations/cli.py`）、`legacy/`（自述「达到退出条件后删除」）、`image-management-design.md`（旧体系镜像管理设计）；`k8s持久化方式及本项目持久化方案设计.md` 先把仍成立、新文档里没有的内容并进 `infrastructure/host/README.md` 与 `gitops/components/foundations/README.md` 再删；根 `README.md`、`AGENTS.md` 里指向 `utils/`、`./sunmoon` 的话改掉。保留 `CHECKPOINT.md`；`scripts/test_switch_test_sync.py` 保留，随 `dev-investment-agent` 搬家改它里面的路径；
    - 冻结的旧体系目录（`app-platform`、`cicd-platform`、`data-platform`、`deploy-sunmoonai-all`、`infrastructure`、`ingress-platform`、`kind-infrastructure`、`messaging-platform`、`operations`、`ops-platform`、`registry-platform`、`CHECKPOINT-old-system-*.md`）直接 `git rm`。
 5. **组件 prepare 的先后顺序**（R5.1 第三次执行撞上，`R5.1-qwen.20261015-1704.md`）：`infrastructure/components/stages.py` 收集 prepare 按目录字母序，`render.yaml` 也只跑「选中对象」的 prepare。`data-platform/ragflow` 的 prepare 要用 `data-platform/valkey` 的 prepare 备下的 `valkey_credentials`，所以 `OBJECT=all`（ragflow 排在 valkey 前）与 `OBJECT=data-platform/ragflow`（valkey 根本不跑）都会报 `'valkey_credentials' is undefined`。ragflow 自 10-05 换渲染器后没再 stage 过，一直没暴露。修法二选一，修后用 `OBJECT=data-platform/ragflow` 实跑一次核对：ragflow 的 prepare 自己读 valkey 的私有输入（同 `component-input.yaml`，只读不新建）；或 prepare 按阶段依赖排序并带上依赖对象的 prepare。修之前别跑 `platform-stage OBJECT=all`。
+6. **管理端角色**（R5.3 发现，改名前就有）：knowfeed、knowbase、investment 三个管理端的业务页与导航要应用角色 `admin` 或 `operator`（前端 `lib/navigation.ts` 的 `requiredRoles`、页面里的 `requireAnyRole`），角色取自 Casdoor 令牌的 `roles` 并经后端 `ADMIN_AUTH_ROLE_ALLOWLIST` 过滤；现行部署没设这个白名单（空 = 谁都没有角色），Casdoor 里也没给 admin 分配角色，所以 admin 只看得到「治理控制台」「设置」。补法：身份模板给各应用设 `ADMIN_AUTH_ROLE_ALLOWLIST=admin,operator`（网页端 `WEB_AUTH_ROLE_ALLOWLIST` 一并定），Casdoor 里建角色并分给管理员、确认令牌带 `roles`；补完把 R5.3 第 1、2、4 项的业务页（含「缺数据的需求」里发起采集的链接指向 `knowfeed-admin`）补核一遍。
