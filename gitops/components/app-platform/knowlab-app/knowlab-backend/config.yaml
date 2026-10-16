@@ -21,7 +21,10 @@ knowlab_backend_deployment:
   # 普通用户所在组织（决策 D21、SDD 0014）：网页端应用挂这里；管理端仍在 built-in。
   identity_user_organization: sunmoonai
   identity_revision: v4
-  # 通用出站服务身份（SDD 0027 P1，机制在 common/backend/service-client）：用户验收通过后，把分身版本交付给 knowmart 登记。
+  domain_env:
+    # 登录完能回到「我在做的分身」与「提交一个想法」（SDD 0027 P3，前缀匹配）；其余同模板默认
+    WEB_AUTH_ALLOWED_RETURN_PATHS: '/zh-CN/dashboard,/en/dashboard,/zh-CN/login,/en/login,/zh-CN/knowbots,/en/knowbots'
+  # 通用出站服务身份（SDD 0027 P1，机制在 common/backend/service-client）：测试通过后，把分身版本交付给 knowmart 登记。
   service_clients:
     - target: knowmart
       relation: deliver

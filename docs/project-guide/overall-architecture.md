@@ -23,7 +23,7 @@
 
 需求的真源是 [需求](../dev-investment-agent/tree-build/PRD/requirement.md)；做到哪了、每一站谁做见 [流水线](../dev-investment-agent/pipeline.md)；所有者的决定见 [决策](../dev-investment-agent/tree-build/decisions.md)。
 
-**现在有什么**（2026-10-16）：investment 工作台（聊天、工作、「专家」三种对话与项目——「专家」将改叫「分身」；每用户一个沙箱、会合点、供给器；Windows 本地代理经网页一行命令安装配对）；knowfeed 采集、knowbase 数据集与语义层（经 MCP 给沙箱）；我们作为第一个普通用户在做的分身「中国A股上市公司财务分析与预测」（[0023](../dev-investment-agent/tree-build/SDD/modules/0023-fin-forecast.md)）。**还没有**：knowlab-app、knowmart-app（只有设计，[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)、[0018](../dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md)）。
+**现在有什么**（2026-10-16）：investment 工作台（聊天、工作、「专家」三种对话与项目——「专家」将改叫「分身」；每用户一个沙箱、会合点、供给器；Windows 本地代理经网页一行命令安装配对）；knowfeed 采集、knowbase 数据集与语义层（经 MCP 给沙箱）；我们作为第一个普通用户在做的分身「中国A股上市公司财务分析与预测」（[0023](../dev-investment-agent/tree-build/SDD/modules/0023-fin-forecast.md)）。**还没上线**：knowlab-app、knowmart-app 已建成空应用并部署；分身的创建、存放与「请」代码写了大半，未部署（[分身](topics/knowbot.md)）。
 
 ## 2. 仓
 
@@ -35,8 +35,8 @@
 | [`knowfeed-app`](repos/knowfeed-app.md) | 采集：从公开来源取原件、建数据集、质量检查、向 knowbase 登记 | 同上 |
 | [`knowbase-app`](repos/knowbase-app.md) | 加工入库：数据集目录、口径、语义层，经 MCP 给沙箱；文档入库与检索（RAGFlow） | 同上 |
 | [`investment-app`](repos/investment-app.md) | 工作台：网页、工作台后端（对话、项目、分身运行、账、验收、交付）、给沙箱的记录 MCP、本地代理安装包的发放 | 同上 |
-| `knowlab-app` | 创建分身：受理、工程化、测试、交付（**未建**，[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)） | 将由 tpl-app 实例化 |
-| `knowmart-app` | 存放分身与「请」（**未建**；先做私有模式，[0018](../dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md)） | 将由 tpl-app 实例化 |
+| `knowlab-app` | 创建分身：受理、工程化、测试、交付（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)、[0027](../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
+| `knowmart-app` | 存放分身与「请」（先做私有模式，[0018](../dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md)、[0027](../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
 | [`k8s`](repos/k8s.md) | 部署与项目文档：宿主、仓库、入口、建群、Flux、全部平台组件与应用的部署声明；本目录也在此 | 无业务源码（自研的会合点、沙箱、供给器源码除外） |
 | [`runtime`](repos/runtime.md) | 本地代理（英文 sunmoon-link，命令现在还叫 `sunmoon-agent`，下次发 Windows 版时改），装在用户电脑上 | 不参与集群部署 |
 
@@ -206,7 +206,7 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
 
 ## 已知缺口
 
-- knowlab-app、knowmart-app 未建；工作台的「专家」还没改叫「分身」，内置专家包还是对全体用户可选、沙箱还默认接 knowbase 数据服务——工作台对用户开放前要改完（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「四」）。
+- 分身线代码未部署（0027 P4、P5 未做，P6 一次发布）；工作台的「专家」还没改叫「分身」，内置专家包还是对全体用户可选、沙箱还默认接 knowbase 数据服务——工作台对用户开放前要改完（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「四」）。
 - 管理端业务页受角色缺口所限看不到；admin 的旧沙箱待按 0014 U4 回收（[待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 98、99）。
 - 单机 KIND：数据主备同在一块物理盘，机器外备份未落地；开机恢复的剩余验证、Harbor 持久化实测、长期空间管理、灾备、云端建群见 [待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 104–109。
 - 评测的自动化门未接；`scripts/test_switch_test_sync.py` 有 3 个用例早就失败。

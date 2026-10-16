@@ -9,12 +9,11 @@
 | **artifact v1**：knowfeed 向 knowbase 登记一个新版本 | `knowbase-app/contracts/artifact/v1/` | knowfeed（锁 `knowfeed-app/contracts/knowbase-provider-lock.json`），服务身份 `knowbase:ingest` | 在用 |
 | **retrieval v1**：检索与引用 | `knowbase-app/contracts/retrieval/v1/`（request、response、citation） | investment（锁 `investment-app/contracts/knowbase-retrieval-provider-lock.json`），服务身份 `knowbase:retrieve` | 提供方在；**investment 后端现在没有调用它的代码，只剩锁文件**——investment 取数据走的是沙箱里的 MCP（下一行） |
 | **knowbase MCP**：`/api/mcp/knowledge`（服务名 `sunmoon_knowbase`） | knowbase `interfaces/mcp/knowbase_mcp.py` | 沙箱里的 Codex，带 investment 签发的短期令牌 | 在用；工作台对用户开放前改为默认不接（`C-L2`） |
-| **knowbot-manifest v1**：分身清单外层 | `knowmart-app/contracts/knowbot/v1/`（由 knowmart 后端模型生成） | knowlab（交付，服务身份 `knowmart:deliver`）、运行方（取清单，`knowmart:summon`） | 已写，未部署（[分身](knowbot.md)） |
-| **knowbot-test-run v1**：运行方跑测试 | `knowlab-app/contracts/`（待写） | 运行方实现，knowlab 调用（`<运行方>:testrun`） | 设计已定，未写 |
+| **knowbot-manifest v1**：分身清单外层 | `knowmart-app/contracts/knowbot/v1/`（由 knowmart 后端模型生成） | knowlab（交付，服务身份 `knowmart:deliver`；锁 `knowlab-app/contracts/knowmart-knowbot-manifest-lock.json`）、运行方（取清单，`knowmart:summon`） | 已写，未部署（[分身](knowbot.md)） |
+| **knowbot-test-run v1**：运行方跑测试 | `knowlab-app/contracts/knowbot-test-run/v1/`（由 knowlab 后端模型生成） | 运行方实现，knowlab 调用（`<运行方>:testrun`） | knowlab 端已写，未部署；运行方（investment）待 P4 |
 | **工作台 MCP**：`/api/mcp/workbench` | investment `interfaces/mcp/workbench_mcp.py` | 沙箱里的 Codex（读本项目别的对话与底稿） | 在用 |
 | **会合点协议**：本地代理、沙箱、工作台管理者的握手与透传 | 会合点源码 `k8s/infrastructure/applications/component-images/relay/`（`service-v1.md`、`local-permission-v1.md/.json`） | 本地代理（锁 `runtime/agent/contracts/relay-permissions.lock.json`）、沙箱、investment | 在用；协议字段（如 `role=agent`）不随产品改名 |
 | **web-interaction v1**：同一个应用内后端 ↔ 网页端 | `tpl-app/contracts/web-interaction-v1.consumer-vectors.json`（共享测试向量） | 各应用后端 DTO 与网页端 zod | 定义齐全，但各实例默认适配器是 `UnavailableWebInteractionAdapter`（返回 503），**没接线** |
-| knowlab → knowmart 交付、工作台 ← knowmart「请」 | 待建（[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「一之二」） | — | 只有设计 |
 
 判断一个契约面能不能用，看上表「现状」与对应的 [`repos/`](../repos/) 文件，**不要看契约文件是否齐全**。
 

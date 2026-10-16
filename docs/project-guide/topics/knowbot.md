@@ -2,7 +2,7 @@
 
 > 最后更新：2026-10-16 ｜ 设计真源 [0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)（第一条通路）、[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)（定位与合规） ｜ 规则 [`C-L1`–`C-L5`](../../dev-investment-agent/tree-build/rules/constraints.md#合规)
 >
-> **现状**：设计已定；P1（服务身份、内部入口）、P1b（单点登录）、P2（knowmart）的代码已写、已测、已推送，**未部署**（攒到 0027 P6 一次发布）；P3（knowlab）、P4（investment）、P5（运行时读用户数据）未做。集群里的 knowlab、knowmart 仍是空应用。
+> **现状**：设计已定；P1（服务身份、内部入口）、P1b（单点登录）、P2（knowmart）、P3（knowlab，除「后端调模型生成草稿」与数据上传）的代码已写、已测、已推送，**未部署**（攒到 0027 P6 一次发布）；P4（investment）、P5（数据上传与运行时读用户数据）未做。集群里的 knowlab、knowmart 仍是空应用。
 
 ## 1. 是什么，谁做什么
 
@@ -34,7 +34,7 @@ knowlab 管理端后端          「测试中」→ 按草稿的运行方调登�
 以后的分身不一定都跑在投资工作台上，所以「谁来运行和测试」是可登记的：
 
 - 分身清单外层必填 `runtime`（运行方，现在是 `investment`）。
-- 测试协议是 knowlab 定的通用契约 `knowbot-test-run/v1`（真源将放 `knowlab-app/contracts/`，P3 写）：请求是草稿清单、验收用例、数据绑定、预算上限、超时；回每条用例的结果（各步验收通过与否、出错处）。测试跑出的分析内容**不给用户**，运行方只短期保留（7 天）供排查。
+- 测试协议是 knowlab 定的通用契约 `knowbot-test-run/v1`（真源 `knowlab-app/contracts/knowbot-test-run/v1/`，由 knowlab 后端模型生成）：请求是草稿清单、验收用例、数据绑定、预算上限、超时；回每条用例的结果（各步验收通过与否、出错处）。测试跑出的分析内容**不给用户**，运行方只短期保留（7 天）供排查。
 - 一个应用要成为运行方：实现这个契约，提供统一路径 `/api/internal/v1/knowbot-runtime/test-runs`；在 knowlab 配置里登记（出站服务身份 `<运行方>:testrun`）；在 traefik service-access 开内部入口；向 knowmart 声明自己是「取清单」的调用方。knowlab、knowmart 的代码不用改。
 - knowmart 的「取清单」只给运行方是调用方自己的分身；用户从哪个运行方跳来「请」，就只能选运行方是它的分身。
 
@@ -44,9 +44,9 @@ knowlab 管理端后端          「测试中」→ 按草稿的运行方调登�
 
 | 关系（scope） | 调用方 → 接收方 | 做什么 | 现状 |
 | --- | --- | --- | --- |
-| `knowmart:deliver` | knowlab → knowmart | 交付测试通过的版本：`POST /api/internal/v1/knowmart/deliveries`（幂等：同交付单号同内容回原结果，不同则 409） | knowmart 端已写；knowlab 端 P3 |
+| `knowmart:deliver` | knowlab → knowmart | 交付测试通过的版本：`POST /api/internal/v1/knowmart/deliveries`（幂等：同交付单号同内容回原结果，不同则 409） | 两端已写 |
 | `knowmart:summon` | 运行方（investment）→ knowmart | 取清单：`GET /api/internal/v1/knowmart/owners/{所有者}/knowbots/{分身}@{版本}`（所有者由运行方从自己的登录会话里取；不是你的与不存在都是 404） | knowmart 端已写；investment 端 P4 |
-| `investment:testrun` | knowlab → 运行方（investment） | 跑测试：`POST /api/internal/v1/knowbot-runtime/test-runs`，契约 `knowbot-test-run/v1` | 配置已写；两端代码 P3、P4 |
+| `investment:testrun` | knowlab → 运行方（investment） | 跑测试：`POST /api/internal/v1/knowbot-runtime/test-runs`，契约 `knowbot-test-run/v1` | 配置与 knowlab 端已写；investment 端 P4 |
 
 接收方的环境变量是 `SERVICE_AUTH_<关系>_CALLERS` 加每个调用方一组 `SERVICE_AUTH_<关系>_<调用方>_*`；校验签名、签发方、受众（调用方 client_id）、精确主体与 scope，通过后知道是哪个调用方。knowbase 那一对旧关系（摄入、检索）仍走旧机制，迁移见待办账 115。
 
@@ -54,8 +54,8 @@ knowlab 管理端后端          「测试中」→ 按草稿的运行方调登�
 
 | 契约 | 真源 | 现状 |
 | --- | --- | --- |
-| 分身清单 `knowbot-manifest/v1`（外层） | `knowmart-app/contracts/knowbot/v1/`，由 knowmart 后端模型生成，测试核一致 | 已写 |
-| 测试 `knowbot-test-run/v1` | `knowlab-app/contracts/` | P3 写 |
+| 分身清单 `knowbot-manifest/v1`（外层） | `knowmart-app/contracts/knowbot/v1/`，由 knowmart 后端模型生成，测试核一致；knowlab 持锁 `knowlab-app/contracts/knowmart-knowbot-manifest-lock.json` | 已写 |
+| 测试 `knowbot-test-run/v1` | `knowlab-app/contracts/knowbot-test-run/v1/`（请求、结果两份 schema 与 `contract-manifest.json`），由 knowlab 后端 `app/domain/knowbots/test_run.py` 生成，测试核一致 | 已写；运行方实现在 P4 |
 
 清单分两层：外层（格式标识、名字与说明、版本、运行方、`data_bindings`、`rule_sources`）归 knowmart，严格校验；里面的 `pack`（步骤、验收、底稿的形状）归运行方，按运行方自己的模型完整校验。摘要是外层规范 JSON 的 sha256（`sha256:<十六进制>`）。
 
@@ -81,5 +81,7 @@ knowlab 管理端后端          「测试中」→ 按草稿的运行方调登�
 | --- | --- |
 | knowmart 后端 | `knowmart-backend/app/app/domain/knowbots/`（清单）、`application/services/knowbot_service.py`、`infrastructure/repositories/knowbots.py`、`infrastructure/security/relation_auth.py`、`interfaces/endpoints/knowbot_routes.py`、迁移 `alembic/versions/20261016_0004_knowbots.py` |
 | knowmart 网页端 | `knowmart-web-frontend/app/app/[locale]/(dashboard)/knowbots/`、`components/knowbots/`、`contracts/knowbots.ts` |
+| knowlab 后端 | `knowlab-backend/app/app/domain/knowbots/`（测试契约、草稿状态与提交形状）、`application/services/knowbot_service.py`、`infrastructure/external/service_client.py`（通用出站客户端）与 `knowbot_clients.py`（运行方登记、交付 knowmart）、`infrastructure/repositories/knowbots.py`、`interfaces/endpoints/knowbot_routes.py`、迁移 `alembic/versions/20261016_0004_knowbots.py` |
+| knowlab 网页端、管理端 | 网页端 `app/[locale]/(dashboard)/knowbots/`（我在做的分身、`new` 提交一个想法）、`components/knowbots/`；管理端 `app/[locale]/(dashboard)/knowbots/`（分身草稿）、`components/knowbots/knowbot-drafts.tsx`。管理端导航入口要角色 `admin`/`operator`，现网管理员还没有角色（待办账 98），在那之前直接输入地址进 |
 | 部署 | `gitops/components/app-platform/common/backend/service-client/`、各应用后端 `config.yaml` 的 `service_clients` / `service_receivers`、`ingress-platform/traefik/service-access/` |
 | 单点登录 | 模板 `tpl-backend` 的 `auth_service.end_session`、两端退出接口与 `logged-out`；`common/backend/identity/provision.py.j2`；Casdoor `config.yaml` 的 `casdoor_session_lifetime_seconds` |
