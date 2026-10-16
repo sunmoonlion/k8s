@@ -1,227 +1,69 @@
-# k8s（部署编排仓）
+# k8s：部署与项目文档
 
-> 取证时点：2026-09-13 源码与运行门禁边界复核 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
+> 最后更新：2026-10-16 ｜ 按 `k8s/sunmoonai/` 移出后的现状重写 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
-## 1. 定位
+宿主、Harbor、入口、建群、Flux 与全部平台组件、应用的部署声明都在这里；项目的设计、规则、派活卡与本目录也在这里。没有应用业务源码，只有三个自研组件镜像（会合点、沙箱、供给器）的源码。
 
-五仓中**唯一不含应用源码**的仓：全部平台的部署声明、三个 App 的部署 bundle、
-发布门禁脚本、ADR，以及本文档集。它不拥有任何领域逻辑。
+## 结构
 
-规模：约 1k 个 yaml、数百个 shell 与 python。
-
-构建脚本从 `{SOURCE_ROOT}/{app}-app/` 读源码，render 脚本引用同级的
-`../tpl-app/k8s-deployment`——**因此五仓必须并列放置**。
-
-## 1.1 重要点（读代码前先别理解反）
-
-| | |
-| --- | --- |
-| 迁移失败 | **阻断整次 apply**，不得继续 runtime（`deploy.py` 抛 `DeployError`） |
-| smoke 通过 | **不等于发布完成**。smoke 只覆盖一条路径；发布完成要 bundle 五文件 sha256、digest、副本数、门禁四层全过 |
-| NetworkPolicy | **KIND 默认不执行**（kindnet 不 enforce）。包级验证必须另起 Calico 集群，否则"测过了"是假的 |
-| `deploy-sunmoonai-all` | **只做编排，不拥有领域**——不是改 App 内部所有权的入口 |
-| 部署顺序 | 只满足启动前置，**不代表运行时耦合**（见总览 §4.1） |
-
-## 2. 结构
-
-> 本节与下一节描述的是 2026-10-06 之前的旧体系结构。旧目录（`sunmoonai/` 下的旧部署、仓根 `utils/`）已于 2026-10-16 删除，要看按 Git 历史 `9a2abf12` 取；新体系的结构见仓根 [README](../../../README.md) 与 [架构](../../platform-kind-v1/architecture.md)。
-
-`sunmoonai/` 下 **8 个平台 + 3 个非平台**目录：
-
-| 目录 | 装什么 |
-| --- | --- |
-| `app-platform/` | 三 App 的 bundle + auth-app（Casdoor）+ 共享脚本 + `utils/` |
-| `data-platform/` | postgresql · redis · mongodb · neo4j · elasticsearch · kibana · logstash · **object-storage**（不叫 minio/s3） |
-| `messaging-platform/` | RabbitMQ |
-| `ingress-platform/` | Traefik Helm 与 CRD |
-| `cicd-platform/` | Harbor · Jenkins |
-| `ops-platform/` | flower · pgadmin · redisinsight · mongo-express |
-| `infrastructure/` | 远程 kubeadm 分步脚本（`steps/step00…step13`） |
-| `kind-infrastructure/` | 本地 KIND 集群定义与节点镜像 |
-| `deploy-sunmoonai-all/` | 全平台总控（**非平台**） |
-| `utils/` | 跨平台工具，如 `db-provisioner`（**非平台**） |
-| `docs/` | 本文档集、冻结任务回执与历史索引（**非平台**）；复用验证工具在 `app-platform/scripts/validation/` |
-
-仓根另有 `utils/`（集群参数解析、Secret 占位生成、Harbor 包等）。
-
-## 3. 一个 App 的部署单元
-
-以 `app-platform/knowfeed-app/` 为例——**7 个 deploy 入口 + 1 个 deployment 目录**：
-
-```
-deploy-info-app-all/            App 总入口
-deploy-knowfeed-backend-api/        ┐
-deploy-knowfeed-backend-worker/     │ Backend 四角色
-deploy-knowfeed-backend-scheduler/  │
-deploy-knowfeed-migration/          ┘
-deploy-knowfeed-admin-frontend/     ┐ 双前端
-deploy-knowfeed-web-frontend/       ┘
-
-deployment/
-├── render.py       渲染 bundle（解析镜像 digest 写入）
-├── deploy.py       执行（plan / apply / server-dry-run / drift / cleanup）
-└── bundle/         渲染产物：五份 YAML + release.json
+```text
+k8s/
+├── README.md、AGENTS.md          运维入口；代码与开发规则入口
+├── Makefile → infrastructure/    公开入口（make -C infrastructure help）
+├── infrastructure/               Make + Ansible：宿主到应用的实施入口
+├── gitops/                       Flux 拥有的集群声明
+├── docs/                         设计、规则、派活卡、本目录、平台文档、参考资料
+├── scripts/                      回执 results/、本地联调 local-integration/、同步脚本的回归测试
+├── CHECKPOINT.md                 开发期续接记录
+└── 密码修改表.md                 所有者保留的开发密码查阅表（不是部署真源，不进对话与日志）
 ```
 
-三个领域 App 同构。**auth-app 例外**：只有 Casdoor 一个组件，Helm 部署，
-**无 `deployment/bundle/release.json`**；该结构差异不豁免正式制品不可变与可追溯要求。
+## infrastructure/
 
-## 4. 发布
-
-### 4.1 bundle 五文件
-
-| 文件 | 资源 kind |
+| 目录 | 管什么 |
 | --- | --- |
-| `00-prerequisites.yaml` | ServiceAccount · ConfigMap · Service |
-| `10-migration.yaml` | Job |
-| `20-runtime.yaml` | Deployment · PodDisruptionBudget · HorizontalPodAutoscaler |
-| `30-network-policies.yaml` | NetworkPolicy（**独立文件，不在 prerequisites 内**） |
-| `40-ingress.yaml` | IngressRoute |
+| `host/` | WSL 宿主：数据盘与挂载、容量、开机恢复、维护账号；`wsl_interop.py` 源码 |
+| `registry/` | 宿主上的 Harbor（集群外独立持久化） |
+| `entry/` | 入口 HAProxy（`30443`，只看 SNI 分流） |
+| `cluster/` | KIND 建群（三节点，节点挂载在数据盘） |
+| `flux/` | Flux 安装、发布 OCI 候选、晋级与退回 |
+| `services/` | 平台组件的部署与维护编排（Make → Ansible → Flux / SOPS）；组件参数与模板在各组件目录 |
+| `applications/` | 应用构建与部署：`sources.yaml` 钉各应用父仓与子仓的提交；`component-images.yaml` 与 `component-images/`（会合点 `relay/`、沙箱与供给器 `sandbox-platform/` 的源码） |
+| `components/` | 组件阶段图：每个含 `stage.yaml` 的组件目录是一个可部署对象（`OBJECT`），由此汇总集群阶段声明 |
+| `artifacts/`、`environments/` | 物料与上游镜像锁；环境（`kind/site.yaml` 的命名空间、根路径，`flux-source.yaml` 的已晋级源） |
+| `edge/` | 公网边缘（只在东京云 VM 上跑：Traefik + frps） |
+| `tools/` | 工具链安装（Flux、kubectl、mc、age 等） |
 
-### 4.2 apply 的真实顺序
+## gitops/
 
-`deployment/deploy.py` 的 `apply()`，三 App 一致：
-
-```python
-external_secret_gate(args, data)          # 0  release.external_secrets 须全部已存在
-apply_file(args, "00-prerequisites.yaml") # 1
-apply_file(args, "30-network-policies.yaml")  # 2  ← 网络策略先于迁移
-run_migration(args, data)                 # 3  删旧 Job → apply → 等完成 → 删 Job
-apply_file(args, "20-runtime.yaml")       # 4
-apply_file(args, "40-ingress.yaml")       # 5
-# 6  逐个 rollout status（按 deployment_replicas）
-# 7  legacy_deployments 缩容至 0
-```
-
-**两个易错点**：
-
-1. 网络策略在**迁移之前**就 apply——按"prerequisites→migration→runtime→network"
-   的直觉顺序手工部署，会在无 NetworkPolicy 的窗口内跑迁移与运行态。
-2. `STEADY_FILES` = `[00-prerequisites, 20-runtime, 30-network-policies, 40-ingress]`，
-   **不含 `10-migration`**（Job 跑完即删，不是稳态资源）。`drift` 只比对这四份。
-   `server-dry-run` 又按 `release.json.resources` 数组顺序走，**与 apply 顺序不同**。
-
-三 App 差异：Investment 与 Knowbase 有步骤 0a 外部对账（RabbitMQ vhost / Redis ACL /
-knowledge active binding），Knowfeed 没有；Investment 在迁移前另有一步用 SQL 改 PG 角色 LOGIN 状态。
-
-### 4.3 `release.json` 是发布的不可变输入
-
-| 字段 | 含义 |
-| --- | --- |
-| `schema_version` | 须为 `2` |
-| `architecture` | 须为 `app-platform-v2-formal` |
-| `formal_release` | 须 `true` |
-| `images` | backend / admin / web 三个 **digest** |
-| `sha256` | 五份 YAML 的内容哈希 |
-| `deployment_replicas` | 五个 Deployment 的副本契约 |
-| `ingress_routes` | 路由结构契约 |
-| `external_secrets` | 集群须预先存在的 Secret 名 |
-| `legacy_deployments` | 须缩容至 0 的旧 Deployment |
-| `forbidden_markers` | bundle 全文禁止出现的字符串 |
-| `renderer_inputs_sha256` | render 输入文件指纹 |
-| `contains_credentials` | 须 `false` |
-
-App 特有：Investment 有 `knowledge_binding`；Knowbase 有 `retrieval_dataset_allowlist`
-与 `protected_provider_resources`。
-
-## 5. 门禁
-
-**不存在一个跑一次就全覆盖的脚本。**静态与运行时分属不同脚本，网络策略还需另起集群。
-
-| 层 | 脚本 | 需活集群 |
+| 目录 | 装什么 | 命名空间 |
 | --- | --- | --- |
-| 静态：schema / sha256 / digest / 标签 / 禁用标记 | `app-platform/scripts/verify-formal-instance.py` | 否 |
-| 静态：`.conf` 与 `release.json` 逐字段一致 | `deployment_config.py` + `formal_deploy_entry.py` | 否 |
-| 集群态：副本 / digest / 迁移 head / 无残留 Job / Ingress 集 | 按当前 release 和部署清单现场验收；旧 R7 检查已清退，未提供覆盖全部项目的新聚合器 | 是 |
-| 集群态：跨 App 纵切真实链路 | 按本次发布绑定真实 Provider 回执；旧 R6 证据不自动继承 | 是 |
-| 浏览器：strict TLS + 真实 Casdoor 登录 | 按本次发布做双端真实旅程验收；旧 R3 浏览器脚本仅在历史版本保留 | 是 |
-| 网络：NetworkPolicy 包级 allow/deny | `app-platform/scripts/validation/verify_r3_network_policy_calico.sh` | 是，**另起临时 Calico 集群** |
+| `components/app-platform/` | `auth-app/casdoor`；`tpl-app`、`knowfeed-app`、`knowbase-app`、`investment-app`（每个应用下分前后端组件，后端下有 database、migration、redis、rabbitmq、identity、runtime 等阶段）；`common/`（应用共用的部署机制） | `app-platform-dev` |
+| `components/data-platform/` | PostgreSQL、Redis / Valkey、对象存储、RAGFlow（含 Infinity、text-embeddings）、ELK、Neo4j、MongoDB | `data-platform-dev` |
+| `components/messaging-platform/` | RabbitMQ | `messaging-platform-dev` |
+| `components/ingress-platform/` | 内网 Traefik（TLS 终止、按 Host 路由，不做授权）、frpc | `ingress-platform-dev` |
+| `components/ops-platform/` | pgAdmin、RedisInsight、Flower、Mongo Express | `ops-platform-dev` |
+| `components/relay-platform/`、`sandbox-platform/` | 会合点；供给器与沙箱镜像锁 | `relay-platform-dev`、`sandbox-platform-dev` |
+| `components/foundations/`、`core/` | 跨命名空间的基础对象（网络策略、拉取凭据、存储）与核心 | — |
+| `clusters/kind/` | 集群根：阶段图 `stages.yaml`（由各组件 `stage.yaml` 汇总生成） | — |
 
-`verify-formal-instance.py` 实际检查（逐条可查）：
-`schema_version == 2` · 正式包须 `architecture == "app-platform-v2-formal"` 且 `formal_release is True`；
-显式开发包则由 `development_release.validate` 核验 KIND 和非正式身份 ·
-`renderer_inputs_sha256` · 五文件 sha256 逐份重算比对 ·
-所有资源须带 `sunmoonai.com/managed-by: app-platform-v2` 标签 ·
-镜像须匹配 `^[^\s]+@sha256:[0-9a-f]{64}$` · `forbidden_markers` 全文扫描
+每个组件目录里 `config.yaml`、`stage.yaml`、`README.md` 是真源；`workload.yaml`、`kustomization.yaml`、`*.sops.yaml`、`image.lock.yaml` 是渲染产物，**不手改**。所有应用统一用 `app_namespace`；目录归属不等于运行命名空间。
 
-旧 R7 验证器写死旧迁移 head 并要求正式包，不适用于当前三个开发 bundle。
-清退旧工具不减少验收项，仍按[发布与门禁](../topics/release.md)逐层补齐。
+## docs/
 
-## 6. 集群
-
-| 事项 | 现状 |
+| 目录 / 文件 | 内容 |
 | --- | --- |
-| KIND 拓扑 | 1 control-plane + 2 worker |
-| **KIND CNI** | 默认 kindnet，**不执行 NetworkPolicy**——所以包级验证必须另起 Calico 集群 |
-| 远程 CNI | 默认 calico |
-| 命名空间 | 各平台 `<platform>-dev` |
-| production profile | 三 App 的 `profiles/production.conf` 均 `PROFILE_ENABLED=false`，直接部署报 `deployment profile is disabled` |
+| [`dev-investment-agent/`](../../dev-investment-agent/pipeline.md) | 流水线、`turn/`（通用开发规范）、`tree-build/`（需求、设计、规则、决策）、`switch-test/`（派活卡与两台机器同步）、`tools/`（文档门禁） |
+| [`project-guide/`](../README.md) | 本目录：项目现在是什么样 |
+| [`platform-kind-v1/`](../../platform-kind-v1/architecture.md) | 新体系架构、验收记录、组件账号维护 |
+| [`reference/`](../../reference/) | 通用参考资料（行业、采集与数据、技术笔记、运维笔记） |
+| `README.md`、`发布链.md`、`拓扑.md` | 维护导航、发布路径、拓扑 |
+| `rename.md`、`rename-receipts/`、`rename-tools/` | 改名手册、回执与工具；「冻结解除之后」一节是遗留事项 |
 
-`production_network_policy_gate_satisfied` 是**门禁脚本的 JSON 输出字段与 evidence 内容**，
-不是集群里的持久配置；在 KIND 上通常为 `false`。
+## 门禁与钩子
 
-## 7. 已知未实现或易误解
+`.githooks/`（`git config core.hooksPath .githooks`，全部工位共享）：提交时跑 `doc-gate.py --staged` 与 `anchor-gate.py`，范围是 `docs/dev-investment-agent/` 与 `docs/project-guide/`；缺脚本即判失败。
 
-| 容易误认为 | 实际 |
-| --- | --- |
-| `infrastructure/` 含 cert-manager | **无**。该目录只有 steps/utils/deploy-*/docs；TLS 由 Traefik + 各 App `*-tls` Secret 承担 |
-| 对象存储目录叫 minio 或 s3 | 实际是 `data-platform/object-storage/` |
-| 构建脚本推 digest | **推可变 tag**；digest 由 `render.py` 解析后写入 bundle，门禁只认 digest |
-| 构建脚本可以推发布 tag | **不能**。`1.0.0`/`2.0.0` 是 v1/v2 的发布 tag，脚本会拒绝（`PROTECTED_TAGS`），没有环境变量绕过开关。默认 tag 是 `architecture-v2-dev` |
-| `server-dry-run all` 顺序 = apply 顺序 | 不同，见 §4.2 |
-| auth-app 与三 App 同模型 | auth-app 是 Helm，无 bundle/release.json |
-| R7 终检覆盖网络策略包级行为 | 不覆盖，那是独立脚本 + 独立集群 |
-| 指标 HTTP 有输出就是接好监控了 | **不是**。Prometheus 采集、Alertmanager 路由与告警送达**都还没部署、没接线、没验收**；CLI/HTTP 输出只证明指标端点活着 |
-| Alertmanager 页面显示 firing 就是告警已送达 | **不是**。见下面「接线时按这几条判」 |
+## 已不在本仓的
 
-### 监控与告警：未接线，接线时按这几条判
-
-k8s 是采集与规则的主载体；tpl-app 提供公共受保护观测能力，按**模板优先**、
-Knowfeed → Knowbase → Investment **串行**同步；四个 App 只在接线确需改代码或配置时才改，不跨域读库。
-
-**动手前先冻结**：目标环境、资源与存储预算、采集周期与保留期、负责人、告警阈值、
-通知接收渠道；核对有没有可复用的现成监控；确定受保护指标接口的**精确服务身份**、
-令牌更新方式与网络策略。
-
-**判据**（缺一条都不算接好）：
-
-| 判什么 | 通过的样子 |
-| --- | --- |
-| 采集身份 | 越权采集**被拒** |
-| 新鲜度 | 正常采集有新鲜度证据；**采集缺失或失败不得显示成健康的零值** |
-| 多副本 | 同一 App 多个 API 副本的**同一数据库 gauge 不重复求和** |
-| 规则 | 按冻结的窗口触发，并能恢复 |
-| 路由 | Alertmanager 能分组、去重，并按批准的策略恢复通知 |
-| **送达** | ⚠ **必须有接收端的时间戳与合成告警 ID 对应的回执**；页面 firing、发送请求成功**都不算** |
-
-**测试**按 [IMP 的测试层次](../../dev-investment-agent/turn/imp/message-rules.md)：L1 规则正反例；L2 身份、采集失败与恢复；
-L5 停采、过期、队列积压等受控故障及通知失败；L7 在获准环境验证组件、规则加载、接收端回执与恢复通知。
-⚠ **数据与通知一律用明确的合成标识，不得向真实接收人发送**；测试通知前先设好停止条件与精确的静默范围。
-
-**回滚**：恢复前一版的采集、规则与通知路由，或停用本次新增的资源；
-**不删业务账本，也不删指标历史卷**；采集故障不得触发业务角色自动重启。
-
-⚠ 监控是**部署适配**：不要把 Kubernetes 或 Prometheus 做成将来桌面应用与本机 runtime 的强依赖。
-
-当前续作入口为[发布与门禁](../topics/release.md)，不依赖仓根旧便签。
-本机 KIND 已完成独立数据库/broker 身份切换，旧登录与旧 vhost 权限已实测拒绝；
-云端、production 和后续 release 仍须重新核角色 LOGIN、默认 ACL、启动 definitions 与
-真实回执，不能把一次开发候选的结果外推。
-
-## 8. 验证
-
-```bash
-cd <repo>/k8s/sunmoonai
-
-# 平台目录清单（应为 8 平台 + deploy-sunmoonai-all + utils + docs）
-ls -1d */
-
-# 静态门禁
-python3 app-platform/scripts/verify-formal-instance.py --app info
-
-# apply 真实顺序（权威）
-awk '/^def apply\(/,/^def drift\(/' app-platform/knowfeed-app/deployment/deploy.py
-
-# bundle 各文件的资源 kind
-grep -h '^kind:' app-platform/knowfeed-app/deployment/bundle/*.yaml | sort -u
-```
+旧体系（`sunmoonai/` 下的旧部署、仓根 `utils/`、`legacy/`、`./sunmoon` 命令行）2026-10-16 删除，要看按 Git 历史取（最后包含它们的提交 `9a2abf12`）。`.gitignore` 里旧目录的条目保留，防止两台机器上残留的被忽略文件变成未跟踪。

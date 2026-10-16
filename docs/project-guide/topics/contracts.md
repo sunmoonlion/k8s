@@ -1,119 +1,40 @@
 # 契约
 
-> 取证时点：2026-09-13 后端接线复核；本次不改契约 ｜ 相关规则见 [`../../dev-investment-agent/tree-build/rules/constraints.md`](../../dev-investment-agent/tree-build/rules/constraints.md)「契约」C-C1–C-C6
+> 最后更新：2026-10-16 ｜ 按代码现状重写 ｜ 相关规则见 [`constraints.md`](../../dev-investment-agent/tree-build/rules/constraints.md)「契约」`C-C1`–`C-C11`
 
-## 1. 三套契约：两跨 App，一同 App 共享
+## 1. 有哪些
 
-分类先说清，否则容易误以为 web-interaction 有一个跨四仓的运行时 provider：
-
-| | 契约 |
-| --- | --- |
-| **跨 App** | artifact v1、retrieval v1 |
-| **模板共享、各实例 App 内消费** | web-interaction v1 |
-
-后者是同 App 内「后端 ↔ Web 前端」，模板发下去四份——这解释了为什么它
-DTO / Port / 前端 zod 都齐全，却仍能在**每个实例里各自未接线**。
-
-
-| 契约 | provider（schema 真源） | consumer（锁文件） | 传输 |
+| 契约 | 提供方（真源） | 调用方 | 现状 |
 | --- | --- | --- | --- |
-| **artifact v1** | `knowbase-app/contracts/artifact/v1/knowfeed-knowbase-artifact.schema.json` | `knowfeed-app/contracts/knowbase-provider-lock.json` | knowfeed → knowbase，HTTP 摄入 |
-| **retrieval v1** | `knowbase-app/contracts/retrieval/v1/`（request / response / citation 三份 schema） | `investment-app/contracts/knowbase-retrieval-provider-lock.json` | investment → knowbase，HTTP 检索 |
-| **web-interaction v1** | `tpl-app/contracts/web-interaction-v1.consumer-vectors.json` | 各 App 后端 DTO + 各 Web 前端 zod | **同 App 内**后端 ↔ Web 前端 |
+| **artifact v1**：knowfeed 向 knowbase 登记一个新版本 | `knowbase-app/contracts/artifact/v1/` | knowfeed（锁 `knowfeed-app/contracts/knowbase-provider-lock.json`），服务身份 `knowbase:ingest` | 在用 |
+| **retrieval v1**：检索与引用 | `knowbase-app/contracts/retrieval/v1/`（request、response、citation） | investment（锁 `investment-app/contracts/knowbase-retrieval-provider-lock.json`），服务身份 `knowbase:retrieve` | 提供方在；**investment 后端现在没有调用它的代码，只剩锁文件**——investment 取数据走的是沙箱里的 MCP（下一行） |
+| **knowbase MCP**：`/api/mcp/knowledge`（服务名 `sunmoon_knowbase`） | knowbase `interfaces/mcp/knowbase_mcp.py` | 沙箱里的 Codex，带 investment 签发的短期令牌 | 在用；工作台对用户开放前改为默认不接（`C-L2`） |
+| **工作台 MCP**：`/api/mcp/workbench` | investment `interfaces/mcp/workbench_mcp.py` | 沙箱里的 Codex（读本项目别的对话与底稿） | 在用 |
+| **会合点协议**：本地代理、沙箱、工作台管理者的握手与透传 | 会合点源码 `k8s/infrastructure/applications/component-images/relay/`（`service-v1.md`、`local-permission-v1.md/.json`） | 本地代理（锁 `runtime/agent/contracts/relay-permissions.lock.json`）、沙箱、investment | 在用；协议字段（如 `role=agent`）不随产品改名 |
+| **web-interaction v1**：同一个应用内后端 ↔ 网页端 | `tpl-app/contracts/web-interaction-v1.consumer-vectors.json`（共享测试向量） | 各应用后端 DTO 与网页端 zod | 定义齐全，但各实例默认适配器是 `UnavailableWebInteractionAdapter`（返回 503），**没接线** |
+| knowlab → knowmart 交付、工作台 ← knowmart「请」 | 待建（[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「一之二」） | — | 只有设计 |
 
-**规律**：schema 真源放在**被调方**（provider）仓；锁文件放在**调用方**（consumer）仓。
+判断一个契约面能不能用，看上表「现状」与对应的 [`repos/`](../repos/) 文件，**不要看契约文件是否齐全**。
 
-web-interaction 是例外——它不跨仓，模板持共享测试向量（含 valid 与 invalid 两组），
-各实例双端各自对齐。
+## 2. 锁怎么用
 
-## 2. 锁机制
+schema 真源放在**提供方**仓，调用方**只放锁文件、不放 schema 副本**。锁 pin 三样：契约 major 版本、schema 文件路径、schema 的 sha256（`C-C3`）。
 
-consumer 仓**只放锁文件，不放 schema 副本**。锁文件 pin 三样东西：契约 major 版本、
-schema 文件路径、schema 的 sha256。
+升级只有一条路：提供方改 schema → 两端测试都过 → 才更新锁里的 sha256（`C-C4`）。「只改锁不跑测试」不算升级；在调用方生成或复制一份 schema 是第二真源，禁止。破坏性变更 = 新 major + 两版并存的迁移窗口（`C-C10`）。
 
-升级的合法路径**只有一条**：
+调用方的测试要用环境变量指向提供方的契约目录，所以**跨仓契约测试在单仓 CI 里不会自动跑**，要显式给路径。
 
-```
-provider 改 schema → 双端（provider + consumer）测试都通过 → 才允许更新锁文件的 sha256
-```
+## 3. DTO 与引用
 
-**「只改锁不跑测试」不是合法升级。**同理，在 consumer 仓生成或复制一份 schema
-会产生第二真源，禁止。
+- 所有契约 DTO 是 Pydantic 模型，`extra=forbid`：未声明的字段一律拒收（`C-C5`）；前端对应 zod。`contract_version` 写在 manifest 与 DTO 两处，须一致。
+- 引用的 `source_href` 全平台只有一个形状：`/api/web/v1/citations/{evidence_id}/source`，相对路径，由各自的 origin 解析（`C-C6`）。同形的地方现在有五处，改一处要一起改：`knowbase-app/contracts/retrieval/v1/citation.schema.json`（真源）、knowbase `application/dto/retrieval.py`、`application/dto/interaction.py`、investment `application/dto/interaction.py`、`investment-web-frontend/app/contracts/interaction.ts`。复核：knowbase `tests/test_knowledge_retrieval.py`、investment `tests/test_interaction_contract.py`。
 
-破坏性变更 = 新 major + 双版本迁移窗口。
+## 4. 跨应用消息里放什么
 
-## 3. 双端怎么测
+- 事件只带**稳定标识、契约版本、必要摘要**；大对象走**引用 + 内容哈希**，不进消息体（`C-C11`）。
+- artifact v1 只接受一个不可变、带版本的 `s3://` 对象；knowbase 用自己的只读身份去取，核存储版本、大小、类型与 SHA-256 后才进 RAGFlow，从不回调 knowfeed 的库。
+- 投递走 Outbox / Inbox，消费方幂等、有死信、可重放、周期对账（`C-C2`）；每个跨应用集成写明超时、重试、幂等键、到上限后去哪、怎么对账（`C-C9`）。
 
-| 契约 | provider 侧 | consumer 侧 |
-| --- | --- | --- |
-| artifact v1 | knowbase 的摄入测试对 manifest digest | knowfeed 的分发辅助测试 |
-| retrieval v1 | knowbase 的检索测试对 manifest digest | investment 设 `KNOWBASE_RETRIEVAL_CONTRACT_DIR` 后跑契约测试 |
-| web-interaction v1 | 后端消费向量测试 | 前端 vitest，向量路径由 `WEB_INTERACTION_CONSUMER_VECTORS` 注入 |
+## 5. 历史契约
 
-**注意**：consumer 侧测试需要环境变量指向 provider 仓的契约目录，
-所以**跨仓契约测试在单仓 CI 里不会自动跑**，必须显式提供路径。这是一个已知的松点。
-
-## 4. DTO 的共同约束
-
-所有契约 DTO 是 Pydantic 模型，`extra=forbid`——**未声明的字段一律拒收**。
-前端侧对应为 zod schema。`contract_version` 写在 manifest 与 DTO 两处，须一致，由 §3 的测试保证。
-
-## 5. citation 的 `source_href` 只有一个形状
-
-**全平台统一为 `/api/web/v1/citations/{evidence_id}/source`**，相对路径，
-由消费方在**自己的 origin** 下解析——knowbase 与 investment 各自都有这条路由。
-
-同形的地方共七处，改一处必须七处一起改：
-
-| 位置 | 角色 |
-| --- | --- |
-| `knowbase-app/contracts/retrieval/v1/citation.schema.json` | 契约真源 |
-| `knowledge:application/dto/retrieval.py` `Citation` | provider 投影 |
-| `knowledge:application/dto/interaction.py` `BrowserCitation` | 浏览器面 |
-| `investment:domain/agent/knowledge.py` `Citation` | consumer 投影 |
-| `investment:application/dto/pilot_runtime.py` `BrowserCitation` | 内部 pilot 面 |
-| `investment:application/dto/interaction.py` `BrowserCitation` | 浏览器面 |
-| `investment-web-frontend:contracts/interaction.ts` | 前端 zod |
-
-**其中两处经事件存储首尾相接**：`tasks/agent_delivery.py` 用
-`domain/agent/knowledge.Citation` 写 citation 事件，`agent/pilot_service.py`
-再用 `dto/pilot_runtime.BrowserCitation` 读回来。两者 pattern 不一致会让
-`model_validate` 在运行时直接抛。
-
-### 复核这七处仍然同形
-
-```bash
-# provider 侧：契约正则必须匹配真实路由
-cd knowbase-app/knowbase-backend/app
-uv run pytest tests/test_knowledge_retrieval.py -k resolves_to_a_real_route
-# consumer 侧：两个经事件存储首尾相接的类必须同形
-cd investment-app/investment-backend/app
-uv run pytest tests/test_knowledge_retrieval_contract.py -k matches_investment_own
-```
-
-## 6. 契约定义齐全 ≠ 链路已通
-
-web-interaction v1 在四个仓里都有完整的 DTO、Port 与前端 zod，
-但**四个仓的默认适配器都是 `UnavailableWebInteractionAdapter`，返回 503**；
-唯一的替代实现是 reference fixture，且生产环境禁止开启。
-
-**判断某个契约面是否真的能用，看对应仓 `repos/*.md` 的「已知未实现」一节，
-不要看契约文件是否齐全。**
-
-## 7. 另有一批历史契约
-
-旧 v5 契约（`research-agent-web` / `research-runtime` / `web-interaction` / `security`）
-已随旧目录退出当前工作树。它们**不在上述三套现行契约之列**，
-原文按 [v5 历史索引](v5-history.md) 的固定 Git 版本查询，
-不能用旧 schema 替代 provider 仓的现行契约。
-
-## 8. 跨 App 消息里放什么
-
-共享 Outbox 已接线（见总览 §9.2），broker 提示由稳定消息 UUID 定位持久账本；
-跨 App 摄入仍遵循 artifact v1，不因可靠投递而改变主档所有权：
-
-- 事件只带**稳定 ID、契约版本、必要摘要**；
-- 大对象走 **artifact 引用 + 内容哈希**，不进消息体；
-- 消费方按引用去对象存储取，取不到就是取不到——**不要因此把正文塞回消息**。
-
-理由与"主档只有一份"同源：消息体里的正文是第二份内容，且无版本、无生命周期。
+旧 v5 契约（`research-agent-web`、`research-runtime`、`security` 等）已退出工作树，不在现行契约之列；原文按 [v5 历史索引](v5-history.md) 的固定 Git 版本查询。

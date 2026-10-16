@@ -1,48 +1,46 @@
 # SunMoonAI 项目总览
 
-> 最后更新：2026-10-15 ｜ 按新体系（架构 C：公网边缘 + 内网站点 + 本地代理，网页是产品界面）全文重写，取代 2026-09-22 的旧体系版本。
+> 最后更新：2026-10-16 ｜ 按当日所有者的定位（knowlab、分身、knowmart 私有模式）与改名完成、`k8s/sunmoonai/` 移出后的现状重写。
 >
-> **本文件是进入这个项目的入口。**读完它，你应当知道：这个产品是什么、改动落在哪个仓、东西跑在哪里、怎么发布、去哪里查更细的。
-> 细节都在指路的文档里；本文不写易腐的值（提交号、镜像摘要、迁移头、版本号、副本数）。与代码冲突时**永远以代码为准**，并请指出本文件需要更新。
->
-> 改名进行中（2026-10-14 起，见 [`k8s/docs/rename.md`](../rename.md)）：`info-app` → `knowfeed-app`、`knowledge-app` → `knowbase-app`、`advisor-app` → `knowmart-app`。仓与代码已是新名字；本机集群在改名 R5 晋级之后才换成新名字，在那之前跑的仍是 `info-*`、`knowledge-*`。
+> **本文件是进入这个项目的入口。**读完它，你应当知道：这个产品是什么、改动落在哪个仓、东西跑在哪里、怎么发布、去哪里查更细的。细节都在指路的文档里；本文不写易腐的值（提交号、镜像摘要、迁移头、版本号、副本数）。与代码冲突时**永远以代码为准**，并请指出本文件需要更新。
 
 ---
 
 ## 1. 这个项目是什么
 
-**投研专家。**用户已经能用 AI 助手（Codex）做很多事；我们存在的理由是在裸 AI 做不好的地方做好。"做好"靠三样捆在一起：**专业知识**（数据、口径、引用，经 MCP 给 Codex）、**方法**（专家包：怎么拆步、每步给什么料、何时停下问人、做对没有）、**评测闭环**（金标准、分段判定、改动回归）。**不做投资咨询**：产出是研究底稿，结论由用户填。
-
-一句话：**用户在网页里用自己的 Codex 做研究；做不好时请专家驾驶同一个 Codex，把可验收的底稿交回，结果就在用户的工作区里。循环在我们的沙箱，工具在用户机器，界面是网页，公网只有薄边缘。**
+**把用户自己的研究方法做成他自己的分身。**用户带来一个想法（最好是一份 skill）和自己的数据；我们在 **knowlab** 里把它工程化、测试好，交付成一个**分身**（英文 knowbot）；分身存在 **knowmart** 里属于他的位置；用户在 **investment 工作台**里「请」自己的分身，用自己的数据跑。
 
 | 前提（定了不再讨论） | 意思 |
 | --- | --- |
-| 两层决策权，同一个 Codex 实例 | 第一层用户自驾；第二层专家（顾问）按方法驾驶同一个 thread、同一个工作区、同一个模型账户；方向盘显式交接 |
+| 我们创建，用户使用 | 创建（工程化与测试）是我们的价值；使用是用户自己在工作台里跑，不由我们替他跑出结果再交给他 |
+| 投资逻辑与数据都是用户的 | 平台不带自己的投资逻辑、不给自己的数据；工程测试可以用我们的数据，结果不交给用户；验收只用用户的数据（约束 `C-L1`–`C-L5`） |
+| 分身只归用户自己 | 只能请自己的分身，一个人可以有多个；不得导出、分享、出售；knowmart 现在是私有模式，后端强制按所有者过滤 |
 | 不垫付 token（BYOK） | 用户的模型 key 加密存在工作台，只进他自己的沙箱 |
-| 工作区在本地 | 用户的文件在他的电脑上；本地代理只让沙箱读写他加进白名单的目录 |
-| 循环在云、执行在本机 | Codex app-server 跑在我们内网的每用户沙箱里，exec-server 跑在用户电脑上 |
-| 界面是网页 | 只装一个小的本地代理，不做桌面应用 |
-| 边缘 + 内网 | 公网只有无状态的薄边缘；业务在内网，深处只出站 |
+| 循环在云、执行在本机 | Codex app-server 跑在内网的每用户沙箱里；要碰用户本机文件时，exec-server 跑在用户电脑上的**本地代理**（英文 sunmoon-link）里 |
+| 界面是网页，边缘 + 内网 | 只装一个小的本地代理，不做桌面应用；公网只有无状态的薄边缘，业务在内网，深处只出站 |
 
-需求的真源是 [需求](../dev-investment-agent/tree-build/PRD/requirement.md)；用户看得见的三个应用见 [`PRD/apps/`](../dev-investment-agent/tree-build/PRD/apps/README.md)；一次求助的九站见 [流水线](../dev-investment-agent/pipeline.md)。
+为什么这样定：规避证券投资咨询类监管——平台不向用户提供自己的投资分析或建议（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「五、合规分析」，对外收费前取得书面法律意见）。knowmart 对外开放（有资格的开发者把分身上架给别人用）是**持牌以后**的下一步。
 
-**现在有什么**（2026-10-15）：网页里的聊天、工作、专家三种对话与项目；每用户一个沙箱、会合点、供给器；Windows 本地代理（经网页一行命令安装、配对）；专家包 `DATA_QUERY`（问数）、`FIN_REVIEW`（财报体检）、`FIN_FORECAST`（财务预测），按版本上架；knowfeed 的证券采集（巨潮、东方财富）与申请审批；knowbase 的数据集登记、语义层与 MCP 工具；公网边缘已上线三个域名。**还没有**：knowmart（专家市场，只有设计 [0018](../dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md)）、评测三道门的自动化、机器外备份。
+需求的真源是 [需求](../dev-investment-agent/tree-build/PRD/requirement.md)；做到哪了、每一站谁做见 [流水线](../dev-investment-agent/pipeline.md)；所有者的决定见 [决策](../dev-investment-agent/tree-build/decisions.md)。
+
+**现在有什么**（2026-10-16）：investment 工作台（聊天、工作、「专家」三种对话与项目——「专家」将改叫「分身」；每用户一个沙箱、会合点、供给器；Windows 本地代理经网页一行命令安装配对）；knowfeed 采集、knowbase 数据集与语义层（经 MCP 给沙箱）；我们作为第一个普通用户在做的分身「中国A股上市公司财务分析与预测」（[0023](../dev-investment-agent/tree-build/SDD/modules/0023-fin-forecast.md)）。**还没有**：knowlab-app、knowmart-app（只有设计，[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)、[0018](../dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md)）。
 
 ## 2. 仓
 
-**平台各仓必须并列放置**（部署与构建按同级相对路径互相引用）。四个应用父仓各用 gitlink 引三个组件子仓，所以 Git 仓不止这几个：推送**子仓先、父仓后**；一个工作树可能出现「父仓在、子仓未初始化」。
+**平台各仓必须并列放置**（部署与构建按同级相对路径互相引用）。应用父仓各用 gitlink 引三个组件子仓：推送**子仓先、父仓后**；一个子仓的提交要被父仓记下才算进了那个应用的版本。
 
-| 仓 | 职责 | 子仓 |
+| 仓 | 职责 | 说明 |
 | --- | --- | --- |
-| `tpl-app` | 模板：一个标准应用长什么样，其余应用由它实例化；公共缺陷先修模板再同步实例 | 后端、网页、管理端 |
-| [`knowfeed-app`](repos/knowfeed-app.md) | 采集：从公开来源取原件、建数据集、质量检查、向 knowbase 登记；采集申请与审批 | 同上 |
-| [`knowbase-app`](repos/knowbase-app.md) | 知识：数据集目录、口径、语义层，经 MCP 给 Codex；文档入库与检索（RAGFlow）；两套跨仓契约的提供方 | 同上 |
-| `investment-app` | 产品主应用：网页、工作台后端（会话、方向盘、专家包、账、验收、交付）、给沙箱的投资记录 MCP、本地代理安装包的发放 | 同上 |
-| `knowmart-app` | 专家市场（未建，0018 设计；由 tpl-app 实例化） | — |
-| `k8s` | 部署：宿主、仓库、入口、建群、Flux、全部平台组件与应用的部署声明；本文档也在此 | 无业务源码 |
-| `runtime` | 本地代理 `sunmoon-agent`（Node，装在用户电脑；将改名 `agent`） | 不参与集群部署，不要求并列 |
+| [`tpl-app`](repos/tpl-app.md) | 模板：一个标准应用长什么样，其余应用由它实例化；公共缺陷先修模板再同步实例 | 三个子仓：后端、网页、管理端 |
+| [`knowfeed-app`](repos/knowfeed-app.md) | 采集：从公开来源取原件、建数据集、质量检查、向 knowbase 登记 | 同上 |
+| [`knowbase-app`](repos/knowbase-app.md) | 加工入库：数据集目录、口径、语义层，经 MCP 给沙箱；文档入库与检索（RAGFlow） | 同上 |
+| [`investment-app`](repos/investment-app.md) | 工作台：网页、工作台后端（对话、项目、分身运行、账、验收、交付）、给沙箱的记录 MCP、本地代理安装包的发放 | 同上 |
+| `knowlab-app` | 创建分身：受理、工程化、测试、交付（**未建**，[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)） | 将由 tpl-app 实例化 |
+| `knowmart-app` | 存放分身与「请」（**未建**；先做私有模式，[0018](../dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md)） | 将由 tpl-app 实例化 |
+| [`k8s`](repos/k8s.md) | 部署与项目文档：宿主、仓库、入口、建群、Flux、全部平台组件与应用的部署声明；本目录也在此 | 无业务源码（自研的会合点、沙箱、供给器源码除外） |
+| [`runtime`](repos/runtime.md) | 本地代理（英文 sunmoon-link，命令现在还叫 `sunmoon-agent`，下次发 Windows 版时改），装在用户电脑上 | 不参与集群部署 |
 
-工位与同步：主目录 `~/master/<仓>`，工位 `~/worktrees/<工位>/<仓>`（`mb` 管理，见 `toolboxes` 里的 `model-switch`）；两台机器之间只经 Git origin 往来，所有者用 `~/switch-test/human-local.sh` / `human-remote.sh` 同步（转发到 k8s 仓里的同名脚本）。
+工位与同步：主目录 `~/master/<仓>`，工位 `~/worktrees/<工位>/<仓>`（`mb` 管理）；两台机器（远程机写、本地机跑）之间只经 Git origin 往来，所有者用 `~/switch-test/human-local.sh`、`human-remote.sh` 同步；派活卡与回执在 [`switch-test/`](../dev-investment-agent/switch-test/README.md)。
 
 ## 3. 东西跑在哪里
 
@@ -55,55 +53,56 @@
 ──────────              ──────────────────────              ────────────────────────────────
 浏览器 ──https 443──▶   Traefik（TLS、证书）──▶ frps  ◀──隧道（frpc 主动连出）── frpc ─▶ 内网 Traefik ─▶ 应用、Casdoor
 本地代理 ─wss 443──▶    会合点 relay  ◀──wss 出站──────────────────────────── 沙箱 Pod（每用户一个）
-                                       ◀──wss 出站（管理通道）──────────────── investment runner
+                                       ◀──wss 出站（管理通道）──────────────── investment 工作台管理者
                                                                                供给器 ─▶ Kubernetes API（建/删沙箱）
                                                                                沙箱 ─MCP─▶ investment-api、knowbase-api
                                                                                沙箱 ─https 出站─▶ 模型厂商
 ```
 
-### 3.2 现网（2026-10-15）
+### 3.2 现网
 
-- **内网站点 = 所有者机器的 WSL**：宿主上的 Harbor 与入口 HAProxy（`30443`，只看 SNI 分流、不解密），一个三节点 KIND 集群 `sunmoon-kind`，数据盘挂在 `/mnt/sunmoon-data`。集群里跑全部平台组件与四个应用、会合点（暂在集群里）、供给器与沙箱。
-- **公网边缘 = 东京云 VM**（远程助手所在的机器）：Traefik + frps，2026-10-10 上线。对公网只放三个域名：`investment`、`casdoor`、`relay.sunmoonai.com`，经 frp 隧道回到集群。其余域名（knowfeed、knowbase、各管理端、Harbor）只在所有者机器上经 hosts 访问。要再暴露域名：DNS、`infrastructure/edge/config.yaml` 的 `edge_domains` 与 `gitops/components/ingress-platform/frpc/config.yaml` 的 `frpc_domains`（两份名单相同）、边缘重新部署、frpc 发布。
+- **内网站点 = 所有者机器的 WSL**：宿主上的 Harbor 与入口 HAProxy（`30443`，只看 SNI 分流、不解密），一个三节点 KIND 集群 `sunmoon-kind`，数据盘挂在 `/mnt/sunmoon-data`。
+- **公网边缘 = 东京云 VM**：Traefik + frps，对公网只放 `investment`、`casdoor`、`relay.sunmoonai.com`；knowfeed、knowbase 与各管理端只在所有者机器上可用。
 - 集群里的后端**不按公网名互连**：访问 Casdoor、会合点、供给器一律走集群内 Service（`*_BACKCHANNEL_ENDPOINT` 等）；公网名只出现在交给浏览器与本地代理的地址里。
 
-拓扑的图、各组件管什么、一次「工作」的顺序：[`k8s/docs/拓扑.md`](../拓扑.md)；裁定与风险：[拓扑设计](../dev-investment-agent/tree-build/SDD/architecture/topology.md)；边缘：[0013](../dev-investment-agent/tree-build/SDD/modules/0013-edge.md) 与 `k8s/infrastructure/edge/`。
+拓扑的图与一次「工作」的顺序：[`k8s/docs/拓扑.md`](../拓扑.md)；裁定与风险：[拓扑设计](../dev-investment-agent/tree-build/SDD/architecture/topology.md)。
 
-## 4. 三个应用与数据怎么流
+## 4. 应用与数据怎么流
+
+两条线：**数据线**（knowfeed → knowbase，我们自己的数据）与**分身线**（knowlab → knowmart → 工作台，用户的方法与数据）。分身线上的分身运行时**不接**数据线的数据（`C-L2`）。
+
+```text
+数据线                                             分身线
+公开网站 ──采集──▶ knowfeed                        用户：想法 / skill ＋ 自己的数据
+                    │ 登记新版本（服务身份 knowbase:ingest）      │
+                    ▼                               knowlab（我们：受理 → 工程化 → 测试 → 用户验收）  [未建]
+                 knowbase ── 语义层 / RAGFlow 索引           │ 交付
+                    │（内部工具；以后 knowmart 的数据线）   knowmart（私有：只有本人看得见）           [未建]
+                    ▼                                       │ 请
+                 （现在仍经 MCP sunmoon_knowbase 接进沙箱，  investment 工作台：用户请自己的分身，自己跑
+                   工作台对用户开放前改为默认不接，0026）
+```
 
 | 应用 | 用户来做什么 | 管理员来做什么 |
 | --- | --- | --- |
-| investment | 聊天、让代理干活、请专家；管工作区与项目 | 「缺数据的需求」（链去 knowfeed 管理端发起采集）、研究运行时 |
-| knowbase | 看有哪些公司的数据、数据到哪一天、口径怎么算 | 数据集版本、登记、工具调用情况 |
-| knowfeed | 申请「我要这家公司的数据」、看进度 | 批准申请、发起采集、看批次、关注清单 |
+| investment | 聊天、让代理干活、请自己的分身；管工作区与项目 | 「缺数据的需求」（链去 knowfeed 管理端发起采集）、研究运行时 |
+| knowbase | 看有哪些数据、数据到哪一天、口径怎么算 | 数据集版本、登记、工具调用情况 |
+| knowfeed | （网页端没有功能页） | 批准申请、发起采集、看批次、关注清单 |
 
-```text
-公开网站 ──采集──▶ knowfeed ──原件、数据集文件──▶ 对象存储（knowfeed 的桶）
-                      │ 登记「有一个新版本」（服务身份 knowbase:ingest）
-                      ▼
-                  knowbase ──按登记的位置只读取文件 ──▶ 语义层 / RAGFlow 索引（可重建的派生物）
-                      │ MCP 工具（sunmoon_knowbase）
-                      ▼
-沙箱里的 Codex ◀── 方向盘在用户或专家手里 ──── investment runner（工作台管理者）
-                      │ 事件
-                      ▼
-                investment 的页面
-```
+管理端的业务页按应用角色 `admin`/`operator` 显示，现行部署没配角色白名单，admin 只看得到「治理控制台」「设置」（[改名手册「冻结解除之后」第 6 条](../rename.md)）。
 
 | 规则 | 说明 |
 | --- | --- |
 | 一件事只在一个应用里办 | 别的应用要用，就用普通链接把人带过去（新标签页，带业务参数、`from`、`ref`），不各做一份 |
-| Codex 不直接连 knowfeed | 只经 knowbase 的工具拿数据；没过质量检查的数据 knowfeed 不登记，knowbase 就没有 |
-| 每个结果带出处 | 数据集、版本、数据时点 |
 | 跨应用只经版本化 HTTP 契约 | **禁止跨应用直接读写对方的库、桶、Redis 键**；契约的 schema 真源在提供方，锁文件在调用方（[契约](topics/contracts.md)） |
-| 每步只写自己的库 | 跨应用不用分布式事务；投递走 Outbox/Inbox，消费方幂等；broker ACK 不等于业务提交 |
-| 新数据先定归属 | 新增数据实体先答五问（领域、唯一所有者、哪一类、版本与审计、下游怎么失效重建，`C-D12`）；原始证据先存再处理、不覆盖（`C-D13`）；关键数据可按历史时点重现（`C-D14`） |
+| 每步只写自己的库 | 跨应用不用分布式事务；投递走 Outbox/Inbox，消费方幂等 |
+| 新数据先定归属 | 新增数据实体先答五问（`C-D12`）；原始证据先存再处理、不覆盖（`C-D13`）（[数据](topics/data.md)） |
 
-investment 内部：三种对话（聊天、工作、专家，[0017](../dev-investment-agent/tree-build/SDD/modules/0017-three-kinds-of-conversation.md)）；工作区 = 本地代理里加的白名单目录，项目是其下子目录（[0024](../dev-investment-agent/tree-build/SDD/modules/0024-new-project.md)）；后端进程 `runner`（工作台管理者，将改名 `manager`）连沙箱、下指令、收事件、算费用、管项目与专家流程；专家包按版本上架，新委托绑定委托当时上架的版本；本地代理的安装包经 investment 的 `agent-releases` 发放。设计按块在 [`SDD/modules/`](../dev-investment-agent/tree-build/SDD/modules/)。
+investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/modules/0017-three-kinds-of-conversation.md)）；工作区 = 本地代理里加的白名单目录；底稿与结果放右边栏。
 
 ## 5. 一个标准应用长什么样
 
-四个应用父仓拓扑相同（由模板规定）；领域目录、路由、迁移、依赖各不相同，是受控的扩展点（判据见 [`repos/tpl-app.md`](repos/tpl-app.md)）。
+应用父仓拓扑相同（由模板规定）；领域目录、路由、迁移、依赖各不相同，是受控的扩展点（[`repos/tpl-app.md`](repos/tpl-app.md)）。
 
 ```text
 <名>-app/
@@ -112,39 +111,21 @@ investment 内部：三种对话（聊天、工作、专家，[0017](../dev-inve
 └── <名>-web-frontend/     Next.js 网页端
 ```
 
-- **后端一个不可变镜像，多个运行角色**：API（Deployment + Service）、Worker（Celery）、Scheduler（Celery beat，单副本）、Migration（一次性 Job）；investment 另有 `runner`。各角色有独立 ServiceAccount、数据库与 broker 身份。入口在 `app/bootstrap/`。
-- **分层**：`domain/`、`application/`（服务、DTO、Port）、`infrastructure/`（ORM、外部适配、Celery、存储）、`interfaces/`（`http/` 是模板面，`endpoints/` 是领域面）；`application` 不得 import `interfaces`。
-- **前端**：Next.js 16 + React 19 + Tailwind v4 + shadcn + next-intl，`output: 'standalone'`，源码在内层 `app/`；路由边界是 `proxy.ts`；请求只走同源 `/api/`；会话经 server-only 的 `BACKEND_INTERNAL_URL` 读；**OIDC 全在后端，token 不进浏览器存储**；网页的预览模式用录下来的样例回放（`preview/fixtures/`）。
+- **后端一个不可变镜像，多个运行角色**：API、Worker（Celery）、Scheduler（Celery beat，单副本）、Migration（一次性 Job）；investment 另有工作台管理者（代码里叫 runner）。
+- **分层**：`domain/`、`application/`（服务、DTO、Port）、`infrastructure/`（ORM、外部适配、Celery、存储）、`interfaces/`（`http/` 是模板面，`endpoints/` 是领域面）；结构不变量在 `app/tests/test_kernel_invariants.py`。
+- **前端**：Next.js + React + Tailwind + shadcn + next-intl，`output: 'standalone'`，源码在内层 `app/`；请求只走同源 `/api/`；会话由后端的 cookie 承载。
+- 各仓还留着旧体系的部署材料（应用父仓的 `dev-to-prod-deploy/`、后端的 `db-provisioner/` 与 `*-access-bootstrap/`、tpl-app 的 `k8s-deployment/`）：**现行部署不用它们**，部署只在 `k8s` 仓。
 
-## 6. 部署（`k8s` 仓）
+## 6. 部署与发布（`k8s` 仓）
 
-单机 WSL 里的 KIND 是第一期；同一套组件声明以后用于云端建群。Make 是公开入口，Ansible 编排，Flux 拥有集群声明；不另设 CLI 或部署状态机。职责与约束见 [`docs/platform-kind-v1/architecture.md`](../platform-kind-v1/architecture.md)，实际验证过的范围见 [`verification.md`](../platform-kind-v1/verification.md)，日常导航见 `infrastructure/README.md`。
-
-| 目录 | 管什么 |
-| --- | --- |
-| `infrastructure/host`、`registry`、`entry`、`cluster`、`flux` | 宿主（WSL、挂盘、容量、开机恢复）、Harbor、入口 HAProxy、KIND 建群、Flux 与发布源 |
-| `infrastructure/services`、`applications`、`components` | 平台组件、四个应用、组件阶段图的 Make / Ansible 入口；`applications/sources.yaml` 钉各应用父仓与子仓的提交，`component-images.yaml` 钉自研镜像（会合点、沙箱、供给器）的源码提交 |
-| `infrastructure/edge` | 公网边缘（只在边缘机上跑） |
-| `infrastructure/artifacts`、`environments` | 物料与镜像锁；环境（`site.yaml` 的命名空间、根路径，`flux-source.yaml` 的已晋级源） |
-| `gitops/components/<平台>/…` | 组件声明：每个组件目录里 `config.yaml`、`stage.yaml`、`README.md` 是真源，`workload.yaml`、`kustomization.yaml`、`*.sops.yaml`、`image.lock.yaml` 是生成的 |
-| `gitops/clusters/kind` | 集群根：阶段图 `stages.yaml`（由各组件 `stage.yaml` 汇总生成） |
-
-| 平台目录 | 装什么 | 命名空间 |
-| --- | --- | --- |
-| `app-platform` | `auth-app/casdoor`；四个应用；`common/`（应用共用的部署机制，不经 tpl 转接） | `app-platform-dev` |
-| `data-platform` | PostgreSQL、Redis / Valkey、对象存储、RAGFlow（+ Infinity、text-embeddings）、ELK、Neo4j、MongoDB；应用的建库 Job | `data-platform-dev` |
-| `messaging-platform` | RabbitMQ 与应用的 vhost 初始化 | `messaging-platform-dev` |
-| `ingress-platform` | 内网 Traefik（TLS 终止、按 Host 路由；**不做授权**）、frpc | `ingress-platform-dev` |
-| `ops-platform` | pgAdmin、RedisInsight、Flower、Mongo Express | `ops-platform-dev` |
-| `relay-platform` / `sandbox-platform` | 会合点 / 供给器与沙箱镜像 | `relay-platform-dev` / `sandbox-platform-dev` |
-| `foundations` | 跨命名空间的基础对象（网络策略、拉取凭据、存储） | — |
+单机 WSL 里的 KIND 是第一期；同一套组件声明以后用于云端建群。Make 是公开入口，Ansible 编排，Flux 拥有集群声明。职责与约束见 [平台架构](../platform-kind-v1/architecture.md)，已验证范围见 [验收记录](../platform-kind-v1/verification.md)，目录见 [`repos/k8s.md`](repos/k8s.md)。
 
 **发布链**（一张发布卡的标准动作，样板见 `switch-test/done/` 里的卡）：
 
 ```text
-改 sources.yaml / component-images.yaml 的钉
+改 infrastructure/applications/sources.yaml（应用）或 component-images.yaml（会合点、沙箱、供给器）的钉
   → make platform-build OBJECT=…        构建镜像推 Harbor，改写 image.lock
-  → make platform-stage OBJECT=…        渲染声明、按私有目录里的输入生成 SOPS 密文（有副作用：可能建私有目录、远端数据集）
+  → make platform-stage OBJECT=…        渲染声明、按私有目录里的输入生成 SOPS 密文（有副作用）
   → make application-deployment-plan    核迁移头、Job 代次
   → git commit                           固定 Git 对象
   → make flux-release                    打成不可变 OCI 候选推 Harbor
@@ -153,11 +134,7 @@ investment 内部：三种对话（聊天、工作、专家，[0017](../dev-inve
   → make application-check APP=…
 ```
 
-现在由人照发布卡跑这些 Make 入口；后期改由 Jenkins 等流水线触发（所有者 2026-10-15 说的方向），变的是谁来触发，约束不变，见 [`rules/constraints.md`「发布」](../dev-investment-agent/tree-build/rules/constraints.md#发布)（`C-R1`–`C-R12`）。
-
-要点：秘密在宿主私有目录里主备两份、逐字节一致，已有身份丢失就停、不重新生成；Flux 根与各阶段都是 **`prune: false`**，删掉的声明不会自动删集群对象（要精确退役）；完成的 Job 由 Flux 持有，内容不可改，改了要换代次；回退 = 把 `flux-source.yaml` 退回已验证的源再 apply，数据库 schema 与持久数据不随 Git 回退。
-
-**`k8s/sunmoonai/`** 是 2026-10-06 起冻结的旧体系，计划整体移出（[改名手册「冻结解除之后」](../rename.md#冻结解除之后不属于改名但要有人做)）；其中还活着的只有 `docs/dev-investment-agent/`（手册、派活卡、回执、同步脚本、门禁工具）、`docs/project-guide/`（本文档集）、`relay-platform/` 与 `sandbox-platform/`（自研镜像源码）、`scripts/` 里的联调脚本与发布卡回执。
+现在由人照发布卡跑；后期改由流水线触发，约束不变。要点：秘密在宿主私有目录里主备两份、逐字节一致，已有身份丢失就停、不重新生成；Flux 根与各阶段都是 **`prune: false`**，删掉的声明不会自动删集群对象，下线旧对象要专门清理（样板：[改名 R6](../rename.md)）。组件 prepare 的先后顺序有一个已知隐患，修好前别跑 `platform-stage OBJECT=all`（[改名手册「冻结解除之后」第 5 条](../rename.md)）。
 
 ## 7. 身份
 
@@ -165,57 +142,56 @@ investment 内部：三种对话（聊天、工作、专家，[0017](../dev-inve
 
 | 类别 | 机制 |
 | --- | --- |
-| 浏览器 | Casdoor OIDC（授权码 + PKCE）→ 后端会话 cookie。每个应用的 Admin 与 Web 是两个独立的安全边界：各有 client、回调、cookie 名、会话命名空间、Origin 策略 |
-| 作用域 | 「应用名:动作」：Admin 必须有 `<名>:admin`（如 `knowfeed:admin`），Web 不要求作用域；管理端只收 built-in 组织的令牌，网页端只收配置的用户组织（0014 U2） |
-| 服务间 | client credentials，按关系各一个身份与组织：knowfeed → knowbase `knowbase:ingest`，investment → knowbase `knowbase:retrieve`；接收方核 audience、主体绑定表、作用域 |
-| 沙箱 | investment 给每个沙箱签发短期令牌：调投资记录 MCP 与 knowbase MCP；模型 key 只在沙箱进程环境里 |
-| 本地代理 | 网页里一行命令安装与配对；连会合点用 investment 签发、会合点就地验签的令牌 |
-
-细节：[身份](topics/identity.md)（部分仍是旧体系的写法，以代码为准）；组织与入口把关：[0014](../dev-investment-agent/tree-build/SDD/modules/0014-user-organization.md)。
+| 浏览器 | Casdoor OIDC 授权码 → 后端会话 cookie。每个应用的 Admin 与 Web 是两个独立边界：各有 client、回调、cookie、会话命名空间、Origin |
+| 组织 | 管理端只收 `built-in` 组织的令牌（admin 只用于 Casdoor 和管理后台）；网页端只收 `sunmoonai` 组织（所有者日常用自己的 sunmoonai 账号，[0014](../dev-investment-agent/tree-build/SDD/modules/0014-user-organization.md)） |
+| 服务间 | client credentials，按关系各一个身份：knowfeed → knowbase `knowbase:ingest`，investment → knowbase `knowbase:retrieve`；接收方核 audience 与主体绑定表 |
+| 沙箱 | investment 给每个沙箱签发短期令牌：调记录 MCP 与 knowbase MCP；模型 key 只在沙箱进程环境里 |
+| 本地代理 | 网页里一行命令安装与配对；连会合点用 investment 签发、会合点就地验签的短期令牌，可吊销 |
 
 ## 8. 规则来自哪里
 
 | 层 | 在哪 | 违反后果 |
 | --- | --- | --- |
-| 动代码前必读的规则 `C-*` | [`rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) | 方案不进入讨论 |
+| 动代码前必读的规则 `C-*`（含合规 `C-L*`） | [`rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) | 方案不进入讨论 |
 | 不变量 `I1`–`I14` | [`SDD/architecture/invariants.md`](../dev-investment-agent/tree-build/SDD/architecture/invariants.md) | 同上 |
 | 结构不变量测试 | 各后端 `app/tests/test_kernel_invariants.py` | 测试失败 |
 | 启动期配置校验 | 各后端 `core/config.py` | **进程起不来**，不降级运行 |
-| 部署准备的断言 | 各组件 `prepare.yaml`（名字、作用域、路径、身份按应用名拼出并核对） | stage 失败 |
+| 部署准备的断言 | 各组件 `prepare.yaml` | stage 失败 |
+| 文档门禁 | `docs/dev-investment-agent/tools/doc-gate.py`、`anchor-gate.py`（钩子 `.githooks/`） | 提交被拒 |
 | 人的批准点 | [`turn/approvals.md`](../dev-investment-agent/turn/approvals.md) | 不能自动通过 |
 
 ## 9. 动手前必知的红线
 
 | 红线 | 违反会怎样 |
 | --- | --- |
+| 平台带自己的投资逻辑、给用户自己的数据、评价投资效果、让分身流出给别人 | 碰监管（`C-L1`–`C-L5`） |
 | 跨应用直接读写对方的库、桶、Redis 键 | 破坏领域所有权，没有门禁能救 |
 | 用可变 tag 代替固定摘要部署 | 发布链拒收；部署只认 `image.lock` 里的摘要 |
 | 手改渲染产物（`workload.yaml`、`*.sops.yaml`、`image.lock.yaml`） | 下一次 stage 覆盖或校验失败；改真源再 stage |
 | 契约 schema 在调用方另建副本 | 第二真源；升级必须提供方先改、两端测试过后才动锁 |
 | 先改实例再改模板 | 公共缺陷必须先修 tpl-app 再同步实例 |
-| 迁移链分叉或与测试里的清单不一致 | 测试失败 |
 | 重新生成已有身份、清私有目录、为清状态删 PVC 或 force apply | 身份与数据对不上，可能不可恢复 |
 | 集群内组件按公网名互连 | 公网解析一变就连错；要连就加 backchannel 变量 |
 | 把评测、验收、批准写成「系统会自动」 | 不得假设还不存在的自动化（[流水线](../dev-investment-agent/pipeline.md)） |
 | 秘密进日志、回执、Git | 口令、令牌、私钥只在私有目录与 SOPS 里 |
-| 把「部署了」当成「可以对外服务」 | 对外前逐项过上线门（`C-R10`）：备份要真恢复过，单机 KIND 不是生产高可用 |
+| 把「部署了」当成「可以对外服务」 | 对外前逐项过上线门（`C-R10`）；单机 KIND 不是生产高可用 |
 
-描述能力状态用四个递进的词：**defined**（schema、表、Port 在）→ **wired**（有生产调用方）→ **deployable**（配置与门禁允许部署）→ **runtime-verified**（有对应环境、版本、场景的运行证据）。「文件存在」只到 defined。
+描述能力状态用四个递进的词：**defined**（schema、表、Port 在）→ **wired**（有生产调用方）→ **deployable**（配置与门禁允许部署）→ **runtime-verified**（有运行证据）。
 
 ## 10. 去哪查
 
 | 我要… | 读 |
 | --- | --- |
-| 知道这个产品要什么 | [需求](../dev-investment-agent/tree-build/PRD/requirement.md)、[`PRD/apps/`](../dev-investment-agent/tree-build/PRD/apps/README.md)、[待定决策](../dev-investment-agent/tree-build/decisions.md) |
+| 知道这个产品要什么 | [需求](../dev-investment-agent/tree-build/PRD/requirement.md)、[`PRD/apps/`](../dev-investment-agent/tree-build/PRD/apps/README.md)、[决策](../dev-investment-agent/tree-build/decisions.md) |
 | 知道某块怎么设计 | [`SDD/architecture/`](../dev-investment-agent/tree-build/SDD/architecture/README.md)、[`SDD/modules/`](../dev-investment-agent/tree-build/SDD/modules/) |
 | 动代码前必读的规则 | [`rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) |
 | 一次求助 / 一次委托怎么走 | [流水线](../dev-investment-agent/pipeline.md)、[`turn/`](../dev-investment-agent/turn/README.md) |
 | 拓扑、谁连谁 | [`k8s/docs/拓扑.md`](../拓扑.md) |
-| 部署、发版、某个组件怎么维护 | `k8s/infrastructure/README.md`、各组件目录的 `README.md`、[平台架构](../platform-kind-v1/architecture.md)、[验收边界](../platform-kind-v1/verification.md) |
-| 派活卡、回执、两台机器怎么同步 | `../dev-investment-agent/switch-test/`（`inbox/`、`done/`、`human-*.sh`） |
-| 改某个仓的代码 | [`repos/`](repos/) 对应文件（部分仍是旧体系的写法，以代码为准） |
-| 跨应用契约、数据、身份 | [`topics/`](topics/) 对应文件（同上） |
-| 改名进行到哪 | [`k8s/docs/rename.md`](../rename.md) |
+| 部署、发版、某个组件怎么维护 | `k8s/README.md`、`infrastructure/` 与各组件目录的 `README.md`、[平台架构](../platform-kind-v1/architecture.md)、[验收记录](../platform-kind-v1/verification.md) |
+| 派活卡、回执、两台机器怎么同步 | [`switch-test/`](../dev-investment-agent/switch-test/README.md)（`inbox/`、`done/`、`human-*.sh`）；回执在各仓 `scripts/results/` |
+| 改某个仓的代码 | [`repos/`](repos/) 对应文件 |
+| 跨应用契约、数据 | [`topics/`](topics/) 对应文件 |
+| 改名做了什么、留了哪些尾巴 | [`k8s/docs/rename.md`](../rename.md)「冻结解除之后」 |
 | 查当前钉的提交 / 镜像摘要 / 已晋级的源 | `infrastructure/applications/sources.yaml`、各组件 `image.lock.yaml`、`infrastructure/environments/kind/flux-source.yaml` |
 | 查集群里实际跑的 | `export KUBECONFIG=~/.kube/sunmoon-kind.config; kubectl -n app-platform-dev get deploy -o wide`（所有者机器） |
 | 复核本文的某条断言 | **读代码**，别的都不算数 |
@@ -230,7 +206,7 @@ investment 内部：三种对话（聊天、工作、专家，[0017](../dev-inve
 
 ## 已知缺口
 
-- `repos/`、`topics/`、`governance.md` 还有旧体系（`k8s/sunmoonai/` 下的平台目录、`bundle/` 与 `deploy.py` 发布链）的写法，待按本文重写。
-- 公网边缘只暴露三个域名；knowfeed、knowbase 与各管理端只在所有者机器上可用。
-- 单机 KIND：数据主备同在一块物理盘，机器外备份未落地；真实 KIND 删除重建、DNS 与系统证书信任等仍在 [验收边界](../platform-kind-v1/verification.md#未完成项) 的未完成项里。
-- knowmart（专家市场）只有设计；评测的自动化门未接。
+- knowlab-app、knowmart-app 未建；工作台的「专家」还没改叫「分身」，内置专家包还是对全体用户可选、沙箱还默认接 knowbase 数据服务——工作台对用户开放前要改完（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「四」）。
+- 管理端业务页受角色缺口所限看不到；admin 的旧沙箱待按 0014 U4 回收（[改名手册「冻结解除之后」第 6、7 条](../rename.md)）。
+- 单机 KIND：数据主备同在一块物理盘，机器外备份未落地；真实 KIND 删除重建、DNS 与系统证书信任等仍在 [验收记录](../platform-kind-v1/verification.md) 的未完成项里。
+- 评测的自动化门未接；`scripts/test_switch_test_sync.py` 有 3 个用例早就失败。

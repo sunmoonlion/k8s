@@ -1,90 +1,42 @@
-# 数据与迁移
+# 数据
 
-> 源码复核：2026-09-13 ｜ 相关规则见 [`../../dev-investment-agent/tree-build/rules/constraints.md`](../../dev-investment-agent/tree-build/rules/constraints.md)「数据」C-D1–C-D9
+> 最后更新：2026-10-16 ｜ 按部署声明与代码现状重写 ｜ 相关规则见 [`constraints.md`](../../dev-investment-agent/tree-build/rules/constraints.md)「数据」`C-D1`–`C-D15` 与「合规」`C-L2`
 
-## 1. 一个 App 一个库，谁的表谁改
+## 1. 谁拥有什么
 
-四个 App 各自持有自己的 PostgreSQL 逻辑库与迁移链。
-**代码中不存在跨 App 直接读写对方表的路径**——跨 App 传数据一律走 HTTP 契约。
+每个应用一个逻辑数据库、一条迁移链，物理实例共享，但库、角色、Secret 各自独立（`C-D2`、`C-D3`）；跨应用**禁止直接读写对方的库、桶、Redis 键**，要用就经契约（[契约](contracts.md)）。
 
-| 主档 | 归属 | 派生系统 |
+| 应用 | PostgreSQL 库 | Redis / RabbitMQ | 对象存储 | 其他 |
+| --- | --- | --- | --- | --- |
+| tpl | `tpl` | 自己的 ACL 用户与键前缀；自己的 vhost | — | — |
+| knowfeed | `knowfeed` | 同上 | 桶 `knowfeed-originals`（原件与数据集文件，键前缀 `knowfeed/`） | — |
+| knowbase | `knowbase` | 同上 | 不自己存原件：只读 knowfeed 桶的 `knowfeed/` 前缀 | RAGFlow 数据集 `sunmoon-kind-knowbase-default`（派生，可重建，`C-D5`） |
+| investment | `investment` | 同上 | 桶 `agent-releases`（本地代理安装包，私有、带版本） | — |
+| Casdoor | `casdoor` | — | — | — |
+| knowlab（未建） | 将有自己的库 | — | 将有自己的存储：用户上传的数据集归它（先答 `C-D12` 五问） | — |
+
+每个应用库有两个角色：`<应用>_migrator`（只给迁移 Job）与 `<应用>_runtime`（给运行角色）（Casdoor 用单一账号 `casdoor`）；库与角色带归属注释 `sunmoon-kind/<应用>`，部署准备时核对，对不上就停。迁移只由独立 Job 执行（`C-D8`）。
+
+MongoDB、Neo4j 在平台里已部署，**应用还没用**。
+
+## 2. 用户的数据在哪
+
+| 数据 | 在哪 | 说明 |
 | --- | --- | --- |
-| 来源、采集作业、文档版本、原始制品 | knowfeed-app | Elasticsearch 索引（**默认关闭**） |
-| 摄入任务、知识文档与版本、Evidence | knowbase-app | RAGFlow |
-| Agent session / run / 事件 / 副作用 / Pilot 请求 | investment-app | LangGraph checkpoint 表（同库） |
-| 用户身份 `auth_user` | 各 App 各自一份 | Casdoor 为上游 IdP |
+| 用户的文件、工作区 | 用户自己的电脑 | 本地代理只让沙箱读写他加进白名单的目录；不经云端 |
+| 对话、项目、底稿、运行记录 | investment 的库 | 结果明文入库（`C-D10`） |
+| 模型 key | investment 的密钥库与他自己的沙箱进程环境 | 不进任何表、事件、日志、界面（`C-D10`、`I8`） |
+| 沙箱里的 Codex 状态 | 每用户一个 PVC（`CODEX_HOME`） | 回收沙箱时保留，`purge` 才删 |
+| 用户为分身上传的数据（将来） | knowlab | 分身运行时只读这一份，不接 knowbase、knowfeed（`C-L2`） |
 
-物理资源可以共享（同一个 PostgreSQL 集群），但必须用独立逻辑库、角色、Secret、
-备份与访问策略。对象存储同理：独立 bucket、凭据、生命周期。
+## 3. 数据怎么保留
 
-## 2. 派生系统可重建，主档不可
+- **原始证据先存再处理**：原件、HTTP 响应、导入批次带内容哈希、来源与获取时间；修订产生新版本，不覆盖（`C-D13`）。关键数据有版本，能按历史时点重现；跨应用只存对方的稳定标识与版本（`C-D14`）。
+- **派生系统可重建**：检索、RAG、模型、缓存不可用时不影响权威数据的保存（`C-D15`）。
+- **静态卷用 Retain**：声明删除时不隐式回收；KIND 动态卷目录也在数据盘上。重建集群不是自动恢复（[foundations README](../../../gitops/components/foundations/README.md)）。
+- **秘密**：在宿主私有目录 `/etc/sunmoon/…` 与备份盘 `/mnt/sunmoon-data/backups/…` 主备两份、逐字节一致，部署时生成 SOPS 密文；已有身份丢失就停，不重新生成。
+- **备份**：数据盘与系统盘同在一块物理盘，同盘备份只防误删与升级失败；机器外备份的落点待所有者指定（[宿主](../../../infrastructure/host/README.md)）。
 
-这是约束第 2 条（单一主档）与第 5 条（RAGFlow 是派生系统）的直接后果，
-代码里有两处可观察的体现：
+## 4. 新增数据之前
 
-- knowfeed 的索引任务在 `SEARCH_BACKEND=disabled` 时**直接跳过**（默认就是 disabled）
-- knowbase 在无 RAGFlow 凭据时摄入止于 `artifact_verified`，**不写** `KnowledgeDocument*`
-
-两者都是「**主档已落、派生未建**」的**合法状态**，不是故障。
-
-RAGFlow / Elasticsearch / 向量 / 缓存**都不能**当作权威业务记录。
-
-## 3. 数据库运行身份
-
-2026-09-20 本机 KIND 已将三个 App 的 API/Worker/Scheduler/Migration 切换到独立数据库
-身份，跨 App 的 18 次连接尝试和三个旧登录均实测拒绝。该结果只为固定开发候选
-`kind-b7-20260919` 背书，不自动覆盖云端、production 或后续 release。
-
-策略真源为 `tpl-app/k8s-deployment/runtime_database_policy.py` 与各实例 deployment 的
-`*_database_policy.py`：API 接受业务意图、Worker 消费/回执、Scheduler CONNECT-only、
-Migration 拥有迁移对象；未知清单拒绝。角色独立 Secret 键和实际账号权限须一并供给，
-不可只复制旧 URL。后续发布仍须核 PUBLIC、继承、default ACL 与真实拒绝；加法 GRANT
-不会自动撤销旧权限。
-**前端不得持有后端或数据库凭据。**Secret 名仍从具体 release 的 external_secrets 查。
-
-investment-app 另有一步特殊处理：部署时在跑迁移 Job **之前**用 SQL 改 PG 角色的
-LOGIN 状态；knowfeed 与 knowbase 无此步。
-
-## 4. 迁移纪律
-
-### 做数据迁移时
-
-程序（七步、fail-closed、六条验收）是**规则**，不写在投影里：
-见 [`../../dev-investment-agent/tree-build/rules/constraints.md`](../../dev-investment-agent/tree-build/rules/constraints.md)「数据」。
-
-## 5. 共享可靠投递已接入业务
-
-四仓共享 `outbox_message`、`inbox_message`、`outbox_dead_letter`、`outbox_execution`；
-`application/services/durable_tasks.py` 与 `infrastructure/messaging/durable_delivery.py`
-提供事务意图、有限投递、租约/epoch、提交前 fencing、Inbox、死信、显式重放和对账。
-API 只接受持久意图；Beat 发 pump 提示，数据库 pump/consume 由 Worker 执行。
-Knowfeed 采集/索引/分发、Knowbase 摄入/轮询均已接入；Investment 在公共策略上扩展会话
-执行与 Redis 通知，不另建 publisher/死信真源。旧 Knowfeed 分发日志和旧 Agent 死信仅保留
-受保护的回滚档案，不再接受新业务写入。
-
-broker ACK、控制探针 pong、已提交 Inbox、Provider 业务成功是不同证据。释放租约保留
-epoch 墓碑并显式标失效，立即重排不再依赖墙钟门槛；真实预约/退避仍按 DB 时间执行。
-Knowbase 对未知外部写入结果保留操作账并阻断盲目重传。**不能按固定天数直接删
-Outbox/Inbox/死信/租约**：去重、回滚、Provider 回执和迟到执行者仍可能引用它们。
-归档或删除前必须先冻结重试/恢复/调查保护窗口，盘点全部逻辑引用，关闭新增引用并发，
-验证归档读取与隔离恢复；未知外部写、权限不足或归档损坏一律保留保护。
-
-## 6. 幂等与副作用
-
-| 机制 | 位置 | 语义 |
-| --- | --- | --- |
-| Agent run 幂等 | investment `infrastructure/agent/repositories.py` | `session_id` + `idempotency_key` |
-| Pilot run 幂等 | investment `pilot_repository.py` | `owner_actor_id` + `idempotency_key` |
-| 摄入任务幂等 | knowbase `knowledge_ingestion_service.py` | `idempotency_key` 命中则返回已有 job |
-| 分发幂等键 | knowfeed | `knowfeed-app:{version_id}:{dataset_key}:artifact-v1` |
-| 副作用一次性 | investment `side_effect_service.record_once` | `tool_call_id` 为 PK + `ON CONFLICT DO NOTHING` |
-| Resume 令牌一次性 | investment `pilot_repository.consume_resume` | 置位后不可复用 |
-
-## 7. 数据组件在哪配置
-
-`k8s/sunmoonai/data-platform/` 下八个子目录：postgresql · redis · mongodb · neo4j ·
-elasticsearch · kibana · logstash · **object-storage**（目录名不是 minio 或 s3）。
-消息中间件不在此，在 `messaging-platform/`（RabbitMQ）。
-
-**四个 App 实际用到的只有**：PostgreSQL、Redis、object-storage、RabbitMQ、
-Elasticsearch（knowfeed，默认关闭）。**mongodb / neo4j / kibana / logstash 未见任何 App 侧引用。**
+新增数据实体先答五问：属于哪个领域、谁是唯一权威所有者、是主档 / 原始证据 / 派生 / 运行数据哪一类、要不要版本时间审计、下游怎么引用和失效重建；答不出的不进实现（`C-D12`）。已有 PVC 不能改命名空间，跨命名空间迁移要一致备份恢复，没有通用自动入口。

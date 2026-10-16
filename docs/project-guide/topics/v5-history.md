@@ -131,7 +131,7 @@ Info 分发帮助函数 6 passed、Investment 检索契约 7 passed；这些是�
 历史、原地迁入 Investment 三组件拓扑的旧实施过程，不是当前发布操作指令。
 `ResearchSession` 等仍可为合法领域术语，不能据历史改名要求全局替换 `research`。
 本次只删文档并修正两处引用，不改仓名、业务数据、运行资源或历史备份。
-现状见 [Investment 指南](../repos/investment-app.md)，当前发布边界见[发布与门禁](release.md)。
+现状见 [Investment 指南](../repos/investment-app.md)，当前发布边界见[发布与门禁](../overall-architecture.md)。
 原文仍在上述固定 k8s 提交中：
 
 ```sh
@@ -150,7 +150,7 @@ git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/investment清�
 旧 R3/R5/R7 候选、供给、切流、退役和固化发布脚本基于当年的身份、schema、镜像和目录；
 不作为本批开发发布工具。特别是 R7 检查要求正式包且写死旧迁移 head，与当前开发包不符。
 旧 capability 清单验证依赖已经退出当前拓扑的双 Backend，也只在历史版本复现。
-当前部署入口、静态 bundle 检查与剩余验收见[发布与门禁](release.md)，不因清理销账。
+当前部署入口、静态 bundle 检查与剩余验收见[发布与门禁](../overall-architecture.md)，不因清理销账。
 
 冻结的 `tpl-app/template-release-manifest.json` **保持逐字不变**：其中 `test_evidence`
 以 `k8s/` 开头的九个旧路径都按此固定 k8s 快照解析（去掉开头的 `k8s/`）。目录项用
