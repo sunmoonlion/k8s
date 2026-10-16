@@ -1,0 +1,39 @@
+== align wsl-dev 2026-10-16 13:41:10  HOME=/home/zymun  --apply
+  FAIL master/k8s 做完仍不干净或不在 master：?? sunmoonai/ 
+  DONE master/runtime 快进 2 个
+  DONE master/knowfeed-app 快进 1 个
+  DONE master/knowbase-app 快进 1 个
+  DONE master/investment-app 快进 1 个
+  DONE master/tpl-app 快进 1 个
+  DONE cursor/k8s 快进 6 个
+  DONE cursor/runtime 快进 2 个
+  DONE cursor/knowfeed-app 快进 1 个
+  DONE cursor/knowbase-app 快进 1 个
+  DONE cursor/investment-app 快进 1 个
+  DONE cursor/tpl-app 快进 1 个
+  DONE fable/k8s 快进 6 个
+  DONE fable/runtime 快进 2 个
+  DONE fable/knowfeed-app 快进 1 个
+  DONE fable/knowbase-app 快进 1 个
+  DONE fable/investment-app 快进 1 个
+  DONE fable/tpl-app 快进 1 个
+  DONE kimi/k8s 快进 6 个
+  DONE kimi/runtime 快进 2 个
+  DONE kimi/knowfeed-app 快进 1 个
+  DONE kimi/knowbase-app 快进 1 个
+  DONE kimi/investment-app 快进 1 个
+  DONE kimi/tpl-app 快进 1 个
+  DONE luna/k8s 快进 6 个
+  DONE luna/runtime 快进 2 个
+  DONE luna/knowfeed-app 快进 1 个
+  DONE luna/knowbase-app 快进 1 个
+  DONE luna/investment-app 快进 1 个
+  DONE luna/tpl-app 快进 1 个
+  ok   qwen/k8s（比 master 多 1 个，都已推到 origin/qwen，等 master 跟上）
+  DONE qwen/runtime 快进 2 个
+  DONE qwen/knowfeed-app 快进 1 个
+  DONE qwen/knowbase-app 快进 1 个
+  DONE qwen/investment-app 快进 1 个
+  DONE qwen/tpl-app 快进 1 个
+done_or_would=34 held=0 failed=1
+exit=3
