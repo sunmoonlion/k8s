@@ -669,6 +669,7 @@ PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 换名；0018 改写为 knowmar
    - `align [--apply]`：每个检出 `merge --ff-only origin/master`；子仓按新的 `.gitmodules` 初始化、接回工位分支，新建的子仓照 qwen 工位同名子仓配推送地址（GitHub + gitee）；父仓里留下的旧名子仓目录（`info-*`、`knowledge-*`，git 删不掉有内容的子仓目录）挪进 `~/rename-backup/<时间>-old-subrepos/`。父仓或它的子仓有未提交改动、有既不在 `origin/<分支>` 也不在 master 的提交、分支不对、与 master 分叉的，整个父仓跳过报 HOLD。不加 `--apply` 只预演。
    - 2026-10-16 在临时目录按两台机器的布局（主目录 + 五个工位、一个父仓的子仓改名、一个故意弄脏的工位）演练过：预演与执行一致，快进、子仓初始化与接回分支、推送地址、挪旧目录都对，脏的那个跳过，再跑一次什么都不改。
    - 顺序：k8s 的 master 先快进到 qwen 最新 → `push-branches --apply` → 远程机 `align` 预演、`--apply`、`list`（Opus）→ 本地机同样三步（Qwen）。
+   - **远程机已做** · 2026-10-16 · Opus（`rename-receipts/align-opus.*.md`）：k8s master 快进到 `800bc686`；72 个 `origin/<工位>` 快进到 master；`align --apply` 30 个父仓快进、30 个旧名子仓目录挪进备份，0 HOLD；之后 `list` 108 个全部 ok。本地机待 Qwen。
 3. 远程机 `~/rename-backup/` 与本地机同名目录保留，删除另行决定。
 4. **把 `k8s/sunmoonai/` 整体移出**（所有者 2026-10-15 定）：它大部分是 10-06 起冻结的旧体系，计划删掉。先把还活着的四块搬出去，再 `git rm` 其余（历史在 Git 里）：
    - `sunmoonai/docs/dev-investment-agent/`（手册、回执、派活卡、同步脚本、门禁工具）→ `k8s/docs/dev-investment-agent/`：连带改 k8s 里 26 个、runtime 里 6 个引用；`.githooks` 的 `doc-gate.py`、`anchor-gate.py` 路径与「只查 `sunmoonai/docs/`」的范围；两台机器的 `~/switch-test/human-*.sh` 转发器（跑一次 `human-local.sh` 自动重新生成）；
