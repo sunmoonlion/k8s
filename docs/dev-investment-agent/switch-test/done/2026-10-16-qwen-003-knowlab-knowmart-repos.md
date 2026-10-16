@@ -1,6 +1,6 @@
 # knowlab-app 与 knowmart-app 开工：建仓、实例化、跑通空应用
 
-> **状态：所有者 2026-10-16 批准（「批准」），下面「要所有者先定的」四项按默认。**A 段过（`scripts/results/qwen-003-A.*`，gitee 空仓不能公开，暂私有）；B 段过（`scripts/results/opus-003-B.*`，顺带修好了 tpl-app 的 `init.sh`）。gitee 8 个仓已改公开（匿名 ls-remote 能取到提交号）；C 段过（`scripts/results/opus-003-C.*`）。**现在做 D 段。** Opus 2026-10-16 在远程机写。设计：[0026 knowlab](../../../tree-build/SDD/modules/0026-knowlab.md)、[0018 knowmart](../../../tree-build/SDD/modules/0018-advisor-market.md)（私有模式）。本卡只做到「两个空应用在本地集群跑起来、能登录」，不写任何业务功能。
+> **状态：所有者 2026-10-16 批准（「批准」），下面「要所有者先定的」四项按默认。**A 段过（`scripts/results/qwen-003-A.*`，gitee 空仓不能公开，暂私有）；B 段过（`scripts/results/opus-003-B.*`，顺带修好了 tpl-app 的 `init.sh`）。gitee 8 个仓已改公开（匿名 ls-remote 能取到提交号）；C 段过（`scripts/results/opus-003-C.*`）。**现在做 D 段。** Opus 2026-10-16 在远程机写。设计：[0026 knowlab](../../tree-build/SDD/modules/0026-knowlab.md)、[0018 knowmart](../../tree-build/SDD/modules/0018-advisor-market.md)（私有模式）。本卡只做到「两个空应用在本地集群跑起来、能登录」，不写任何业务功能。
 >
 > 分四段，一段一停：A（Qwen 建远端仓）→ B（Opus 实例化并推代码）→ C（Opus 写部署声明、改各处仓清单）→ D（Qwen 在本地集群发布并在浏览器核对）。每段交回执，Opus 审过再开下一段。A、D 两段 Qwen 做；B、C 两段 Opus 做，这里写出来是让所有者一次看全。
 

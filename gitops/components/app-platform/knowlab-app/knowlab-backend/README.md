@@ -40,7 +40,7 @@ make -C infrastructure application-check APP=knowlab
 
 plan只读；check会创建限定随机数据库/消息/业务探针并精确清理，失败保留现场，不是纯查看。配置候选、构建、固定发布及bootstrap统一见[应用维护流程](../../../../../infrastructure/applications/README.md)。口令备份不是数据库备份；既有数据更新先准备数据库与外部依赖恢复路径，不能拿Git回退代替。
 
-**尚未部署**：2026-10-16 由 tpl-app 实例化的空应用，第一次发布与浏览器核对在 qwen-003 D 段；做完前这里不写任何「已验」。
+**已部署（空应用）**：2026-10-16 由 tpl-app 实例化，qwen-003 D 段首次发布（晋级 `2d4325ac`），8 个阶段 Ready、`application-check` 通过、网页端与管理端浏览器登录已验（`scripts/results/qwen-003-D.20261016-1747.md`）。还没有业务功能。
 
 ## 后端字段
 

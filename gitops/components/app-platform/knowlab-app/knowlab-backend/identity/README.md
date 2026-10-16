@@ -14,6 +14,6 @@ application-stage APP=knowlab→提交/发布/晋级→bootstrap协调identity�
 
 初始化及普通应用backchannel当前受NetworkPolicy限制的内部HTTP；公开issuer为HTTPS，不能宣称内部mTLS。跨应用服务关系使用独立组织/身份，见[服务身份机制](../../../common/backend/service-identity/README.md)。
 
-尚未部署、尚未验证登录（qwen-003 D 段）；新环境或改身份后都要重新验。回退不会删除Casdoor客户端或撤销会话；输入丢失先恢复，停用/轮换另定明确步骤，不能重新随机密钥。
+2026-10-16 qwen-003 D 段首次部署，网页端（sunmoonai 组织用户）与管理端（admin）浏览器登录已验（`scripts/results/qwen-003-D.20261016-1747.md`）；新环境或改身份后都要重新验。回退不会删除Casdoor客户端或撤销会话；输入丢失先恢复，停用/轮换另定明确步骤，不能重新随机密钥。
 
 操作流程见[应用维护](../../../../../../infrastructure/applications/README.md)；共用源码为[identity模板](../../../common/backend/identity/workload.yaml.j2)。
