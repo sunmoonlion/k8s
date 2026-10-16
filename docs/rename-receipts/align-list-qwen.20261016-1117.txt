@@ -1,0 +1,111 @@
+== wsl-dev 2026-10-16 11:17:20  HOME=/home/zymun
+master/k8s                                           master     ahead=0    behind=1024  dirty=0   unpushed=0   ff           
+master/runtime                                       master     ahead=0    behind=98    dirty=0   unpushed=0   ff           
+master/knowfeed-app                                  master     ahead=0    behind=30    dirty=0   unpushed=0   ff           
+master/knowfeed-app/info-admin-frontend              master     ahead=0    behind=4     dirty=0   unpushed=0   ff            rename→knowfeed-admin-frontend
+master/knowfeed-app/info-web-frontend                master     ahead=0    behind=10    dirty=0   unpushed=0   ff            rename→knowfeed-web-frontend
+master/knowfeed-app/info-backend                     master     ahead=0    behind=27    dirty=0   unpushed=0   ff            rename→knowfeed-backend
+master/knowbase-app                                  master     ahead=0    behind=27    dirty=0   unpushed=0   ff           
+master/knowbase-app/knowledge-admin-frontend         master     ahead=0    behind=6     dirty=0   unpushed=0   ff            rename→knowbase-admin-frontend
+master/knowbase-app/knowledge-web-frontend           master     ahead=0    behind=10    dirty=0   unpushed=0   ff            rename→knowbase-web-frontend
+master/knowbase-app/knowledge-backend                master     ahead=0    behind=24    dirty=0   unpushed=0   ff            rename→knowbase-backend
+master/investment-app                                master     ahead=0    behind=98    dirty=0   unpushed=0   ff           
+master/investment-app/investment-backend             (detached) ahead=0    behind=79    dirty=0   unpushed=0   ff            branch≠master
+master/investment-app/investment-admin-frontend      (detached) ahead=0    behind=5     dirty=0   unpushed=0   ff            branch≠master
+master/investment-app/investment-web-frontend        (detached) ahead=0    behind=66    dirty=0   unpushed=0   ff            branch≠master
+master/tpl-app                                       master     ahead=0    behind=15    dirty=0   unpushed=0   ff           
+master/tpl-app/tpl-web-frontend                      (detached) ahead=0    behind=8     dirty=0   unpushed=0   ff            branch≠master
+master/tpl-app/tpl-backend                           (detached) ahead=0    behind=13    dirty=0   unpushed=0   ff            branch≠master
+master/tpl-app/tpl-admin-frontend                    (detached) ahead=0    behind=4     dirty=0   unpushed=0   ff            branch≠master
+cursor/k8s                                           cursor     ahead=0    behind=128   dirty=0   unpushed=0   ff           
+cursor/runtime                                       cursor     ahead=0    behind=5     dirty=0   unpushed=0   ff           
+cursor/knowfeed-app                                  cursor     ahead=0    behind=2     dirty=0   unpushed=0   ff           
+cursor/knowfeed-app/info-admin-frontend              cursor     ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowfeed-admin-frontend
+cursor/knowfeed-app/info-web-frontend                cursor     ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowfeed-web-frontend
+cursor/knowfeed-app/info-backend                     cursor     ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowfeed-backend
+cursor/knowbase-app                                  cursor     ahead=0    behind=2     dirty=0   unpushed=0   ff           
+cursor/knowbase-app/knowledge-admin-frontend         cursor     ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowbase-admin-frontend
+cursor/knowbase-app/knowledge-web-frontend           cursor     ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowbase-web-frontend
+cursor/knowbase-app/knowledge-backend                cursor     ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowbase-backend
+cursor/investment-app                                cursor     ahead=0    behind=4     dirty=0   unpushed=0   ff           
+cursor/investment-app/investment-backend             (detached) ahead=0    behind=4     dirty=0   unpushed=0   ff            branch≠cursor
+cursor/investment-app/investment-admin-frontend      (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠cursor
+cursor/investment-app/investment-web-frontend        (detached) ahead=0    behind=4     dirty=0   unpushed=0   ff            branch≠cursor
+cursor/tpl-app                                       cursor     ahead=0    behind=2     dirty=0   unpushed=0   ff           
+cursor/tpl-app/tpl-web-frontend                      (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠cursor
+cursor/tpl-app/tpl-backend                           (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠cursor
+cursor/tpl-app/tpl-admin-frontend                    (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠cursor
+fable/k8s                                            fable      ahead=0    behind=128   dirty=0   unpushed=0   ff           
+fable/runtime                                        fable      ahead=0    behind=5     dirty=0   unpushed=0   ff           
+fable/knowfeed-app                                   fable      ahead=0    behind=2     dirty=0   unpushed=0   ff           
+fable/knowfeed-app/info-admin-frontend               fable      ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowfeed-admin-frontend
+fable/knowfeed-app/info-web-frontend                 fable      ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowfeed-web-frontend
+fable/knowfeed-app/info-backend                      fable      ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowfeed-backend
+fable/knowbase-app                                   fable      ahead=0    behind=2     dirty=0   unpushed=0   ff           
+fable/knowbase-app/knowledge-admin-frontend          fable      ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowbase-admin-frontend
+fable/knowbase-app/knowledge-web-frontend            fable      ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowbase-web-frontend
+fable/knowbase-app/knowledge-backend                 fable      ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowbase-backend
+fable/investment-app                                 fable      ahead=0    behind=4     dirty=0   unpushed=0   ff           
+fable/investment-app/investment-backend              (detached) ahead=0    behind=4     dirty=0   unpushed=0   ff            branch≠fable
+fable/investment-app/investment-admin-frontend       fable      ahead=0    behind=2     dirty=0   unpushed=0   ff           
+fable/investment-app/investment-web-frontend         (detached) ahead=0    behind=4     dirty=0   unpushed=0   ff            branch≠fable
+fable/tpl-app                                        fable      ahead=0    behind=2     dirty=0   unpushed=0   ff           
+fable/tpl-app/tpl-web-frontend                       fable      ahead=0    behind=2     dirty=0   unpushed=0   ff           
+fable/tpl-app/tpl-backend                            fable      ahead=0    behind=2     dirty=0   unpushed=0   ff           
+fable/tpl-app/tpl-admin-frontend                     fable      ahead=0    behind=2     dirty=0   unpushed=0   ff           
+kimi/k8s                                             kimi       ahead=0    behind=128   dirty=0   unpushed=0   ff           
+kimi/runtime                                         kimi       ahead=0    behind=5     dirty=0   unpushed=0   ff           
+kimi/knowfeed-app                                    kimi       ahead=0    behind=2     dirty=0   unpushed=0   ff           
+kimi/knowfeed-app/info-admin-frontend                kimi       ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowfeed-admin-frontend
+kimi/knowfeed-app/info-web-frontend                  kimi       ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowfeed-web-frontend
+kimi/knowfeed-app/info-backend                       kimi       ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowfeed-backend
+kimi/knowbase-app                                    kimi       ahead=0    behind=2     dirty=0   unpushed=0   ff           
+kimi/knowbase-app/knowledge-admin-frontend           kimi       ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowbase-admin-frontend
+kimi/knowbase-app/knowledge-web-frontend             kimi       ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowbase-web-frontend
+kimi/knowbase-app/knowledge-backend                  kimi       ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowbase-backend
+kimi/investment-app                                  kimi       ahead=0    behind=4     dirty=0   unpushed=0   ff           
+kimi/investment-app/investment-backend               (detached) ahead=0    behind=4     dirty=0   unpushed=0   ff            branch≠kimi
+kimi/investment-app/investment-admin-frontend        (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠kimi
+kimi/investment-app/investment-web-frontend          (detached) ahead=0    behind=4     dirty=0   unpushed=0   ff            branch≠kimi
+kimi/tpl-app                                         kimi       ahead=0    behind=2     dirty=0   unpushed=0   ff           
+kimi/tpl-app/tpl-web-frontend                        (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠kimi
+kimi/tpl-app/tpl-backend                             (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠kimi
+kimi/tpl-app/tpl-admin-frontend                      (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠kimi
+luna/k8s                                             luna       ahead=0    behind=128   dirty=0   unpushed=0   ff           
+luna/runtime                                         luna       ahead=0    behind=5     dirty=0   unpushed=0   ff           
+luna/knowfeed-app                                    luna       ahead=0    behind=2     dirty=0   unpushed=0   ff           
+luna/knowfeed-app/info-admin-frontend                luna       ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowfeed-admin-frontend
+luna/knowfeed-app/info-web-frontend                  luna       ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowfeed-web-frontend
+luna/knowfeed-app/info-backend                       luna       ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowfeed-backend
+luna/knowbase-app                                    luna       ahead=0    behind=2     dirty=0   unpushed=0   ff           
+luna/knowbase-app/knowledge-admin-frontend           luna       ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowbase-admin-frontend
+luna/knowbase-app/knowledge-web-frontend             luna       ahead=0    behind=2     dirty=0   unpushed=0   ff            rename→knowbase-web-frontend
+luna/knowbase-app/knowledge-backend                  luna       ahead=0    behind=1     dirty=0   unpushed=0   ff            rename→knowbase-backend
+luna/investment-app                                  luna       ahead=0    behind=4     dirty=0   unpushed=0   ff           
+luna/investment-app/investment-backend               (detached) ahead=0    behind=4     dirty=0   unpushed=0   ff            branch≠luna
+luna/investment-app/investment-admin-frontend        (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠luna
+luna/investment-app/investment-web-frontend          (detached) ahead=0    behind=4     dirty=0   unpushed=0   ff            branch≠luna
+luna/tpl-app                                         luna       ahead=0    behind=2     dirty=0   unpushed=0   ff           
+luna/tpl-app/tpl-web-frontend                        (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠luna
+luna/tpl-app/tpl-backend                             (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠luna
+luna/tpl-app/tpl-admin-frontend                      (detached) ahead=0    behind=2     dirty=0   unpushed=0   ff            branch≠luna
+qwen/k8s                                             qwen       ahead=2    behind=0     dirty=1   unpushed=0   hold-dirty   
+qwen/runtime                                         qwen       ahead=0    behind=0     dirty=0   unpushed=0   ok           
+qwen/knowfeed-app                                    qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/knowfeed-app/knowfeed-admin-frontend            qwen       ahead=0    behind=0     dirty=0   unpushed=0   ok           
+qwen/knowfeed-app/knowfeed-web-frontend              qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/knowfeed-app/knowfeed-backend                   qwen       ahead=0    behind=0     dirty=0   unpushed=0   ok           
+qwen/knowbase-app                                    qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/knowbase-app/knowbase-admin-frontend            qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/knowbase-app/knowbase-web-frontend              qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/knowbase-app/knowbase-backend                   qwen       ahead=0    behind=0     dirty=0   unpushed=0   ok           
+qwen/investment-app                                  qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/investment-app/investment-backend               qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/investment-app/investment-admin-frontend        qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/investment-app/investment-web-frontend          qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/tpl-app                                         qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/tpl-app/tpl-web-frontend                        qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/tpl-app/tpl-backend                             qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+qwen/tpl-app/tpl-admin-frontend                      qwen       ahead=0    behind=1     dirty=0   unpushed=0   ff           
+== ~/master 父仓里不在当前 .gitmodules 的子仓目录（对齐后的旧名残留）
+exit=0
