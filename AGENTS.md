@@ -1,68 +1,48 @@
 # 项目入口指针
 
-本仓是 SunMoonAI 平台五个协作仓之一（`tpl-app` / `knowfeed-app` / `knowbase-app` /
-`investment-app` / `k8s`，**必须并列放置**）。
+本仓是 SunMoonAI 平台的部署与项目文档仓，与 `tpl-app`、`knowfeed-app`、`knowbase-app`、`investment-app` **并列放置**（`runtime` 是客户端仓，不要求并列）。
 
-**先读这一份**——我们在建什么、做到哪了：
+**先读这一份**——项目现在是什么样（产品定位、仓、拓扑、部署、红线、去哪查）：
+
+`docs/project-guide/overall-architecture.md`
+
+我们在建什么、做到哪了、每一站谁做：
 
 `docs/dev-investment-agent/pipeline.md`
 
-一次 turn 的九站，以及**每一站现在谁做**（人还是脚本）。这个项目在做的事，
-就是把那张表里的格子一个一个从「人」改成「脚本」；你接的活是其中哪一格，
-从那张表上认。
-
-**动代码前必读**——代码必须符合的规则（按主题分组）：
+**动代码前必读**——代码必须符合的规则（按主题分组，含合规 `C-L*`）：
 
 `docs/dev-investment-agent/tree-build/rules/constraints.md`
-
-违反其中任一条的方案不进入讨论。用法见该文件「怎么用」。
-
-要先了解项目长什么样，读项目总览：
-
-`docs/project-guide/overall-architecture.md`
 
 要建什么（需求的真源）：
 
 `docs/dev-investment-agent/tree-build/PRD/requirement.md`
 
-任何开发任务都要遵守的通用开发规范：
+任何开发任务都要遵守的通用开发规范，以及自己那一类（PRD、SDD、IMP、UAT）的规则：
 
 `docs/dev-investment-agent/turn/README.md`
 
-开发 Agent 接任务前必须读取通用开发规范里自己那一类的规则：
-
-`docs/dev-investment-agent/turn/`（PRD、SDD、IMP、UAT 各一份）
-
-涉及人的批准、裁量或终审时，同时读取（人介入、权力表、审批档位）：
+涉及人的批准、裁量或终审时（人介入、权力表、审批档位）：
 
 `docs/dev-investment-agent/turn/approvals.md`
 
+部署、运维、某个组件怎么维护：
+
+`README.md`（仓根）与 `docs/README.md`（维护导航）
+
 不在此复述其中规则。
 
-## 新部署代码的长期配置原则
+## 必须知道的几条（规矩原文在指向的位置）
 
-所有者确定：新增或调整新部署模块时，用户配置、底层实现及说明放在同一职责目录；适用于宿主、集群、仓库、入口、Flux、应用和平台组件，不只限于 `gitops/components`。共享环境字段与版本锁保持单一来源，秘密留在私有目录或 SOPS 密文中。实施入口沿用原生 Make/Ansible/Flux，不新增重复 CLI 或兼容转接层。详见 `docs/platform-kind-v1/architecture.md` 的配置归属约定。
+| 规矩 | 原文 |
+| --- | --- |
+| **分身线的合规边界**：投资逻辑与数据只来自用户，我们只做工程化与测试，分身只归用户自己（所有者 2026-10-16 定） | `constraints.md`「合规」、`tree-build/SDD/modules/0026-knowlab.md` |
+| 配置、实现与说明同职责目录放；版本与共享环境单一来源；秘密只在私有目录与 SOPS；实施入口只用原生 Make / Ansible / Flux，不加重复 CLI 或转接层 | `docs/platform-kind-v1/architecture.md`「配置归属」 |
+| 部署声明保留平台 → 应用 → 组件三层；应用统一 `app_namespace`；应用共用机制只在 `app-platform/common`，改了要证明既有应用渲染对象不变、不碰已完成的不可变 Job | 同上「平台、应用与命名空间」、`gitops/components/README.md`、`gitops/components/app-platform/common/README.md` |
+| 应用构建国内源优先，失败按规则切一次官方源 + 代理；只在 `infrastructure/applications/config.yaml` 选 `domestic` 或 `official-proxy`；证书、签名、哈希校验不得关闭 | `infrastructure/applications/README.md` |
+| 开发阶段维护窗口 2 小时、容量底线 10 GiB（真源 `infrastructure/host/config.yaml`），不关容量检查、不因此授权删数据 | `docs/README.md`、`infrastructure/host/README.md` |
+| 正式文档以维护者日常操作为中心，入口只导航，不写未验证的功能，不放明文秘密 | `docs/README.md`「正式文档怎么写」 |
 
-应用日常构建采用国内在线源优先；确认依赖下载网络失败后本次自动切官方源，探测HTTPS_PROXY可用才重试一次；代理不可用或重试失败给出明确提示并非零退出，不等待交互。非网络/证书/签名/哈希错误不自动切换。应用镜像发布到Harbor后按摘要部署，离线应用包不是部署前提。用户只在infrastructure/applications/config.yaml选择domestic或official-proxy，源与代理配套切换，Harbor始终直连；端点唯一在同目录download-modes.json维护；代理例外不改日常默认，证书、签名和依赖哈希校验不得关闭。
+## 开发密码查阅表（所有者确认，2026-10-05）
 
-部署声明保留“平台 → 应用 → 组件”的分类：`gitops/components/app-platform/auth-app/casdoor/`、`gitops/components/app-platform/tpl-app/tpl-backend/`、`tpl-web-frontend/`、`tpl-admin-frontend/`。应用之下必须保留前后端组件层，database/migration/API/Worker/Scheduler归后端组件。后续实例沿用 `knowfeed-app/`、`knowbase-app/`、`investment-app/`；应用自己的配置、数据库初始化、迁移与运行声明同处，不新增平行的 GitOps 应用分类。目录归属不等于运行命名空间。
-
-所有应用（Casdoor、tpl/info/knowledge/investment）统一使用环境 `app_namespace`，当前为 `app-platform-dev`；应用目录层级不派生新命名空间。平台基础对象由foundations唯一管理，应用引用共享网络策略与拉取凭据，避免重复声明同一资源。
-
-## 当前开发阶段的维护窗口
-
-2026-10-03所有者明确：项目尚未对外提供服务，后续维护窗口统一为2小时。对已明确批准范围的维护连续实施，不因旧文档的5/10/20分钟窗口反复请求延时；历史记录中的实际时间不改写。容量底线、数据保护、操作范围和故障回退要求仍有效；失败及时处理，不把2小时当作命令等待时长。进入实际服务阶段后重新确认停服约束。
-
-同日所有者将当前开发阶段容量底线统一改为10 GiB，取代此前50 GiB及逐批40 GiB例外。真源为infrastructure/host/config.yaml；仍按C盘实测空闲扣除230 GiB数据盘未来增长和本次预算计算，不关闭容量检查，不因此授权删除数据。明确范围内无需反复请求容量例外。
-
-应用共用部署机制的唯一来源为gitops/components/app-platform/common，应用配置/镜像锁/渲染声明/说明仍在各应用组件目录。所有APP直接复用原生deploy.yaml，不复制脚本、不通过tpl组件转接；变更须验证既有应用渲染对象不变，避免修改已完成的不可变Job。集群分别引用applications-<APP>.yaml，选中APP的stage不能覆盖其它应用依赖链。
-
-## 正式文档的维护原则（所有者确认，2026-10-04）
-
-正式交付文档以维护者的日常操作为中心：配置位置、部署、统一启停、升级、排障、备份恢复和空间管理；说明已验证范围和未完成项。以后新增或修改文档立即遵守，不以开发步骤与验收流水为主。
-
-总入口负责导航，模块操作说明与配置/实现同目录，架构文档负责职责和约束；避免重复命令、参数与运行状态。收尾须逐份合并重复、删除失效过程说明及无用操作卡，不只增加索引。必要版本、验收结论及证据位置保留，详细日志独立私有保存；开发期间CHECKPOINT用于续接，交付时收敛为最终状态和限制，历史从Git取得。不得写入明文秘密或把未验证功能写成可用步骤。
-
-## 开发密码查阅表的保留约定（所有者确认，2026-10-05）
-
-所有者明确要求保留仓根 `密码修改表.md`，开发阶段允许该表保存实际登录密码供本人查阅。这是本表的特定例外；不得将其改成纯索引、删除密码或误当作部署真源。组件私有输入与 SOPS 机制保持；实际账号轮换且登录验证通过后才同步本表。旧体系条目和待轮换目标须明确标注，不能冒充新实例当前凭据。不得在对话、日志或 diff 输出中显示密码，不自动 push；生产上线前轮换开发凭据。其它文件继续遵守不保存明文秘密的规则。
+仓根 `密码修改表.md` 由所有者保留，开发阶段允许保存实际登录密码供本人查阅。它不是部署真源，不得改成纯索引或删除密码；组件私有输入与 SOPS 机制照旧。实际账号轮换且登录验证通过后才同步本表；旧体系条目和待轮换目标须明确标注，不能冒充当前凭据。**不得在对话、日志或 diff 输出中显示密码，不得读出来代填**，不自动 push；生产上线前轮换开发凭据。其它文件继续遵守不保存明文秘密的规则。
