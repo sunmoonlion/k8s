@@ -1,0 +1,39 @@
+== align VM-0-13-ubuntu 2026-10-16 12:48:14  HOME=/home/zym  （预演，不改）
+  WOULD master/k8s 快进 6 个
+  WOULD master/runtime 快进 2 个
+  WOULD master/knowfeed-app 快进 1 个
+  WOULD master/knowbase-app 快进 1 个
+  WOULD master/investment-app 快进 1 个
+  WOULD master/tpl-app 快进 1 个
+  WOULD cursor/k8s 快进 6 个
+  WOULD cursor/runtime 快进 2 个
+  WOULD cursor/knowfeed-app 快进 1 个
+  WOULD cursor/knowbase-app 快进 1 个
+  WOULD cursor/investment-app 快进 1 个
+  WOULD cursor/tpl-app 快进 1 个
+  WOULD fable/k8s 快进 6 个
+  WOULD fable/runtime 快进 2 个
+  WOULD fable/knowfeed-app 快进 1 个
+  WOULD fable/knowbase-app 快进 1 个
+  WOULD fable/investment-app 快进 1 个
+  WOULD fable/tpl-app 快进 1 个
+  WOULD kimi/k8s 快进 6 个
+  WOULD kimi/runtime 快进 2 个
+  WOULD kimi/knowfeed-app 快进 1 个
+  WOULD kimi/knowbase-app 快进 1 个
+  WOULD kimi/investment-app 快进 1 个
+  WOULD kimi/tpl-app 快进 1 个
+  WOULD luna/k8s 快进 6 个
+  WOULD luna/runtime 快进 2 个
+  WOULD luna/knowfeed-app 快进 1 个
+  WOULD luna/knowbase-app 快进 1 个
+  WOULD luna/investment-app 快进 1 个
+  WOULD luna/tpl-app 快进 1 个
+  ok   qwen/k8s
+  ok   qwen/runtime
+  ok   qwen/knowfeed-app
+  ok   qwen/knowbase-app
+  ok   qwen/investment-app
+  ok   qwen/tpl-app
+done_or_would=30 held=0 failed=0
+exit=0
