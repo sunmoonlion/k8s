@@ -11,12 +11,14 @@ if [ -z "${WS:-}" ]; then
 fi
 WS="$WS"
 K8S="$HOME/worktrees/$WS/k8s"; ST="$K8S/docs/dev-investment-agent/switch-test"
-FIVE="k8s knowfeed-app investment-app knowbase-app tpl-app"
+FIVE="k8s knowfeed-app investment-app knowbase-app tpl-app knowlab-app knowmart-app"
 # 父仓下的全部子仓（与 human-remote.sh 同一份）
 SUBS="knowfeed-app/knowfeed-backend knowfeed-app/knowfeed-web-frontend knowfeed-app/knowfeed-admin-frontend
   investment-app/investment-backend investment-app/investment-web-frontend investment-app/investment-admin-frontend
   knowbase-app/knowbase-backend knowbase-app/knowbase-web-frontend knowbase-app/knowbase-admin-frontend
-  tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend"
+  tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend
+  knowlab-app/knowlab-backend knowlab-app/knowlab-web-frontend knowlab-app/knowlab-admin-frontend
+  knowmart-app/knowmart-backend knowmart-app/knowmart-web-frontend knowmart-app/knowmart-admin-frontend"
 
 pull() { # 仓目录 标签
   [ -e "$1/.git" ] || { echo "⚠ $2 不存在：$1"; return 1; }

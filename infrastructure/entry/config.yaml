@@ -36,6 +36,16 @@ entry_cluster_routes:
     hostnames:
       - '{{ investment_web_deployment.origin | urlsplit("hostname") }}'
       - '{{ investment_admin_deployment.origin | urlsplit("hostname") }}'
+  - name: knowlab
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ knowlab_web_deployment.origin | urlsplit("hostname") }}'
+      - '{{ knowlab_admin_deployment.origin | urlsplit("hostname") }}'
+  - name: knowmart
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ knowmart_web_deployment.origin | urlsplit("hostname") }}'
+      - '{{ knowmart_admin_deployment.origin | urlsplit("hostname") }}'
   - name: kibana
     backend: '127.0.0.1:{{ cluster_ingress_port }}'
     hostnames:

@@ -14,7 +14,7 @@
 
 | 选择 | 支持值/含义 |
 |---|---|
-| APP | tpl、knowfeed、knowbase、investment；每条应用命令显式指定 |
+| APP | tpl、knowfeed、knowbase、investment、knowlab、knowmart；每条应用命令显式指定 |
 | COMPONENT | backend、web、admin，用于application-source-plan |
 | application_download_mode | domestic或official-proxy；源与代理配套 |
 | 构建预算字段 | backend/frontends各自峰值；host检查再扣VHD增长 |

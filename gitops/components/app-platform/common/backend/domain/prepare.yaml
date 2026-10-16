@@ -75,7 +75,7 @@
       knowbase: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml") | from_yaml).knowbase_web_deployment.origin }}'
       investment: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/investment-app/investment-web-frontend/config.yaml") | from_yaml).investment_web_deployment.origin }}'
     # 谁带人去哪（PRD/apps/README.md 4.1）：investment 去 knowfeed、knowbase；knowbase 去 knowfeed；knowfeed 去 knowbase
-    target_names: "{{ {'investment': ['knowfeed','knowbase'], 'knowbase': ['knowfeed'], 'knowfeed': ['knowbase'], 'tpl': []}[application_name] }}"
+    target_names: "{{ {'investment': ['knowfeed','knowbase'], 'knowbase': ['knowfeed'], 'knowfeed': ['knowbase'], 'tpl': [], 'knowlab': [], 'knowmart': []}[application_name] }}"
     cross_app_targets: >-
       {% set out = {} %}{% for n in target_names %}{% set _ = out.update({n: {'web_base_url': web_origins[n]}}) %}{% endfor %}{{ out | to_json }}
     # 谁会把人带到这里、各自的回跳地址：investment 的工作台回跳；别的应用不回跳；自己不在名单里

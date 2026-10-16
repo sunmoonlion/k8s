@@ -116,4 +116,6 @@
 | 99 | **admin 的旧沙箱** `sandbox-u-f1cee6277692`：10-06 网页端按组织把关之前拉起的，admin 现在登不进网页端，没人用；`knowledge-api` 删后它连不上。按 0014 U4（账 68）走 investment 后端的回收（同时改 `workbench_sandboxes` 状态、收回令牌），不手删 k8s 对象；admin 登不进网页端，要给后端一个按用户的运维入口 | 改名 R6 查明属 admin | 同上第 7 条 | 待做；并入账 68 一起做 |
 | 100 | **两台机器上的改名残留删不删**：`~/rename-backup/`（改名前的旧检出、`*-old-subrepos/`）；本地机 fable、luna 工位下被忽略的 `k8s/sunmoonai/` 残留（各约 500K）与 `~/master/k8s/utils`（8K） | 改名与 `sunmoonai/` 移出后留下 | 同上第 3 条 | **已完成**（2026-10-16 所有者定「删了吧」「一起删了吧」：两台机器的 `~/rename-backup/`、各工位残留的 `k8s/sunmoonai/`、`k8s/utils/` 都已删，删前核过 git 没在跟踪） |
 | 101 | **`scripts/test_switch_test_sync.py` 有 3 个用例失败**（`test_detached_children_without_local_fable`、`test_new_child_commit_is_pushed_before_parent_gitlink`、`test_publish_rebases_onto_new_origin_commits`），`sunmoonai/` 移出前就如此 | 2026-10-16 移出时跑测试发现 | — | 待做；修同步脚本时顺带 |
+| 102 | **ELK 日志采集加上 knowlab、knowmart**：`gitops/components/data-platform/elk/collector/` 的 `config.yaml`（`elk_collector_applications`）、`prepare.yaml` 的名单断言、`acceptance.py` 的名单。它的配置身份含应用名单，改了采集器会滚动，所以没放进 qwen-003（那张卡要求现有对象一个不变），单独一张小卡做 | qwen-003 C 段 | — | 待做 |
+| 103 | **`infrastructure/applications/tests/test_build_selection.py` 对非 tpl 应用必然失败**：断言发布命令里不出现 `tpl-`，可 Makefile 的 `CONFIG_FILES` 总把各应用的配置（含 tpl）一并传进去；改动前就失败 9 个（3 应用 × 3 角色），加了 knowlab、knowmart 后是 15 个，同一原因 | qwen-003 C 段跑测试发现 | — | 待做 |
 

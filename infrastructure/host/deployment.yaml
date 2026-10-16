@@ -99,5 +99,13 @@
           PLATFORM_INVESTMENT_BACKEND := {{ ("investment-backend" in selection.applications.investment) | lower }}
           PLATFORM_INVESTMENT_WEB := {{ ("investment-web-frontend" in selection.applications.investment) | lower }}
           PLATFORM_INVESTMENT_ADMIN := {{ ("investment-admin-frontend" in selection.applications.investment) | lower }}
+          PLATFORM_KNOWLAB := {{ (selection.applications.knowlab | length > 0) | lower }}
+          PLATFORM_KNOWLAB_BACKEND := {{ ("knowlab-backend" in selection.applications.knowlab) | lower }}
+          PLATFORM_KNOWLAB_WEB := {{ ("knowlab-web-frontend" in selection.applications.knowlab) | lower }}
+          PLATFORM_KNOWLAB_ADMIN := {{ ("knowlab-admin-frontend" in selection.applications.knowlab) | lower }}
+          PLATFORM_KNOWMART := {{ (selection.applications.knowmart | length > 0) | lower }}
+          PLATFORM_KNOWMART_BACKEND := {{ ("knowmart-backend" in selection.applications.knowmart) | lower }}
+          PLATFORM_KNOWMART_WEB := {{ ("knowmart-web-frontend" in selection.applications.knowmart) | lower }}
+          PLATFORM_KNOWMART_ADMIN := {{ ("knowmart-admin-frontend" in selection.applications.knowmart) | lower }}
           PLATFORM_COMPONENT_IMAGES := {{ selection.component_images | default([]) | join(",") }}
       when: selection_persist | bool and deployment_action in ['select','deploy','stage','build','check']

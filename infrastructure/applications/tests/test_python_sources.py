@@ -23,7 +23,7 @@ class PythonSources(unittest.TestCase):
         return subprocess.run([sys.executable,str(APP/'select-python-source.py'),'--context',str(context),'--mode',mode],capture_output=True,text=True)
 
     def test_all_four_locks_roundtrip_without_dependency_changes(self):
-        for app in ['tpl','knowfeed','knowbase','investment']:
+        for app in ['tpl','knowfeed','knowbase','investment','knowlab','knowmart']:
             with self.subTest(app=app), tempfile.TemporaryDirectory(prefix='sunmoon-tpl-build-test-') as temporary:
                 context=self.project(temporary,app)
                 before={p.name:p.read_bytes() for p in context.iterdir()}

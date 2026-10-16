@@ -1,0 +1,30 @@
+# 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
+# enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
+---
+prepare: {file: app-platform/common/backend/prepare.yaml, vars: {application_name: knowmart}}
+defaults: {enabled: '{{ knowmart_deployment.enabled }}', timeout: 8m}
+stages:
+- name: knowmart-database
+  path: database
+  dependsOn: [postgresql]
+  resources: [workload.yaml, bootstrap.sops.yaml, runtime.sops.yaml]
+- name: knowmart-migration
+  path: migration
+  dependsOn: [knowmart-database]
+  resources: [workload.yaml, auth.sops.yaml]
+- name: knowmart-redis
+  path: redis
+  dependsOn: [knowmart-migration, redis]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: knowmart-rabbitmq
+  path: rabbitmq
+  dependsOn: [knowmart-redis, rabbitmq]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: knowmart-identity
+  path: identity
+  dependsOn: [knowmart-rabbitmq, casdoor]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: knowmart-runtime
+  path: runtime
+  dependsOn: [knowmart-identity]
+  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["storage.sops.yaml"] if knowmart_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if knowmart_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if knowmart_backend_deployment.knowbase_service.enabled | default(false) else []) + (["domain.sops.yaml"] if knowmart_backend_deployment.domain_secrets | default({}) | length > 0 else []) }}'

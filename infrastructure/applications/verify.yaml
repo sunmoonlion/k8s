@@ -60,7 +60,7 @@
         quiet: true
         that:
           - not ansible_check_mode
-          - application_name in ['tpl','knowfeed','knowbase','investment']
+          - application_name in ['tpl','knowfeed','knowbase','investment','knowlab','knowmart']
           - application_action == 'check'
           - application_action == 'plan' or cfg.enabled | bool
           - selected_application_components | length > 0

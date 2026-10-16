@@ -1,6 +1,6 @@
 # knowlab-app 与 knowmart-app 开工：建仓、实例化、跑通空应用
 
-> **状态：所有者 2026-10-16 批准（「批准」），下面「要所有者先定的」四项按默认。**A 段过（`scripts/results/qwen-003-A.*`，gitee 空仓不能公开，暂私有）；B 段过（`scripts/results/opus-003-B.*`，顺带修好了 tpl-app 的 `init.sh`）。现在：Qwen 把 gitee 8 个仓改公开；Opus 做 C 段。** Opus 2026-10-16 在远程机写。设计：[0026 knowlab](../../../tree-build/SDD/modules/0026-knowlab.md)、[0018 knowmart](../../../tree-build/SDD/modules/0018-advisor-market.md)（私有模式）。本卡只做到「两个空应用在本地集群跑起来、能登录」，不写任何业务功能。
+> **状态：所有者 2026-10-16 批准（「批准」），下面「要所有者先定的」四项按默认。**A 段过（`scripts/results/qwen-003-A.*`，gitee 空仓不能公开，暂私有）；B 段过（`scripts/results/opus-003-B.*`，顺带修好了 tpl-app 的 `init.sh`）。gitee 8 个仓已改公开（匿名 ls-remote 能取到提交号）；C 段过（`scripts/results/opus-003-C.*`）。**现在做 D 段。** Opus 2026-10-16 在远程机写。设计：[0026 knowlab](../../../tree-build/SDD/modules/0026-knowlab.md)、[0018 knowmart](../../../tree-build/SDD/modules/0018-advisor-market.md)（私有模式）。本卡只做到「两个空应用在本地集群跑起来、能登录」，不写任何业务功能。
 >
 > 分四段，一段一停：A（Qwen 建远端仓）→ B（Opus 实例化并推代码）→ C（Opus 写部署声明、改各处仓清单）→ D（Qwen 在本地集群发布并在浏览器核对）。每段交回执，Opus 审过再开下一段。A、D 两段 Qwen 做；B、C 两段 Opus 做，这里写出来是让所有者一次看全。
 
@@ -48,9 +48,115 @@ knowmart-app  knowmart-backend  knowmart-web-frontend  knowmart-admin-frontend
 
 ## D 段（Qwen，本地机）：发布与浏览器核对
 
-照发布链（总览 §6）对 `APP=knowlab`、`APP=knowmart` 各做一遍：`platform-build` → `platform-stage` → `application-deployment-plan` → 提交 → `flux-release` → 晋级 → `flux-source-apply` → `application-check`。Windows hosts 加四个域名（UAC 由所有者点）。浏览器里：四个地址都能打开，网页端用 `sunmoonai` 账号、管理端用 admin 能登录（**登录由所有者自己输口令**，Qwen 只核截图）。`platform-status` 与六个 `application-check`（tpl、knowfeed、knowbase、investment、knowlab、knowmart）都是 0。具体命令 C 段审过后由 Opus 补进本卡。
+必须用 bash。每一步出 `exit` 不为 0、`STOP`、或与「要看到」不符就停，把输出原样交上来，不修、不重跑。命令里不贴口令与令牌。
 
-- 回传：`k8s/scripts/results/qwen-003-D.<时间>.md`
+**D0 前提**（所有者先做）：两台机器上，`toolboxes` 的 `Vlinux/utils/set-up-tools/model-switch/repos.conf` 末尾加两行 `$HOME/master/knowlab-app`、`$HOME/master/knowmart-app`；`~/five-repos-sync/config.sh` 的 `REPOS=( … )` 里加 `"knowlab-app"`、`"knowmart-app"`。远程机的两个新仓 Opus 已挂好。
+
+**D1 本地机挂上两个新仓**（布局同 `mb`：`~/master/<仓>` 在 master，五个工位各一个同名分支，子仓推送地址 GitHub + gitee）：
+
+```bash
+for a in knowlab knowmart; do
+  M=~/master/$a-app; [ -e "$M" ] && { echo "STOP $M 已存在"; break; }
+  git clone -q --recurse-submodules git@github.com:sunmoonlion/$a-app.git "$M" || { echo "STOP clone $a"; break; }
+  sp() { git -C "$1" config --unset-all remote.origin.pushurl 2>/dev/null; git -C "$1" config --add remote.origin.pushurl git@github.com:sunmoonlion/$2.git; git -C "$1" config --add remote.origin.pushurl https://gitee.com/sunmoonlion/$2.git; }
+  sp "$M" $a-app
+  for c in backend web-frontend admin-frontend; do git -C "$M/$a-$c" checkout -q -B master; git -C "$M/$a-$c" remote set-url origin git@github.com:sunmoonlion/$a-$c.git; sp "$M/$a-$c" $a-$c; done
+  for ws in cursor fable kimi luna qwen; do
+    W=~/worktrees/$ws/$a-app; [ -e "$W" ] && { echo "STOP $W 已存在"; continue; }
+    git -C "$M" worktree add -q -b $ws "$W" master && git -C "$W" submodule update --init -q
+    for c in backend web-frontend admin-frontend; do git -C "$W/$a-$c" checkout -q -B $ws; git -C "$W/$a-$c" remote set-url origin git@github.com:sunmoonlion/$a-$c.git; sp "$W/$a-$c" $a-$c; done
+    echo "mounted $ws/$a-app $(git -C "$W" rev-parse --short HEAD)"
+  done
+done
+cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen && git log --oneline -1
+bash docs/dev-investment-agent/switch-test/align_workstations.sh list 2>&1 | grep -E 'know(lab|mart)' | grep -v ' ok ' ; echo list-done
+```
+
+要看到：10 行 `mounted`（两个应用 × 五个工位）；最后除了 `list-done` 没有别的行。
+
+**D2 现有应用一个都不变**（同改名时的验法：重新 stage 现有应用，`git status` 里它们的文件不该有任何变动；**不要跑 `platform-stage OBJECT=all`**，见待办账 97）：
+
+```bash
+cd ~/worktrees/qwen/k8s
+make -C infrastructure topology-stage OBJECT=all; echo "topology exit=$?"
+for o in app-platform/tpl-app app-platform/knowfeed-app app-platform/knowbase-app app-platform/investment-app; do
+  echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
+done
+git status --short gitops | awk '{print $2}' | sed -E 's#^gitops/(components/[^/]+/[^/]+(/[^/]+)?|clusters/kind)/.*#\1#' | sort | uniq -c
+```
+
+要看到：全是 `exit=0`；`git status` 只有 `clusters/kind`（`stages.yaml` 加了两个应用的阶段）与两个新应用目录，tpl、knowfeed、knowbase、investment **没有任何一行**。有就停。
+
+**D3 构建两个新应用并 stage**：
+
+```bash
+for o in app-platform/knowlab-app app-platform/knowmart-app; do
+  echo "===== build $o"; make -C infrastructure platform-build OBJECT=$o 2>&1 | tail -n 12; rc=${PIPESTATUS[0]}; echo "exit=$rc"; [ "$rc" = 0 ] || break
+done
+for o in app-platform/knowlab-app app-platform/knowmart-app; do
+  echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
+done
+for a in knowlab knowmart; do make -C infrastructure application-deployment-plan APP=$a; echo "plan $a exit=$?"; done
+git status --short gitops | awk '{print $2}' | sed -E 's#^gitops/(components/[^/]+/[^/]+(/[^/]+)?|clusters/kind)/.*#\1#' | sort | uniq -c
+grep -rln "BEGIN PRIVATE KEY\|BEGIN PUBLIC KEY" gitops/ | head -3; echo key-check-done
+sudo ls /etc/sunmoon/applications/sunmoon-kind/
+```
+
+要看到：全是 `exit=0`；`git status` 只有 `clusters/kind` 与两个新应用（含 `image.lock.yaml`、`workload.yaml`、`*.sops.yaml`）；`key-check-done` 前没有任何文件名；私有目录里多了 `knowlab`、`knowmart`。
+
+**D4 提交、发布、晋级**（同改名 R5.2）：
+
+```bash
+git add gitops && git -c core.editor=true commit -m "deploy: knowlab、knowmart 两个空应用上线（qwen-003 D）"
+make -C infrastructure flux-release; echo "exit=$?"
+sudo cat infrastructure/.build/flux/source-candidate.yaml | sudo tee infrastructure/environments/kind/flux-source.yaml >/dev/null
+sudo chown "$(id -u):$(id -g)" infrastructure/environments/kind/flux-source.yaml 2>/dev/null; git diff --stat infrastructure/environments/kind/flux-source.yaml
+git add infrastructure/environments/kind/flux-source.yaml && git -c core.editor=true commit -m "release(kind): 晋级到 $(git rev-parse --short HEAD)（qwen-003 D）"
+make -C infrastructure flux-source-apply; echo "exit=$?"
+export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl)
+$K -n flux-system get kustomizations -o name | grep -E '/know(lab|mart)-' | xargs $K -n flux-system wait --for=condition=Ready --timeout=40m; echo "wait exit=$?"
+$K -n flux-system get kustomizations | grep -v True
+git push origin qwen
+```
+
+要看到：`flux-release`、`flux-source-apply`、`wait` 都是 0；`get kustomizations | grep -v True` 只剩表头。
+
+**D5 入口加两个应用的域名**（HAProxy 只是加两条分流，现有分流不变；会停几秒）：
+
+```bash
+make -C infrastructure entry-plan 2>&1 | grep -E "knowlab|knowmart" | head
+make -C infrastructure entry-preview; echo "exit=$?"
+make -C infrastructure entry-stop; echo "exit=$?"
+make -C infrastructure entry-deploy; echo "exit=$?"
+make -C infrastructure entry-status; echo "exit=$?"
+```
+
+**D6 Windows hosts 加四个域名**（先在副本上演练；真改弹 UAC，所有者点「是」）：
+
+```bash
+cp docs/dev-investment-agent/switch-test/windows_hosts_add.ps1 /mnt/c/Users/zymun/hosts-add.ps1
+N="'knowlab.sunmoonai.com','knowlab-admin.sunmoonai.com','knowmart.sunmoonai.com','knowmart-admin.sunmoonai.com'"
+cat /mnt/c/Windows/System32/drivers/etc/hosts > /mnt/c/Users/zymun/hosts-add-rehearsal
+powershell.exe -NoProfile -Command "\$env:HOSTS_FILE='C:\Users\zymun\hosts-add-rehearsal'; \$env:HOSTS_OUT='C:\Users\zymun\hosts-add-rehearsal.txt'; powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\zymun\hosts-add.ps1 knowlab.sunmoonai.com knowlab-admin.sunmoonai.com knowmart.sunmoonai.com knowmart-admin.sunmoonai.com; 'exit=' + \$LASTEXITCODE"
+iconv -f GBK -t UTF-8 /mnt/c/Users/zymun/hosts-add-rehearsal.txt; diff /mnt/c/Windows/System32/drivers/etc/hosts /mnt/c/Users/zymun/hosts-add-rehearsal
+# 演练 exit=0、diff 只多一行 127.0.0.1 加四个域名，才做真改：
+powershell.exe -NoProfile -Command "Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','C:\Users\zymun\hosts-add.ps1',$N"
+iconv -f GBK -t UTF-8 "/mnt/c/Users/zymun/AppData/Local/Temp/hosts-add-result.txt"
+rm -f /mnt/c/Users/zymun/hosts-add-rehearsal /mnt/c/Users/zymun/hosts-add-rehearsal.bak-add-* /mnt/c/Users/zymun/hosts-add-rehearsal.txt
+```
+
+**D7 检查**：
+
+```bash
+for a in tpl knowfeed knowbase investment knowlab knowmart; do echo "===== check $a"; make -C infrastructure application-check APP=$a; echo "exit=$?"; done
+make -C infrastructure platform-status; echo "exit=$?"
+```
+
+要看到：六个 `application-check` 与 `platform-status` 都是 0。
+
+**D8 浏览器**（所有者自己登录，Qwen 只核截图，截图不截地址栏里的 `code=` 等回跳参数）：`https://knowlab.sunmoonai.com:30443`、`https://knowmart.sunmoonai.com:30443` 用 sunmoonai 账号登录进 dashboard；`https://knowlab-admin.sunmoonai.com:30443`、`https://knowmart-admin.sunmoonai.com:30443` 用 admin 登录进治理控制台。
+
+- 回传：`k8s/scripts/results/qwen-003-D.<时间>.md`（各步输出与截图描述），提交推送后停下等 Opus 审。
 
 ## 不做的
 

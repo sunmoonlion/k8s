@@ -11,12 +11,14 @@ fi
 WS="$WS"
 WORKTREE_ROOT="${WORKTREE_ROOT:-$HOME/worktrees/$WS}"
 SYNC_SCRIPT="${SYNC_SCRIPT:-$HOME/five-repos-sync/sync-five-repos.sh}"
-FIVE="k8s knowfeed-app investment-app knowbase-app tpl-app"
+FIVE="k8s knowfeed-app investment-app knowbase-app tpl-app knowlab-app knowmart-app"
 # 父仓下的全部子仓（前端也在内：2026-10-08 luna 的网页修复因只列了两个后端而没推上来）
 SUBS="knowfeed-app/knowfeed-backend knowfeed-app/knowfeed-web-frontend knowfeed-app/knowfeed-admin-frontend
   investment-app/investment-backend investment-app/investment-web-frontend investment-app/investment-admin-frontend
   knowbase-app/knowbase-backend knowbase-app/knowbase-web-frontend knowbase-app/knowbase-admin-frontend
-  tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend"
+  tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend
+  knowlab-app/knowlab-backend knowlab-app/knowlab-web-frontend knowlab-app/knowlab-admin-frontend
+  knowmart-app/knowmart-backend knowmart-app/knowmart-web-frontend knowmart-app/knowmart-admin-frontend"
 OTHERS="$SUBS runtime"
 pushed=()
 changed=()

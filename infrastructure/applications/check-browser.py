@@ -165,7 +165,7 @@ def _check_surfaces(settings, Browser, member, outcomes):
                                           method='POST', headers=headers)
             require(status == 403, 'Unprivileged browser could invoke administrator diagnostic')
             permission_denied = True
-        if surface == 'web' and settings['application'] == 'tpl':
+        if surface == 'web' and settings['application'] in ('tpl', 'knowlab', 'knowmart'):  # 由模板实例化、还没有业务的应用
             status, _, body = browser.request(origin + '/api/web/v1/runs/00000000-0000-5000-8000-000000000001')
             require(status == 503 and json.loads(body).get('error', {}).get('code') == 'provider_unavailable',
                     'Production template unexpectedly exposes a reference business fixture')

@@ -28,10 +28,10 @@ export OBJECT SITE
 COMPONENT ?= backend
 ifneq ($(filter application-build-% application-publish-% application-source-plan application-deployment-plan application-render application-stage application-validate-release application-check application-check-public application-bootstrap,$(MAKECMDGOALS)),)
 ifneq ($(words $(APP)),1)
-$(error APP must be tpl, knowfeed, knowbase or investment)
+$(error APP must be tpl, knowfeed, knowbase, investment, knowlab or knowmart)
 endif
-ifneq ($(filter $(APP),tpl knowfeed knowbase investment),$(APP))
-$(error APP must be tpl, knowfeed, knowbase or investment)
+ifneq ($(filter $(APP),tpl knowfeed knowbase investment knowlab knowmart),$(APP))
+$(error APP must be tpl, knowfeed, knowbase, investment, knowlab or knowmart)
 endif
 endif
 # Every ordinary field has one source; the explicit list also documents the input closure.
@@ -57,6 +57,14 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml \
 	../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml \
 	../gitops/components/app-platform/investment-app/config.yaml \
+	../gitops/components/app-platform/knowlab-app/config.yaml \
+	../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml \
+	../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml \
+	../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml \
+	../gitops/components/app-platform/knowmart-app/config.yaml \
+	../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml \
+	../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml \
+	../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml \
 	../gitops/components/app-platform/investment-app/investment-backend/config.yaml \
 	../gitops/components/app-platform/investment-app/investment-backend/agent-releases/config.yaml \
 	../gitops/components/app-platform/investment-app/investment-web-frontend/config.yaml \
@@ -419,6 +427,8 @@ platform-deploy-selected:
 	$(if $(filter true,$(PLATFORM_KNOWFEED)),$(MAKE) application-bootstrap APP=knowfeed)
 	$(if $(filter true,$(PLATFORM_KNOWBASE)),$(MAKE) application-bootstrap APP=knowbase)
 	$(if $(filter true,$(PLATFORM_INVESTMENT)),$(MAKE) application-bootstrap APP=investment)
+	$(if $(filter true,$(PLATFORM_KNOWLAB)),$(MAKE) application-bootstrap APP=knowlab)
+	$(if $(filter true,$(PLATFORM_KNOWMART)),$(MAKE) application-bootstrap APP=knowmart)
 	$(if $(filter host,$(OBJECT)),$(MAKE) platform-install-lifecycle)
 
 .PHONY: host-lifecycle-plan platform-install-lifecycle platform-enable-boot platform-start platform-stop platform-status
@@ -442,6 +452,8 @@ platform-check-selected:
 	$(if $(filter true,$(PLATFORM_KNOWFEED)),$(MAKE) application-check-public APP=knowfeed)
 	$(if $(filter true,$(PLATFORM_KNOWBASE)),$(MAKE) application-check-public APP=knowbase)
 	$(if $(filter true,$(PLATFORM_INVESTMENT)),$(MAKE) application-check-public APP=investment)
+	$(if $(filter true,$(PLATFORM_KNOWLAB)),$(MAKE) application-check-public APP=knowlab)
+	$(if $(filter true,$(PLATFORM_KNOWMART)),$(MAKE) application-check-public APP=knowmart)
 
 # Public object navigation is read-only. Lifecycle candidate generation is an internal host operation.
 .PHONY: platform-plan platform-config platform-status
@@ -463,7 +475,7 @@ platform-stage: platform-selection
 	$(MAKE) platform-stage-selected
 platform-stage-selected:
 	@.venv/bin/python -c 'import json,os; d=json.load(open("$(SELECTION_PREFIX).json")); assert d["object"]==os.environ["OBJECT"] and d["action"]=="stage", "Run the public platform-stage entry to validate this object afresh"'
-	$(if $(filter true,$(PLATFORM_FOUNDATIONS) $(PLATFORM_SERVICES) $(PLATFORM_TPL) $(PLATFORM_KNOWFEED) $(PLATFORM_KNOWBASE) $(PLATFORM_INVESTMENT)),$(MAKE) services-stage)
+	$(if $(filter true,$(PLATFORM_FOUNDATIONS) $(PLATFORM_SERVICES) $(PLATFORM_TPL) $(PLATFORM_KNOWFEED) $(PLATFORM_KNOWBASE) $(PLATFORM_INVESTMENT) $(PLATFORM_KNOWLAB) $(PLATFORM_KNOWMART)),$(MAKE) services-stage)
 platform-build: SELECTION_ACTION=build
 platform-build: platform-selection
 	$(MAKE) platform-build-selected
@@ -481,6 +493,12 @@ platform-build-selected:
 	$(if $(filter true,$(PLATFORM_INVESTMENT_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=investment)
 	$(if $(filter true,$(PLATFORM_INVESTMENT_WEB)),$(MAKE) application-build-web application-publish-web APP=investment)
 	$(if $(filter true,$(PLATFORM_INVESTMENT_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=investment)
+	$(if $(filter true,$(PLATFORM_KNOWLAB_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=knowlab)
+	$(if $(filter true,$(PLATFORM_KNOWLAB_WEB)),$(MAKE) application-build-web application-publish-web APP=knowlab)
+	$(if $(filter true,$(PLATFORM_KNOWLAB_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=knowlab)
+	$(if $(filter true,$(PLATFORM_KNOWMART_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=knowmart)
+	$(if $(filter true,$(PLATFORM_KNOWMART_WEB)),$(MAKE) application-build-web application-publish-web APP=knowmart)
+	$(if $(filter true,$(PLATFORM_KNOWMART_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=knowmart)
 	$(foreach image,$(subst $(COMMA), ,$(PLATFORM_COMPONENT_IMAGES)),$(MAKE) component-build component-publish IMAGE=$(image) &&) true
 
 # 自研的非应用镜像（applications/component-images.yaml）：同一条构建链，产物到 Harbor 的 platform/<名字>，锁进 gitops/components/<对象>/image.lock.yaml
