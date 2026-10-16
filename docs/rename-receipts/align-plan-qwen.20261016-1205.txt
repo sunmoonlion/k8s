@@ -1,0 +1,39 @@
+== align wsl-dev 2026-10-16 12:05:56  HOME=/home/zymun  （预演，不改）
+  WOULD master/k8s 快进 1029 个
+  WOULD master/runtime 快进 98 个
+  WOULD master/knowfeed-app 快进 30 个；挪走旧子仓目录: info-admin-frontend info-web-frontend info-backend
+  WOULD master/knowbase-app 快进 27 个；挪走旧子仓目录: knowledge-admin-frontend knowledge-web-frontend knowledge-backend
+  WOULD master/investment-app 快进 98 个
+  WOULD master/tpl-app 快进 15 个
+  WOULD cursor/k8s 快进 133 个
+  WOULD cursor/runtime 快进 5 个
+  WOULD cursor/knowfeed-app 快进 2 个；挪走旧子仓目录: info-admin-frontend info-web-frontend info-backend
+  WOULD cursor/knowbase-app 快进 2 个；挪走旧子仓目录: knowledge-admin-frontend knowledge-web-frontend knowledge-backend
+  WOULD cursor/investment-app 快进 4 个
+  WOULD cursor/tpl-app 快进 2 个
+  WOULD fable/k8s 快进 133 个
+  WOULD fable/runtime 快进 5 个
+  WOULD fable/knowfeed-app 快进 2 个；挪走旧子仓目录: info-admin-frontend info-web-frontend info-backend
+  WOULD fable/knowbase-app 快进 2 个；挪走旧子仓目录: knowledge-admin-frontend knowledge-web-frontend knowledge-backend
+  WOULD fable/investment-app 快进 4 个
+  WOULD fable/tpl-app 快进 2 个
+  WOULD kimi/k8s 快进 133 个
+  WOULD kimi/runtime 快进 5 个
+  WOULD kimi/knowfeed-app 快进 2 个；挪走旧子仓目录: info-admin-frontend info-web-frontend info-backend
+  WOULD kimi/knowbase-app 快进 2 个；挪走旧子仓目录: knowledge-admin-frontend knowledge-web-frontend knowledge-backend
+  WOULD kimi/investment-app 快进 4 个
+  WOULD kimi/tpl-app 快进 2 个
+  WOULD luna/k8s 快进 133 个
+  WOULD luna/runtime 快进 5 个
+  WOULD luna/knowfeed-app 快进 2 个；挪走旧子仓目录: info-admin-frontend info-web-frontend info-backend
+  WOULD luna/knowbase-app 快进 2 个；挪走旧子仓目录: knowledge-admin-frontend knowledge-web-frontend knowledge-backend
+  WOULD luna/investment-app 快进 4 个
+  WOULD luna/tpl-app 快进 2 个
+  ok   qwen/k8s（比 master 多 2 个，都已推到 origin/qwen，等 master 跟上）
+  ok   qwen/runtime
+  WOULD qwen/knowfeed-app 快进 1 个
+  WOULD qwen/knowbase-app 快进 1 个
+  WOULD qwen/investment-app 快进 1 个
+  WOULD qwen/tpl-app 快进 1 个
+done_or_would=34 held=0 failed=0
+exit=0
