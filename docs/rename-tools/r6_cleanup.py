@@ -438,7 +438,8 @@ def ragflow_call(action):
 
 
 def ragflow_list():
-    return {"datasets": [dict(d, listed=d["name"] in RAGFLOW_DATASETS) for d in ragflow_call("list")]}
+    # 只报带旧名的；新数据集 sunmoon-kind-knowbase-default 与验收用的不列，免得混进「不在清单」
+    return {"datasets": [dict(d, listed=d["name"] in RAGFLOW_DATASETS) for d in ragflow_call("list") if re.search(r"(info|knowledge)", d["name"])]}
 
 
 def ragflow_delete(found):

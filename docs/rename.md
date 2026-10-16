@@ -639,7 +639,7 @@ make -C infrastructure platform-status; echo "exit=$?"
 
 **停点**：回执 `R6.2-qwen.<时间>.md` 连同 `R6.2-*.txt` 提交推送，Opus 审过在本节写「改名完成」，冻结解除，Cursor 恢复接卡（用新名字）。
 
-**状态**：草稿 · 2026-10-15 · Opus。R5 通过后按现场核一遍再改「可执行」。
+**状态**：**可执行（R6.1）** · 2026-10-17 · Opus。R5 通过后按现场核过一遍：清单、归属记号、私有文件键名（RAGFlow 仍是 `knowledge_token`）与现行配置一致；RAGFlow 一类只报带旧名的数据集。R6.1 只列不删，交回执后停；R6.2 等 Opus 写「R6.1 通过」。
 
 ---
 
