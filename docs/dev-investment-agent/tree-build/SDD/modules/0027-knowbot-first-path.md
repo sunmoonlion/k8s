@@ -46,7 +46,7 @@ knowlab ──交付──▶ knowmart  登记分身与版本（私有，只归�
 | investment 收回跳 | investment 后端 | 用户会话 | 拿 `knowbot` 用上一行接口按会话里的 owner 核一次，核过才显示「已选」并允许提交；伪造或别人的分身得到「找不到」 |
 | 沙箱 MCP `sunmoon_knowlab`（只读） | 分身运行时 | investment 签发的运行令牌 | `list_my_data`、`read_my_data`：只能读令牌里列出的数据集（= 这一版的 `data_bindings`），且 knowlab 再核一次数据归令牌里的 owner |
 
-- **跳转与单点登录**：工作台到 knowmart 用现成的 `CrossAppLink`（业务参数 + `from=investment` + `ref`）。sunmoonai 组织里 investment、knowlab、knowmart 三个网页端应用在 Casdoor 打开「保持登录会话」与「自动登录」，在一处登录后跳到另两处不再输密码；退出登录同时结束 Casdoor 会话（公用电脑上下一位不会以上一位身份进入）。这两个开关在 Casdoor 4.12 的实际行为先在实验环境核实再改正式配置；单点登录用到的接口按实走重录边缘放行清单（待办 65 的做法）。以后对外市场沿用同一套跳转。
+- **跳转与单点登录**：工作台到 knowmart 用现成的 `CrossAppLink`（业务参数 + `from=investment` + `ref`）。sunmoonai 组织里 investment、knowlab、knowmart 三个网页端应用在 Casdoor 打开「保持登录会话」与「自动登录」，在一处登录后跳到另两处不再输密码；退出登录同时结束 Casdoor 会话（公用电脑上下一位不会以上一位身份进入）。2026-10-16 实验核实（[记录](../../../../../scripts/results/opus-0027-P1b-sso-lab.20261016-1753.md)）：两个开关**都开**才免登（授权请求服务端直接 302 回调）；退出用 `/api/logout` 带登录时的 id_token 才能结束会话并跳回（模板后端要在服务端会话里存 id_token）；会话时长由 `app.conf` 的 `sessionCookieLifeTime` 定（默认 30 天，时长待所有者定）；边缘放行清单加 `/api/logout`。以后对外市场沿用同一套跳转。
 - **跨应用的用户标识用 Casdoor 用户 id（`sub`）**，三个应用各自的本地 actor id 不出应用（`C-D14`）。
 - 运行令牌沿用工作台已有的签名密钥对（`workbench-signing`：investment 私钥签，knowbase、relay 已持公钥），knowlab 加为公钥持有方；令牌带 `aud=knowlab`、`sub`、`knowbot`、`version`、`task`、`datasets`、`exp`，委托到终态即作废（同 0018 §四的生命周期规则）。
 
