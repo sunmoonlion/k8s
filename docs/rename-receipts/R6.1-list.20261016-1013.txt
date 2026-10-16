@@ -1,0 +1,2086 @@
+===== k8s · 现状
+{
+ "flux_kustomizations": [
+  {
+   "name": "info-admin",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "info-database",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "info-identity",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "info-migration",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "info-rabbitmq",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "info-redis",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "info-runtime",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "info-service-identity",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "info-storage",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "info-web",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "knowledge-admin",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "knowledge-database",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "knowledge-identity",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "knowledge-migration",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "knowledge-provider",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "knowledge-rabbitmq",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "knowledge-redis",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "knowledge-runtime",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  },
+  {
+   "name": "knowledge-web",
+   "ready": "False",
+   "listed": true,
+   "in_current_stages": false
+  }
+ ],
+ "objects": [
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "info-browser-identity",
+   "stage": "info-identity"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "info-celery-config",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "info-identity-provision-v1",
+   "stage": "info-identity"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "info-identity-provision-v2",
+   "stage": "info-identity"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "info-identity-provision-v3",
+   "stage": "info-identity"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "info-runtime",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "info-schema-check-v1",
+   "stage": "info-migration"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "info-schema-check-v2",
+   "stage": "info-migration"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "info-service-ca",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "info-service-provision-v1",
+   "stage": "info-service-identity"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-browser-identity",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-celery-config",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-provision-v1",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-provision-v2",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-provision-v3",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-runtime",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-schema-check-v1",
+   "stage": "knowledge-migration"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-schema-check-v2",
+   "stage": "knowledge-migration"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "data-platform-dev",
+   "name": "info-redis-provision-v1",
+   "stage": "info-redis"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "data-platform-dev",
+   "name": "info-redis-provision-v2",
+   "stage": "info-redis"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "data-platform-dev",
+   "name": "info-storage-policy-v1",
+   "stage": "info-storage"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "data-platform-dev",
+   "name": "info-storage-policy-v2",
+   "stage": "info-storage"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "data-platform-dev",
+   "name": "info-storage-policy-v3",
+   "stage": "info-storage"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-provision-v1",
+   "stage": "knowledge-redis"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-provision-v2",
+   "stage": "knowledge-redis"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-source-policy-v1",
+   "stage": "knowledge-provider"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-source-policy-v2",
+   "stage": "knowledge-provider"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "messaging-platform-dev",
+   "name": "info-rabbitmq-provision-v1",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "messaging-platform-dev",
+   "name": "info-rabbitmq-provision-v2",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-provision-v1",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "type": "configmaps",
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-provision-v2",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "info-browser-secrets",
+   "stage": "info-identity"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "info-database-runtime",
+   "stage": "info-database"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "info-identity-provision",
+   "stage": "info-identity"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "info-knowledge-service",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "info-migration-auth",
+   "stage": "info-migration"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "info-rabbitmq-runtime",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "info-redis-runtime",
+   "stage": "info-redis"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "info-service-provision",
+   "stage": "info-service-identity"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "info-storage-runtime",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "info-tls",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-browser-secrets",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-database-runtime",
+   "stage": "knowledge-database"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-domain-runtime",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-provision",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-migration-auth",
+   "stage": "knowledge-migration"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-provider-runtime",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-rabbitmq-runtime",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-redis-runtime",
+   "stage": "knowledge-redis"
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-tls",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "secrets",
+   "namespace": "data-platform-dev",
+   "name": "info-database-bootstrap",
+   "stage": "info-database"
+  },
+  {
+   "type": "secrets",
+   "namespace": "data-platform-dev",
+   "name": "info-redis-provision",
+   "stage": "info-redis"
+  },
+  {
+   "type": "secrets",
+   "namespace": "data-platform-dev",
+   "name": "info-storage-provision",
+   "stage": "info-storage"
+  },
+  {
+   "type": "secrets",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-database-bootstrap",
+   "stage": "knowledge-database"
+  },
+  {
+   "type": "secrets",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-provision",
+   "stage": "knowledge-redis"
+  },
+  {
+   "type": "secrets",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-source-provision",
+   "stage": "knowledge-provider"
+  },
+  {
+   "type": "secrets",
+   "namespace": "messaging-platform-dev",
+   "name": "info-rabbitmq-provision",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "type": "secrets",
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-provision",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "type": "serviceaccounts",
+   "namespace": "app-platform-dev",
+   "name": "info-runtime",
+   "stage": "info-database"
+  },
+  {
+   "type": "serviceaccounts",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-runtime",
+   "stage": "knowledge-database"
+  },
+  {
+   "type": "services",
+   "namespace": "app-platform-dev",
+   "name": "info-admin",
+   "stage": "info-admin"
+  },
+  {
+   "type": "services",
+   "namespace": "app-platform-dev",
+   "name": "info-api",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "services",
+   "namespace": "app-platform-dev",
+   "name": "info-web",
+   "stage": "info-web"
+  },
+  {
+   "type": "services",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-admin",
+   "stage": "knowledge-admin"
+  },
+  {
+   "type": "services",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-api",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "services",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-web",
+   "stage": "knowledge-web"
+  },
+  {
+   "type": "deployments.apps",
+   "namespace": "app-platform-dev",
+   "name": "info-admin",
+   "stage": "info-admin"
+  },
+  {
+   "type": "deployments.apps",
+   "namespace": "app-platform-dev",
+   "name": "info-api",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "deployments.apps",
+   "namespace": "app-platform-dev",
+   "name": "info-scheduler",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "deployments.apps",
+   "namespace": "app-platform-dev",
+   "name": "info-web",
+   "stage": "info-web"
+  },
+  {
+   "type": "deployments.apps",
+   "namespace": "app-platform-dev",
+   "name": "info-worker",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "deployments.apps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-admin",
+   "stage": "knowledge-admin"
+  },
+  {
+   "type": "deployments.apps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-api",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "deployments.apps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-scheduler",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "deployments.apps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-web",
+   "stage": "knowledge-web"
+  },
+  {
+   "type": "deployments.apps",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-worker",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "info-identity-9e536b0ad5e4-v2",
+   "stage": "info-identity"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "info-identity-b470e2fd4f17-v3",
+   "stage": "info-identity"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "info-identity-v2",
+   "stage": "info-identity"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "info-migrate-2443d576ab1b-v1",
+   "stage": "info-migration"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "info-migrate-9e536b0ad5e4-v2",
+   "stage": "info-migration"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "info-migrate-b470e2fd4f17-v2",
+   "stage": "info-migration"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "info-service-identity-9e536b0ad5e4-v1",
+   "stage": "info-service-identity"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "info-service-identity-b470e2fd4f17-v1",
+   "stage": "info-service-identity"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "info-service-identity-v1",
+   "stage": "info-service-identity"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-71aad8b47ada-v2",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-be3c4269ce1a-v2",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-d88fee857408-v3",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-f9cccfe6a844-v2",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-v2",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-migrate-71aad8b47ada-v2",
+   "stage": "knowledge-migration"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-migrate-be3c4269ce1a-v2",
+   "stage": "knowledge-migration"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-migrate-d88fee857408-v2",
+   "stage": "knowledge-migration"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-migrate-e65abcf5f8d3-v1",
+   "stage": "knowledge-migration"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-migrate-f9cccfe6a844-v2",
+   "stage": "knowledge-migration"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "info-database-v1",
+   "stage": "info-database"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "info-redis-9e536b0ad5e4-v2",
+   "stage": "info-redis"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "info-redis-b470e2fd4f17-v2",
+   "stage": "info-redis"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "info-redis-v2",
+   "stage": "info-redis"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "info-storage-v3",
+   "stage": "info-storage"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-database-v1",
+   "stage": "knowledge-database"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-71aad8b47ada-v2",
+   "stage": "knowledge-redis"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-be3c4269ce1a-v2",
+   "stage": "knowledge-redis"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-d88fee857408-v2",
+   "stage": "knowledge-redis"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-f9cccfe6a844-v2",
+   "stage": "knowledge-redis"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-v2",
+   "stage": "knowledge-redis"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-source-v1",
+   "stage": "knowledge-provider"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-source-v2",
+   "stage": "knowledge-provider"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "messaging-platform-dev",
+   "name": "info-rabbitmq-9e536b0ad5e4-v2",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "messaging-platform-dev",
+   "name": "info-rabbitmq-b470e2fd4f17-v2",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "messaging-platform-dev",
+   "name": "info-rabbitmq-v2",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-71aad8b47ada-v2",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-be3c4269ce1a-v2",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-d88fee857408-v2",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-f9cccfe6a844-v2",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "type": "jobs.batch",
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-v2",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "type": "ingresses.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-admin",
+   "stage": "info-admin"
+  },
+  {
+   "type": "ingresses.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-web",
+   "stage": "info-web"
+  },
+  {
+   "type": "ingresses.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-admin",
+   "stage": "knowledge-admin"
+  },
+  {
+   "type": "ingresses.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-web",
+   "stage": "knowledge-web"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-admin",
+   "stage": "info-admin"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-api-casdoor-in",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-api-casdoor-out",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-api-ingress",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-identity-provision-in",
+   "stage": "info-identity"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-identity-provision-out",
+   "stage": "info-identity"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-public-sites-out",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-service-https-out",
+   "stage": "info-runtime"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-service-provision-out",
+   "stage": "info-service-identity"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "info-web",
+   "stage": "info-web"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-admin",
+   "stage": "knowledge-admin"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-api-casdoor-in",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-api-casdoor-out",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-api-ingress",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-provision-in",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-provision-out",
+   "stage": "knowledge-identity"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-ragflow-egress",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-sandboxes-in",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-service-https-out",
+   "stage": "knowledge-runtime"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-web",
+   "stage": "knowledge-web"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "data-platform-dev",
+   "name": "info-redis-provision-in",
+   "stage": "info-redis"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "data-platform-dev",
+   "name": "info-redis-provision-out",
+   "stage": "info-redis"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-provision-in",
+   "stage": "knowledge-redis"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-provision-out",
+   "stage": "knowledge-redis"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "messaging-platform-dev",
+   "name": "info-rabbitmq-provision-in",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "messaging-platform-dev",
+   "name": "info-rabbitmq-provision-out",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-provision-in",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "type": "networkpolicies.networking.k8s.io",
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-provision-out",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "type": "services",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-tls",
+   "stage": "traefik",
+   "renamed_in_shared": true,
+   "still_declared": false,
+   "expected_stage": true
+  },
+  {
+   "type": "ingresses.networking.k8s.io",
+   "namespace": "app-platform-dev",
+   "name": "knowledge-service-access",
+   "stage": "traefik",
+   "renamed_in_shared": true,
+   "still_declared": false,
+   "expected_stage": true
+  },
+  {
+   "type": "secrets",
+   "namespace": "app-platform-dev",
+   "name": "investment-knowledge-service",
+   "stage": "investment-runtime",
+   "renamed_in_shared": true,
+   "still_declared": false,
+   "expected_stage": true
+  }
+ ],
+ "unlabeled_same_prefix": [],
+ "pods_part_of_old_apps": [
+  "app-platform-dev/info-admin-5948f7f797-dmvmg",
+  "app-platform-dev/info-api-64b4c59465-lvltm",
+  "app-platform-dev/info-identity-9e536b0ad5e4-v2-79rfv",
+  "app-platform-dev/info-identity-b470e2fd4f17-v3-s745r",
+  "app-platform-dev/info-identity-v2-c9vjp",
+  "app-platform-dev/info-migrate-2443d576ab1b-v1-k84vh",
+  "app-platform-dev/info-migrate-9e536b0ad5e4-v2-b2lwb",
+  "app-platform-dev/info-migrate-b470e2fd4f17-v2-ttc9q",
+  "app-platform-dev/info-scheduler-795ffc8788-4xh44",
+  "app-platform-dev/info-service-identity-9e536b0ad5e4-v1-rldw7",
+  "app-platform-dev/info-service-identity-b470e2fd4f17-v1-2cf2h",
+  "app-platform-dev/info-service-identity-v1-hx5qg",
+  "app-platform-dev/info-web-5769df67b-96558",
+  "app-platform-dev/info-worker-dc986bf4c-52l7t",
+  "app-platform-dev/knowledge-admin-64dcbbfffb-smndk",
+  "app-platform-dev/knowledge-api-78bf75696b-rwcdx",
+  "app-platform-dev/knowledge-identity-71aad8b47ada-v2-z85kb",
+  "app-platform-dev/knowledge-identity-be3c4269ce1a-v2-s79gn",
+  "app-platform-dev/knowledge-identity-d88fee857408-v3-nb4cp",
+  "app-platform-dev/knowledge-identity-f9cccfe6a844-v2-66nd9",
+  "app-platform-dev/knowledge-identity-v2-f2r9d",
+  "app-platform-dev/knowledge-migrate-71aad8b47ada-v2-srxhh",
+  "app-platform-dev/knowledge-migrate-be3c4269ce1a-v2-q2tdz",
+  "app-platform-dev/knowledge-migrate-d88fee857408-v2-t4rgg",
+  "app-platform-dev/knowledge-migrate-e65abcf5f8d3-v1-pc8fr",
+  "app-platform-dev/knowledge-migrate-f9cccfe6a844-v2-bdn47",
+  "app-platform-dev/knowledge-scheduler-86f6b89bc4-9926x",
+  "app-platform-dev/knowledge-web-6bcc9bc468-b6lrj",
+  "app-platform-dev/knowledge-worker-6c878b6749-7c54m",
+  "data-platform-dev/info-database-v1-pz6mc",
+  "data-platform-dev/info-redis-9e536b0ad5e4-v2-s4dsp",
+  "data-platform-dev/info-redis-b470e2fd4f17-v2-5k7k5",
+  "data-platform-dev/info-redis-v2-bjl28",
+  "data-platform-dev/knowledge-database-v1-vs9wb",
+  "data-platform-dev/knowledge-redis-71aad8b47ada-v2-s9lzs",
+  "data-platform-dev/knowledge-redis-be3c4269ce1a-v2-hx9cq",
+  "data-platform-dev/knowledge-redis-d88fee857408-v2-xjn8n",
+  "data-platform-dev/knowledge-redis-f9cccfe6a844-v2-tsxff",
+  "data-platform-dev/knowledge-redis-v2-zxz7g",
+  "messaging-platform-dev/info-rabbitmq-9e536b0ad5e4-v2-9hqhs",
+  "messaging-platform-dev/info-rabbitmq-b470e2fd4f17-v2-mlqj8",
+  "messaging-platform-dev/info-rabbitmq-v2-7st85",
+  "messaging-platform-dev/knowledge-rabbitmq-71aad8b47ada-v2-6fwgn",
+  "messaging-platform-dev/knowledge-rabbitmq-be3c4269ce1a-v2-pfvrv",
+  "messaging-platform-dev/knowledge-rabbitmq-d88fee857408-v2-gd62k",
+  "messaging-platform-dev/knowledge-rabbitmq-f9cccfe6a844-v2-st8zq",
+  "messaging-platform-dev/knowledge-rabbitmq-v2-2lc5p"
+ ]
+}
+===== job-history · 现状
+{
+ "declared_kept": 34,
+ "history_completed": [
+  {
+   "namespace": "app-platform-dev",
+   "name": "info-identity-9e536b0ad5e4-v2",
+   "stage": "info-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "info-identity-b470e2fd4f17-v3",
+   "stage": "info-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "info-identity-v2",
+   "stage": "info-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "info-migrate-2443d576ab1b-v1",
+   "stage": "info-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "info-migrate-9e536b0ad5e4-v2",
+   "stage": "info-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "info-migrate-b470e2fd4f17-v2",
+   "stage": "info-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "info-service-identity-9e536b0ad5e4-v1",
+   "stage": "info-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "info-service-identity-b470e2fd4f17-v1",
+   "stage": "info-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "info-service-identity-v1",
+   "stage": "info-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-02f1054f2a0f-v3",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-09405580a3d6-v3",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-0c75cb542efb-v2",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-227b7ae2a7e6-v3",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-2b9b8423c89c-v3",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-4cf3a9391d0a-v2",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-68f4a7e7ded7-v3",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-6a189617e8ee-v3",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-86a20079c309-v2",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-8c2b10c698c2-v3",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-9282cde9c6f7-v3",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-99a94820e35c-v2",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-ac5bdcd5ea53-v2",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-b09a366f3d71-v3",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-d2e6ed5d20a3-v2",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-e9d7ddde9d7f-v2",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-f47ea47f23f7-v3",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-identity-v2",
+   "stage": "investment-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-02f1054f2a0f-v7",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-09405580a3d6-v4",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-0c75cb542efb-v4",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-227b7ae2a7e6-v6",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-2b9b8423c89c-v7",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-4cf3a9391d0a-v4",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-68f4a7e7ded7-v7",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-6a189617e8ee-v7",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-72c1ad421254-v2",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-86a20079c309-v3",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-8c2b10c698c2-v7",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-9282cde9c6f7-v5",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-99a94820e35c-v4",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-ac5bdcd5ea53-v4",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-b09a366f3d71-v4",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-d2e6ed5d20a3-v4",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-e9d7ddde9d7f-v3",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-migrate-f47ea47f23f7-v7",
+   "stage": "investment-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-02f1054f2a0f-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-09405580a3d6-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-0c75cb542efb-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-227b7ae2a7e6-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-2b9b8423c89c-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-4cf3a9391d0a-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-68f4a7e7ded7-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-6a189617e8ee-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-86a20079c309-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-8c2b10c698c2-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-9282cde9c6f7-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-99a94820e35c-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-ac5bdcd5ea53-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-b09a366f3d71-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-d2e6ed5d20a3-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-e9d7ddde9d7f-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-f47ea47f23f7-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "investment-service-identity-v1",
+   "stage": "investment-service-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-71aad8b47ada-v2",
+   "stage": "knowledge-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-be3c4269ce1a-v2",
+   "stage": "knowledge-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-d88fee857408-v3",
+   "stage": "knowledge-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-f9cccfe6a844-v2",
+   "stage": "knowledge-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "knowledge-identity-v2",
+   "stage": "knowledge-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "knowledge-migrate-71aad8b47ada-v2",
+   "stage": "knowledge-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "knowledge-migrate-be3c4269ce1a-v2",
+   "stage": "knowledge-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "knowledge-migrate-d88fee857408-v2",
+   "stage": "knowledge-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "knowledge-migrate-e65abcf5f8d3-v1",
+   "stage": "knowledge-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "knowledge-migrate-f9cccfe6a844-v2",
+   "stage": "knowledge-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "tpl-identity-b4b94f049f84-v3",
+   "stage": "tpl-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "tpl-identity-e92a7bb62f06-v2",
+   "stage": "tpl-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "tpl-identity-v2",
+   "stage": "tpl-identity"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "tpl-migrate-36c393be91ae-v1",
+   "stage": "tpl-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "tpl-migrate-b4b94f049f84-v1",
+   "stage": "tpl-migration"
+  },
+  {
+   "namespace": "app-platform-dev",
+   "name": "tpl-migrate-e92a7bb62f06-v1",
+   "stage": "tpl-migration"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "info-database-v1",
+   "stage": "info-database"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "info-redis-9e536b0ad5e4-v2",
+   "stage": "info-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "info-redis-b470e2fd4f17-v2",
+   "stage": "info-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "info-redis-v2",
+   "stage": "info-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "info-storage-v3",
+   "stage": "info-storage"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-02f1054f2a0f-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-09405580a3d6-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-0c75cb542efb-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-227b7ae2a7e6-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-2b9b8423c89c-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-4cf3a9391d0a-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-68f4a7e7ded7-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-6a189617e8ee-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-86a20079c309-v2",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-8c2b10c698c2-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-9282cde9c6f7-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-99a94820e35c-v2",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-ac5bdcd5ea53-v2",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-b09a366f3d71-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-d2e6ed5d20a3-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-e9d7ddde9d7f-v2",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-f47ea47f23f7-v3",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "investment-redis-v2",
+   "stage": "investment-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "knowledge-database-v1",
+   "stage": "knowledge-database"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-71aad8b47ada-v2",
+   "stage": "knowledge-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-be3c4269ce1a-v2",
+   "stage": "knowledge-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-d88fee857408-v2",
+   "stage": "knowledge-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-f9cccfe6a844-v2",
+   "stage": "knowledge-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "knowledge-redis-v2",
+   "stage": "knowledge-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "knowledge-source-v1",
+   "stage": "knowledge-provider"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "knowledge-source-v2",
+   "stage": "knowledge-provider"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "tpl-redis-b4b94f049f84-v3",
+   "stage": "tpl-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "tpl-redis-e92a7bb62f06-v3",
+   "stage": "tpl-redis"
+  },
+  {
+   "namespace": "data-platform-dev",
+   "name": "tpl-redis-v3",
+   "stage": "tpl-redis"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "info-rabbitmq-9e536b0ad5e4-v2",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "info-rabbitmq-b470e2fd4f17-v2",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "info-rabbitmq-v2",
+   "stage": "info-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-02f1054f2a0f-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-09405580a3d6-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-0c75cb542efb-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-227b7ae2a7e6-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-2b9b8423c89c-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-4cf3a9391d0a-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-68f4a7e7ded7-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-6a189617e8ee-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-86a20079c309-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-8c2b10c698c2-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-9282cde9c6f7-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-99a94820e35c-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-ac5bdcd5ea53-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-b09a366f3d71-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-d2e6ed5d20a3-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-e9d7ddde9d7f-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-f47ea47f23f7-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "investment-rabbitmq-v2",
+   "stage": "investment-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-71aad8b47ada-v2",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-be3c4269ce1a-v2",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-d88fee857408-v2",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-f9cccfe6a844-v2",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "knowledge-rabbitmq-v2",
+   "stage": "knowledge-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "tpl-rabbitmq-b4b94f049f84-v2",
+   "stage": "tpl-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "tpl-rabbitmq-e92a7bb62f06-v2",
+   "stage": "tpl-rabbitmq"
+  },
+  {
+   "namespace": "messaging-platform-dev",
+   "name": "tpl-rabbitmq-v2",
+   "stage": "tpl-rabbitmq"
+  }
+ ],
+ "not_completed_listed_only": []
+}
+===== postgresql · 现状
+{
+ "databases": [
+  {
+   "name": "info",
+   "owner_mark": "sunmoon-kind/info",
+   "connections": 1,
+   "size": "9566 kB",
+   "listed": true
+  },
+  {
+   "name": "knowledge",
+   "owner_mark": "sunmoon-kind/knowledge",
+   "connections": 1,
+   "size": "8838 kB",
+   "listed": true
+  }
+ ],
+ "roles": [
+  {
+   "name": "info_migrator",
+   "owner_mark": "sunmoon-kind/info",
+   "listed": true
+  },
+  {
+   "name": "info_runtime",
+   "owner_mark": "sunmoon-kind/info",
+   "listed": true
+  },
+  {
+   "name": "knowledge_migrator",
+   "owner_mark": "sunmoon-kind/knowledge",
+   "listed": true
+  },
+  {
+   "name": "knowledge_runtime",
+   "owner_mark": "sunmoon-kind/knowledge",
+   "listed": true
+  }
+ ]
+}
+===== redis · 现状
+{
+ "users": [
+  {
+   "name": "info_runtime",
+   "listed": true
+  },
+  {
+   "name": "knowledge_runtime",
+   "listed": true
+  }
+ ],
+ "keys": {
+  "info:*": 0,
+  "knowledge:*": 0
+ }
+}
+===== rabbitmq · 现状
+{
+ "vhosts": [
+  {
+   "name": "info",
+   "description": "sunmoon:info:managed-by-gitops",
+   "queues": [
+    {
+     "messages": 0,
+     "name": "celery@info-worker-dc986bf4c-52l7t.celery.pidbox"
+    },
+    {
+     "messages": 0,
+     "name": "celeryev.52f37ee5-bcfc-4102-ac5c-a1c0cc69531a"
+    },
+    {
+     "messages": 0,
+     "name": "info.default"
+    }
+   ],
+   "listed": true
+  },
+  {
+   "name": "knowledge",
+   "description": "sunmoon:knowledge:managed-by-gitops",
+   "queues": [
+    {
+     "messages": 0,
+     "name": "celery@knowledge-worker-6c878b6749-7c54m.celery.pidbox"
+    },
+    {
+     "messages": 0,
+     "name": "celeryev.1cd76d32-2caa-4534-aae8-c5ce66da0704"
+    },
+    {
+     "messages": 0,
+     "name": "knowledge.default"
+    }
+   ],
+   "listed": true
+  }
+ ],
+ "users": [
+  {
+   "name": "info_runtime",
+   "listed": true
+  },
+  {
+   "name": "knowledge_runtime",
+   "listed": true
+  }
+ ]
+}
+===== object-storage · 现状
+{
+ "users": [
+  {
+   "name": "info_storage",
+   "listed": true
+  },
+  {
+   "name": "knowledge_source_reader",
+   "listed": true
+  }
+ ],
+ "policies": [
+  {
+   "name": "knowledge-source-read",
+   "listed": true
+  },
+  {
+   "name": "info-originals",
+   "listed": true
+  }
+ ],
+ "buckets": [
+  {
+   "name": "info-originals",
+   "objects": 94,
+   "bytes": 32727660,
+   "listed": true
+  }
+ ]
+}
+===== ragflow · 现状
+{
+ "datasets": [
+  {
+   "name": "sunmoon-kind-knowledge-default",
+   "documents": 6,
+   "chunks": 6,
+   "listed": true
+  }
+ ]
+}
+===== casdoor · 现状
+{
+ "applications": [
+  {
+   "name": "sunmoonai-info-knowledge-ingest",
+   "clientId": "sunmoon-info-knowledge-ingest",
+   "organization": "sunmoon-workload-info-knowledge",
+   "description": "sunmoon:info:knowledge:managed-by-gitops",
+   "listed": true
+  },
+  {
+   "name": "sunmoonai-investment-knowledge-retrieve",
+   "clientId": "sunmoon-investment-knowledge-retrieve",
+   "organization": "sunmoon-workload-investment-knowledge",
+   "description": "sunmoon:investment:knowledge:managed-by-gitops",
+   "listed": true
+  },
+  {
+   "name": "sunmoonai-knowledge-admin",
+   "clientId": "sunmoon-kind-knowledge-admin",
+   "organization": "built-in",
+   "description": "sunmoon:knowledge:admin:managed-by-gitops",
+   "listed": true
+  },
+  {
+   "name": "sunmoonai-knowledge-web",
+   "clientId": "sunmoon-kind-knowledge-web",
+   "organization": "sunmoonai",
+   "description": "sunmoon:knowledge:web:managed-by-gitops",
+   "listed": true
+  },
+  {
+   "name": "sunmoonai-info-admin",
+   "clientId": "sunmoon-kind-info-admin",
+   "organization": "built-in",
+   "description": "sunmoon:info:admin:managed-by-gitops",
+   "listed": true
+  },
+  {
+   "name": "sunmoonai-info-web",
+   "clientId": "sunmoon-kind-info-web",
+   "organization": "sunmoonai",
+   "description": "sunmoon:info:web:managed-by-gitops",
+   "listed": true
+  }
+ ],
+ "organizations": [
+  {
+   "name": "sunmoon-workload-info-knowledge",
+   "users": 0,
+   "listed": true
+  },
+  {
+   "name": "sunmoon-workload-investment-knowledge",
+   "users": 0,
+   "listed": true
+  }
+ ]
+}
+===== private · 现状
+{
+ "directories": [
+  {
+   "path": "/etc/sunmoon/applications/sunmoon-kind/info",
+   "state": "dir",
+   "files": 10,
+   "size": "48K"
+  },
+  {
+   "path": "/etc/sunmoon/applications/sunmoon-kind/knowledge",
+   "state": "dir",
+   "files": 16,
+   "size": "72K"
+  },
+  {
+   "path": "/mnt/sunmoon-data/backups/applications/sunmoon-kind/info",
+   "state": "dir",
+   "files": 8,
+   "size": "40K"
+  },
+  {
+   "path": "/mnt/sunmoon-data/backups/applications/sunmoon-kind/knowledge",
+   "state": "dir",
+   "files": 8,
+   "size": "40K"
+  }
+ ]
+}
+===== harbor · 现状
+{
+ "repositories": [
+  {
+   "name": "knowledge-admin-frontend",
+   "artifacts": 3,
+   "listed": true
+  },
+  {
+   "name": "knowledge-web-frontend",
+   "artifacts": 3,
+   "listed": true
+  },
+  {
+   "name": "knowledge-backend",
+   "artifacts": 6,
+   "listed": true
+  },
+  {
+   "name": "info-admin-frontend",
+   "artifacts": 2,
+   "listed": true
+  },
+  {
+   "name": "info-web-frontend",
+   "artifacts": 3,
+   "listed": true
+  },
+  {
+   "name": "info-backend",
+   "artifacts": 4,
+   "listed": true
+  }
+ ],
+ "disk": "19G"
+}
+===== harbor-gc · 现状
+{
+ "recent_gc": [],
+ "disk": "19G"
+}
+exit=0
