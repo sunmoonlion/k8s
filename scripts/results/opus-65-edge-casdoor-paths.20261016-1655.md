@@ -1,6 +1,6 @@
 # 待办 65：边缘只放行 Casdoor 登录路径（Opus，远程机）
 
-结论：边缘 Traefik 对 `casdoor.sunmoonai.com` 只放行 OAuth 登录要用的路径，其余 403；investment、relay 不变。远程机隔离实验全部通过。**还没部署到边缘**：`make edge-deploy` 要所有者批准（渲染文件一变会重启整个边缘，investment 与会合点断几秒）。
+结论：边缘 Traefik 对 `casdoor.sunmoonai.com` 只放行 OAuth 登录要用的路径，其余 403；investment、relay 不变。远程机隔离实验全部通过。2026-10-16 所有者批准后已部署到边缘（见文末「部署」）；待所有者用手机走公网登录验证。
 
 ## 改了什么
 
@@ -38,6 +38,14 @@
 2. 远程机：`curl -sk -o /dev/null -w '%{http_code}' https://casdoor.sunmoonai.com:30443/api/get-users --resolve casdoor.sunmoonai.com:30443:127.0.0.1` 得 403；`/login/oauth/authorize` 得 200。
 3. 所有者用**不改 hosts 的设备**（手机流量）打开 `https://investment.sunmoonai.com:30443` 登录一次，能进工作台；再开 `https://casdoor.sunmoonai.com:30443/` 应是 403。
 4. 回退：`git revert` 本提交后再 `edge-deploy`。
+
+## 部署（2026-10-16，所有者批准）
+
+- 部署前把要渲染的 6 个非秘密文件与边缘现行文件逐个比对：只有 `dynamic.yml` 不同（casdoor 两条路由 + `deny-all`），`traefik.yml`、`frps.toml`、`404.html`、`compose.yaml`、单元文件逐字相同。
+- 部署前基线（远程机经边缘 `--resolve 127.0.0.1:30443`）：casdoor `/api/get-users` **200**、`/` 200（管理接口确实对公网开着）；investment `/` 307。
+- `make edge-deploy`：exit 0，`changed=2`（写 `dynamic.yml`、重启单元）；两个容器重新起来；Traefik 无 error 日志；证书仍是 Let's Encrypt 正式证书（CN=YR1）。
+- 部署后：casdoor `/login/oauth/authorize`、`/api/get-app-login`、`/api/get-account` 200，登录页引用的 `/assets/index-*.js`、`.css` 200；`/`、`/organizations`、`/api/get-users`、`/api/get-organizations`、`/api/login/oauth/access_token`、`/.well-known/openid-configuration` **403**；investment `/` 307、relay `/` 426（WebSocket 端点对普通请求的正常回应），与前一致。`/assets/` 目录本身 500（Casdoor 回的空响应，不是边缘拦截；登录不用）。
+- 待所有者：用不改 hosts 的设备（手机流量）开 `https://investment.sunmoonai.com:30443` 登录一次；`https://casdoor.sunmoonai.com:30443/` 应为 403。
 
 ## 以后重录（升级 Casdoor 或开注册 / 找回密码 / MFA）
 
