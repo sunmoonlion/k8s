@@ -21,9 +21,9 @@
 | 组件阶段/依赖（stage.yaml） | [components](../infrastructure/components/README.md) | 图由组件目录汇成 |
 | 平台部署/检查 | [services](../infrastructure/services/README.md) | 平台bootstrap存在 |
 | 应用构建/发布/部署/真实检查 | [applications](../infrastructure/applications/README.md) | 4应用共享原生入口 |
-| 理解职责/适用边界 | [架构](platform/architecture.md) | 稳定设计 |
+| 理解职责/适用边界 | [规则](dev-investment-agent/tree-build/rules/constraints.md#发布)「发布」`C-R*`、[项目总览](project-guide/overall-architecture.md) | 稳定设计 |
 | 看用户、本地代理、沙箱、会合点、供给器怎么连 | [拓扑](拓扑.md) | 图与各自职责 |
-| 看已验证和未完成 | [验收边界](platform/verification.md) | 带日期结论，不代表实时状态 |
+| 看还没完成的 | [待办账](dev-investment-agent/tree-build/pending-after-migration.md) 104–109 | 计划，不是实时状态 |
 
 ## 日常规则
 
@@ -31,7 +31,7 @@
 
 先计划/准备、审阅差异、提交与显式晋级，再原生部署和检查。render/stage/check可能有文件/API/探针写入；关闭enabled不等于停服。当前维护窗口2小时、容量底线10GiB，仍做VHDX未来增长和峰值检查，删除策略需独立批准。
 
-整套一键部署已实际重复部署通过；[统一启停/开机恢复](../infrastructure/host/lifecycle.md)候选、Harbor重启/删群持久化和长期空间管理尚待实际完成，具体出口在[未完成项](platform/verification.md#未完成项)。
+整套一键部署已实际重复部署通过；[统一启停/开机恢复](../infrastructure/host/lifecycle.md)候选、Harbor重启/删群持久化和长期空间管理尚待实际完成，具体出口在[未完成项](dev-investment-agent/tree-build/pending-after-migration.md)（104–109）。
 
 ## 正式文档怎么写（所有者确认，2026-10-04；2026-10-16 从仓根 AGENTS.md 移来）
 

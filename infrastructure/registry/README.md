@@ -75,7 +75,7 @@ accounts追加Docker的仓库专用CA并保留其他CA。KIND信任与DNS由[clu
 
 systemd唯一管理重启，容器restart=no、Compose前台；任一组件退出停止整组并经过守卫恢复，120秒最多3次。启动核精确ext4/UUID/bind fsroot、宿主与Docker的设备/inode及实例落盘。失败即拒绝启动。此守卫不等于运行期故障监控。
 
-本模块deploy只daemon-reload并管理本仓库，不单独启用boot autostart。当前由[宿主统一生命周期](../host/lifecycle.md)协调开机顺序，恢复单元已安装并启用；Harbor/KIND整套停启及目录/镜像验收已通过，真实Windows/WSL重启和删群重建仍见[未完成项](../../docs/platform/verification.md#未完成项)。
+本模块deploy只daemon-reload并管理本仓库，不单独启用boot autostart。当前由[宿主统一生命周期](../host/lifecycle.md)协调开机顺序，恢复单元已安装并启用；Harbor/KIND整套停启及目录/镜像验收已通过，真实Windows/WSL重启和删群重建仍见[未完成项](../../docs/dev-investment-agent/tree-build/pending-after-migration.md)（104–109）。
 
 错误先看systemd和限定日志：
 
@@ -90,4 +90,4 @@ sudo docker logs --tail 100 sunmoon-registry-core-1
 
 已批准Docker local日志每容器最多3×20MiB，10组件约600MiB配置上限，不含额外文件/元数据。jobservice走stdout；Compose不再复制容器输出到journal。上传残留自动清理关闭，镜像保留/GC与备份删除未启用。
 
-[扫描器维护](scanning.md)说明离线库、真实扫描、风险边界；[备份恢复](recovery.md)说明现有隔离恢复入口。容器healthy、库字节正确和扫描Success分别是不同结论；持久化重启/删群验收和生产安全门禁见[验收边界](../../docs/platform/verification.md)。
+[扫描器维护](scanning.md)说明离线库、真实扫描、风险边界；[备份恢复](recovery.md)说明现有隔离恢复入口。容器healthy、库字节正确和扫描Success分别是不同结论；持久化重启/删群验收和生产安全门禁见验收边界（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。

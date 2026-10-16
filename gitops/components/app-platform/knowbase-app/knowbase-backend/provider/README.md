@@ -33,4 +33,4 @@ plan只读；stage除了私有输入/候选文件，还调用已运行RAGFlow官
 
 成功只清本次UUID指定的成功摄入Job、对应领域记录/已结束投递与Outbox、精确RAGFlow文档及S3版本；再删除原文指定VersionId与日记。不删正式数据集、其它原文/桶或未知对象。清理失败按日记恢复精确处理，不全目录批删，也不把删除日记当恢复完成。
 
-检查入口application-check APP=knowledge会有上述写入/精确删除副作用；纯状态先看Flux/Pod。恢复仍需源原文、平台数据库、派生状态与身份配套，当前完整灾备未验收，见[验收边界](../../../../../../docs/platform/verification.md#未完成项)。
+检查入口application-check APP=knowledge会有上述写入/精确删除副作用；纯状态先看Flux/Pod。恢复仍需源原文、平台数据库、派生状态与身份配套，当前完整灾备未验收，见[验收边界](../../../../../../docs/dev-investment-agent/tree-build/pending-after-migration.md)（104–109）。

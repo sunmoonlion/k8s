@@ -40,7 +40,7 @@ make -C infrastructure registry-recovery-check \
 
 ## 结果、失败和退出
 
-运行目录是`registry_instance_dir/recovery/rehearsal-<本次标记>`。停止的容器、证据与演练副本保留，不能自动删除冷备或正式数据。已有日期结果见[验收边界](../../docs/platform/verification.md#仓库与扫描)；历史硬编码备份路径不作为下一次输入。
+运行目录是`registry_instance_dir/recovery/rehearsal-<本次标记>`。停止的容器、证据与演练副本保留，不能自动删除冷备或正式数据。已有日期结果见验收边界（已删，Git 历史 `53767f6a:docs/platform/verification.md`）；历史硬编码备份路径不作为下一次输入。
 
 如果Ansible被强杀，always不保证执行。先根据本次`prepared.json`中的精确project、compose和工具路径核对隔离身份，再用该Compose项目`stop --timeout 60`，确认没有本次运行容器；禁止`down -v`或按全局容器名清理。此例外是隔离演练退出，不扩展成清理正式资源授权。
 

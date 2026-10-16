@@ -42,6 +42,6 @@
 
 ## 维护流程
 
-先在一个受影响应用准备候选并审阅，再核对其他应用；提交、发布、显式晋级和执行方法统一见[应用手册](../../../../infrastructure/applications/README.md)。验收既查初始化回执，也查实际角色/登录/消息，范围见[应用与业务链路](../../../../docs/platform/verification.md#应用与业务链路)。
+先在一个受影响应用准备候选并审阅，再核对其他应用；提交、发布、显式晋级和执行方法统一见[应用手册](../../../../infrastructure/applications/README.md)。验收既查初始化回执，也查实际角色/登录/消息，范围见应用与业务链路（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。
 
 业务schema、持久身份或远端数据变化不能仅靠Git回退；此目录不增加另一个部署CLI、业务启动脚本或删除策略。

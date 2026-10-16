@@ -35,6 +35,7 @@ MongoDB、Neo4j 在平台里已部署，**应用还没用**。
 - **派生系统可重建**：检索、RAG、模型、缓存不可用时不影响权威数据的保存（`C-D15`）。
 - **静态卷用 Retain**：声明删除时不隐式回收；KIND 动态卷目录也在数据盘上。重建集群不是自动恢复（[foundations README](../../../gitops/components/foundations/README.md)）。
 - **秘密**：在宿主私有目录 `/etc/sunmoon/…` 与备份盘 `/mnt/sunmoon-data/backups/…` 主备两份、逐字节一致，部署时生成 SOPS 密文；已有身份丢失就停，不重新生成。
+- **要备份的**：数据库主数据、对象原文版本、Harbor 的密钥与镜像层与账号、Casdoor 的文件与 marker、age 私钥、TLS、许可证、各组件的初始化输入；派生索引能重建不等于已经实现重建，也不等于可以随意删。
 - **备份**：数据盘与系统盘同在一块物理盘，同盘备份只防误删与升级失败；机器外备份的落点待所有者指定（[宿主](../../../infrastructure/host/README.md)）。
 
 ## 4. 新增数据之前

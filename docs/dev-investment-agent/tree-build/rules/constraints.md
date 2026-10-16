@@ -78,6 +78,7 @@
 | C-I7 | 服务令牌 subject 必须命中精确绑定表；下游路径命中 allowlist | `core/config.py` |
 | C-I8 | 生产期配置硬校验，配错进程起不来 | `core/config.py` |
 | C-I9 | **会合点的三类出站客户**（内网站点、沙箱、本地代理）各持按用户或按站点签发的短期令牌，边缘用公钥就地验，可吊销；一个用户的代理只能被该用户的沙箱使用。旧 C-I9 设备私钥与派发签名**退役** | ⚠ 自检 + `AT-22` `AT-23` |
+| C-I10 | **运行安全基线**：网络默认拒绝、按标签授权；容器非 root、只读根文件系统、去掉 capabilities、不挂 ServiceAccount 令牌；例外（日志采集的 hostPath、入口的 host network）只限写明了职责的地方；Infinity、Valkey 与应用的 AMQP 现在是明文协议，靠网络策略限制，不宣称全面 mTLS（2026-10-16 从 `docs/platform/architecture.md` 并入，原文 Git 历史 `53767f6a:docs/platform/architecture.md`） | 各组件 `workload.yaml` 渲染 + 网络策略 |
 | C-I10 | 用户的模型 key 是 BYOK：存密钥库，按沙箱注入，用户可撤换；不接受订阅登录搬上云端 | ⚠ 自检 |
 
 ## 拓扑
@@ -96,7 +97,7 @@
 
 ## 发布
 
-写成与执行者无关的约束：现在由人照发布卡跑 Make 入口，以后改由 Jenkins 等流水线触发，**变的只是「谁在执行」一栏与入口，规则不变**。流程见 `k8s/infrastructure/README.md` 与 [项目总览](../../../project-guide/overall-architecture.md#6-部署k8s-仓)。2026-10-15 按新体系改写，旧体系 bundle 那几条退役。
+写成与执行者无关的约束：现在由人照发布卡跑 Make 入口，以后改由 Jenkins 等流水线触发，**变的只是「谁在执行」一栏与入口，规则不变**。流程见 `k8s/infrastructure/README.md` 与 [项目总览](../../../project-guide/overall-architecture.md) §6。2026-10-15 按新体系改写，旧体系 bundle 那几条退役。
 
 | # | 规则 | 谁在执行 |
 | --- | --- | --- |
@@ -110,8 +111,15 @@
 | C-R8 | **发布清单里成对钉住**：Codex 版本（app-server 与 exec-server 同版）、会合点协议版、本地代理版 | ⚠ 自检 |
 | C-R9 | 上线门里加两条不是软件的：内网站点的上行链路与冗余（`D15`）、监控告警送达（`repos/k8s.md`） | ⚠ 自检 |
 | C-R10 | **部署了不等于生产就绪**。对外服务前逐项过上线门：领域与数据所有权明确；契约变更兼容；迁移已验证；测试通过；备份可恢复且至少做过一次恢复演练（`Retain` 的卷不是备份，单机 KIND 不是生产高可用）；监控告警可送达；秘密与权限合规；容量够；回退或补偿路径明确；运维说明已更新。没满足的项写明责任人、风险与期限 | ⚠ 自检 |
-| C-R11 | 集群声明是 `prune: false`：删掉声明不会删对象，退役要列清单精确删除；完成的 Job 内容不可改，Job 的输入一变就换代次（`*_revision`），不 force apply、不为清状态删 PVC | ⚠ 自检 + Flux 套用失败即暴露 |
+| C-R11 | 集群声明是 `prune: false`：删掉声明不会删对象，退役要列清单精确删除；完成的 Job 内容不可改，Job 的输入一变就换代次（`*_revision`），不 force apply、不清 managedFields、不为清状态删 PVC 或节点卷；关掉组件的 `enabled` 只是关闭准入，不会停服或删对象 | ⚠ 自检 + Flux 套用失败即暴露 |
 | C-R12 | 秘密与身份只在宿主私有目录（主备两份、逐字节一致）与 SOPS 密文里；已有身份丢失就停，**不重新生成**；新身份按新名字全新生成，不复用别处的口令 | 各组件 `prepare.yaml` 的断言 |
+| C-R13 | **实施入口只有原生的 Make → Ansible → Flux**：Make 是公开入口，Ansible 编排模块，专用校验程序只处理有限的输入与探针，Flux 拥有集群声明；不新增平行的命令行、转接旧体系的层或另一套部署状态机（2026-10-16 从 `docs/platform/architecture.md` 并入，原文 Git 历史 `53767f6a:docs/platform/architecture.md`） | ⚠ 自检 |
+| C-R14 | **配置归属**：用户配置、底层实现与 README 放在同一职责目录（宿主、Harbor、入口、KIND、Flux、服务、应用都一样）；单一来源——共享身份、命名空间、物料根只在 `infrastructure/environments/kind/site.yaml`，版本与文件、镜像摘要只在 `infrastructure/artifacts/` 的锁，应用父仓与子仓钉只在 `infrastructure/applications/sources.yaml`，已晋级的修订与 OCI 摘要只在 `infrastructure/environments/kind/flux-source.yaml`，普通用户名、域名、端口、资源、代次在各组件 `config.yaml`；口令与私钥不进普通配置或说明 | ⚠ 自检 |
+| C-R15 | **平台 → 应用 → 组件三层**：部署声明按这三层放，目录归属不等于运行命名空间（应用统一 `app_namespace`，应用的建库 Job 在 `data_namespace`）；应用共用的部署机制只在 `app-platform/common`，各应用直接用，不经 tpl 转接；跨命名空间的共享对象只由 `foundations` 声明，一份资源只有一个管理者 | ⚠ 自检 + 渲染比对 |
+| C-R16 | **镜像来源**：官方镜像优先；必要的最小派生（如 RAGFlow）要有官方源 SHA 守卫，并单独记录派生身份；不把版本清单复制进手册 | 物料锁与构建链 |
+| C-R17 | **升级准入**：升级要一起审配套版本与迁移、完整物料、主备数据、回退路径与验收；不能只改 tag 就认为 schema 与接口兼容 | ⚠ 自检 |
+| C-R18 | **操作语义写明副作用**：plan 可能读已有身份与文件，render 会准备目录、证书、身份与模型，stage 会改声明（有的 provider 会建远端资源），check 可能写随机探针再精确清理；维护手册必须写清每个操作的副作用、成功与停止条件、怎么恢复 | ⚠ 自检 |
+| C-R19 | **清理策略先批准**：镜像 GC、构建缓存、备份轮换、日志与索引的保留策略先经所有者批准再自动化；保护在用的与回退用的资源，同盘备份不防硬件故障 | ⚠ 自检 |
 
 ## 智能体
 

@@ -91,7 +91,7 @@ Knowfeed S3检查通过实际适配器写两个随机版本读回摘要并核权
 
 私有目录每应用root0700，credentials/redis/rabbitmq/identity/service-identity等文件0600，独立副本按config的backup_dir保留；两份均丢失而声明已有时拒绝生成。备份口令不等于备份数据库。
 
-不可变Job输入改动须新代次并审核schema/账号实际状态；成功Job不为清输出反复删掉重跑。数据库schema以固定源迁移head比对，源变更需要迁移/恢复评估。退回按[Flux](../flux/README.md#故障与退回)，新阶段和数据不自动清除。当前业务验收范围与未覆盖目标见[验收边界](../../docs/platform/verification.md#应用与业务链路)。
+不可变Job输入改动须新代次并审核schema/账号实际状态；成功Job不为清输出反复删掉重跑。数据库schema以固定源迁移head比对，源变更需要迁移/恢复评估。退回按[Flux](../flux/README.md#故障与退回)，新阶段和数据不自动清除。当前业务验收范围与未覆盖目标见验收边界（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。
 
 ## 构建字段
 

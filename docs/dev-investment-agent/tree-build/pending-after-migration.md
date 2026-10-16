@@ -118,4 +118,10 @@
 | 101 | **`scripts/test_switch_test_sync.py` 有 3 个用例失败**（`test_detached_children_without_local_fable`、`test_new_child_commit_is_pushed_before_parent_gitlink`、`test_publish_rebases_onto_new_origin_commits`），`sunmoonai/` 移出前就如此 | 2026-10-16 移出时跑测试发现 | — | 待做；修同步脚本时顺带 |
 | 102 | **ELK 日志采集加上 knowlab、knowmart**：`gitops/components/data-platform/elk/collector/` 的 `config.yaml`（`elk_collector_applications`）、`prepare.yaml` 的名单断言、`acceptance.py` 的名单。它的配置身份含应用名单，改了采集器会滚动，所以没放进 qwen-003（那张卡要求现有对象一个不变），单独一张小卡做 | qwen-003 C 段 | — | 待做 |
 | 103 | **`infrastructure/applications/tests/test_build_selection.py` 对非 tpl 应用必然失败**：断言发布命令里不出现 `tpl-`，可 Makefile 的 `CONFIG_FILES` 总把各应用的配置（含 tpl）一并传进去；改动前就失败 9 个（3 应用 × 3 角色），加了 knowlab、knowmart 后是 15 个，同一原因 | qwen-003 C 段跑测试发现 | — | 待做 |
+| 104 | **开机恢复与冷建的剩余验证**：WSL 真实重启 2026-10-06 已验；还要验 Windows 整机重启的真实登录触发，以及空集群恢复时旧 kind 不夺入口、不用重复点 UAC | 平台第一次重构时所有者要求的交付目标 | 平台验收记录「未完成项」（Git 历史 `53767f6a:docs/platform/verification.md`） | 待做 |
+| 105 | **Harbor 独立持久化的实测**：分别实际做 WSL 重启、KIND 重启与 KIND 删除重建；核 Harbor 全目录与镜像摘要完整、新节点认证后真实拉取；保护其它集群与数据 | 平台第一次重构时所有者要求的交付目标 | 平台验收记录「未完成项」（Git 历史 `53767f6a:docs/platform/verification.md`） | 待做 |
+| 106 | **长期空间管理**：容量持续查看与告警，统一的查看 / 预览 / 执行入口；Harbor 保留与 GC、构建缓存、日志轮转与索引、备份轮换；区分自动与人工，删除策略先批准（`C-R19`），保护在用与回退镜像和必要备份 | 平台第一次重构时所有者要求的交付目标 | 平台验收记录「未完成项」（Git 历史 `53767f6a:docs/platform/verification.md`） | 待做 |
+| 107 | **数据与身份灾备**：各数据库、对象原文、私有输入完整备份并实际恢复演练；机器外落点由所有者选定（同盘备份不防硬件故障） | 平台第一次重构时所有者要求的交付目标 | 平台验收记录「未完成项」（Git 历史 `53767f6a:docs/platform/verification.md`） | 待做 |
+| 108 | **生产安全与业务补齐**：组件安全门禁与官方修复跟踪、按需轮换、Kibana 宿主访问与界面、各应用业务边界逐项验收 | 平台第一次重构时所有者要求的交付目标 | 平台验收记录「未完成项」（Git 历史 `53767f6a:docs/platform/verification.md`） | 待做 |
+| 109 | **云端建群验证**：统一声明与流程在云上建群的适配另做设计并实机验证；当前 KIND 不能证明 kubeadm 与系统离线包路径；Ubuntu 虚拟机演练排在 KIND 验收之后、另行批准 | 平台第一次重构时所有者要求的交付目标 | 平台验收记录「未完成项」（Git 历史 `53767f6a:docs/platform/verification.md`） | 待做 |
 

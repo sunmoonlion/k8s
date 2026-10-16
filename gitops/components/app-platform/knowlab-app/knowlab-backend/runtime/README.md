@@ -18,4 +18,4 @@ Web/Admin证书复用平台CA，TLS输入private_dir/tls和独立backup，Git仅
 
 application-check核Flux源与当前代次、五个Deployment摘要/副本、真实worker/scheduler及保留SNI/Host/CA的新TraefikHTTPS路由；public检查才证明宿主30443指向正确目标。模板已实际验登录/消息，但未配置业务provider仍503/provider_unavailable。
 
-操作与恢复见[应用维护](../../../../../../infrastructure/applications/README.md)，历史范围见[验收边界](../../../../../../docs/platform/verification.md#应用与业务链路)。Git回退不能代替数据库回退或恢复已失身份。
+操作与恢复见[应用维护](../../../../../../infrastructure/applications/README.md)，历史范围见验收边界（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。Git回退不能代替数据库回退或恢复已失身份。

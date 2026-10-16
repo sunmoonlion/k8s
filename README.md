@@ -14,8 +14,8 @@ make -C infrastructure application-check APP=<应用>
 
 | 要找的 | 在哪 |
 | --- | --- |
-| 架构、职责与配置归属 | [docs/platform/architecture.md](docs/platform/architecture.md) |
-| 已验证范围与验收记录 | [docs/platform/verification.md](docs/platform/verification.md) |
+| 部署相关的规矩（配置归属、分层、发布、升级、清理） | [`constraints.md`](docs/dev-investment-agent/tree-build/rules/constraints.md)「发布」`C-R*` |
+| 还没做完的平台目标（开机恢复、Harbor 持久化、空间管理、灾备、云端建群） | [待办账](docs/dev-investment-agent/tree-build/pending-after-migration.md) 104–109 |
 | 宿主（WSL、数据盘、开机服务、空间） | [infrastructure/host/](infrastructure/host/README.md) |
 | 集群、Harbor、入口、边缘机 | `infrastructure/` 下各目录的 README |
 | 应用构建与自研组件镜像 | [infrastructure/applications/](infrastructure/applications/README.md) |

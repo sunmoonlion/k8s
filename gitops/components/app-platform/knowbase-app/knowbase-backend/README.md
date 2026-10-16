@@ -40,7 +40,7 @@ make -C infrastructure application-check APP=knowbase
 
 plan只读；check会创建限定随机数据库/消息/业务探针并精确清理，失败保留现场，不是纯查看。配置候选、构建、固定发布及bootstrap统一见[应用维护流程](../../../../../infrastructure/applications/README.md)。口令备份不是数据库备份；既有数据更新先准备数据库与外部依赖恢复路径，不能拿Git回退代替。
 
-基础登录、消息及实际Knowfeed→Knowbase→Investment中文检索链已验；完整爬取、PDF/其它格式、浏览器全集与恢复演练仍有缺项。 记录见[验收边界](../../../../../docs/platform/verification.md#应用与业务链路)。
+基础登录、消息及实际Knowfeed→Knowbase→Investment中文检索链已验；完整爬取、PDF/其它格式、浏览器全集与恢复演练仍有缺项。 记录见验收边界（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。
 
 ## 后端字段
 

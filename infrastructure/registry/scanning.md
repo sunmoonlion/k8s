@@ -30,4 +30,4 @@ scan-check走真实Harbor API→jobservice→Trivy adapter，等待本次任务�
 - scan失败：查看jobservice/scanner限定日志与任务状态；healthy不替代真实扫描结果。
 - 包漏洞：先核对运行进程是否加载/调用该包，再结合漏洞路径和官方修复评估。加载不等于可触达，未加载也不能无限期豁免。
 
-已有扫描结论、运行库日期与已知包问题集中在[带日期验收](../../docs/platform/verification.md#仓库与扫描)。官方资料：[Trivy库](https://trivy.dev/docs/dev/configuration/db/)、[Harbor扫描](https://goharbor.io/docs/main/administration/vulnerability-scanning/)。实际版本以锁为准。
+已有扫描结论、运行库日期与已知包问题集中在带日期验收（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。官方资料：[Trivy库](https://trivy.dev/docs/dev/configuration/db/)、[Harbor扫描](https://goharbor.io/docs/main/administration/vulnerability-scanning/)。实际版本以锁为准。

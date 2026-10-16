@@ -79,7 +79,7 @@
 ## 七、我没有做的
 
 - 没有读 549 个声明文件的内容，只看了结构、组件清单、relay/沙箱/四应用的配置与模板。
-- 没有验证新体系能不能跑：luna 的验收记录（`docs/platform/verification.md`）我只读了，没有复现。
+- 没有验证新体系能不能跑：luna 的验收记录（当时的 `docs/platform-kind-v1/verification.md`，已删，Git 历史 `53767f6a:docs/platform/verification.md`）我只读了，没有复现。
 - 没有核对 `infrastructure/` 里的 Ansible 剧本逻辑。
 
 ## 七之二、所有者补充的来龙去脉（2026-10-06）
