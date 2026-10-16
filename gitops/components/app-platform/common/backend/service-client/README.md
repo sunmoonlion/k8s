@@ -35,7 +35,7 @@
 | `<目标>_<关系>_SERVICE_DISCOVERY_URL`、`_BACKCHANNEL_ENDPOINT` | Casdoor 公网发现地址；集群内 HTTPS 换令牌地址 |
 | `<目标>_<关系>_SERVICE_CLIENT_SECRET` | 来自运行时 Secret |
 
-接收方（api）：每种关系 `SERVICE_AUTH_<关系>_CASDOOR_APPLICATION`、`_AUDIENCE`（调用方 client_id）、`_SUBJECT_ALLOWLIST`（`admin/<调用方 application>`）、`_REQUIRED_SCOPE`、`_DISCOVERY_URL`、`_BACKCHANNEL_ENDPOINT`；`ALLOWED_HOSTS` 加上自己的内部入口域名。令牌校验签名、issuer、audience、精确 subject 与 scope，不能只信调用方声明的 scope。
+接收方（api）：一种关系可以有多个调用方。`SERVICE_AUTH_<关系>_CALLERS` 列出调用方；每个调用方一组 `SERVICE_AUTH_<关系>_<调用方>_CASDOOR_APPLICATION`、`_AUDIENCE`（调用方 client_id）、`_SUBJECT_ALLOWLIST`（`admin/<调用方 application>`）、`_REQUIRED_SCOPE`、`_DISCOVERY_URL`、`_BACKCHANNEL_ENDPOINT`（调用方名大写、`-` 换 `_`）；`ALLOWED_HOSTS` 加上自己的内部入口域名。校验通过后接收方知道是哪个调用方（knowmart 据此核分身的运行方）。令牌校验签名、issuer、audience、精确 subject 与 scope，不能只信调用方声明的 scope。
 
 两边都挂共用 CA（`/etc/sunmoon/service/ca.crt`），出站只放行到 Traefik 8443。
 

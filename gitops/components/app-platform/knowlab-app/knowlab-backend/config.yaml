@@ -32,6 +32,16 @@ knowlab_backend_deployment:
       scope: knowmart:deliver
       job_revision: v1
       token_seconds: 900
+    # 管理端后端按草稿的运行方调登记的运行方跑测试（契约 knowbot-test-run/v1，SDD 0027 决定 12）
+    - target: investment
+      relation: testrun
+      enabled: true
+      application: sunmoonai-knowlab-investment-testrun
+      client_id: sunmoon-knowlab-investment-testrun
+      organization: sunmoon-workload-knowlab-investment-testrun
+      scope: investment:testrun
+      job_revision: v1
+      token_seconds: 900
   api_port: 8000
   api_replicas: 1
   worker_replicas: 1

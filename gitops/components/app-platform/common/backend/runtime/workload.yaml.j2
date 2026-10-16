@@ -65,14 +65,17 @@ data:
   {{ p }}_SERVICE_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
   {{ p }}_SERVICE_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
 {% endfor %}
-{% for receiver in generic_service_receivers | default([]) %}
-{% set p = 'SERVICE_AUTH_' ~ (receiver.relation | upper) %}
+{% for relation, group in generic_service_receivers | default([]) | groupby('relation') %}
+  SERVICE_AUTH_{{ relation | upper }}_CALLERS: {{ group | map(attribute='caller') | join(',') | to_json }}
+{% for receiver in group %}
+{% set p = 'SERVICE_AUTH_' ~ (receiver.relation | upper) ~ '_' ~ (receiver.caller | upper | replace('-', '_')) %}
   {{ p }}_CASDOOR_APPLICATION: {{ receiver.client.application | to_json }}
   {{ p }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
   {{ p }}_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
   {{ p }}_AUDIENCE: {{ receiver.client.client_id | to_json }}
   {{ p }}_SUBJECT_ALLOWLIST: {{ ('admin/' + receiver.client.application) | to_json }}
   {{ p }}_REQUIRED_SCOPE: {{ receiver.client.scope | to_json }}
+{% endfor %}
 {% endfor %}
 {% if service_ca_needed and not service_enabled and not provider_enabled %}
   SSL_CERT_FILE: /etc/sunmoon/service/ca.crt

@@ -10,3 +10,7 @@ service_access_routes:
   knowmart:
     host: 'knowmart-tls.{{ app_namespace }}.svc.cluster.local'
     path: /api/internal/v1/knowmart
+  # 运行方的统一入口（SDD 0027 决定 12）：knowlab 按契约 knowbot-test-run/v1 来这里跑测试
+  investment:
+    host: 'investment-tls.{{ app_namespace }}.svc.cluster.local'
+    path: /api/internal/v1/knowbot-runtime
