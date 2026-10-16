@@ -1,4 +1,0 @@
-dc65e5f02495fac2054fd1ce3464229ce476447468571c7e243e00d33a2ab4e0  attach-vhds.ps1
-e78e8ee47f0a8a685bd8a5b8c21dd317309ed5043ab194c2c5d6528bd7b590c9  initialize-sunmoon-data.ps1
-be63dddb1ce85d7de949d35b2a439c25aae8b27d6c3f7e5cc8ef748105515407  check-storage-mounts.sh
-e542c9cdbc68abe291d5ab47af466540e632627201d7ac0d1e9e04e30fab99c5  sunmoon-data-storage.py

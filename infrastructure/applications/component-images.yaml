@@ -1,4 +1,6 @@
-# 自研的非应用镜像（0010 第 4 步）：会合点、沙箱、沙箱供给器。源码在本仓（`sunmoonai/` 里的三个目录仍是活源码），
+# 自研的非应用镜像（0010 第 4 步）：会合点、沙箱、沙箱供给器。源码 2026-10-16 已从 sunmoonai/ 挪到同目录 component-images/
+# （relay/、sandbox-platform/）；下面的 context 仍写旧路径，因为它跟钉的 revision 配套（构建从那个提交导出 context），
+# 下次重建哪个镜像就把它的 context 与 revision 一起改到新位置。
 # 钉本仓的一个提交；构建从该提交导出 context，工作区须干净且 HEAD 是它的后代。产物发到 Harbor 的 platform/<名字>，
 # 锁写进 gitops/components/<对象>/image.lock.yaml（component-lock）。构建入口：make platform-build OBJECT=<对象>。
 ---

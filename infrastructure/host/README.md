@@ -6,7 +6,7 @@
 
 动态ext4数据盘为`C:\wsl-disks\sunmoon-data.vhdx`，上限230GiB；文件系统挂到`/mnt/sunmoon-data`，子目录分别bind到`/data/kind-clusters`和`/data/harbor`。UUID、挂载点、fsroot以[config.yaml](config.yaml)为准。严禁在原始`/data/kind-local-storage`上覆盖挂载。
 
-各节点自己的static/dynamic目录由[cluster](../cluster/README.md)管理；Harbor实例独立于节点。数据盘和WSL系统盘最终同在C盘物理硬盘，同盘备份防误删和升级失败，不能防硬件故障。机器外数据库、对象原文和身份备份落点待所有者指定。
+各节点自己的static/dynamic目录由[cluster](../cluster/README.md)管理；Harbor实例独立于节点：停止或重建KIND不碰`/data/harbor`和Harbor容器，但关闭WSL、重启Docker或宿主磁盘故障仍会同时影响二者。数据盘和WSL系统盘最终同在C盘物理硬盘，同盘备份防误删和升级失败，不能防硬件故障。机器外数据库、对象原文和身份备份落点待所有者指定。
 
 ## 日常预检
 
@@ -58,7 +58,7 @@ make -C infrastructure preflight
 5. 改[config.yaml](config.yaml)的`data_vhd_maximum_gib`为真实上限（改数字本身不扩盘）。
 6. 移除维护标记、启用任务，`platform-start`、`platform-status`，核各服务数据与镜像拉取。
 
-当时的扩盘、备份脚本在旧目录`sunmoonai/kind-infrastructure/mount/`（`resize_data.py`、`resize_backup.py`），移出`sunmoonai/`时评估是否收进本目录。
+当时的扩盘、备份脚本（`resize_data.py`、`resize_backup.py`）是那一次100→230 GiB的一次性脚本，2026-10-16随`sunmoonai/`移出没有收进来，要参考到Git历史`9a2abf12:sunmoonai/kind-infrastructure/mount/`取。
 
 ## 空间回收与系统盘压缩
 
@@ -68,7 +68,7 @@ make -C infrastructure preflight
 - **构建缓存**：限定builder、只清7天以上、排除InUse与共享的，例如`docker buildx prune --builder default --filter until=168h --filter 'private=""'`，不用`--all`。清理会刷新父缓存的使用时间，剩下的要等下一轮。
 - **镜像**：只删能证明有恢复来源的——Harbor里有同一manifest摘要（按描述符字节算SHA256比对，不认标签），或有核过的离线tar；不加force、不递归删父镜像。KIND节点、容器、卷一律不动。
 - **重复物料**：大小、SHA256、独立inode都核过才删副本，保留正式副本与来源回执；唯一离线来源和唯一备份不删。
-- **系统盘压缩**：ext4里删掉文件不会让C盘变大，WSL系统盘`ext4.vhdx`（`%LOCALAPPDATA%\Packages\CanonicalGroupLimited.Ubuntu_*\LocalState\`下）要在维护窗口手动压缩：`platform-stop` → 维护标记与禁用任务 → `sudo fstrim -v /`（数据盘另`fstrim /mnt/sunmoon-data`） → Windows管理员`wsl --shutdown`并确认没有运行的发行版 → DiskPart `select vdisk file="<ext4.vhdx>"`、`compact vdisk`（[要求已分离或只读附加](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/compact-vdisk)）→ 记录压缩前后的文件长度与C盘空闲（两者不一定相等）→ 启动Ubuntu、预检、`platform-start`。压缩没有撤销，中途不要打断；DiskPart输出里有失败字样时，即使退出码0也不算通过。当时的压缩脚本在旧目录`sunmoonai/kind-infrastructure/mount/system_compaction.py`。
+- **系统盘压缩**：ext4里删掉文件不会让C盘变大，WSL系统盘`ext4.vhdx`（`%LOCALAPPDATA%\Packages\CanonicalGroupLimited.Ubuntu_*\LocalState\`下）要在维护窗口手动压缩：`platform-stop` → 维护标记与禁用任务 → `sudo fstrim -v /`（数据盘另`fstrim /mnt/sunmoon-data`） → Windows管理员`wsl --shutdown`并确认没有运行的发行版 → DiskPart `select vdisk file="<ext4.vhdx>"`、`compact vdisk`（[要求已分离或只读附加](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/compact-vdisk)）→ 记录压缩前后的文件长度与C盘空闲（两者不一定相等）→ 启动Ubuntu、预检、`platform-start`。压缩没有撤销，中途不要打断；DiskPart输出里有失败字样时，即使退出码0也不算通过。当时的压缩脚本（停旧KIND六个节点那一版）没有收进来，在Git历史`9a2abf12:sunmoonai/kind-infrastructure/mount/system_compaction.py`。
 
 ## 长期空间管理状态
 

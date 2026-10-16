@@ -8,7 +8,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "sunmoonai/docs/dev-investment-agent/switch-test/human-remote.sh"
+SCRIPT = ROOT / "docs/dev-investment-agent/switch-test/human-remote.sh"
 PARENTS = ("k8s", "knowfeed-app", "investment-app", "knowbase-app", "tpl-app")
 CHILDREN = ("investment-app/investment-backend", "knowbase-app/knowbase-backend")
 

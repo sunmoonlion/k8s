@@ -1,6 +1,6 @@
 # 公网边缘（东京 VM）
 
-设计见 `sunmoonai/docs/dev-investment-agent/tree-build/SDD/modules/0013-edge.md`。只在边缘机上运行；集群侧的 frpc 不在这里。
+设计见 `docs/dev-investment-agent/tree-build/SDD/modules/0013-edge.md`。只在边缘机上运行；集群侧的 frpc 不在这里。
 
 | 命令（在 `infrastructure/` 下） | 作用 |
 | --- | --- |

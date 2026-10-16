@@ -56,7 +56,7 @@ systemctl status sunmoon-wsl-interop.service; systemctl cat sunmoon-wsl-interop.
 
 开机时`sunmoon-wsl-interop.service`在Docker之前跑一次，只补缺失的注册；遇到已有但不同、停用的条目或全局禁用则拒绝，不自行覆盖。运行中又丢失时，用`ExecStart`里那份已安装的固定副本显式恢复（`sudo python3 -B <路径>/wsl_interop.py --apply`），不重启WSL、Docker或集群，并追查删除者。
 
-PowerShell的stderr可能是中文CLIXML进度消息，按UTF-8解码会报错：项目只解析stdout，不要把编码异常当成互操作仍断开。Linux能调Windows程序不等于有Windows管理员权限。该检查的源码现仍在旧目录`sunmoonai/kind-infrastructure/mount/wsl_interop.py`，移出`sunmoonai/`时收进本目录。
+PowerShell的stderr可能是中文CLIXML进度消息，按UTF-8解码会报错：项目只解析stdout，不要把编码异常当成互操作仍断开。Linux能调Windows程序不等于有Windows管理员权限。该检查的源码在本目录[wsl_interop.py](wsl_interop.py)（2026-10-16 从旧目录`sunmoonai/kind-infrastructure/mount/`收进来；本目录只存源码，开机服务用的是安装时复制出去的那份）。
 
 ## Docker认证拉取失败
 

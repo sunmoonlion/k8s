@@ -5,7 +5,7 @@
 
 **先读这一份**——我们在建什么、做到哪了：
 
-`sunmoonai/docs/dev-investment-agent/pipeline.md`
+`docs/dev-investment-agent/pipeline.md`
 
 一次 turn 的九站，以及**每一站现在谁做**（人还是脚本）。这个项目在做的事，
 就是把那张表里的格子一个一个从「人」改成「脚本」；你接的活是其中哪一格，
@@ -13,29 +13,29 @@
 
 **动代码前必读**——代码必须符合的规则（按主题分组）：
 
-`sunmoonai/docs/dev-investment-agent/tree-build/rules/constraints.md`
+`docs/dev-investment-agent/tree-build/rules/constraints.md`
 
 违反其中任一条的方案不进入讨论。用法见该文件「怎么用」。
 
 要先了解项目长什么样，读项目总览：
 
-`sunmoonai/docs/project-guide/overall-architecture.md`
+`docs/project-guide/overall-architecture.md`
 
 要建什么（需求的真源）：
 
-`sunmoonai/docs/dev-investment-agent/tree-build/PRD/requirement.md`
+`docs/dev-investment-agent/tree-build/PRD/requirement.md`
 
 任何开发任务都要遵守的通用开发规范：
 
-`sunmoonai/docs/dev-investment-agent/turn/README.md`
+`docs/dev-investment-agent/turn/README.md`
 
 开发 Agent 接任务前必须读取通用开发规范里自己那一类的规则：
 
-`sunmoonai/docs/dev-investment-agent/turn/`（PRD、SDD、IMP、UAT 各一份）
+`docs/dev-investment-agent/turn/`（PRD、SDD、IMP、UAT 各一份）
 
 涉及人的批准、裁量或终审时，同时读取（人介入、权力表、审批档位）：
 
-`sunmoonai/docs/dev-investment-agent/turn/approvals.md`
+`docs/dev-investment-agent/turn/approvals.md`
 
 不在此复述其中规则。
 

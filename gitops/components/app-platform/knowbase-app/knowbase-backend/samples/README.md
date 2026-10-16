@@ -1,6 +1,6 @@
 # 样例数据集
 
-给专家「财务分析与预测」演示与评测用的公共样例，设计见 `sunmoonai/docs/dev-investment-agent/tree-build/SDD/modules/0023-fin-forecast.md` 第三节。
+给专家「财务分析与预测」演示与评测用的公共样例，设计见 `docs/dev-investment-agent/tree-build/SDD/modules/0023-fin-forecast.md` 第三节。
 
 | 样例 | 定义与生成 | 许可证 |
 | --- | --- | --- |

@@ -8,7 +8,7 @@
 
 修法（k8s `76a38cdb`）：附盘脚本先附盘再启动 Ubuntu；`make` 入口在命名空间不一致时自动钻进 PID 1 的命名空间；`platform-start` 的输出先写 `/var/log/sunmoon/platform-start.log`。按「首次维护安装」流程重新装运行副本、重新发布 Windows 任务、启用 boot（待办 21，13:48）。
 
-真实重启（待办 22，13:55）：`platform-stop` → `wsl --shutdown` → 手动触发附盘任务（`LastTaskResult` 0）→ `sunmoon-platform-boot.service` `active`、`Result=success`，14:01 打印已恢复 Harbor、入口和 KIND；新会话与 PID 1 同一命名空间，两个 bind 都在数据盘；`platform-status` 退出 0，3 节点 Ready、Flux 阶段全 Ready、无异常 Pod；旧 kind 三个容器保持退出。注意：这个单元是 `Type=simple`，`is-active` 一启动就是 `active`，要看进程是否退出（`systemctl show sunmoon-platform-boot.service -p ExecMainPID -p Result`），不能拿早读的 `platform-status` 当结果。证据：`sunmoonai/scripts/results/boot-order-install.20261006-135027.md`、`real-wsl-reboot.20261006-135543.md`。仍未验：Windows 整机重启（注销再登录的真实登录触发）、删群冷建。
+真实重启（待办 22，13:55）：`platform-stop` → `wsl --shutdown` → 手动触发附盘任务（`LastTaskResult` 0）→ `sunmoon-platform-boot.service` `active`、`Result=success`，14:01 打印已恢复 Harbor、入口和 KIND；新会话与 PID 1 同一命名空间，两个 bind 都在数据盘；`platform-status` 退出 0，3 节点 Ready、Flux 阶段全 Ready、无异常 Pod；旧 kind 三个容器保持退出。注意：这个单元是 `Type=simple`，`is-active` 一启动就是 `active`，要看进程是否退出（`systemctl show sunmoon-platform-boot.service -p ExecMainPID -p Result`），不能拿早读的 `platform-status` 当结果。证据：`scripts/results/boot-order-install.20261006-135027.md`、`real-wsl-reboot.20261006-135543.md`。仍未验：Windows 整机重启（注销再登录的真实登录触发）、删群冷建。
 
 ## 整套入口与开机恢复（2026-10-05）
 

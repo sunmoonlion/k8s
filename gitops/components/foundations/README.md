@@ -15,7 +15,7 @@ PV集群作用域、PVC属于namespace。每个静态卷指节点内/data/kind-l
 
 KIND默认local-path目录也独立bind到数据盘dynamic，节点容器不作为唯一持久介质。[节点挂载](../../../infrastructure/cluster/README.md#配置和存储)描述准确路径。
 
-已有PVC不能改namespace；已有PV的claimRef/UID不可套历史patch重新认领。跨namespace迁移需一致备份/恢复、停止写入、核数据/权限/身份并显式发布，当前没有通用自动迁移入口。
+已有PVC不能改namespace；已有PV的claimRef/UID不可套历史patch重新认领。跨namespace迁移需一致备份/恢复、停止写入、核数据/权限/身份并显式发布，当前没有通用自动迁移入口。重建集群也不是自动恢复：宿主目录还在只说明数据字节可能还在，还要恢复或重新绑定PV/PVC、节点亲和性、namespace、Secret/证书与组件配置，并核目录权限和数据库一致性；动态卷目录名带着旧PVC身份。
 
 ## 使用与失败边界
 

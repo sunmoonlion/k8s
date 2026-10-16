@@ -42,7 +42,7 @@ make -C infrastructure application-publish-admin APP=knowfeed
 
 ## 自研的非应用镜像（会合点、沙箱、供给器）
 
-[component-images.yaml](component-images.yaml)列出三个镜像：源码在本仓（`sunmoonai/relay-platform/relay`、`sunmoonai/sandbox-platform/{image,bridge,provisioner}`），钉本仓的一个提交。同一条构建链（`build.yaml`，`build_kind=component`）：从钉住的提交导出context、锁定基底（python或node-runtime）、按下载模式传依赖源、核架构/用户/版本、发到Harbor的`platform/<名字>`，成功后`component-lock`把锁写进`gitops/components/<对象>/image.lock.yaml`。
+[component-images.yaml](component-images.yaml)列出三个镜像：源码在本仓（`infrastructure/applications/component-images/relay`、`infrastructure/applications/component-images/sandbox-platform/{image,bridge,provisioner}`），钉本仓的一个提交。同一条构建链（`build.yaml`，`build_kind=component`）：从钉住的提交导出context、锁定基底（python或node-runtime）、按下载模式传依赖源、核架构/用户/版本、发到Harbor的`platform/<名字>`，成功后`component-lock`把锁写进`gitops/components/<对象>/image.lock.yaml`。
 
 ```sh
 make -C infrastructure platform-build OBJECT=relay-platform/relay

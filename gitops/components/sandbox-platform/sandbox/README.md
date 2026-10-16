@@ -1,6 +1,6 @@
 # 沙箱镜像
 
-每用户一个的沙箱 Pod 里跑的镜像：钉版 Codex app-server + 沙箱侧出站桥（源码 `sunmoonai/sandbox-platform/{image,bridge}`）。只构建、不单独部署：供给器读这里的 `image.lock.yaml` 决定拉起哪个镜像。
+每用户一个的沙箱 Pod 里跑的镜像：钉版 Codex app-server + 沙箱侧出站桥（源码 `infrastructure/applications/component-images/sandbox-platform/{image,bridge}`）。只构建、不单独部署：供给器读这里的 `image.lock.yaml` 决定拉起哪个镜像。
 
 ```sh
 make -C infrastructure platform-build OBJECT=sandbox-platform/sandbox
