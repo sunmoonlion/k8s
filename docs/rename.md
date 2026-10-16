@@ -663,11 +663,12 @@ PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 换名；0018 改写为 knowmar
 ## 冻结解除之后（不属于改名，但要有人做）
 
 1. ~~fable 照常把 `qwen` 的改名提交并进 `master`~~ 所有者 2026-10-16 改由 Opus 直接做。**已做** · 2026-10-16 · Opus（`rename-receipts/master-ff-opus.*.md`）：18 个仓（6 个父仓、12 个子仓）的 master 都快进到 qwen，GitHub 与 gitee 核过；master 自 09-25 起没再合过，这次连同那以后 qwen 上的全部提交一起进去（其他工位的分支都已包含在 qwen 里）。
-2. **两台机器、五个工位全部对齐一次**（所有者 2026-10-16 定：第 1 条并完 master 后，远程机与本地机的各工位都对齐）。范围：两台机器 × `cursor`、`fable`、`kimi`、`luna`、`qwen` × 六组仓（`k8s`、`knowfeed-app`、`knowbase-app`、`investment-app` 连同子仓、`runtime`、`tpl-app`）。做法（Opus 写工具、先在副本上演练；远程机 Opus 跑，本地机 Qwen 跑；先列后改，一停一审）：
-   - 先列：每个工位每个仓的分支、相对 master 多出的提交数（ahead）、是否有未提交改动（dirty）、是否已推。
-   - 再对齐：ahead=0 的快进到 master；ahead>0 的把 master 并进来（不重置、不强推，冲突就停、交 Opus），不用 `mb worktree add --from-master` 拨回（会丢提交）；dirty 的不动、交所有者定。
-   - 推送后核对：两台机器上同一工位同一仓是同一个提交，master 是它的祖先，dirty=0。
-   - 两台机器的 `~/master/<仓>` 检出也要对齐到新的 master：父仓里子仓目录从旧名（`info-backend` 等）换成新名，要按 `.gitmodules` 重新初始化子仓，旧名目录确认无未推改动后再挪走。
+2. **两台机器、五个工位全部对齐一次**（所有者 2026-10-16 定：并完 master 后远程机与本地机各工位都对齐；用同步脚本，不删工位重开）。范围：两台机器 × `~/master` 与 `cursor`、`fable`、`kimi`、`luna`、`qwen` × 六组仓（含子仓）。工具 `docs/rename-tools/align_workstations.sh`：`list` 只读列状态（远程机清单 `rename-receipts/align-list-opus.*.txt`：90 个快进、17 个已对齐、0 个要合并、0 个会丢提交）；`old-subrepos [--apply]` 挪旧名子仓目录。步骤：
+   1. 本地机先跑 `list`（Qwen，只读），确认本地各工位没有不在远端也不在 master 的提交、没有未提交改动——有的话先交所有者定，不往下。
+   2. Opus 把 18 个仓的 `origin/<工位>`（cursor、fable、kimi、luna）推到 master（都是快进，不强推），k8s 的 master 再快进到 qwen 最新。
+   3. 所有者在本地机跑 `~/five-repos-sync/sync-five-repos.sh remote-pull -all`，再跑 `local-pull -all`：两台机器的 `~/master` 与各工位 `pull --ff-only`，子仓按新的 `.gitmodules` 初始化（新名目录从新仓 clone）。
+   4. 父仓里留下的旧名子仓目录（`info-*`、`knowledge-*`，git 删不掉有内容的子仓目录，会成为未跟踪目录，父仓不干净、下次同步就停）用 `old-subrepos` 先列、再 `--apply` 挪进 `~/rename-backup/<时间>-old-subrepos/`；不干净或有不在远端的提交的只报不挪。远程机 Opus、本地机 Qwen。2026-10-16 在临时目录按「主目录 + 工位、子仓改名」的布局演练过：快进与子仓初始化都成功、旧目录留成 `??`，`--apply` 后父仓干净。
+   5. 两台机器再跑一次 `list`：都应是 `ok`（子仓游离只是备注；本地机下次跑 `human-local.sh` 会把子仓接回工位分支）。
 3. 远程机 `~/rename-backup/` 与本地机同名目录保留，删除另行决定。
 4. **把 `k8s/sunmoonai/` 整体移出**（所有者 2026-10-15 定）：它大部分是 10-06 起冻结的旧体系，计划删掉。先把还活着的四块搬出去，再 `git rm` 其余（历史在 Git 里）：
    - `sunmoonai/docs/dev-investment-agent/`（手册、回执、派活卡、同步脚本、门禁工具）→ `k8s/docs/dev-investment-agent/`：连带改 k8s 里 26 个、runtime 里 6 个引用；`.githooks` 的 `doc-gate.py`、`anchor-gate.py` 路径与「只查 `sunmoonai/docs/`」的范围；两台机器的 `~/switch-test/human-*.sh` 转发器（跑一次 `human-local.sh` 自动重新生成）；
