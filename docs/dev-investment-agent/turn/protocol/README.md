@@ -20,5 +20,5 @@
 每次竞争的记录放在所属任务的目录里。
 
 ⚠ **产品侧怎么把这件事做成能力**，不在这里；第一期不做（`C-A10`），旧设计见
-[`tree-build-v1` 的 `0008-competition`](../../tree-build-v1/SDD/submodules/0001-backend/SDD/modules/0008-competition.md)。
+`tree-build-v1` 的 `0008-competition`（已删，Git 历史 `90b01d01:docs/dev-investment-agent/tree-build-v1/SDD/submodules/0001-backend/SDD/modules/0008-competition.md`）。
 两者要满足的意图相同，但**操作步骤不可互抄**：这里写的是人怎么做，那里写的是程序怎么做。

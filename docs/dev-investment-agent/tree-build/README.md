@@ -3,8 +3,8 @@
 **这个项目要建什么、切成哪些块、每块的定稿与委托记录。**
 一条求助怎么走完九站见 [`../pipeline.md`](../pipeline.md)；一问一答怎么走见 [`../turn/`](../turn/README.md)。
 
-> 2026-09-23 从头重写。上一棵树在 [`../tree-build-v1/`](../tree-build-v1/README.md)（tag `tree-build-v1-retired-2026-09-23`），只作取证，不再维护。
-> 重写依据：[合并稿](human-ai-turn/prd/discussion-final.md) §一到§五，以及 §六 的三项改判（架构 C、隐私不作约束、界面回到网页）。
+> 2026-09-23 从头重写。上一棵树在 `../tree-build-v1/`（已删，Git 历史 `90b01d01:docs/dev-investment-agent/tree-build-v1/README.md`）（tag `tree-build-v1-retired-2026-09-23`），只作取证，不再维护。
+> 重写依据：合并稿（已删，Git 历史 `90b01d01:docs/dev-investment-agent/tree-build/human-ai-turn/prd/discussion-final.md`） §一到§五，以及 §六 的三项改判（架构 C、隐私不作约束、界面回到网页）。
 
 | | 是什么 |
 | --- | --- |
@@ -18,7 +18,7 @@
 | [`rules/constraints.md`](rules/constraints.md) | 动代码前必读的规则 `C-*` |
 | [`SDD/architecture/`](SDD/architecture/README.md) | 模块之间怎么连：组成、拓扑、通道、对象、方向盘、契约、状态机、审批、工作区、安全、方法、Profile、不变量、责任、工程 |
 | [`SDD/modules/`](SDD/modules/) | 七块各自是什么：`0001-workbench`、`0002-web`、`0003-sandbox`、`0004-relay`、`0005-agent`、`0006-knowledge`、`0007-eval` |
-| [`human-ai-turn/`](human-ai-turn/prd/discussion-final.md) | 值得留档的讨论：合并稿、四家评审、luna 本地环境 |
+| `human-ai-turn/`（已删，Git 历史 `90b01d01:docs/dev-investment-agent/tree-build/human-ai-turn/prd/discussion-final.md`） | 值得留档的讨论：合并稿、四家评审、luna 本地环境 |
 
 ## 一句话
 

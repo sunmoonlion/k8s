@@ -5,7 +5,7 @@
 > 还没定与还没验的记在 [待定决策与未验证事项](../decisions.md)。
 >
 > 本树 2026-09-23 从头重写，上一棵树在 `../tree-build-v1/`（tag `tree-build-v1-retired-2026-09-23`），只作取证。
-> 重写的依据是 [合并稿](../human-ai-turn/prd/discussion-final.md) 与所有者当日的裁定；旧树里凡与本文冲突的，以本文为准。
+> 重写的依据是 合并稿（已删，Git 历史 `90b01d01:docs/dev-investment-agent/tree-build/human-ai-turn/prd/discussion-final.md`） 与所有者当日的裁定；旧树里凡与本文冲突的，以本文为准。
 
 ## 一、做的是什么产品
 

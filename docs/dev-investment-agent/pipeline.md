@@ -99,7 +99,7 @@
 
 多方竞争不是另一条流程,它**从派发那一格分出去,到验收重新合流**:同一问发给几家,
 多出互评、裁决、异议三个环节。因为横穿两站,产品侧曾单列成一块;**第一期不做**(`C-A10` 禁并行与竞争择优),
-旧设计见 [`tree-build-v1` 的 `0008-competition`](tree-build-v1/SDD/submodules/0001-backend/SDD/modules/0008-competition.md)。
+旧设计见 `tree-build-v1` 的 `0008-competition`（已删，Git 历史 `90b01d01:docs/dev-investment-agent/tree-build-v1/SDD/submodules/0001-backend/SDD/modules/0008-competition.md`）。
 
 规则见 [多方竞争](turn/competition.md);**这一格现在由人做**时的操作细则见
 [protocol/](turn/protocol/README.md)——那几份随这一格被脚本化而退役。
