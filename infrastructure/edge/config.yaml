@@ -20,3 +20,11 @@ edge_images:
 # 冒烟用的客户端，正式环境的 frpc 在集群里（SDD 0013 第五节）。
 edge_smoke_frpc_image: docker.io/fatedier/frpc:v0.71.0@sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee
 edge_rate_limit: {average: 50, burst: 100}
+# 按域名只放行列出的路径，其余回 403；没列的域名整域放行。paths 精确匹配，prefixes 前缀匹配，不看查询串。
+# casdoor：公网用户只走 OAuth 授权码登录，管理界面与管理接口不对公网（待办 65）。清单是 2026-10-16 用同版本
+# Casdoor（4.12.0）实走登录录下来的：首次进入、错密码、登录拿到回跳、再次授权、注册页。换令牌、JWKS 走集群内部，不经边缘。
+# 升级 Casdoor 或打开注册、找回密码、MFA 时要重录。
+edge_path_allowlist:
+  casdoor.sunmoonai.com:
+    paths: [/login/oauth/authorize, /signup/oauth/authorize, /api/get-account, /api/get-app-login, /api/login]
+    prefixes: [/assets/]

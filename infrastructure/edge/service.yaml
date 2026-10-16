@@ -17,6 +17,11 @@
           - edge_tls_mode in ['acme-staging', 'acme', 'smoke']
           - edge_domains | length > 0
           - edge_domains | select('match', '^[a-z0-9-]+\.sunmoonai\.com$') | list | length == edge_domains | length
+          # 放行清单只给已开放的域名，路径只用安全字符，且至少一条（空清单等于整域 403，要关域名就从 edge_domains 删）
+          - edge_path_allowlist.keys() | difference(edge_domains) | length == 0
+          - edge_path_allowlist.values() | map('dict2items') | flatten | map(attribute='key') | difference(['paths', 'prefixes']) | length == 0
+          - edge_path_allowlist.values() | map('dict2items') | flatten | map(attribute='value') | flatten | reject('match', '^/[A-Za-z0-9/._-]*$') | list | length == 0
+          - edge_path_allowlist.values() | map('dict2items') | map('map', attribute='value') | map('flatten') | map('length') | select('equalto', 0) | list | length == 0
           - edge_config_dir is match('^/etc/sunmoon/edge[a-z0-9-]*$')
           - edge_token_file.startswith(edge_config_dir + '/')
           - edge_images.traefik is search('@sha256:[0-9a-f]{64}$')

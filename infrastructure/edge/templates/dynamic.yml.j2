@@ -1,4 +1,4 @@
-# 只放行三个公开域名；其它 Host 没有路由，Traefik 回 404。
+# 只放行三个公开域名；其它 Host 没有路由，Traefik 回 404。edge_path_allowlist 列了的域名只放行列出的路径，其余 403。
 http:
   routers:
     to-https:
@@ -8,9 +8,18 @@ http:
       middlewares: [to-https]
       service: noop@internal
 {% for host in edge_domains %}
+{% set allow = edge_path_allowlist.get(host) %}
+{% set terms = [] %}
+{% for path in (allow or {}).get('paths', []) %}{% set _ = terms.append('Path(`' ~ path ~ '`)') %}{% endfor %}
+{% for prefix in (allow or {}).get('prefixes', []) %}{% set _ = terms.append('PathPrefix(`' ~ prefix ~ '`)') %}{% endfor %}
     {{ host.split('.')[0] }}:
       entryPoints: [websecure]
+{% if allow %}
+      rule: "Host(`{{ host }}`) && ({{ terms | join(' || ') }})"
+      priority: 200
+{% else %}
       rule: "Host(`{{ host }}`)"
+{% endif %}
       middlewares: [per-ip-limit]
       service: tunnel
       tls:
@@ -19,8 +28,25 @@ http:
 {% else %}
         {}
 {% endif %}
+{% if allow %}
+    # {{ host }} 上没放行的路径一律 403（edge_path_allowlist）。
+    {{ host.split('.')[0] }}-deny:
+      entryPoints: [websecure]
+      rule: "Host(`{{ host }}`)"
+      priority: 100
+      middlewares: [per-ip-limit, deny-all]
+      service: noop@internal
+      tls:
+{% if edge_tls_mode in ['acme', 'acme-staging'] %}
+        certResolver: le
+{% else %}
+        {}
+{% endif %}
+{% endif %}
 {% endfor %}
   middlewares:
+    deny-all:
+      ipAllowList: {sourceRange: ["0.0.0.0/32"]}
     to-https:
       redirectScheme: {scheme: https, port: "{{ edge_https_port }}", permanent: true}
     per-ip-limit:

@@ -12,6 +12,8 @@ cleanup() {
   sudo -n systemctl stop sunmoon-edge.service 2>/dev/null
   sudo -n rm -rf "$dir"; rm -rf "$work"
 }
+# 冒烟和现网用同一个单元名，清理时会停掉它：现网边缘在跑就不冒烟（上线后在边缘机上别跑，另找机器）。
+if systemctl is-active --quiet sunmoon-edge.service; then echo "STOP sunmoon-edge.service 正在运行（现网边缘），冒烟会替换并停掉它"; exit 1; fi
 [ "${KEEP:-0}" = 1 ] || trap cleanup EXIT
 token=$(openssl rand -base64 36 | tr -d '\n/+=' | cut -c1-48)
 sudo -n install -d -m 700 "$dir"
@@ -27,9 +29,11 @@ docker run -d --name sunmoon-edge-smoke-frpc --network host -e FRP_AUTH_TOKEN="$
 sleep 4
 r() { curl -sk --max-time 10 --resolve "$1:30443:127.0.0.1" "https://$1:30443$2" "${@:3}"; }
 echo "== 检查"
-for h in investment casdoor relay; do
+for h in investment relay; do
   check "$h 经隧道回显正确 Host" "r $h.sunmoonai.com /hello | grep -q '\"host\":\"$h.sunmoonai.com'"
 done
+check "casdoor 放行的登录路径经隧道回显正确 Host" "r casdoor.sunmoonai.com /login/oauth/authorize | grep -q '\"host\":\"casdoor.sunmoonai.com'"
+check "casdoor 没放行的路径 403（管理界面不对公网）" "[ \"\$(r casdoor.sunmoonai.com /api/get-users -o /dev/null -w '%{http_code}')\" = 403 ] && [ \"\$(r casdoor.sunmoonai.com / -o /dev/null -w '%{http_code}')\" = 403 ]"
 check "proto=https 保留到后端" "r investment.sunmoonai.com /x | grep -q '\"proto\":\"https\"'"
 check "X-Forwarded-For 第一个是真实来源" "r investment.sunmoonai.com /x | grep -q '\"xff\":\"127.0.0.1'"
 check "未列出的域名 404" "[ \"\$(r harbor.sunmoonai.com / -o /dev/null -w '%{http_code}')\" = 404 ]"
