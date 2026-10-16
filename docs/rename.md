@@ -663,7 +663,10 @@ PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 换名；0018 改写为 knowmar
 ## 冻结解除之后（不属于改名，但要有人做）
 
 1. fable 照常把 `qwen` 的改名提交并进 `master`（五组仓都要：knowfeed-app、knowbase-app 及子仓、investment-app、k8s、runtime、tpl-app 里 R1 改过的）。
-2. 其他工位（cursor、fable、kimi、luna）各自把 `master` 并进自己的分支，或用 `mb worktree add --from-master <工位> <仓>` 拨回 master——拨回会丢掉该工位相对 master 的提交，用前确认已并进 master。
+2. **两台机器、五个工位全部对齐一次**（所有者 2026-10-16 定：第 1 条并完 master 后，远程机与本地机的各工位都对齐）。范围：两台机器 × `cursor`、`fable`、`kimi`、`luna`、`qwen` × 六组仓（`k8s`、`knowfeed-app`、`knowbase-app`、`investment-app` 连同子仓、`runtime`、`tpl-app`）。做法（Opus 写工具、先在副本上演练；远程机 Opus 跑，本地机 Qwen 跑；先列后改，一停一审）：
+   - 先列：每个工位每个仓的分支、相对 master 多出的提交数（ahead）、是否有未提交改动（dirty）、是否已推。
+   - 再对齐：ahead=0 的快进到 master；ahead>0 的把 master 并进来（不重置、不强推，冲突就停、交 Opus），不用 `mb worktree add --from-master` 拨回（会丢提交）；dirty 的不动、交所有者定。
+   - 推送后核对：两台机器上同一工位同一仓是同一个提交，master 是它的祖先，dirty=0。
 3. 远程机 `~/rename-backup/` 与本地机同名目录保留，删除另行决定。
 4. **把 `k8s/sunmoonai/` 整体移出**（所有者 2026-10-15 定）：它大部分是 10-06 起冻结的旧体系，计划删掉。先把还活着的四块搬出去，再 `git rm` 其余（历史在 Git 里）：
    - `sunmoonai/docs/dev-investment-agent/`（手册、回执、派活卡、同步脚本、门禁工具）→ `k8s/docs/dev-investment-agent/`：连带改 k8s 里 26 个、runtime 里 6 个引用；`.githooks` 的 `doc-gate.py`、`anchor-gate.py` 路径与「只查 `sunmoonai/docs/`」的范围；两台机器的 `~/switch-test/human-*.sh` 转发器（跑一次 `human-local.sh` 自动重新生成）；
