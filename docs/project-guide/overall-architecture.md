@@ -206,7 +206,7 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
 
 ## 已知缺口
 
-- 分身线代码未部署（0027 P4、P5 未做，P6 一次发布）；工作台的「专家」还没改叫「分身」，内置专家包还是对全体用户可选、沙箱还默认接 knowbase 数据服务——工作台对用户开放前要改完（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「四」）。
+- 分身线代码未部署（0027 P4 第二部分待所有者定、P5 未做，P6 一次发布）；工作台的「专家」还没改叫「分身」，内置专家包还是对全体用户可选、沙箱还默认接 knowbase 数据服务——工作台对用户开放前要改完（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「四」）。
 - 管理端业务页受角色缺口所限看不到；admin 的旧沙箱待按 0014 U4 回收（[待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 98、99）。
 - 单机 KIND：数据主备同在一块物理盘，机器外备份未落地；开机恢复的剩余验证、Harbor 持久化实测、长期空间管理、灾备、云端建群见 [待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 104–109。
 - 评测的自动化门未接；`scripts/test_switch_test_sync.py` 有 3 个用例早就失败。
