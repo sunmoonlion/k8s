@@ -41,8 +41,8 @@ knowmart-app  knowmart-backend  knowmart-web-frontend  knowmart-admin-frontend
 ## C 段（Opus，远程机）：部署声明与各处仓清单
 
 1. `k8s/gitops/components/app-platform/knowlab-app/`、`knowmart-app/`：照 tpl-app 的组件（`database`、`migration`、`redis`、`rabbitmq`、`identity`、`runtime`、前后端），共用 `app-platform/common/`；`infrastructure/applications/sources.yaml` 加两个应用的钉；Casdoor 两套浏览器应用（管理端 `built-in`、网页端 `sunmoonai`）。
-2. 渲染比对：除新增的两个应用，现有对象**一个都不变**（同改名 R5.1 的比对方法）。
-3. 各处写死的仓清单加上两个新仓：同步脚本 `switch-test/human-local.sh`、`human-remote.sh` 的父仓与子仓列表，对齐工具 `docs/rename-tools/align_workstations.sh` 的 `REPOS`。两台机器上不在 Git 里的配置由所有者自己加：`~/five-repos-sync/config.sh` 的 `REPOS`，`toolboxes` 里 `model-switch/repos.conf`（`mb` 注册仓）。
+2. 渲染比对：除新增的两个应用，现有对象**一个都不变**（同改名时的比对方法，Git 历史 `3951246c:docs/rename-tools/r5_render_diff.py`）。
+3. 各处写死的仓清单加上两个新仓：同步脚本 `switch-test/human-local.sh`、`human-remote.sh` 的父仓与子仓列表，对齐工具 `docs/dev-investment-agent/switch-test/align_workstations.sh` 的 `REPOS`。两台机器上不在 Git 里的配置由所有者自己加：`~/five-repos-sync/config.sh` 的 `REPOS`，`toolboxes` 里 `model-switch/repos.conf`（`mb` 注册仓）。
 4. 两台机器五个工位挂出两个新仓（`mb worktree add`，子仓初始化）。
 5. 回执 `k8s/scripts/results/opus-003-C.<时间>.md`。
 

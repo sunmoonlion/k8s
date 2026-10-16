@@ -89,7 +89,7 @@
 | knowbase | 看有哪些数据、数据到哪一天、口径怎么算 | 数据集版本、登记、工具调用情况 |
 | knowfeed | （网页端没有功能页） | 批准申请、发起采集、看批次、关注清单 |
 
-管理端的业务页按应用角色 `admin`/`operator` 显示，现行部署没配角色白名单，admin 只看得到「治理控制台」「设置」（[改名手册「冻结解除之后」第 6 条](../rename.md)）。
+管理端的业务页按应用角色 `admin`/`operator` 显示，现行部署没配角色白名单，admin 只看得到「治理控制台」「设置」（[待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 98）。
 
 | 规则 | 说明 |
 | --- | --- |
@@ -134,7 +134,7 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
   → make application-check APP=…
 ```
 
-现在由人照发布卡跑；后期改由流水线触发，约束不变。要点：秘密在宿主私有目录里主备两份、逐字节一致，已有身份丢失就停、不重新生成；Flux 根与各阶段都是 **`prune: false`**，删掉的声明不会自动删集群对象，下线旧对象要专门清理（样板：[改名 R6](../rename.md)）。组件 prepare 的先后顺序有一个已知隐患，修好前别跑 `platform-stage OBJECT=all`（[改名手册「冻结解除之后」第 5 条](../rename.md)）。
+现在由人照发布卡跑；后期改由流水线触发，约束不变。要点：秘密在宿主私有目录里主备两份、逐字节一致，已有身份丢失就停、不重新生成；Flux 根与各阶段都是 **`prune: false`**，删掉的声明不会自动删集群对象，下线旧对象要专门清理（样板：改名时的清理工具，Git 历史 `3951246c:docs/rename-tools/r6_cleanup.py`）。组件 prepare 的先后顺序有一个已知隐患，修好前别跑 `platform-stage OBJECT=all`（[待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 97）。
 
 ## 7. 身份
 
@@ -191,7 +191,7 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
 | 派活卡、回执、两台机器怎么同步 | [`switch-test/`](../dev-investment-agent/switch-test/README.md)（`inbox/`、`done/`、`human-*.sh`）；回执在各仓 `scripts/results/` |
 | 改某个仓的代码 | [`repos/`](repos/) 对应文件 |
 | 跨应用契约、数据 | [`topics/`](topics/) 对应文件 |
-| 改名做了什么、留了哪些尾巴 | [`k8s/docs/rename.md`](../rename.md)「冻结解除之后」 |
+| 还没做的事 | [待办账](../dev-investment-agent/tree-build/pending-after-migration.md)、[接下来做什么](staging.md)；改名（info→knowfeed、knowledge→knowbase，2026-10-14 至 16）的手册与回执已删，按 Git 历史 `3951246c:docs/rename.md` 取 |
 | 查当前钉的提交 / 镜像摘要 / 已晋级的源 | `infrastructure/applications/sources.yaml`、各组件 `image.lock.yaml`、`infrastructure/environments/kind/flux-source.yaml` |
 | 查集群里实际跑的 | `export KUBECONFIG=~/.kube/sunmoon-kind.config; kubectl -n app-platform-dev get deploy -o wide`（所有者机器） |
 | 复核本文的某条断言 | **读代码**，别的都不算数 |
@@ -207,6 +207,6 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
 ## 已知缺口
 
 - knowlab-app、knowmart-app 未建；工作台的「专家」还没改叫「分身」，内置专家包还是对全体用户可选、沙箱还默认接 knowbase 数据服务——工作台对用户开放前要改完（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「四」）。
-- 管理端业务页受角色缺口所限看不到；admin 的旧沙箱待按 0014 U4 回收（[改名手册「冻结解除之后」第 6、7 条](../rename.md)）。
+- 管理端业务页受角色缺口所限看不到；admin 的旧沙箱待按 0014 U4 回收（[待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 98、99）。
 - 单机 KIND：数据主备同在一块物理盘，机器外备份未落地；真实 KIND 删除重建、DNS 与系统证书信任等仍在 [验收记录](../platform-kind-v1/verification.md) 的未完成项里。
 - 评测的自动化门未接；`scripts/test_switch_test_sync.py` 有 3 个用例早就失败。

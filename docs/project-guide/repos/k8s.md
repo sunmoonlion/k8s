@@ -58,7 +58,7 @@ k8s/
 | [`platform-kind-v1/`](../../platform-kind-v1/architecture.md) | 新体系架构、验收记录、组件账号维护 |
 | [`reference/`](../../reference/) | 通用参考资料（行业、采集与数据、技术笔记、运维笔记） |
 | `README.md`、`发布链.md`、`拓扑.md` | 维护导航、发布路径、拓扑 |
-| `rename.md`、`rename-receipts/`、`rename-tools/` | 改名手册、回执与工具；「冻结解除之后」一节是遗留事项 |
+| （已删）改名手册、回执与工具 | 2026-10-16 删除，按 Git 历史 `3951246c` 取；遗留事项已移进待办账 97–101，对齐工具移到 `dev-investment-agent/switch-test/align_workstations.sh` |
 
 ## 门禁与钩子
 
