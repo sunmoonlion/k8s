@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowmart-rabbitmq-runtime
+    namespace: app-platform-dev
+stringData:
+    CELERY_BROKER_URL: ENC[AES256_GCM,data:TdliKcgl8U5kOhVhAJHdUY2CxHiDoGldeaCdUS7r3YsfsoNsN/5Z7rMxcs9jFMh9dh1sjuICrrlhPEy4IrOqxvxeyrIeDLTFfwFhqhDMwDWbpvivArt1O+F2zr29SaNsZRh8yYhz5NPveGhXTRCmC+z68yzyCwYfv7VyNIMx7AI=,iv:9pS60+6yXZwA5lcBG+6gv93su0lV4tNdT/MoXa8MA9A=,tag:6zuLRd5NXrF4ho7H++pCBg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBDbDk5SG95UlZwby9hOGZW
+            TDV3TE9KckFWZ09OTmZ3RkxNZ0RYcll5TldZClI5ZjQyWE04U29TSi9yT0k1d25E
+            M2syVENWc1FVK1JTZGRUWGxwRlo2K3cKLS0tIG13c3JVTHIySjVvZ1lMaE9Ed2xt
+            TEZoK0RyT2FNU2NianROSVFTOVJ4em8K/EQY63dQoJu5NzfAa70fznLPrQ43T0XI
+            GobQWn6OGGbsZj9KJ537syCPHySX40Sf3zJV192HRaei73O2c7SDcA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-16T09:25:43Z"
+    mac: ENC[AES256_GCM,data:YTPnFmF+69MgJ1El/682qrm3UoRIFOsN9rAeMKGCayYeHPwUkC78SvWcae/c8cuKu+mzouRbGFGORTru980rRw8IzhnBafvstsVv1NvGzmtI7ll95ygGH/6QMR8IC9bLl1qG9UvBunLa0GmF10XPwlSOoRP9GmWNcru6X71LSyE=,iv:2YK/yh9zs1pC1BaclMjIKfGPtNcnmMGrqblB7oVP/JA=,tag:8lHymFMfmp0bI3CXDL70zw==,type:str]
+    version: 3.13.3

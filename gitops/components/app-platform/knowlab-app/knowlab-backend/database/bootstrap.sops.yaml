@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowlab-database-bootstrap
+    namespace: data-platform-dev
+stringData:
+    migrator_password: ENC[AES256_GCM,data:AS/PI57zw8w1glQUCn+mT0ZGu2nxu1JdcHQLfM4x86o/sSSQ2Hb9Uw==,iv:th4ACJrUjCBg+PofK3Kd10Jih+Zn0Pcpl/ZU3Jj930k=,tag:B85Dq/9hqlYj9elp5w7bjw==,type:str]
+    runtime_password: ENC[AES256_GCM,data:Zj44n/luKqReSvqbrRPqdxHC7jqN/FMp22Mzjr580FccWV9k+7IVfQ==,iv:euzHVvb9Bjddw7dIV2uvgAUvBCwW9B2McQ6W8Upw2PM=,tag:e+E1hPzfXEnsVJ6g0qrV7Q==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSByMVlJNURGRjc3aEg3NEQz
+            UEI2ZWI2ZmlYNVdNKzBsNCt3cDNDT1BDNFI0ClpxRGJoSmF0OVljNmx4eUJOaDdW
+            bUtLVnl3ZGRuYWlocWJ4Ui9KUkxPQTQKLS0tIEpJSnpER3ZPa0VLZGZiTi9mQ1J2
+            bFFENDZlMGN6QU1Db2lPYXlqQTJ0OW8Ko5jNHZ6sMfPSC27dT/YKYiXZjLwy75+3
+            tG7vx2YYOYNVH0i8RhySEcANgr0Hs0vFESsGiih0dk1Y9NpfBEMMlw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-16T09:24:35Z"
+    mac: ENC[AES256_GCM,data:uyUg/D7YXO6Q/JN8pf80U02tbNjOWqMICR/9WyMS8OJVCjPay+sVHH6ljc6fIPkr+LZeg/S93giueqIxAwfXpcMK6+EF9B/057qxOm3qx8S3Md8cjaeKgXnLhGlI27Pesqpl6zVgKxJ7qX9dhpuq2UISYTe/MuUiJLSPbMsKz04=,iv:UiQEh8vupGfKCrl3B96HNNF+C9cMrKtx57YxELZt/vQ=,tag:XyKBsjd9CQSHpcQCxJv42g==,type:str]
+    version: 3.13.3

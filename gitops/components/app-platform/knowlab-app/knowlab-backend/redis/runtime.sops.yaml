@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowlab-redis-runtime
+    namespace: app-platform-dev
+stringData:
+    REDIS_USER: ENC[AES256_GCM,data:lW85plRhNPQlXPny1tn/,iv:HXeOYBgkDouxCUHkimtmeKMhxwpdbC0v5+GpnE853TI=,tag:b1eB+MwCYyCrhs/dlZ4nRQ==,type:str]
+    REDIS_PASSWORD: ENC[AES256_GCM,data:71Nv5H/71OdzsRFgzSHRqMikHtSGyzUuB8J+WiFmvgTYFZ4MPxNLrw==,iv:FeqLUuKj1bdMNK4SrV+jHfvv0f3t0z280CFT3qfNYmk=,tag:KACpgQ9xGyorp3Wxu/SD9w==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBZVzFYL3JRSHNaOUt5Uncr
+            ZDVtVGlLejVLV3BGZ3lWclRaUDlaU1VnbHdjClZoQVVJS0FyM1Myell6N2xwNWhJ
+            VmtwUEQxQlNaKzc0YWlSRkdDWkI4c00KLS0tIEpEaUxCNTR5aklMbGZqOUlpaFZO
+            WW83UGpLUVJrVEt2Y2NVM3RaVnVLdUkKzs0XMFfVZEopYCHeNsHnuiOck/SvPsg9
+            ypxcIsKJRXsmEkxMyjznRru0BBNgiuMy8C2NPFY4BBFymggUTcbN1A==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-16T09:24:41Z"
+    mac: ENC[AES256_GCM,data:vT13WuZYrog232+avkCVuJubEvCPKkg/XD2R54VloZe+2NWU2G8hBcAjmH3aymF9ycA9d9Bxo+YauznmHvXVeSeJykn8szJdm1+UttGodsLDqpF9u4a8jk2DSnr/vk5slJ21bpMoqEQ7Wc1OCL1YFKZPD9p4ngEne8Zh7xmTM8c=,iv:Lst1iJLOHQx8py1YSXS24Euj5h0I8oirRXxVHhbUXqw=,tag:rSnN+QlCQV8ZNfb7v2Zmgg==,type:str]
+    version: 3.13.3

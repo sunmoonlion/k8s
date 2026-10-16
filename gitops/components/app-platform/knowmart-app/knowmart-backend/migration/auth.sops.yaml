@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowmart-migration-auth
+    namespace: app-platform-dev
+stringData:
+    DATABASE_URL: ENC[AES256_GCM,data:vI55HvJnsVzTW3nMj6Iywn8KRadGaXdSMqTTSzlMmEqirIqavoRHC9RkMdkz2GwQCrew42v1wEcrPdLq5TqwF98yOnZWHLId7MnirZCVl4Lj1qqKFhafKDTI0H53LuTDXBQroSRxP2B1+fa1O4SyzeP5cfp3WlXSvl17AKt3au3sG1PpsOHw4IGi0w==,iv:OTbKC5S8MAonJt09/b1MDq7W2pKkeyqdZmw3Dk+FwDg=,tag:cFRJhAozJYZ8RA+1KAuJ2w==,type:str]
+    MIGRATION_DATABASE_URL: ENC[AES256_GCM,data:q1UZ/raAvMHY6/sIVU49TXFAdj6eWLu84zFz85pXVZYTP22birIio1MY3k8o549p15NkcOB48u6MzqjGgYAKEaxYkorbNOppFJx7k4My6kZBnKjvMnebO0wUUczTXwozZiKdjYBDLH1QX3uFyV8ohQHupn4rUC1fF4QZfCxrm3mDy8Tuw5MEpzNfW2s=,iv:l3Rv/dTaZeYiH+HsSJLXbRytg0QgnXW8KvpHznSR1aA=,tag:J/XcFKSHQKwE/C/ts/qZpQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBIOFF6NytFSWZwcVMyRDl2
+            NmliTERHaWxhWEQ5Z2gxaFkwQTJIZk5oOTJvCk4xcE0yYUZnK2VtVTRFb3ExRjB4
+            RGNQa0h4WDQzMlB2T2xEcnN2QWRPbDQKLS0tIEdKNjZwRmZBWW9KdFQwd3NnNXUx
+            WDZGb2tFb3J5M3hCK0tDanBacmJkcDQKC8e9eYTCzY5TMNArHX3egnph3ZdgGvwO
+            SctBeSA+3bprfE6XDHzS1yo5kNoTGOJvSIo25uvTrhXRk14xvBOpxQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-16T09:25:37Z"
+    mac: ENC[AES256_GCM,data:TNW137WopVsIdXA+knzsTC1tcFZJd401XUYAFY/LQg6ywsWmJ61sqS038ELGD8SEoAXE7o7dzVL5a90p40WWfb/AaHWbDSuAKWd4SmJfNAdB/elfwG9i/5TB9zTXYe/gLfZbT4AD92gpVweKJMJj5na2kPDoSszGTGIu/Do0PgA=,iv:4ALcIslxVJCtNFC8qu3plNU7cLHmIJueDwS4XkkoXfQ=,tag:oPsobFRglmS+neA8EgIk+Q==,type:str]
+    version: 3.13.3

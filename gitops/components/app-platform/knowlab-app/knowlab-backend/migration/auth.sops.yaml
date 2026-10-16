@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowlab-migration-auth
+    namespace: app-platform-dev
+stringData:
+    DATABASE_URL: ENC[AES256_GCM,data:1gWd6BkJos+/+u9Eu0P0/OBlRVwAvuQN6OL6690J0B7boQS4MozokcCUY2e3Dwl3Z/WMRKBeD+fCeWaWlR2AIU/zW1TPZMZfc2gFuhHDrfl5xudhoWd0jFNr+vMRXUzuc9uaMNq7LXdbTzugPF3GqaxWJHGGKagNfkHo8J6lPuDuWPEN+uDlTSY=,iv:wNVYim8CQBy+YQ6846yTDx3U1COcExnc6L7z4ls1VCs=,tag:oXg/zHzProgSlV5BmJ0g1g==,type:str]
+    MIGRATION_DATABASE_URL: ENC[AES256_GCM,data:aB4aomCV5DwxEBsclI19L1/yODJUjwS/lRO3TjMrKx8kSikjtVOY95g4oDdbdBJ2A9jkyuLizEEfEzg8s8o5YVf1haKEs/WN8w2Y/rhJkbFQWohG8lgeArIYlIbRChmPq8JwPow2ebFaVhEc9egD7254Y8jLjVKJ5jMeCaXALazVHnZiIWtp7oOU,iv:aKgYe72SFInEMUm97HeRWl5EcCNlr3zVnOf2XQ1h7oY=,tag:b0/snd+u/sAAQ7bVhDQjAA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBrWHV6VGp2MDRhYkI3MDFx
+            cnNUUEtaa2FXNG1VWUJOUUdMZEcrWUxPbVNjCkREekczVU1DT0o4cy95bVJGdDdw
+            SmtDSld3dnBCWlc1SW1KYThMVHJiWkEKLS0tIDg0MnUvRktvRmN6YmFqdElNSXJn
+            WkNGN1dwSnRQTDJ1bWFZMVJlK2xXSjAK4yFVeIiP0kYnFe1AEX2pIVRAFknNVO44
+            aVS1gWshmFe+neQazaXsqRRF++J09JPE6/ExS6fHXXOV4JE1RzJQ2w==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-16T09:24:38Z"
+    mac: ENC[AES256_GCM,data:RJ+xoQOU4tethNjo+k+OD5j+VQ7bwfxEVFcPVVksO5KFy0Ha/g+vH/J/0wVxMVuKaWZxyBZKlScYrwn1A+CKf5coprudPF4E4bfJlfUeAjTbJIOl4xIzlpXn3uGaKE1VMq7HIkDh8dL7OGKjJUeTgGC6ZIs4oUKoprJ3ga10wIo=,iv:1e7LzhJDa5ivDPUVWgiq3rH86bkWprx0Gv+VVFTHs8Q=,tag:amnlkbIyRwjK222IMaYmhA==,type:str]
+    version: 3.13.3

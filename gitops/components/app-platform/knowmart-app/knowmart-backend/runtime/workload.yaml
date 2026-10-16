@@ -1,0 +1,238 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: knowmart-runtime, namespace: app-platform-dev}
+data:
+  ENV: production
+  APP_SLUG: knowmart
+  DEPLOYMENT_ID: "knowmart-backend-a477d934e3380d74"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,knowmart-api,knowmart-api.app-platform-dev.svc.cluster.local,knowmart.sunmoonai.com,knowmart-admin.sunmoonai.com"
+  REDIS_HOST: redis.data-platform-dev.svc.cluster.local
+  REDIS_PORT: '6379'
+  REDIS_DB: '0'
+  CELERY_QUEUE: knowmart.default
+  CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
+  CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor.app-platform-dev.svc.cluster.local:8000
+  CASDOOR_VERIFY_SSL: 'true'
+  SESSION_COOKIE_SECURE: 'true'
+  REFERENCE_INTERACTION_ENABLED: 'false'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: knowmart-celery-config, namespace: app-platform-dev}
+data:
+  celeryconfig.py: |
+    # Native Celery 5.6 configuration; transient per-connection queues only.
+    control_queue_durable = False
+    control_queue_exclusive = True
+    event_queue_durable = False
+    event_queue_exclusive = True
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: knowmart-api, namespace: app-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: knowmart-api}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowmart-api
+        app.kubernetes.io/part-of: knowmart
+        sunmoonai.com/postgresql-client: 'true'
+        sunmoonai.com/rabbitmq-client: 'true'
+        sunmoonai.com/redis-client: 'true'
+      annotations:
+        sunmoonai.com/config-sha256: 8034196c07d73bdf63f4a187d8310d92579d6cea9e36972c7440a134d3437863
+    spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
+      serviceAccountName: knowmart-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: api
+          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:a477d934e3380d74a77d67ac0fb473243ae34c3bb84af5f8b571b6b0fb145445
+          imagePullPolicy: IfNotPresent
+          command: [uvicorn]
+          args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
+          ports: [{name: http, containerPort: 8000}]
+          startupProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, periodSeconds: 3, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /health/ready, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 5, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 3, periodSeconds: 20}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: SERVICE_NAME, value: knowmart-api}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
+          envFrom:
+            - {configMapRef: {name: knowmart-runtime}}
+            - {configMapRef: {name: knowmart-browser-identity}}
+            - {secretRef: {name: knowmart-database-runtime}}
+            - {secretRef: {name: knowmart-rabbitmq-runtime}}
+            - {secretRef: {name: knowmart-redis-runtime}}
+            - {secretRef: {name: knowmart-browser-secrets}}
+          resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "2", "memory": "768Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: knowmart-celery-config}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: knowmart-worker, namespace: app-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: knowmart-worker}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowmart-worker
+        app.kubernetes.io/part-of: knowmart
+        sunmoonai.com/postgresql-client: 'true'
+        sunmoonai.com/rabbitmq-client: 'true'
+      annotations:
+        sunmoonai.com/config-sha256: 8034196c07d73bdf63f4a187d8310d92579d6cea9e36972c7440a134d3437863
+    spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
+      serviceAccountName: knowmart-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: worker
+          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:a477d934e3380d74a77d67ac0fb473243ae34c3bb84af5f8b571b6b0fb145445
+          imagePullPolicy: IfNotPresent
+          command: [celery]
+          args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
+          startupProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 10, failureThreshold: 30}
+          readinessProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 20}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: SERVICE_NAME, value: knowmart-worker}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
+          envFrom:
+            - {configMapRef: {name: knowmart-runtime}}
+            - {configMapRef: {name: knowmart-browser-identity}}
+            - {secretRef: {name: knowmart-database-runtime}}
+            - {secretRef: {name: knowmart-rabbitmq-runtime}}
+          resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "2", "memory": "1Gi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: knowmart-celery-config}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: knowmart-scheduler, namespace: app-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: knowmart-scheduler}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowmart-scheduler
+        app.kubernetes.io/part-of: knowmart
+        sunmoonai.com/postgresql-client: 'true'
+        sunmoonai.com/rabbitmq-client: 'true'
+      annotations:
+        sunmoonai.com/config-sha256: 8034196c07d73bdf63f4a187d8310d92579d6cea9e36972c7440a134d3437863
+    spec:
+      dnsConfig:
+        options: [{name: ndots, value: '2'}]
+      serviceAccountName: knowmart-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: scheduler
+          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:a477d934e3380d74a77d67ac0fb473243ae34c3bb84af5f8b571b6b0fb145445
+          imagePullPolicy: IfNotPresent
+          command: [celery]
+          args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
+          startupProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 5, failureThreshold: 30}
+          readinessProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 10}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: SERVICE_NAME, value: knowmart-scheduler}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
+          envFrom:
+            - {configMapRef: {name: knowmart-runtime}}
+            - {configMapRef: {name: knowmart-browser-identity}}
+            - {secretRef: {name: knowmart-database-runtime}}
+            - {secretRef: {name: knowmart-rabbitmq-runtime}}
+          resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: knowmart-celery-config}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: knowmart-api, namespace: app-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: knowmart-api}
+  ports: [{name: http, port: 8000, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowmart-api-ingress, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowmart-api}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowmart-web}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowmart-admin}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowmart-api-casdoor-out, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowmart-api}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowmart-api-casdoor-in, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowmart-api}}
+      ports: [{protocol: TCP, port: 8000}]

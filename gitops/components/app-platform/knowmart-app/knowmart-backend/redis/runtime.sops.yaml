@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowmart-redis-runtime
+    namespace: app-platform-dev
+stringData:
+    REDIS_USER: ENC[AES256_GCM,data:xnFlL9hvv6ysOEd8v+MWJQ==,iv:T/eRMoRE5wFxegcAz0d++UkerUxAYLGLT0mIshAKK+k=,tag:m+GUtdCQcskuVRSukNVdHA==,type:str]
+    REDIS_PASSWORD: ENC[AES256_GCM,data:khvYLejj0zm7WmpLoAGzhvVe7U0uH5DqpPqiFZEaYUM23zm4GauoqQ==,iv:EWxrYKGudqCVPTI5EBQgPIuhAWPq7Jcu2puShuLGVhw=,tag:6fUOqNg7KuZVUCpB86zfkA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB3Tko5RkZxZDZYd0llM0Z4
+            SjFqbUprWU1MbjJhWEZ1Z2pFeTFGZnp6MlRBCjE5eUgycmpuWHR4NWE4d3ZGV1Ix
+            WUtjdVRPeW0rZ05DTlU1SGNJWThhMmcKLS0tIFArZGtnZVUzZ2RWUEYrT2U2cmlh
+            VHNBUW8zcEpSQXBjUWdzT0tsaGdLRm8KuZKg0AKB3FvyGDCeguYnnlIgdVu1/FlL
+            weyws0/a8K0PKg5l3P+/tYC1vzFk/cq6J2JvdcOT++q5qeRHvXuROw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-16T09:25:40Z"
+    mac: ENC[AES256_GCM,data:CPow+nPCFxahh1sGBk0MdsggRHYvOytrfcEeq1Xv7mka7Ut3tll9j0sRkrznbJA1puFQN5DUEGtq6nCLeXGzlWrC2ou7hPS8B4OCYheMoaUK1GPRxnI4Di0/U7jQ4OACbuuH25lfBnu+BqZO4v2U0Rv9lp6uAt6RTJTKqjAjm2g=,iv:v9fJzzHUE/ZdMbreuH5UAuSzlB2p0tUIkuwuuNf+E5g=,tag:burcaUbv9EtrT66WcpOwew==,type:str]
+    version: 3.13.3

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowmart-database-runtime
+    namespace: app-platform-dev
+stringData:
+    DATABASE_URL: ENC[AES256_GCM,data:cZMLKFkEX7/ru0lVLm5y9MfLWeJlM78JwG9dTt74zF0IuM5g8k7ugSQzC3amEFPILk+/hnnivH0pDT7J5gJ777R9H8bdUzGm9rqwXtfoJWLIdiYkknCsbPcU7r2nMv0BI3qU7LPgaUm12ppQz6EtzeJP8U/Y3+RNEvGvgighvQ5maDZhVg6zI6wwfA==,iv:TUU5aLmP+9FX4Mm2MngWo/ZK4jgIKUsdeOJougF/s8o=,tag:ac1StZ4ZU1V39UBONwhk7A==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBQdUJqSGwzRC9aUnE3RUlZ
+            U1dFb1NGUEJVN3hiRVdNc3AvUFRwVUJiVFZvCndNNzJkcmtoSGRkUE91MlBSc052
+            dmxZVklseFBIMngvWE9ITnY1ZlE2VVUKLS0tIDFNRXM3M3lDeGRjcnFmTjlxeTRM
+            SmdYNEhCR0xDaGJ1NlRVN0ZqTVd6U3MKdncl8B3/o2XbX/z0a/tr7M97+Zri2gzv
+            FbtgqiRSY8NwnXNRAQE+GzoFMI6Kfbks+P76rPdrrkJspZ2t23SdFg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-16T09:25:36Z"
+    mac: ENC[AES256_GCM,data:3+ZkwiGEH9Owv2gavKr8kghx+xXo48QUZDffv86RclHbFmJ0rgA3sJRqCnC+mjOBud3kWCqAE3PCX7oe/xU1R7SipzD21dFeQKqhQx0OWXn0kQCLWiELe1siWwR96fGXnKQ0HeLqWQt7/g1jZEtQEF+lycsor7qr8Q7GctPboCw=,iv:4fjesLOUY838kaFcW3K4e7WJsiZCYMe6mWnb7b5qZto=,tag:d3aiTOmoRPmsKAhXXReSbw==,type:str]
+    version: 3.13.3

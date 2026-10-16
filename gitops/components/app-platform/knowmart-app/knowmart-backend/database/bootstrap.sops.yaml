@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowmart-database-bootstrap
+    namespace: data-platform-dev
+stringData:
+    migrator_password: ENC[AES256_GCM,data:DDwZXIBhtNXkcLuJjE3HGK2EeoR5Dox+bF6ycf8hWkw+ed4d1Yg4WQ==,iv:hzCF1SaIzmhIUrpueo4uGjeaDXP3J10xV3i12FC6GqA=,tag:zv0HvQrYUp2yf5olZGbFQA==,type:str]
+    runtime_password: ENC[AES256_GCM,data:8eBulzKoy0qc73IU14S2p46ebvbWiu5JR54duMYuZghdIJVfSK3fFw==,iv:w0qWOY78UQcsbHTNysJ5bnR4XEYWp2vCYkdO5MsJ7Qs=,tag:GYj5ekHe29I3Mnxxz0OK7A==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBtNTE4VGluUDdFRVdjeWZE
+            aWRCOWVLdEpmUW9ORXo1NDJscmZmUGVjSm13CmRENk90UjI2bTNBb1h2aXl3KzlL
+            ZXZsNklnVkxicHNjZlYrT2FLZ0JVMlkKLS0tIEFmRHEvZTEwV0xEZmQxNEQrM2x0
+            UTFkM25RN2VkNi9hNjQ5am1QRjAzaGcKD0T2joYq2opb2vlJSPY4osklrGshtREf
+            u4sDTIfSGXPdyxeI7/wJ3N/MPEYZMz5mhUjxpfcdcKJPz6fc0EEPKQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-16T09:25:35Z"
+    mac: ENC[AES256_GCM,data:d4b54OFWbVXAAsbSJEfoDVhJ+fnl0AyaTo0TSSNTGoGbgMo5vsspsMiFtECPKcrzNRCPZVWAdwrVV2OOpeFAw/m9qX6BF84EpuaJAxxwcsOMo0AE3Fpmfk8TnrtuCsCL//JZm12rB0AoYTTbIQIdo4eJkiI8dsxxtu72sa1Xjq0=,iv:EU6wDxqT185A01vNaZHZOTEPR58Khfax+cvrXY1euy4=,tag:NVIpxl3FEdQQRTnkSLppQA==,type:str]
+    version: 3.13.3

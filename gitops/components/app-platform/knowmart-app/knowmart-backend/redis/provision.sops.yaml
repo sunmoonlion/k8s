@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowmart-redis-provision
+    namespace: data-platform-dev
+stringData:
+    password: ENC[AES256_GCM,data:ULVQuWe3ugX9PjcdW6HRjOGPJua1PnV9puW0SWJqbesIzbje6qt+Tw==,iv:/oDSeFD19SO/nRoEhQ/zWTJ3cIKebl9i3ek3yRbLjCo=,tag:+RUMeOofUn2gUZ3xRjbtBQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBqQ1lUaVhMeDlZNnFPeDRn
+            Znd5OUluOTRTMnZUa2ZqUmdERDdyWUpmc2pvCmFPc0VDSGowc1hpcnhjQ3lzU2ta
+            YlE2dXFiKzJzQi9Ecy84bVFKc0VqWkEKLS0tIElqaHN6Wm1oR3ZGVzBNTVYzK1Zo
+            TUFhRi9HQ09VR0k0ZGNLT2pTRXcvdXcKfV0C/0rAT0KBK1CRbi/crQam0MAx4Src
+            NpEch5vNCikoQyQ9Ixcd5RrcF+V8J7zfjX+qPnnE+kBcD1TMOsHEbg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-16T09:25:39Z"
+    mac: ENC[AES256_GCM,data:iFx/dVWLCo3gRNtL27onirrU7iBdewx0I4hL62cqJqrbE5IotYqnICRbQOIujiSm8fET+PSf+fiij+cyePK7Cj+9cBWfmlDiuGbVfuwfnELProFTyiFDfXIvYihdE+5/KTO6EO5OIiXA/N6gttub7oXNpGcWMnuL5h8aR6PG2e8=,iv:YtuDXzzkRWKd7iyVdYX7o/sNJjTvc/dMfOUNqF7CHuM=,tag:P6gYj0rJQFS6MEYdKAm0og==,type:str]
+    version: 3.13.3

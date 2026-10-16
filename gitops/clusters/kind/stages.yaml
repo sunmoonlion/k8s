@@ -610,6 +610,304 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
+metadata: {name: knowlab-admin, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowlab-app/knowlab-admin-frontend
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowlab-runtime}
+    - {name: traefik}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowlab-database, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowlab-app/knowlab-backend/database
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: postgresql}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowlab-migration, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowlab-app/knowlab-backend/migration
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowlab-database}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowlab-redis, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowlab-app/knowlab-backend/redis
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowlab-migration}
+    - {name: redis}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowlab-rabbitmq, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowlab-app/knowlab-backend/rabbitmq
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowlab-redis}
+    - {name: rabbitmq}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowlab-identity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowlab-app/knowlab-backend/identity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowlab-rabbitmq}
+    - {name: casdoor}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowlab-runtime, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowlab-app/knowlab-backend/runtime
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowlab-identity}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowlab-web, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowlab-app/knowlab-web-frontend
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowlab-runtime}
+    - {name: traefik}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowmart-admin, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowmart-app/knowmart-admin-frontend
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowmart-runtime}
+    - {name: traefik}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowmart-database, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowmart-app/knowmart-backend/database
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: postgresql}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowmart-migration, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowmart-app/knowmart-backend/migration
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowmart-database}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowmart-redis, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowmart-app/knowmart-backend/redis
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowmart-migration}
+    - {name: redis}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowmart-rabbitmq, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowmart-app/knowmart-backend/rabbitmq
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowmart-redis}
+    - {name: rabbitmq}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowmart-identity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowmart-app/knowmart-backend/identity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowmart-rabbitmq}
+    - {name: casdoor}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowmart-runtime, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowmart-app/knowmart-backend/runtime
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowmart-identity}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowmart-web, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowmart-app/knowmart-web-frontend
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowmart-runtime}
+    - {name: traefik}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
 metadata: {name: tpl-admin, namespace: flux-system}
 spec:
   interval: 5m

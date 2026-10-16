@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowlab-rabbitmq-provision
+    namespace: messaging-platform-dev
+stringData:
+    password: ENC[AES256_GCM,data:DXdxugVGesqj2miVoRTWqEeAomf3MWUunMLpdsk+rC9Bz5UlvRzy8A==,iv:Ooa0hsZJv/qtYp+WKLOlwlQt4lnljUoE8FdANUjQvR0=,tag:GoYvez54jpc0Sl9QzAjQrQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBxUTlrYWNZY2QyMWN1WWRP
+            TVJPdEYrc1gyUWc3aWJBWkpaUTRCdCszdVdRClpXMUM4NVJIV3NBa2VHRFNIbjYr
+            Nno5eTJ1TDVlbVROb1NZeldwMUZPM0UKLS0tIExXZjBRQzJVbWVGNnJYN28xbGdl
+            bUQ5SU5Jdk1NN3kyUElNdVY3QmdmOTQKE85EhkeeyquGmYudT0J5xsh6HhrwjPhE
+            /8GqWpkvAOYHpjwQ4OnOwh5+eiwvIg+2A9+oGnbjkzI4LuxU5x7hew==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-16T09:24:43Z"
+    mac: ENC[AES256_GCM,data:foFEON1jlUEerxIGdBE3CUKKb/q8ZVp0iCU90HPSvYV3D/uD87HjN5yNUfQANP1Gg25v98NIRQ2Mr0if4jXgJT12gaqn5Ns8GC49/6Df3HTYgzyiVnPFvx57SnpNHOGPjLM3fyu/a3cwe4/ANYakVzrN+JIYjlJXlz5Sue7PLwQ=,iv:xXy183WAMtHGFOf1vD41ZaZyzobJuxYUNCWrSqMnNVU=,tag:jSkludESpCPiiHHKIycg1w==,type:str]
+    version: 3.13.3

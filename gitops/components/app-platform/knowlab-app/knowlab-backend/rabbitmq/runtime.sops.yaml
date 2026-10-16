@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowlab-rabbitmq-runtime
+    namespace: app-platform-dev
+stringData:
+    CELERY_BROKER_URL: ENC[AES256_GCM,data:coEeFGEmOnaIWkQhLhoc5H7D1OQnuCLSml8+6a+fJY8f43oNf+4cHIy8HWvL33tW2LdDUbAEII1ZVqNM27UGvC8vUSSk+ekn5UinbLLxegnTXipXNOTYA1ZL5yfdtDg2aZzpqHx1Xsu113oi3VOTfhw8IQAUd4c6r7etyBTS,iv:E34e5a26XJ7CjbvA3+jN7YiBG9jZ1leAL+6vbPEe6IA=,tag:GAr6djOwdAn0Q22pXT4XEw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBSTVpESGxHdEZ1VGxsNlJT
+            MjBET1BWUFdMSi9zS1lLQ2xHVjhjckZlWDBNCk5jUlg0eGh1Y1FqdHRNVEJRT1JH
+            eVZIaVNVMDk5amJDcXNYTFk1NHlqeDAKLS0tIC8yUXNDV0V3SnpQM0R1WU9rYmxU
+            NUtQRnFndlFhUVpjVFhwTENYakhKdzAKMIpP3C1fcYnwnuGrg3lwzPVXTkcImlgx
+            vOUoUcW7m8RyhuKDZIca3EWXLWKGhqMY2LThzs1heilfafDmdt/c1g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-16T09:24:44Z"
+    mac: ENC[AES256_GCM,data:VQ99e7HpM6k0W1PI6GY8b5HSJrB02H4NeDSl9G9Q1v9Qm/ngnRrWkakg6YjAFAEYehuwVHaaYdJtK0OVFxEMtaIrWCnE6onvA8Ise8EQQCs7ADa5LoJdy1rJ1GFefdGVieMEJpcX3nbApshClQqQf1w4E+7oVGtA4a7PzjrLpTs=,iv:rsy+Qayxds+j9clndUiYI03DBPbpr/S7FFW0VGoIonU=,tag:CSBy/SJ8pjf1/TrITqUiRw==,type:str]
+    version: 3.13.3
