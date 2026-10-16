@@ -21,11 +21,16 @@
 - 两个开关不开的应用（如 built-in 组织的管理端），即使浏览器里有会话也照样弹登录框——只给 sunmoonai 的网页端开，管理端不受影响。
 - 经边缘过滤配置（待办 65 的清单加 `/api/logout`）：单点登录、退出、退出后重新登录都通过，没有被拦的请求；原登录流程照常（第二次授权变成 302 自动回跳）。
 
+## 补记（同日稍后，写模板代码时）
+
+- 改用 `client_id` 代替 `id_token_hint` 也行：`/api/logout?client_id=<本面>&post_logout_redirect_uri=<登记过的地址>&state=…` 同样结束会话并跳回。`client_id` 对但地址没登记、或拿 B 的 `client_id` 配 A 的地址，都不跳回（会话照样结束）。所以**不存任何令牌**：模板原有约束「会话记录里不出现 id_token」保持（Casdoor 的 id_token 与 access_token 同钥签名、内容几乎一样，存它近乎存访问令牌）。下面第 3 条按此改。
+- 发现文档有标准的 `end_session_endpoint`（= `/api/logout`），后端按标准从发现文档读、同源校验。
+
 ## 对 P1b 实施的输入
 
 1. identity 共用机制：sunmoonai 网页端应用 `enableSigninSession`、`enableAutoSignin` 改 true（显式迁移，不靠漂移放行；`identity_revision` 递增）；管理端不动。
 2. `app.conf` 加 `sessionCookieLifeTime`（时长待所有者定）。
-3. 模板后端：登录时把 id_token 存在服务端会话里（不给浏览器）；退出删本地会话后返回 Casdoor 退出地址，前端跳过去；`post_logout_redirect_uri` 登记进应用的 redirectUris。
+3. 模板后端：退出删本地会话后返回 Casdoor 退出地址（带 `client_id`，不存令牌），前端跳过去；落地地址 `/api/auth/<面>/logged-out` 登记进应用的 redirectUris。
 4. 边缘 `edge_path_allowlist` 的 casdoor 加 `/api/logout`，部署照待办 65 的做法。
 
 ## 脚本
