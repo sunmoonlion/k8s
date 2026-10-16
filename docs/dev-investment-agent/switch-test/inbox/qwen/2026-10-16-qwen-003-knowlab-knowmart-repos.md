@@ -52,19 +52,19 @@ knowmart-app  knowmart-backend  knowmart-web-frontend  knowmart-admin-frontend
 
 **D0 前提**（所有者先做）：两台机器上，`toolboxes` 的 `Vlinux/utils/set-up-tools/model-switch/repos.conf` 末尾加两行 `$HOME/master/knowlab-app`、`$HOME/master/knowmart-app`；`~/five-repos-sync/config.sh` 的 `REPOS=( … )` 里加 `"knowlab-app"`、`"knowmart-app"`。远程机的两个新仓 Opus 已挂好。
 
-**D1 本地机挂上两个新仓**（布局同 `mb`：`~/master/<仓>` 在 master，五个工位各一个同名分支，子仓推送地址 GitHub + gitee）：
+**D1 本地机挂上两个新仓**（布局同 `mb`：`~/master/<仓>` 在 master，五个工位各一个同名分支，子仓推送地址 GitHub + gitee；本地机连不上 GitHub 的 SSH，地址一律用 https，和现有各仓一样）：
 
 ```bash
 for a in knowlab knowmart; do
   M=~/master/$a-app; [ -e "$M" ] && { echo "STOP $M 已存在"; break; }
-  git clone -q --recurse-submodules git@github.com:sunmoonlion/$a-app.git "$M" || { echo "STOP clone $a"; break; }
-  sp() { git -C "$1" config --unset-all remote.origin.pushurl 2>/dev/null; git -C "$1" config --add remote.origin.pushurl git@github.com:sunmoonlion/$2.git; git -C "$1" config --add remote.origin.pushurl https://gitee.com/sunmoonlion/$2.git; }
+  git clone -q --recurse-submodules https://github.com/sunmoonlion/$a-app.git "$M" || { echo "STOP clone $a"; break; }
+  sp() { git -C "$1" config --unset-all remote.origin.pushurl 2>/dev/null; git -C "$1" config --add remote.origin.pushurl https://github.com/sunmoonlion/$2.git; git -C "$1" config --add remote.origin.pushurl https://gitee.com/sunmoonlion/$2.git; }
   sp "$M" $a-app
-  for c in backend web-frontend admin-frontend; do git -C "$M/$a-$c" checkout -q -B master; git -C "$M/$a-$c" remote set-url origin git@github.com:sunmoonlion/$a-$c.git; sp "$M/$a-$c" $a-$c; done
+  for c in backend web-frontend admin-frontend; do git -C "$M/$a-$c" checkout -q -B master; git -C "$M/$a-$c" remote set-url origin https://github.com/sunmoonlion/$a-$c.git; sp "$M/$a-$c" $a-$c; done
   for ws in cursor fable kimi luna qwen; do
     W=~/worktrees/$ws/$a-app; [ -e "$W" ] && { echo "STOP $W 已存在"; continue; }
     git -C "$M" worktree add -q -b $ws "$W" master && git -C "$W" submodule update --init -q
-    for c in backend web-frontend admin-frontend; do git -C "$W/$a-$c" checkout -q -B $ws; git -C "$W/$a-$c" remote set-url origin git@github.com:sunmoonlion/$a-$c.git; sp "$W/$a-$c" $a-$c; done
+    for c in backend web-frontend admin-frontend; do git -C "$W/$a-$c" checkout -q -B $ws; git -C "$W/$a-$c" remote set-url origin https://github.com/sunmoonlion/$a-$c.git; sp "$W/$a-$c" $a-$c; done
     echo "mounted $ws/$a-app $(git -C "$W" rev-parse --short HEAD)"
   done
 done
