@@ -21,6 +21,16 @@ knowlab_backend_deployment:
   # 普通用户所在组织（决策 D21、SDD 0014）：网页端应用挂这里；管理端仍在 built-in。
   identity_user_organization: sunmoonai
   identity_revision: v4
+  # 用户上传的数据只进自己的桶（SDD 0027 决定 4，机制在 common/backend/storage）；桶与身份的名字由机制规定。
+  # 未接入 S3 前上传一律不收，不回退到容器本地目录
+  object_storage:
+    enabled: true
+    user: knowlab_storage
+    bucket: knowlab-originals
+    job_revision: v1
+  domain_runtime_env: {STORAGE_BACKEND: s3}
+  # 上传的文件超过 1 MB 会先落到 /tmp（单个最大 50 MB），默认 64Mi 不够几个并发
+  tmp_size_limit: 256Mi
   domain_env:
     # 登录完能回到「我在做的分身」与「提交一个想法」（SDD 0027 P3，前缀匹配）；其余同模板默认
     WEB_AUTH_ALLOWED_RETURN_PATHS: '/zh-CN/dashboard,/en/dashboard,/zh-CN/login,/en/login,/zh-CN/knowbots,/en/knowbots'

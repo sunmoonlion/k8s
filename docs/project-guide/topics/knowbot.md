@@ -2,7 +2,7 @@
 
 > 最后更新：2026-10-16 ｜ 设计真源 [0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)（第一条通路）、[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)（定位与合规） ｜ 规则 [`C-L1`–`C-L5`](../../dev-investment-agent/tree-build/rules/constraints.md#合规)
 >
-> **现状**：设计已定；P1（服务身份、内部入口）、P1b（单点登录）、P2（knowmart）、P3（knowlab，除「后端调模型生成草稿」与数据上传）、P4 第一部分（investment 请分身）的代码已写、已测、已推送，**未部署**（攒到 0027 P6 一次发布）；P4 第二部分（investment 无人值守跑测试）方案待所有者定（0027 §3.4），P5（数据上传与运行时读用户数据）未做。集群里的 knowlab、knowmart 仍是空应用。
+> **现状**：设计已定；P1（服务身份、内部入口）、P1b（单点登录）、P2（knowmart）、P3（knowlab，除「后端调模型生成草稿」与数据上传）、P4 第一部分（investment 请分身）的代码已写、已测、已推送，**未部署**（攒到 0027 P6 一次发布）；P5 的数据上传（knowlab「我的数据」、自己的对象存储桶）也已写未部署；P4 第二部分（investment 无人值守跑测试）方案待所有者定（0027 §3.4），P5 的运行时读用户数据（只读 MCP、运行令牌）未做。集群里的 knowlab、knowmart 仍是空应用。
 
 ## 1. 是什么，谁做什么
 
@@ -82,6 +82,7 @@ knowlab 管理端后端          「测试中」→ 按草稿的运行方调登�
 | knowmart 后端 | `knowmart-backend/app/app/domain/knowbots/`（清单）、`application/services/knowbot_service.py`、`infrastructure/repositories/knowbots.py`、`infrastructure/security/relation_auth.py`、`interfaces/endpoints/knowbot_routes.py`、迁移 `alembic/versions/20261016_0004_knowbots.py` |
 | knowmart 网页端 | `knowmart-web-frontend/app/app/[locale]/(dashboard)/knowbots/`、`components/knowbots/`、`contracts/knowbots.ts` |
 | knowlab 后端 | `knowlab-backend/app/app/domain/knowbots/`（测试契约、草稿状态与提交形状）、`application/services/knowbot_service.py`、`infrastructure/external/service_client.py`（通用出站客户端）与 `knowbot_clients.py`（运行方登记、交付 knowmart）、`infrastructure/repositories/knowbots.py`、`interfaces/endpoints/knowbot_routes.py`、迁移 `alembic/versions/20261016_0004_knowbots.py` |
+| knowlab 用户数据 | 后端 `app/domain/knowbots/datasets.py`（类型、大小、配额、绑定规则）、`application/services/knowbot_data.py`、`infrastructure/storage/object_storage.py`（`application-check` 用它在真实 API 里核对读写）、迁移 `20261016_0005_knowbot_datasets.py`；网页端 `components/knowbots/my-data.tsx`；部署 `knowlab-backend/storage/`、config 的 `object_storage` |
 | knowlab 网页端、管理端 | 网页端 `app/[locale]/(dashboard)/knowbots/`（我在做的分身、`new` 提交一个想法）、`components/knowbots/`；管理端 `app/[locale]/(dashboard)/knowbots/`（分身草稿）、`components/knowbots/knowbot-drafts.tsx`。管理端导航入口要角色 `admin`/`operator`，现网管理员还没有角色（待办账 98），在那之前直接输入地址进 |
 | 部署 | `gitops/components/app-platform/common/backend/service-client/`、各应用后端 `config.yaml` 的 `service_clients` / `service_receivers`、`ingress-platform/traefik/service-access/` |
 | investment 后端、网页端 | 后端 `app/domain/workbench/knowbots.py`（清单→专家包与硬约束）、`application/workbench/catalog.py`（分身目录、钉住、`pack_for_task`）、`infrastructure/external/knowmart_client.py`、`interfaces/http/web/workbench_expert.py`（`POST /api/workbench/knowbots/pin`）、迁移 `alembic/versions/20261016_0019_knowbot_pins.py`；网页端专家首页「请我的分身」、`components/workbench/knowbot-arrival.tsx`（收回跳）；锁 `investment-app/contracts/knowmart-knowbot-manifest-lock.json` |
