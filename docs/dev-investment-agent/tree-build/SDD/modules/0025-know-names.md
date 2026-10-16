@@ -8,6 +8,7 @@
 | --- | --- | --- | --- |
 | `info-app` | **`knowfeed-app`** | 采集：从公开来源取原文、登记数据集 | `knowfeed.sunmoonai.com` / `knowfeed-admin.sunmoonai.com` |
 | `knowledge-app` | **`knowbase-app`** | 加工入库：把采集来的东西抽取、切分、索引，供检索 | `knowbase.sunmoonai.com` / `knowbase-admin.sunmoonai.com` |
+| （新，0026） | **`knowlab`** | 用户的 idea 与数据做成自己的 bot：我们只做工程化与测试，bot 只给用户自己用（2026-10-16 所有者定名） | `knowlab.sunmoonai.com` |
 | `advisor-app`（0018，只有骨架） | **`knowmart-app`** | 知识市场：上架、购买知识；专家是第一种上架的知识（请专家 = 买知识） | `knowmart.sunmoonai.com` / `knowmart-admin.sunmoonai.com` |
 
 一条链：**knowfeed 采集 → knowbase 加工入库 → knowmart 上架卖**。组件照现有规矩：`<名>-app/<名>-backend`、`<名>-web-frontend`、`<名>-admin-frontend`。knowmart 还没有代码和部署，直接用新名字建，不算迁移；0018 里的 advisor 一并改。
