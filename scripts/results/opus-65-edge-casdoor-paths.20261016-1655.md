@@ -1,6 +1,6 @@
 # 待办 65：边缘只放行 Casdoor 登录路径（Opus，远程机）
 
-结论：边缘 Traefik 对 `casdoor.sunmoonai.com` 只放行 OAuth 登录要用的路径，其余 403；investment、relay 不变。远程机隔离实验全部通过。2026-10-16 所有者批准后已部署到边缘（见文末「部署」）；待所有者用手机走公网登录验证。
+结论：边缘 Traefik 对 `casdoor.sunmoonai.com` 只放行 OAuth 登录要用的路径，其余 403；investment、relay 不变。远程机隔离实验全部通过。2026-10-16 所有者批准后已部署到边缘（见文末「部署」），所有者用手机走公网登录 investment 成功，完成。
 
 ## 改了什么
 
@@ -45,7 +45,8 @@
 - 部署前基线（远程机经边缘 `--resolve 127.0.0.1:30443`）：casdoor `/api/get-users` **200**、`/` 200（管理接口确实对公网开着）；investment `/` 307。
 - `make edge-deploy`：exit 0，`changed=2`（写 `dynamic.yml`、重启单元）；两个容器重新起来；Traefik 无 error 日志；证书仍是 Let's Encrypt 正式证书（CN=YR1）。
 - 部署后：casdoor `/login/oauth/authorize`、`/api/get-app-login`、`/api/get-account` 200，登录页引用的 `/assets/index-*.js`、`.css` 200；`/`、`/organizations`、`/api/get-users`、`/api/get-organizations`、`/api/login/oauth/access_token`、`/.well-known/openid-configuration` **403**；investment `/` 307、relay `/` 426（WebSocket 端点对普通请求的正常回应），与前一致。`/assets/` 目录本身 500（Casdoor 回的空响应，不是边缘拦截；登录不用）。
-- 待所有者：用不改 hosts 的设备（手机流量）开 `https://investment.sunmoonai.com:30443` 登录一次；`https://casdoor.sunmoonai.com:30443/` 应为 403。
+- 所有者手机（公网）验证：前几次报「密码错误」，电脑（hosts 直连）能登。排查：经公网边缘打开真实登录页，请求全部 200、`/api/login` 到达 Casdoor；同版本实验经部署配置、模拟 iPhone，正确密码登录成功，密码含 `!@#$%^&*()_+-=[]{};:,.<>/?~` 也不受影响；真实组织没开密码混淆。结论是手机端实际输入的密码不同，与边缘无关。实测 Casdoor 默认 5 次机会、任一端成功登录一次清零；所有者先在电脑登录清零后，手机登录成功。
+- 附带发现：Casdoor 登录页用户名输入框没设 `autocapitalize="none"`，手机输入法可能自动把首字母改大写，而用户名区分大小写。这次不是这个原因（所有者核过），先记录，不改。
 
 ## 以后重录（升级 Casdoor 或开注册 / 找回密码 / MFA）
 
