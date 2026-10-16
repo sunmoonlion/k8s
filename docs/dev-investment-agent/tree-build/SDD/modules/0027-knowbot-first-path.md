@@ -1,6 +1,6 @@
-# 分身的第一条通路：knowlab 受理与交付、knowmart 私有登记、工作台「请」（0027，待所有者定）
+# 分身的第一条通路：knowlab 受理与交付、knowmart 私有登记、工作台「请」（0027）
 
-> 状态：**设计稿，待所有者定「七、要您定的」**。Opus 2026-10-16 起草。
+> 状态：**设计定稿，未实施**。Opus 2026-10-16 起草；所有者同日定「七」：按建议，但第 1 条改为跳转（「我觉得还是跳，这样可以与以后保持一致」），跳转配单点登录。
 >
 > 以什么为底：[0026](0026-knowlab.md)（knowlab 定位、两条线、硬边界）、[0018](0018-advisor-market.md) 顶部的私有模式说明与 §三之二（版本 = 可执行的发布清单）、约束 [`C-L1`–`C-L5`](../../rules/constraints.md#合规)、`C-D2`/`C-D4`/`C-D12`/`C-D14`/`C-C1`、[staging](../../../../project-guide/staging.md) 第 2 项。
 >
@@ -15,7 +15,7 @@
 我们（knowlab 管理端）  受理 → 上传工程化好的分身清单 → 跑工程测试与验收测试 → 出运行正确性报告
 用户（knowlab 网页端）  看报告，验收通过
 knowlab ──交付──▶ knowmart  登记分身与版本（私有，只归这个用户）
-用户（investment 工作台）看到「我的分身」，请一位，给输入，自己跑；运行时只读他自己上传、绑定在这一版上的数据
+用户（investment 工作台）点「请分身」→ 跳到 knowmart「我的分身」选一位 → 跳回工作台，给输入，自己跑；运行时只读他自己上传、绑定在这一版上的数据
 ```
 
 不在这一项里：工作台撤内置专家包与沙箱默认不接 knowbase（staging 第 4 项）；财务分析与预测分身本身（第 3 项）；knowmart 对外上架（持牌后）；可视化编辑分身。
@@ -25,7 +25,7 @@ knowlab ──交付──▶ knowmart  登记分身与版本（私有，只归�
 | | knowlab-app | knowmart-app（私有模式） | investment 工作台 |
 | --- | --- | --- | --- |
 | 真源 | 想法原文与六问、用户数据文件、工程化过程、测试记录与报告、规则来源记录 | 分身登记（所有者、名字、说明、状态）、**不可改写的版本**（清单原文 + 摘要 + 数据绑定） | 委托、步骤、交回物、底稿、运行记录 |
-| 做 | 受理、工程化（第一版：我们手写清单文件上传，后端校验）、测试、用户验收、交付 | 接收交付、按所有者列出、按 `id@version` 给清单、停用 | 列「我的分身」、请、按钉死的版本逐步编排；签发运行期读数据的令牌 |
+| 做 | 受理、工程化（第一版：我们手写清单文件上传，后端校验）、测试、用户验收、交付 | 接收交付、网页端「我的分身」（列出、选定回跳、停用）、按 `id@version` 给清单 | 跳去选分身、收回跳并向 knowmart 核验、按钉死的版本逐步编排；签发运行期读数据的令牌 |
 | 不做 | 不运行分身给用户看结果（只跑测试）；不存工作台的运行结果 | 不存用户数据文件（只存引用）；不运行；不出现「市场、上架、购买、价格」 | 不改分身清单；不读别人的分身；不给分身接我们的数据（第 4 项完成后强制） |
 
 ## 三、契约与接口
@@ -41,17 +41,18 @@ knowlab ──交付──▶ knowmart  登记分身与版本（私有，只归�
 | 接口 | 谁调谁 | 身份 | 做什么 |
 | --- | --- | --- | --- |
 | knowlab → knowmart `POST /internal/knowbots/deliveries` | knowlab 后端 | 服务身份 `knowmart:deliver` | 交付一个验收通过的版本：所有者、分身名与说明、清单原文、摘要。幂等键 = knowlab 的交付单 id；同一分身已有该版本号且摘要不同则拒绝 |
-| investment → knowmart `GET /internal/owners/{owner}/knowbots` | investment 后端 | 服务身份 `knowmart:summon` | 列这个所有者的分身（名字、说明、当前版本、状态）。**只返回 owner 的**；owner 由 investment 从已认证的会话里取，浏览器给不了 |
-| investment → knowmart `GET /internal/owners/{owner}/knowbots/{id}@{version}` | investment 后端 | 同上 | 取清单原文 + 摘要；owner 不符一律 404（不区分「不存在」与「不是你的」） |
-| knowmart 网页端「我的分身」 | 用户 | 用户会话（sunmoonai） | 看自己的分身与版本、停用某一版；不出现上架、分享、导出入口（`C-L4`） |
+| investment → knowmart `GET /internal/owners/{owner}/knowbots/{id}@{version}` | investment 后端 | 服务身份 `knowmart:summon` | 取清单原文 + 摘要。**owner 由 investment 从已认证的会话里取**，浏览器给不了；owner 不符一律 404（不区分「不存在」与「不是你的」） |
+| knowmart 网页端「我的分身」 | 用户 | 用户会话（sunmoonai，单点登录） | 只列本人的分身与版本、停用某一版；从工作台跳来时每位分身多一个「请这位」，点了按服务端登记的回跳目标跳回工作台，带 `knowbot=<id>@<version>` 与原 `ref`（不从链接接受回跳地址，[跨应用跳转规则](../architecture/cross-app-links.md)）；不出现上架、分享、导出、价格（`C-L4`） |
+| investment 收回跳 | investment 后端 | 用户会话 | 拿 `knowbot` 用上一行接口按会话里的 owner 核一次，核过才显示「已选」并允许提交；伪造或别人的分身得到「找不到」 |
 | 沙箱 MCP `sunmoon_knowlab`（只读） | 分身运行时 | investment 签发的运行令牌 | `list_my_data`、`read_my_data`：只能读令牌里列出的数据集（= 这一版的 `data_bindings`），且 knowlab 再核一次数据归令牌里的 owner |
 
+- **跳转与单点登录**：工作台到 knowmart 用现成的 `CrossAppLink`（业务参数 + `from=investment` + `ref`）。sunmoonai 组织里 investment、knowlab、knowmart 三个网页端应用在 Casdoor 打开「保持登录会话」与「自动登录」，在一处登录后跳到另两处不再输密码；退出登录同时结束 Casdoor 会话（公用电脑上下一位不会以上一位身份进入）。这两个开关在 Casdoor 4.12 的实际行为先在实验环境核实再改正式配置；单点登录用到的接口按实走重录边缘放行清单（待办 65 的做法）。以后对外市场沿用同一套跳转。
 - **跨应用的用户标识用 Casdoor 用户 id（`sub`）**，三个应用各自的本地 actor id 不出应用（`C-D14`）。
 - 运行令牌沿用工作台已有的签名密钥对（`workbench-signing`：investment 私钥签，knowbase、relay 已持公钥），knowlab 加为公钥持有方；令牌带 `aud=knowlab`、`sub`、`knowbot`、`version`、`task`、`datasets`、`exp`，委托到终态即作废（同 0018 §四的生命周期规则）。
 
 ### 3.3 工作台的改动（investment）
 
-- 现在 12 处同步调用 `find_pack(profile_id, version)`。改为一个**分身目录端口**：`list_for(owner)`、`resolve(owner, id, version)`。实现两个来源：内置（只剩机制烟测 `SMOKE` 和过渡期的现有内置包）+ knowmart。
+- 现在 12 处同步调用 `find_pack(profile_id, version)`。改为一个**分身目录端口**：`resolve(owner, id, version)`（内置包另有本地列出）。实现两个来源：内置（只剩机制烟测 `SMOKE` 和过渡期的现有内置包）+ knowmart。
 - **请的时候钉死并缓存**：建委托时从 knowmart 取 `id@version` 的清单，原文与摘要存进 investment 自己的库（版本不可改写，所以缓存不会过期）；之后编排、底稿、验收全读本地缓存。knowmart 暂时不可用只影响「列出」与「新请」，不影响在跑的委托。
 - 委托记录加一列来源（内置 / knowmart）与清单摘要，便于复核。
 
@@ -81,17 +82,18 @@ knowlab ──交付──▶ knowmart  登记分身与版本（私有，只归�
 
 | 威胁 | 后果 | 强制点 |
 | --- | --- | --- |
-| 浏览器伪造 owner 列别人的分身 | 泄露别人的方法 | owner 只来自服务端会话；knowmart 只接受服务身份调用 internal |
+| 浏览器伪造 owner 或回跳参数，拿别人的分身 | 泄露、冒用别人的方法 | owner 只来自服务端会话；knowmart 网页端只列本人的；回跳的 `knowbot` 由 investment 后端按会话 owner 向 knowmart 核验；knowmart 只接受服务身份调用 internal |
+| 单点登录会话留在公用电脑 | 下一位以上一位身份进入 | 退出登录同时结束 Casdoor 会话；会话时长按 Casdoor 设置 |
 | 一个应用的服务身份被盗 | 能以任意 owner 查 | 服务身份按关系分（deliver / summon 各一个 client 与 scope）；内部网络策略只放行 knowlab、investment 到 knowmart |
 | 分身清单里夹带越权工具 | 运行时越权 | 工具策略沿用现有「只能比平台更严」的校验；清单解析失败拒绝运行 |
 | 运行令牌被拿去读别的数据 | 越权读数据 | 令牌列死数据集与委托，委托到终态即作废；knowlab 每次查委托状态（同 0018 §四「撤销要即时」） |
 | 我们的工程化偷偷加了投资判断 | 违反 `C-L1` | 清单带 `rule_sources`；受理时缺的判断回头问用户；管理端抽查 |
 
-## 七、要您定的（每条附建议）
+## 七、所有者定的（2026-10-16）
 
-| # | 问题 | 建议 |
+| # | 问题 | 定了什么 |
 | --- | --- | --- |
-| 1 | 工作台怎么「请」：A. 工作台直接列「我的分身」（经 knowmart 内部接口，后端按所有者过滤）；B. 照 0018 跳到 knowmart 选定再跳回 | **A**。私有模式下列表只有自己的分身，跳出去没有收益；Casdoor 不保持登录会话，每跳一次都要重新登录。B 留给持牌后的对外市场 |
+| 1 | 工作台怎么「请」 | **跳到 knowmart「我的分身」选定再跳回**，与以后的对外市场一致（所有者：「我觉得还是跳，这样可以与以后保持一致」）。配单点登录，跳过去不用再登录（§3.2） |
 | 2 | 第一版「工程化」怎么做 | 我们（Opus/Qwen）照用户的方法手写分身清单文件，经 knowlab 管理端上传，后端校验、跑测试；**不做**可视化编辑器 |
 | 3 | 受理表（「方法说得清」） | 沿用专家包的六问：解决什么、不解决什么、输入是什么、步骤与每步的判断规则、输出长什么样、怎样算对；加「上传数据」与「验收用的标准答案」 |
 | 4 | 用户数据的存放与配额（`C-D12`） | 存 knowlab 自己的对象存储桶，按用户分前缀；单文件 ≤ 50 MB、每人 ≤ 1 GB；文件类型先收 PDF、Excel、CSV、文本；用户可删未被已交付版本引用的文件；数据只用于他自己的分身与测试 |
@@ -103,10 +105,11 @@ knowlab ──交付──▶ knowmart  登记分身与版本（私有，只归�
 | 卡 | 仓 | 内容 | 验收 |
 | --- | --- | --- | --- |
 | P1 | k8s | 服务身份共用机制从「只对 knowbase」改为通用（目标应用作参数）；加 knowlab→knowmart（deliver）、investment→knowmart（summon）两对身份与网络策略；knowlab 加为运行令牌公钥持有方 | 现有四个应用重新渲染后对象**逐字不变**（`C-R11`）；新身份能换到令牌 |
-| P2 | knowmart-app | 分身与版本表、`knowbot-manifest` v1 schema（真源）、三个 internal 接口、网页端「我的分身」 | owner 过滤与不可改写的测试；伪造 owner、同版本不同摘要被拒 |
+| P1b | k8s + 应用模板 | 单点登录：先在实验环境核实 Casdoor 4.12「保持登录会话」「自动登录」的行为；identity 共用机制里 sunmoonai 网页端应用打开这两项（显式迁移，不靠漂移放行）；模板的退出登录同时结束 Casdoor 会话；按实走重录边缘放行清单 | investment 登录后跳 knowlab、knowmart 不再输密码；退出后三处都要重新登录；边缘清单改前改后的录制一致 |
+| P2 | knowmart-app | 分身与版本表、`knowbot-manifest` v1 schema（真源）、交付与取清单两个 internal 接口、网页端「我的分身」（列出、请这位回跳、停用） | owner 过滤与不可改写的测试；伪造 owner、同版本不同摘要被拒 |
 | P3 | knowlab-app | 受理（六问 + 数据上传）、管理端受理队列与清单上传、测试与报告、用户验收、交付 | 从提交到交付走通；未验收不能交付；交付幂等 |
-| P4 | investment-app | 分身目录端口（内置 + knowmart）、请时缓存清单、委托记来源与摘要；「我的分身」出现在请专家处 | 现有内置包行为不变；knowmart 的分身能请、能跑；不能请别人的；knowmart 停了在跑的委托不受影响 |
+| P4 | investment-app | 分身目录端口（内置 + knowmart）、「请分身」跳转与收回跳核验、请时缓存清单、委托记来源与摘要 | 现有内置包行为不变；knowmart 的分身能请、能跑；伪造回跳与别人的分身被拒；knowmart 停了在跑的委托不受影响 |
 | P5 | knowlab-app + 沙箱 | `sunmoon_knowlab` 只读 MCP 与运行令牌校验；供给器给沙箱配它 | 只能读这一版绑定的本人数据；委托终态后读不到 |
 | P6 | 本地机（Qwen） | 发布、浏览器走一遍：建一个测试分身（假数据）从提交到工作台运行 | 截图与回执 |
 
-P1 先做（其余都依赖它）；P2、P3、P4 可并行；P5 在 P3 之后；P6 最后。
+P1、P1b 先做（其余都依赖它们）；P2、P3、P4 可并行；P5 在 P3 之后；P6 最后。
