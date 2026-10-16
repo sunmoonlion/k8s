@@ -598,7 +598,7 @@ grep -E "^=====|\?\?" docs/rename-receipts/R6.1-list.$T.txt
 
 要看到：`exit=0`（哪一类 `STOP` 就停，原样进回执）。清单整份随回执提交：`git add docs/rename-receipts/R6.1-* && git -c core.editor=true commit -m "rename: R6.1 清单（Qwen）" && git push origin qwen`。**停点**：Opus 逐类审（尤其 `??` 那几行），写「R6.1 通过」才删。
 
-**R6.1 通过** · 2026-10-16 · Opus（`R6.1-qwen.20261016-1016.md`、`R6.1-list.20261016-1013.txt`）。`exit=0`，无 `STOP`、无 `??`。逐类核过：`k8s` 旧 Kustomization 19 个全在清单、都不在现行 `stages.yaml`，带旧阶段标签的对象 151 个（含共享组件里改了名的 3 个，`still_declared` 都是 false、标签是预期阶段），无旧名无标签的游离对象，旧 Pod 47 个；`job-history` 现行声明的 34 个保留，已完成历史 Job 142 个（investment 90、tpl 15、其余是旧 info/knowledge 的——这些先随 `k8s` 一类删掉），没有未完成的；`postgresql` 库 `info`（9.6 MB）、`knowledge`（8.8 MB）与 4 个角色，归属注释都对；`redis` 2 个用户，旧键 0；`rabbitmq` 2 个 vhost（说明是本平台记号，队列消息都是 0）、2 个用户；`object-storage` 桶 `info-originals`（94 个对象、约 31 MB）、2 个用户、2 条策略；`ragflow` 旧数据集 1 个（6 份文档）；`casdoor` 应用 6 个（回执写成 4 个，以清单为准）、组织 2 个且都没有用户，clientId 与说明都对；`private` 4 个目录（构建候选目录 R3 时已不在）；`harbor` 旧仓库 6 个，占用基线 19G，没做过垃圾回收。R6.2 等所有者确认删除后开始。
+**R6.1 通过** · 2026-10-16 · Opus（`R6.1-qwen.20261016-1016.md`、`R6.1-list.20261016-1013.txt`）。`exit=0`，无 `STOP`、无 `??`。逐类核过：`k8s` 旧 Kustomization 19 个全在清单、都不在现行 `stages.yaml`，带旧阶段标签的对象 151 个（含共享组件里改了名的 3 个，`still_declared` 都是 false、标签是预期阶段），无旧名无标签的游离对象，旧 Pod 47 个；`job-history` 现行声明的 34 个保留，已完成历史 Job 142 个（investment 90、tpl 15、其余是旧 info/knowledge 的——这些先随 `k8s` 一类删掉），没有未完成的；`postgresql` 库 `info`（9.6 MB）、`knowledge`（8.8 MB）与 4 个角色，归属注释都对；`redis` 2 个用户，旧键 0；`rabbitmq` 2 个 vhost（说明是本平台记号，队列消息都是 0）、2 个用户；`object-storage` 桶 `info-originals`（94 个对象、约 31 MB）、2 个用户、2 条策略；`ragflow` 旧数据集 1 个（6 份文档）；`casdoor` 应用 6 个（回执写成 4 个，以清单为准）、组织 2 个且都没有用户，clientId 与说明都对；`private` 4 个目录（构建候选目录 R3 时已不在）；`harbor` 旧仓库 6 个，占用基线 19G，没做过垃圾回收。R6.2 等所有者确认删除后开始。所有者 2026-10-16 确认删（「确认删」），R6.2 可执行。
 
 ### R6.2 删（按顺序，一类一类）
 
@@ -641,7 +641,7 @@ make -C infrastructure platform-status; echo "exit=$?"
 
 **停点**：回执 `R6.2-qwen.<时间>.md` 连同 `R6.2-*.txt` 提交推送，Opus 审过在本节写「改名完成」，冻结解除，Cursor 恢复接卡（用新名字）。
 
-**状态**：**可执行（R6.1）** · 2026-10-16 · Opus。R5 通过后按现场核过一遍：清单、归属记号、私有文件键名（RAGFlow 仍是 `knowledge_token`）与现行配置一致；RAGFlow 一类只报带旧名的数据集。R6.1 只列不删，交回执后停；R6.2 等 Opus 写「R6.1 通过」。
+**状态**：**可执行（R6.2）** · 2026-10-16 · Opus。R5 通过后按现场核过一遍：清单、归属记号、私有文件键名（RAGFlow 仍是 `knowledge_token`）与现行配置一致；RAGFlow 一类只报带旧名的数据集。R6.1 已通过；所有者 2026-10-16 确认删除，**R6.2 可执行**。
 
 ---
 
