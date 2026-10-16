@@ -38,6 +38,7 @@ knowlab 管理端后端          草稿改「测试中」→ 调 investment 工�
 
 - **形状 = 工作台现在的专家包**（`investment-backend` `app/domain/workbench/packs.py` 的 `ExpertPack`：六问、步骤契约、验收规则、底稿布局、工具策略），去掉内置专用字段（`internal`），加 `data_bindings`（这一版能读的用户数据：knowlab 的数据集 id + 版本 + sha256）和 `rule_sources`（每条判断规则出自用户原文还是用户确认过的改写，`C-L1`）。
 - **schema 真源在 knowmart**（版本的提供方），investment 与 knowlab 各持锁文件，同 knowfeed→knowbase 的做法（`contracts/*-provider-lock.json`）。schema 变更走版本号，v1 冻结后只增可选字段。
+- **运行方 `runtime`（所有者 2026-10-16：「不要把测试工作写死为investment，因为之后可能还有其它的bot」）**：清单外层必填，写明这个分身在哪个应用里运行（现在只有 `investment`）。knowmart 原样存放；「取清单」只给运行方是调用方自己的分身；用户「请分身」的入口在各运行方自己的界面里，从哪个运行方来就只能选运行方是它的分身。
 - **P2 实现时细化（2026-10-16）**：清单分两层。外层（`schema: knowbot-manifest/v1`、名字与说明、版本、`data_bindings`、`rule_sources`）归 knowmart，严格校验；`pack`（专家包形状的可执行部分）归执行它的工作台，knowmart 只核骨架（`pack_id`、`version` 等于外层版本、非空 `workflow`），完整形状由工作台按自己的模型校验，免得两处各维护一份执行格式。外层 schema 由 knowmart 后端模型生成，放 `knowmart-app/contracts/knowbot/v1/`（摘要见 `contract-manifest.json`）；JSON Schema 表达不了的跨字段规则以 knowmart 交付时的校验为准。摘要写作 `sha256:<十六进制>`。
 - 校验两处做：knowlab 上传时（不合格不让测）、knowmart 登记时（不合格不收）。investment 取到后按同一 schema 解析，失败拒绝运行。
 
@@ -46,13 +47,14 @@ knowlab 管理端后端          草稿改「测试中」→ 调 investment 工�
 | 接口 | 谁调谁 | 身份 | 做什么 |
 | --- | --- | --- | --- |
 | knowlab → knowmart `POST /api/internal/v1/knowmart/deliveries` | knowlab 后端 | 服务身份 `knowmart:deliver` | 交付一个验收通过的版本：所有者、分身名与说明、清单原文、摘要。幂等键 = knowlab 的交付单 id；同一分身已有该版本号且摘要不同则拒绝 |
-| investment → knowmart `GET /api/internal/v1/knowmart/owners/{owner}/knowbots/{id}@{version}` | investment 后端 | 服务身份 `knowmart:summon` | 取清单原文 + 摘要。**owner 由 investment 从已认证的会话里取**，浏览器给不了；owner 不符一律 404（不区分「不存在」与「不是你的」） |
-| knowlab 管理端后端 → investment `POST /api/internal/v1/workbench/test-runs` | knowlab 后端 | 服务身份 `investment:testrun` | 交给工作台一份草稿清单、验收用例与数据绑定，在我们的测试账号上无人值守跑一遍（预算上限、超时），回每条用例的结果（各步验收通过与否、出错处）；测试跑出的分析内容不给用户，investment 只短期保留（7 天）供排查，到期删除 |
+| 运行方 → knowmart `GET /api/internal/v1/knowmart/owners/{owner}/knowbots/{id}@{version}` | 运行方后端（现在是 investment） | 服务身份 `knowmart:summon`（每个运行方一个调用方，knowmart 认出是谁；只给运行方是它自己的分身） | 取清单原文 + 摘要。**owner 由 investment 从已认证的会话里取**，浏览器给不了；owner 不符一律 404（不区分「不存在」与「不是你的」） |
+| knowlab 管理端后端 → 运行方 `POST /api/internal/v1/knowbot-runtime/test-runs` | knowlab 后端 | 服务身份 `<运行方>:testrun` | 按草稿的 `runtime` 找到登记的运行方（现在只有 investment）。契约 `knowbot-test-run/v1` 由 knowlab 定（真源 `knowlab-app/contracts/`）：请求是草稿清单、验收用例、数据绑定、预算上限、超时；回每条用例的结果（各步验收通过与否、出错处）。运行方在我们的测试账号上无人值守跑；测试跑出的分析内容不给用户，运行方只短期保留（7 天）供排查，到期删除。以后加运行方：实现这个契约、在 knowlab 配置里登记（名字、服务身份、集群内入口），knowlab 代码不改 |
 | knowmart 网页端「我的分身」 | 用户 | 用户会话（sunmoonai，单点登录） | 只列本人的分身与版本、停用某一版；从工作台跳来时每位分身多一个「请这位」，点了按服务端登记的回跳目标跳回工作台，带 `knowbot=<id>@<version>` 与原 `ref`（不从链接接受回跳地址，[跨应用跳转规则](../architecture/cross-app-links.md)）；不出现上架、分享、导出、价格（`C-L4`） |
 | investment 收回跳 | investment 后端 | 用户会话 | 拿 `knowbot` 用上一行接口按会话里的 owner 核一次，核过才显示「已选」并允许提交；伪造或别人的分身得到「找不到」 |
 | 沙箱 MCP `sunmoon_knowlab`（只读） | 分身运行时 | investment 签发的运行令牌 | `list_my_data`、`read_my_data`：只能读令牌里列出的数据集（= 这一版的 `data_bindings`），且 knowlab 再核一次数据归令牌里的 owner |
 
 - **跳转与单点登录**：工作台到 knowmart 用现成的 `CrossAppLink`（业务参数 + `from=investment` + `ref`）。sunmoonai 组织里 investment、knowlab、knowmart 三个网页端应用在 Casdoor 打开「保持登录会话」与「自动登录」，在一处登录后跳到另两处不再输密码；退出登录同时结束 Casdoor 会话（公用电脑上下一位不会以上一位身份进入）。2026-10-16 实验核实（[记录](../../../../../scripts/results/opus-0027-P1b-sso-lab.20261016-1753.md)）：两个开关**都开**才免登（授权请求服务端直接 302 回调）；退出用 `/api/logout` 结束会话并跳回（只跳回登记过的地址）；会话时长由 `app.conf` 的 `sessionCookieLifeTime` 定（默认 30 天；所有者 2026-10-16 定 **12 小时**，即 `43200`，全局生效，管理端登录也一样）；边缘放行清单加 `/api/logout`。退出不存任何令牌：带本面 `client_id` 即可（实验核实 Casdoor 结束会话且只跳回登记过的地址），会话记录里仍不出现 id_token。一处退出只结束 Casdoor 会话，已登录着的其他应用本地会话留到自己过期（最长 1 小时）；全局单点退出见待办账 114。以后对外市场沿用同一套跳转。
+- **接收方按「关系 × 调用方」配置**：一种关系可以有多个调用方（「取清单」以后会有多个运行方），接收方的环境变量是 `SERVICE_AUTH_<关系>_<调用方>_*`，外加 `SERVICE_AUTH_<关系>_CALLERS` 列出调用方；校验器按令牌认出调用方，接口据此核运行方。
 - **服务身份与内部入口（P1 已实现，未部署）**：knowmart 的内部接口统一在 `/api/internal/v1/knowmart` 下，经 traefik service-access 的内部入口 `knowmart-tls.<命名空间>.svc.cluster.local`（独立证书）。knowlab 的 `service_clients` 有 `knowmart:deliver`，investment 有 `knowmart:summon`，knowmart 的 `service_receivers` 接受这两种；应用代码读的环境变量见 `gitops/components/app-platform/common/backend/service-client/README.md`（调用方 `KNOWMART_INTERNAL_URL`、`KNOWMART_<关系>_SERVICE_*`；接收方 `SERVICE_AUTH_<关系>_*`）。knowlab 加为运行令牌公钥持有方放到 P5 一起做（只是加一条 `domain_secrets` 的 `workbench-signing` 公钥配置）。
 - **跨应用的用户标识用 Casdoor 用户 id（`sub`）**，三个应用各自的本地 actor id 不出应用（`C-D14`）。
 - 运行令牌沿用工作台已有的签名密钥对（`workbench-signing`：investment 私钥签，knowbase、relay 已持公钥），knowlab 加为公钥持有方；令牌带 `aud=knowlab`、`sub`、`knowbot`、`version`、`task`、`datasets`、`exp`，委托到终态即作废（同 0018 §四的生命周期规则）。
@@ -112,6 +114,7 @@ knowlab 管理端后端          草稿改「测试中」→ 调 investment 工�
 | 8 | knowlab 后端怎么创建分身 | 所有者未明说，先按：后端调模型把用户的想法或 skill 生成清单，投资判断的空缺回头问用户（`C-L1`），每条规则记出处 |
 | 9 | 测试通过后要不要用户验收 | 所有者未明说，先按：测试通过即可用；用户在「我的分身」看得到运行正确性报告，不满意可停用 |
 | 10 | 测试时谁取清单 | 草稿就在 knowlab，管理端后端连同用例与数据绑定交给 investment「跑测试」接口；investment 不另开跨所有者取分身的权限 |
+| 12 | 运行与测试不写死 investment | 清单外层加 `runtime`；测试契约 `knowbot-test-run/v1` 由 knowlab 定，运行方实现并在 knowlab 登记；「取清单」按调用方核运行方；接口路径统一 `/api/internal/v1/knowbot-runtime/…`（所有者「可以，写进0027然后改P2」） |
 | 11 | Opus 补的五条（所有者「全部采纳」） | ① 未通过：报告给用户和我们，改好出新草稿再测；② 发起测试前逐条核规则出处；③ 用户只在 knowmart 看到能用的版本，在做的显示在 knowlab；④ 用户同意数据用于测试，测试令牌只开这一版的数据，测试产出短期保留后删；⑤ 每次测试有预算上限，「测试中」超时可退回重跑 |
 
 ## 八、实施拆分（卡）
@@ -120,9 +123,9 @@ knowlab 管理端后端          草稿改「测试中」→ 调 investment 工�
 | --- | --- | --- | --- |
 | P1 | k8s | **已实现，未部署（2026-10-16）**：通用服务身份 `common/backend/service-client`（knowbase 那一对不动，见待办 115）；knowmart 内部入口（独立证书）；knowlab→knowmart（deliver）、investment→knowmart（summon）两对身份与网络策略。knowlab 的运行令牌公钥放到 P5 | 现有四个应用重新渲染后对象**逐字不变**（`C-R11`）；新身份能换到令牌 |
 | P1b | k8s + 应用模板 | 单点登录：（实验已核实，见 §3.2）identity 共用机制里 sunmoonai 网页端应用打开这两项（显式迁移，不靠漂移放行）；Casdoor `app.conf` 设 `sessionCookieLifeTime = 43200`；模板的退出登录同时结束 Casdoor 会话（带 client_id，不存令牌）；按实走重录边缘放行清单 | investment 登录后跳 knowlab、knowmart 不再输密码；退出后三处都要重新登录；边缘清单改前改后的录制一致 |
-| P2 | knowmart-app | **已实现，未部署（2026-10-16）**；草稿放 knowlab 后不用改（交付的都是测试通过的，交付即可用）。已实现：分身与版本表（数据库触发器保证版本只插不改）、`knowbot-manifest` v1 外层 schema（真源，契约在父仓 `contracts/knowbot/v1/`）、交付与取清单两个 internal 接口（按关系校验服务令牌，身份先于数据库会话）、网页端「我的分身」（列出、停用、「请这位」回跳带 `knowbot=<分身>@<版本>`）；部署配置开跨应用跳转、登录回跳名单加 `/knowbots` | owner 过滤与不可改写的测试；伪造 owner、同版本不同摘要被拒 |
-| P3 | knowlab-app + k8s | 网页端受理（想法或 skill、数据上传、验收用例、测试授权）与「我在做的分身」；后端创建草稿（调模型生成清单，空缺回头问用户，规则记出处）；管理端网页列待测试、核规则出处、发起测试，管理端后端调 investment 跑测试（`investment:testrun` 新身份）、出报告、通过即交付 knowmart（`knowmart:deliver`）；knowlab 对象存储放用户数据 | 从提交到交付走通；未核出处不能测；未通过不能交付；「测试中」超时可退回 |
-| P4 | investment-app + k8s | 分身目录端口（内置 + knowmart）、「请分身」跳转与收回跳核验（investment 的跨应用目标加 knowmart）、请时缓存清单、委托记来源与摘要；「跑测试」内部接口（接收 `investment:testrun`，在我们的测试账号上无人值守跑，回每条用例结果，不回分析内容） | 现有内置包行为不变；knowmart 测试通过的分身能请、能跑；伪造回跳与别人的分身被拒；knowmart 停了在跑的委托不受影响；跑测试只认 knowlab 的服务身份 |
+| P2 | knowmart-app | **已实现，未部署（2026-10-16）**；草稿放 knowlab 后交付即可用；按决定 12 补：清单外层 `runtime`、「取清单」与「请这位」按运行方核、接收方按「关系 × 调用方」认调用方。已实现：分身与版本表（数据库触发器保证版本只插不改）、`knowbot-manifest` v1 外层 schema（真源，契约在父仓 `contracts/knowbot/v1/`）、交付与取清单两个 internal 接口（按关系校验服务令牌，身份先于数据库会话）、网页端「我的分身」（列出、停用、「请这位」回跳带 `knowbot=<分身>@<版本>`）；部署配置开跨应用跳转、登录回跳名单加 `/knowbots` | owner 过滤与不可改写的测试；伪造 owner、同版本不同摘要被拒 |
+| P3 | knowlab-app + k8s | 网页端受理（想法或 skill、数据上传、验收用例、测试授权）与「我在做的分身」；后端创建草稿（调模型生成清单，空缺回头问用户，规则记出处）；管理端网页列待测试、核规则出处、发起测试，管理端后端按草稿 `runtime` 调登记的运行方跑测试（契约 `knowbot-test-run/v1` 真源在 knowlab；现在登记 investment，新身份 `investment:testrun`）、出报告、通过即交付 knowmart（`knowmart:deliver`）；knowlab 对象存储放用户数据 | 从提交到交付走通；未核出处不能测；未通过不能交付；「测试中」超时可退回 |
+| P4 | investment-app + k8s | 分身目录端口（内置 + knowmart）、「请分身」跳转与收回跳核验（investment 的跨应用目标加 knowmart）、请时缓存清单、委托记来源与摘要；作为运行方实现 `knowbot-test-run/v1`：`/api/internal/v1/knowbot-runtime/test-runs`（接收 `investment:testrun`，在我们的测试账号上无人值守跑，回每条用例结果，不回分析内容）；只请、只跑 `runtime: investment` 的分身 | 现有内置包行为不变；knowmart 测试通过的分身能请、能跑；伪造回跳与别人的分身被拒；knowmart 停了在跑的委托不受影响；跑测试只认 knowlab 的服务身份 |
 | P5 | knowlab-app + 沙箱 | `sunmoon_knowlab` 只读 MCP 与运行令牌校验；供给器给沙箱配它 | 只能读这一版绑定的本人数据；委托终态后读不到 |
 | P6 | 本地机（Qwen） | 发布、浏览器走一遍：建一个测试分身（假数据）从提交到工作台运行 | 截图与回执 |
 
