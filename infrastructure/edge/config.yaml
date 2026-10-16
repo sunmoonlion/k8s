@@ -23,8 +23,9 @@ edge_rate_limit: {average: 50, burst: 100}
 # 按域名只放行列出的路径，其余回 403；没列的域名整域放行。paths 精确匹配，prefixes 前缀匹配，不看查询串。
 # casdoor：公网用户只走 OAuth 授权码登录，管理界面与管理接口不对公网（待办 65）。清单是 2026-10-16 用同版本
 # Casdoor（4.12.0）实走登录录下来的：首次进入、错密码、登录拿到回跳、再次授权、注册页。换令牌、JWKS 走集群内部，不经边缘。
-# 升级 Casdoor 或打开注册、找回密码、MFA 时要重录。
+# 升级 Casdoor 或打开注册、找回密码、MFA 时要重录。/api/logout 是单点登录的退出（各应用带 client_id 跳来结束会话，
+# Casdoor 只跳回登记过的地址），2026-10-16 实验录入（SDD 0027 P1b）。
 edge_path_allowlist:
   casdoor.sunmoonai.com:
-    paths: [/login/oauth/authorize, /signup/oauth/authorize, /api/get-account, /api/get-app-login, /api/login]
+    paths: [/login/oauth/authorize, /signup/oauth/authorize, /api/get-account, /api/get-app-login, /api/login, /api/logout]
     prefixes: [/assets/]

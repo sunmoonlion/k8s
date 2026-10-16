@@ -34,6 +34,7 @@ def run():
     created = []
     checked = []
     migrated = []
+    sso_migrated = []
     with httpx.Client(base_url=endpoint, headers={'Origin': origin}, trust_env=False, timeout=15) as client:
         def api(method, path, payload=None, params=None):
             response = client.request(method, path, json=payload, params=params)
@@ -69,17 +70,22 @@ def run():
             require(frontend.scheme == 'https' and frontend.hostname and not frontend.username and
                     not frontend.password and not frontend.query and not frontend.fragment and frontend.path in ('', '/'),
                     'Frontend origin must be an exact HTTPS origin')
+            callback = config['origin'] + '/api/auth/' + surface + '/callback'
+            # SDD 0027: web clients share Casdoor's sign-in session (single sign-on); admin clients
+            # do not. Both register the logout landing next to the callback: Casdoor redirects
+            # back after logout only to a registered URI.
+            single_sign_on = surface == 'web'
             desired = {
                 'owner': 'admin', 'name': config['name'], 'organization': surface_organization[surface],
                 'description': 'sunmoon:{{ application_name }}:' + surface + ':managed-by-gitops',
                 'displayName': 'SunMoon template ' + surface, 'category': 'Default', 'type': 'Web',
                 'clientId': config['client_id'], 'clientSecret': secrets[surface + '_secret'],
-                'redirectUris': [config['origin'] + '/api/auth/' + surface + '/callback'],
+                'redirectUris': [callback, config['origin'] + '/api/auth/' + surface + '/logged-out'],
                 'homepageUrl': config['origin'], 'cert': baseline['cert'],
                 'grantTypes': ['authorization_code'], 'tokenFormat': 'JWT', 'tokenSigningMethod': 'RS256',
                 'expireInHours': 1, 'refreshExpireInHours': 0,
                 'enablePassword': True, 'enableSignUp': False, 'enableGuestSignin': False,
-                'enableSigninSession': False, 'isShared': False,
+                'enableSigninSession': single_sign_on, 'enableAutoSignin': single_sign_on, 'isShared': False,
                 'signinMethods': [{'name': 'Password', 'displayName': 'Password', 'rule': 'All'}],
             }
             existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
@@ -93,12 +99,24 @@ def run():
                 existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
             drift = {k for k, v in desired.items() if existing.get(k) != v}
             if drift == {'organization'} and surface == 'web' and existing.get('organization') == organization:
-                # The only migration allowed here: a web client registered before SDD 0014
-                # moves from built-in to the user organization. Anything else still stops.
+                # First allowed migration: a web client registered before SDD 0014 moves
+                # from built-in to the user organization.
                 moved = api('POST', '/api/update-application', dict(existing, organization=user_organization),
                             params={'id': 'admin/' + config['name'], 'columns': 'organization'})
                 require(moved == 'Affected', 'Web application was not moved')
                 migrated.append(surface)
+                existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
+            # SDD 0027: the second allowed migration, only from the exact previous shape (callback
+            # only, no sign-in session): turn on single sign-on for web and register the logout
+            # landing. Anything else still stops.
+            sso_keys = {'redirectUris', 'enableSigninSession', 'enableAutoSignin'}
+            drift = {k for k, v in desired.items() if existing.get(k) != v}
+            if (drift and drift <= sso_keys and existing.get('redirectUris') == [callback]
+                    and existing.get('enableSigninSession') is False and not existing.get('enableAutoSignin')):
+                changed = api('POST', '/api/update-application', dict(existing, **{k: desired[k] for k in drift}),
+                              params={'id': 'admin/' + config['name']})
+                require(changed == 'Affected', 'Single sign-on settings were not applied')
+                sso_migrated.append(surface)
                 existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
             require(existing and all(existing.get(k) == v for k, v in desired.items()),
                     'Existing browser application differs; explicit migration required')
@@ -114,6 +132,7 @@ def run():
         response = client.get(urlsplit(discovery['jwks_uri']).path)
         require(response.status_code == 200 and response.json().get('keys'), 'OIDC verification keys missing')
     print(json.dumps({'browser_clients': sorted(checked), 'created': created, 'migrated': migrated,
+                      'single_sign_on_migrated': sso_migrated, 'single_sign_on': ['web'],
                       'user_organization': user_organization, 'admin_organization': organization,
                       'distinct_identities': True, 'exact_redirects': True, 'client_secrets_match': True,
                       'authorization_code_only': True, 'signup_disabled': True,

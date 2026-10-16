@@ -1,6 +1,6 @@
 # knowmart 浏览器身份
 
-Web/Admin的origin、casdoor_application及client_id在各自前端config；后端identity_organization及identity_revision在上级[后端config](../config.yaml)。回调由origin加/api/auth/web/callback或/api/auth/admin/callback生成，不维护第二套URL。
+Web/Admin的origin、casdoor_application及client_id在各自前端config；后端identity_organization及identity_revision在上级[后端config](../config.yaml)。回调与退出落地由origin加/api/auth/<web|admin>/callback、/api/auth/<web|admin>/logged-out生成（Casdoor只跳回登记过的地址），不维护第二套URL。网页端开Casdoor「保持登录会话」与「自动登录」（单点登录），管理端不开（SDD 0027）。
 
 ## 秘密与权限
 

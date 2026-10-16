@@ -8,6 +8,9 @@ casdoor_volume:
   uid: 1000
   gid: 1000
 casdoor_hostname: casdoor.sunmoonai.com
+# Casdoor 登录会话保持多久（秒，写进 app.conf 的 sessionCookieLifeTime）。sunmoonai 网页端开了单点登录，
+# 公用电脑上忘了退出，这段时间内下一位能直接进入；所有者 2026-10-16 定 12 小时（SDD 0027）。全局生效，管理端一样
+casdoor_session_lifetime_seconds: 43200
 casdoor_database: casdoor
 casdoor_database_user: casdoor
 

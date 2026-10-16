@@ -1,6 +1,12 @@
 ---
 # Casdoor private inputs: the shared platform service certificate, the database login,
 # the startup and one-time initialization configuration and the first administrator.
+- name: Require a bounded login session lifetime
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - casdoor_session_lifetime_seconds is integer
+      - casdoor_session_lifetime_seconds >= 3600 and casdoor_session_lifetime_seconds <= 2592000
 - name: Read the shared core identities
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/shared-credentials.yaml'
 - name: Generate a private service TLS key only when absent
@@ -60,6 +66,11 @@
         kind: Secret
         metadata: {name: casdoor-database-auth, namespace: '{{ data_namespace }}'}
         stringData: {password: '{{ service_credentials.casdoor_db_password }}'}
+  no_log: true
+- name: Bind Casdoor restarts to its startup configuration
+  ansible.builtin.set_fact:
+    casdoor_config_digest: '{{ lookup("template", playbook_dir + "/../../gitops/components/app-platform/auth-app/casdoor/app.conf.j2") | hash("sha256") }}'
+  vars: {initializing: false}
   no_log: true
 - name: Encrypt startup config without repeating initialization on restarts
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'

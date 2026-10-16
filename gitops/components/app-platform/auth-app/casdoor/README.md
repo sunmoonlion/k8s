@@ -14,6 +14,8 @@ services_config_dir/credentials.yaml保存casdoor_db_password、casdoor_admin_pa
 
 services-check核可信TLS admin登录和实际session；各应用check另外核Web/Admin PKCE/SSR/CSRF及关系服务token。登录通过不能推导所有业务授权完成。修改初始口令文件不会更新远端账号，目录/domain/账号变更须完整身份迁移和证书/回调联动。
 
+登录会话时长由[config](config.yaml)的`casdoor_session_lifetime_seconds`定（写进app.conf的`sessionCookieLifeTime`，默认30天，现定12小时）；改了会滚动重启Casdoor（Pod注解是app.conf摘要），已登录会话随之失效。sunmoonai网页端应用开了「保持登录会话」与「自动登录」做单点登录，管理端不开；退出由各应用跳Casdoor的`/api/logout`（带client_id）结束会话（SDD 0027）。
+
 ## 配置字段
 
 当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。

@@ -9,6 +9,8 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: casdoor, sunmoonai.com/postgresql-client: 'true'}
+      # Casdoor reads app.conf only at startup; a changed config rolls the pod.
+      annotations: {sunmoonai.com/input-sha256: '{{ casdoor_config_digest }}'}
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
