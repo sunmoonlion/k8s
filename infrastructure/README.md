@@ -17,10 +17,10 @@ make -C infrastructure platform-check OBJECT=data-platform/postgresql
 
 账号也按相同对象选择，[账号维护](host/accounts.md)列出人工管理员、只读及程序身份的区别、初次预设、私有主备、开发密码表和实际轮换限制。PostgreSQL/Redis等管理员也在统一目录；不把它们全部归成“机器账号”。
 
-本轮公开对象入口是候选，阶段所有权交接与真实轮换待[维护单元](../docs/platform-kind-v1/component-account-maintenance.md)实施验收，已有服务仍由原运行源协调；原始启停已验证的边界见正式验收说明。
+本轮公开对象入口是候选，阶段所有权交接与真实轮换待[维护单元](../docs/platform/component-account-maintenance.md)实施验收，已有服务仍由原运行源协调；原始启停已验证的边界见正式验收说明。
 
 
-日常任务从[维护导航](../docs/README.md)选择；架构见[职责与约束](../docs/platform-kind-v1/architecture.md)，已验证范围与缺项见[验收边界](../docs/platform-kind-v1/verification.md)。
+日常任务从[维护导航](../docs/README.md)选择；架构见[职责与约束](../docs/platform/architecture.md)，已验证范围与缺项见[验收边界](../docs/platform/verification.md)。
 
 物料按组件归属查看与准备见[artifacts](artifacts/README.md)，应用构建/部署见[applications](applications/README.md)；日常可先运行`make -C infrastructure material-inventory`定位所需文件与Harbor目标。
 

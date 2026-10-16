@@ -17,7 +17,7 @@ Web是用户分面，SSR会话必须与后端状态一致；检查退出与Admin
 
 stage→审阅提交→发布/显式晋级→application-bootstrap APP=knowlab使用共同应用入口。/healthz检查进程、surface和deployment_id；SSR通过内部API Service查询会话。Ready或直连新Traefik通过不代表公共30443已切换，也不代表登录/权限已验；完整检查包括PKCE、回调、会话、退出、CSRF与分面隔离。
 
-检查公开入口使用application-check-public APP=knowlab，有真实身份/探针副作用；配置切换按[入口维护](../../../../../infrastructure/entry/README.md)先备份、预览、限定切换并验证。历史验收范围见[记录](../../../../../docs/platform-kind-v1/verification.md#应用与业务链路)。
+检查公开入口使用application-check-public APP=knowlab，有真实身份/探针副作用；配置切换按[入口维护](../../../../../infrastructure/entry/README.md)先备份、预览、限定切换并验证。历史验收范围见[记录](../../../../../docs/platform/verification.md#应用与业务链路)。
 
 ## 前端字段
 

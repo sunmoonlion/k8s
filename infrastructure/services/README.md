@@ -63,7 +63,7 @@ make -C infrastructure services-check
 
 声明差异先修配置/源码并重新审阅发布；字段冲突不force接管。Job失败保留代次与错误，查其前置依赖/schema/身份；已有同名账号/卷不符须显式处理。Neo4j限定rollout恢复见[组件说明](../../gitops/components/data-platform/neo4j/README.md)。
 
-退回按[Flux](../flux/README.md#故障与退回)恢复原固定源并做真实检查；schema/身份/持久数据需匹配备份，不自动随Git回滚。业务备份/轮换、统一停用、WSL/删群持久化和长期空间管理见[未完成项](../../docs/platform-kind-v1/verification.md#未完成项)。
+退回按[Flux](../flux/README.md#故障与退回)恢复原固定源并做真实检查；schema/身份/持久数据需匹配备份，不自动随Git回滚。业务备份/轮换、统一停用、WSL/删群持久化和长期空间管理见[未完成项](../../docs/platform/verification.md#未完成项)。
 
 ## Kibana浏览器访问
 

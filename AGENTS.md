@@ -37,7 +37,7 @@
 | 规矩 | 原文 |
 | --- | --- |
 | **分身线的合规边界**：投资逻辑与数据只来自用户，我们只做工程化与测试，分身只归用户自己（所有者 2026-10-16 定） | `constraints.md`「合规」、`tree-build/SDD/modules/0026-knowlab.md` |
-| 配置、实现与说明同职责目录放；版本与共享环境单一来源；秘密只在私有目录与 SOPS；实施入口只用原生 Make / Ansible / Flux，不加重复 CLI 或转接层 | `docs/platform-kind-v1/architecture.md`「配置归属」 |
+| 配置、实现与说明同职责目录放；版本与共享环境单一来源；秘密只在私有目录与 SOPS；实施入口只用原生 Make / Ansible / Flux，不加重复 CLI 或转接层 | `docs/platform/architecture.md`「配置归属」 |
 | 部署声明保留平台 → 应用 → 组件三层；应用统一 `app_namespace`；应用共用机制只在 `app-platform/common`，改了要证明既有应用渲染对象不变、不碰已完成的不可变 Job | 同上「平台、应用与命名空间」、`gitops/components/README.md`、`gitops/components/app-platform/common/README.md` |
 | 应用构建国内源优先，失败按规则切一次官方源 + 代理；只在 `infrastructure/applications/config.yaml` 选 `domestic` 或 `official-proxy`；证书、签名、哈希校验不得关闭 | `infrastructure/applications/README.md` |
 | 开发阶段维护窗口 2 小时、容量底线 10 GiB（真源 `infrastructure/host/config.yaml`），不关容量检查、不因此授权删数据 | `docs/README.md`、`infrastructure/host/README.md` |

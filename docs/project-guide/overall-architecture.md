@@ -118,7 +118,7 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
 
 ## 6. 部署与发布（`k8s` 仓）
 
-单机 WSL 里的 KIND 是第一期；同一套组件声明以后用于云端建群。Make 是公开入口，Ansible 编排，Flux 拥有集群声明。职责与约束见 [平台架构](../platform-kind-v1/architecture.md)，已验证范围见 [验收记录](../platform-kind-v1/verification.md)，目录见 [`repos/k8s.md`](repos/k8s.md)。
+单机 WSL 里的 KIND 是第一期；同一套组件声明以后用于云端建群。Make 是公开入口，Ansible 编排，Flux 拥有集群声明。职责与约束见 [平台架构](../platform/architecture.md)，已验证范围见 [验收记录](../platform/verification.md)，目录见 [`repos/k8s.md`](repos/k8s.md)。
 
 **发布链**（一张发布卡的标准动作，样板见 `switch-test/done/` 里的卡）：
 
@@ -187,7 +187,7 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
 | 动代码前必读的规则 | [`rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) |
 | 一次求助 / 一次委托怎么走 | [流水线](../dev-investment-agent/pipeline.md)、[`turn/`](../dev-investment-agent/turn/README.md) |
 | 拓扑、谁连谁 | [`k8s/docs/拓扑.md`](../拓扑.md) |
-| 部署、发版、某个组件怎么维护 | `k8s/README.md`、`infrastructure/` 与各组件目录的 `README.md`、[平台架构](../platform-kind-v1/architecture.md)、[验收记录](../platform-kind-v1/verification.md) |
+| 部署、发版、某个组件怎么维护 | `k8s/README.md`、`infrastructure/` 与各组件目录的 `README.md`、[平台架构](../platform/architecture.md)、[验收记录](../platform/verification.md) |
 | 派活卡、回执、两台机器怎么同步 | [`switch-test/`](../dev-investment-agent/switch-test/README.md)（`inbox/`、`done/`、`human-*.sh`）；回执在各仓 `scripts/results/` |
 | 改某个仓的代码 | [`repos/`](repos/) 对应文件 |
 | 跨应用契约、数据 | [`topics/`](topics/) 对应文件 |
@@ -208,5 +208,5 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
 
 - knowlab-app、knowmart-app 未建；工作台的「专家」还没改叫「分身」，内置专家包还是对全体用户可选、沙箱还默认接 knowbase 数据服务——工作台对用户开放前要改完（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「四」）。
 - 管理端业务页受角色缺口所限看不到；admin 的旧沙箱待按 0014 U4 回收（[待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 98、99）。
-- 单机 KIND：数据主备同在一块物理盘，机器外备份未落地；真实 KIND 删除重建、DNS 与系统证书信任等仍在 [验收记录](../platform-kind-v1/verification.md) 的未完成项里。
+- 单机 KIND：数据主备同在一块物理盘，机器外备份未落地；真实 KIND 删除重建、DNS 与系统证书信任等仍在 [验收记录](../platform/verification.md) 的未完成项里。
 - 评测的自动化门未接；`scripts/test_switch_test_sync.py` 有 3 个用例早就失败。

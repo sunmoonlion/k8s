@@ -18,7 +18,7 @@
 
 从[平台维护](../../../../../../infrastructure/services/README.md)走候选→审阅→stage/提交→发布/显式晋级→services-bootstrap。这个组件不提供第二套部署CLI。公开30443切换属于[入口维护](../../../../../../infrastructure/entry/README.md)的限定维护，完成后核对Harbor和其它应用路由。
 
-`services-check`检查集群入口，`services-check-public`检查宿主公开入口；均核验实际TLS登录页面、独立账号、权限拒绝、session cookie、会话读视图及退出。验证会创建/注销临时登录会话，并尝试写一个UUID视图确认403；如果意外被准许，只删除该UUID视图并报失败。不会修改正式视图/日志。它不等于真实浏览器界面渲染或Windows/WSL DNS已核验；当前实际完成状态见[验收边界](../../../../../../docs/platform-kind-v1/verification.md)。
+`services-check`检查集群入口，`services-check-public`检查宿主公开入口；均核验实际TLS登录页面、独立账号、权限拒绝、session cookie、会话读视图及退出。验证会创建/注销临时登录会话，并尝试写一个UUID视图确认403；如果意外被准许，只删除该UUID视图并报失败。不会修改正式视图/日志。它不等于真实浏览器界面渲染或Windows/WSL DNS已核验；当前实际完成状态见[验收边界](../../../../../../docs/platform/verification.md)。
 
 关闭kibana_ui_enabled停止新增声明，不自动删除已部署账号、路由、Secret或CRD。退回旧Flux源不会自动撤销新增身份，按明确对象另行退役；数据卷和旧账号不能跟着清空。
 

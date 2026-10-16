@@ -14,8 +14,8 @@ make -C infrastructure application-check APP=<应用>
 
 | 要找的 | 在哪 |
 | --- | --- |
-| 架构、职责与配置归属 | [docs/platform-kind-v1/architecture.md](docs/platform-kind-v1/architecture.md) |
-| 已验证范围与验收记录 | [docs/platform-kind-v1/verification.md](docs/platform-kind-v1/verification.md) |
+| 架构、职责与配置归属 | [docs/platform/architecture.md](docs/platform/architecture.md) |
+| 已验证范围与验收记录 | [docs/platform/verification.md](docs/platform/verification.md) |
 | 宿主（WSL、数据盘、开机服务、空间） | [infrastructure/host/](infrastructure/host/README.md) |
 | 集群、Harbor、入口、边缘机 | `infrastructure/` 下各目录的 README |
 | 应用构建与自研组件镜像 | [infrastructure/applications/](infrastructure/applications/README.md) |
