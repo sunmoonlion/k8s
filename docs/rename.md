@@ -566,7 +566,7 @@ $K -n sandbox-platform-dev get deploy -l app=sandbox -o yaml | grep -E 'name: (K
 
 只在 R5 写了「通过」之后做（所有者 2026-10-15 定旧的不必备份）。删完就没有退路了（R5 的回退靠的正是这些旧对象），所以 R5.3 浏览器验证过了才做。
 
-**旧沙箱**：R5.3 时另一用户的 `sandbox-u-f1cee6277692` 还是旧镜像、`KNOWLEDGE_MCP_URL` 指向旧 `knowledge-api`。它不带旧阶段标签，R6 不删它；但 `k8s` 类删掉旧 `knowledge-api` 之后，这个用户的数据工具会连不上，直到他在「设置 → 云端与模型」点一次「更新沙箱」。所有者能登这个账号的话，R6.2 之前点一次；R6.1 清单里沙箱一行照贴。
+**旧沙箱**：`sandbox-u-f1cee6277692` 还是旧镜像、`KNOWLEDGE_MCP_URL` 指向旧 `knowledge-api`。所有者 2026-10-17 查 investment 库：它属于 `admin`（built-in 组织），10-06 网页端按组织把关之前拉起的；admin 现在登不进网页端，没人用、也没人能点「更新沙箱」。它不带旧阶段标签，R6 不动它，`knowledge-api` 删掉后它连不上也不影响任何人；回收见「冻结解除之后」第 7 条。（`sig-am` 的 `sandbox-u-5cdfe57e345f` 已在 R5.3 换新。）
 
 工具 `docs/rename-tools/r6_cleanup.py`：清单是写死的旧名字（Opus 2026-10-15 从改名前的配置 `4be661df` 逐个抄出），默认只列不删；删一次只删一类，要 `--confirm <类>`；每类删前先核归属记号（PostgreSQL 的注释 `sunmoon-kind/info`、RabbitMQ vhost 的说明、Casdoor 服务应用的说明与 clientId、k8s 对象的旧阶段标签），对不上整类不删；列出来但不在清单里的标 `?? 不在清单，不删`，交 Opus 看。不打印口令、令牌、哈希。
 
@@ -668,3 +668,4 @@ PRD / SDD / 决策 / 总览 / 各仓 `AGENTS.md` 换名；0018 改写为 knowmar
    - 冻结的旧体系目录（`app-platform`、`cicd-platform`、`data-platform`、`deploy-sunmoonai-all`、`infrastructure`、`ingress-platform`、`kind-infrastructure`、`messaging-platform`、`operations`、`ops-platform`、`registry-platform`、`CHECKPOINT-old-system-*.md`）直接 `git rm`。
 5. **组件 prepare 的先后顺序**（R5.1 第三次执行撞上，`R5.1-qwen.20261015-1704.md`）：`infrastructure/components/stages.py` 收集 prepare 按目录字母序，`render.yaml` 也只跑「选中对象」的 prepare。`data-platform/ragflow` 的 prepare 要用 `data-platform/valkey` 的 prepare 备下的 `valkey_credentials`，所以 `OBJECT=all`（ragflow 排在 valkey 前）与 `OBJECT=data-platform/ragflow`（valkey 根本不跑）都会报 `'valkey_credentials' is undefined`。ragflow 自 10-05 换渲染器后没再 stage 过，一直没暴露。修法二选一，修后用 `OBJECT=data-platform/ragflow` 实跑一次核对：ragflow 的 prepare 自己读 valkey 的私有输入（同 `component-input.yaml`，只读不新建）；或 prepare 按阶段依赖排序并带上依赖对象的 prepare。修之前别跑 `platform-stage OBJECT=all`。
 6. **管理端角色**（R5.3 发现，改名前就有）：knowfeed、knowbase、investment 三个管理端的业务页与导航要应用角色 `admin` 或 `operator`（前端 `lib/navigation.ts` 的 `requiredRoles`、页面里的 `requireAnyRole`），角色取自 Casdoor 令牌的 `roles` 并经后端 `ADMIN_AUTH_ROLE_ALLOWLIST` 过滤；现行部署没设这个白名单（空 = 谁都没有角色），Casdoor 里也没给 admin 分配角色，所以 admin 只看得到「治理控制台」「设置」。补法：身份模板给各应用设 `ADMIN_AUTH_ROLE_ALLOWLIST=admin,operator`（网页端 `WEB_AUTH_ROLE_ALLOWLIST` 一并定），Casdoor 里建角色并分给管理员、确认令牌带 `roles`；补完把 R5.3 第 1、2、4 项的业务页（含「缺数据的需求」里发起采集的链接指向 `knowfeed-admin`）补核一遍。
+7. **admin 的孤儿沙箱** `sandbox-u-f1cee6277692`（见 R6 开头）：走正路回收，不手删 k8s 对象——investment 后端的回收会同时改库里 `workbench_sandboxes` 的状态、收回令牌，只删 Deployment 会让库里还记着「已拉起」。admin 登不进网页端，所以要么给后端加一个运维入口按用户回收，要么在补管理端角色（第 6 条）时一并定 admin 是否该有工作台；定之前它留着只占一个 Pod。
