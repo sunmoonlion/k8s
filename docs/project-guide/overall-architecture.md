@@ -69,17 +69,17 @@
 
 ## 4. 应用与数据怎么流
 
-两条线：**数据线**（knowfeed → knowbase，我们自己的数据）与**分身线**（knowlab → knowmart → 工作台，用户的方法与数据）。分身线上的分身运行时**不接**数据线的数据（`C-L2`）。
+两条线：**数据线**（knowfeed → knowbase，我们自己的数据）与**分身线**（knowlab → knowmart → 运行方，用户的方法与数据）。分身线上的分身运行时**不接**数据线的数据（`C-L2`）。分身线的架构见[分身](topics/knowbot.md)：knowlab、knowmart 已建成空应用，分身相关代码已写一部分、未部署。
 
 ```text
 数据线                                             分身线
 公开网站 ──采集──▶ knowfeed                        用户：想法 / skill ＋ 自己的数据
                     │ 登记新版本（服务身份 knowbase:ingest）      │
-                    ▼                               knowlab（我们：受理 → 工程化 → 测试 → 用户验收）  [未建]
-                 knowbase ── 语义层 / RAGFlow 索引           │ 交付
-                    │（内部工具；以后 knowmart 的数据线）   knowmart（私有：只有本人看得见）           [未建]
-                    ▼                                       │ 请
-                 （现在仍经 MCP sunmoon_knowbase 接进沙箱，  investment 工作台：用户请自己的分身，自己跑
+                    ▼                               knowlab（创建草稿 → 管理端核出处、调运行方测试）
+                 knowbase ── 语义层 / RAGFlow 索引           │ 测试通过才交付
+                    │（内部工具；以后 knowmart 的数据线）   knowmart（私有：只有本人看得见，只放能用的版本）
+                    ▼                                       │ 请（跳过去选、跳回）
+                 （现在仍经 MCP sunmoon_knowbase 接进沙箱，  运行方（现在是 investment 工作台）：用户请自己的分身，自己跑
                    工作台对用户开放前改为默认不接，0026）
 ```
 
@@ -144,7 +144,7 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
 | --- | --- |
 | 浏览器 | Casdoor OIDC 授权码 → 后端会话 cookie。每个应用的 Admin 与 Web 是两个独立边界：各有 client、回调、cookie、会话命名空间、Origin |
 | 组织 | 管理端只收 `built-in` 组织的令牌（admin 只用于 Casdoor 和管理后台）；网页端只收 `sunmoonai` 组织（所有者日常用自己的 sunmoonai 账号，[0014](../dev-investment-agent/tree-build/SDD/modules/0014-user-organization.md)） |
-| 服务间 | client credentials，按关系各一个身份：knowfeed → knowbase `knowbase:ingest`，investment → knowbase `knowbase:retrieve`；接收方核 audience 与主体绑定表 |
+| 服务间 | client credentials，按关系各一个身份：knowfeed → knowbase `knowbase:ingest`，investment → knowbase `knowbase:retrieve`；接收方核 audience 与主体绑定表。分身线的新关系（`knowmart:deliver`、`knowmart:summon`、`investment:testrun`）走通用机制 `common/backend/service-client`，已写未部署（[分身](topics/knowbot.md) §4） |
 | 沙箱 | investment 给每个沙箱签发短期令牌：调记录 MCP 与 knowbase MCP；模型 key 只在沙箱进程环境里 |
 | 本地代理 | 网页里一行命令安装与配对；连会合点用 investment 签发、会合点就地验签的短期令牌，可吊销 |
 
@@ -190,7 +190,7 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
 | 部署、发版、某个组件怎么维护 | `k8s/README.md`、`infrastructure/` 与各组件目录的 `README.md`、[规则「发布」](../dev-investment-agent/tree-build/rules/constraints.md#发布) |
 | 派活卡、回执、两台机器怎么同步 | [`switch-test/`](../dev-investment-agent/switch-test/README.md)（`inbox/`、`done/`、`human-*.sh`）；回执在各仓 `scripts/results/` |
 | 改某个仓的代码 | [`repos/`](repos/) 对应文件 |
-| 跨应用契约、数据 | [`topics/`](topics/) 对应文件 |
+| 跨应用契约、数据、分身 | [`topics/`](topics/) 对应文件（分身：[`topics/knowbot.md`](topics/knowbot.md)） |
 | 还没做的事 | [待办账](../dev-investment-agent/tree-build/pending-after-migration.md)、[接下来做什么](staging.md)；改名（info→knowfeed、knowledge→knowbase，2026-10-14 至 16）的手册与回执已删，按 Git 历史 `3951246c:docs/rename.md` 取 |
 | 查当前钉的提交 / 镜像摘要 / 已晋级的源 | `infrastructure/applications/sources.yaml`、各组件 `image.lock.yaml`、`infrastructure/environments/kind/flux-source.yaml` |
 | 查集群里实际跑的 | `export KUBECONFIG=~/.kube/sunmoon-kind.config; kubectl -n app-platform-dev get deploy -o wide`（所有者机器） |
