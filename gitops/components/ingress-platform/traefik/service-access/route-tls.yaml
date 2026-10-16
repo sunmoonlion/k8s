@@ -1,0 +1,22 @@
+---
+# One application route's TLS identity (SDD 0027 P1): its own key and certificate, independent
+# of the shared casdoor/knowbase certificate, so adding a route never re-issues an existing one.
+- name: Prepare an independent recoverable TLS certificate for {{ route.key }}
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ services_config_dir }}/service-access-{{ route.key }}'
+    tls_backup_dir: '{{ services_backup_dir }}/service-access-{{ route.key }}'
+    tls_declaration: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/tls-{{ route.key }}.sops.yaml'
+    tls_hostnames: ['{{ route.value.host }}']
+- name: Encrypt the {{ route.key }} route TLS identity for Traefik only
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: 'ingress-platform/traefik/service-access/tls-{{ route.key }}.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: 'service-access-{{ route.key }}-tls', namespace: '{{ app_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+  no_log: true

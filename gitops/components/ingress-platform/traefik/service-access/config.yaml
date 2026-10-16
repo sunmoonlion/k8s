@@ -4,3 +4,9 @@ service_access_enabled: true
 service_access_hosts:
   casdoor: 'casdoor-tls.{{ app_namespace }}.svc.cluster.local'
   knowbase: 'knowbase-tls.{{ app_namespace }}.svc.cluster.local'
+# 应用的内部入口（SDD 0027 P1）：其他应用的后端经这里用服务身份调它的内部接口。每条一张独立证书，
+# 不动上面 casdoor、knowbase 共用的那张；只路由到该应用 API 的内部前缀。调用方的 service_clients 按 target 找这里。
+service_access_routes:
+  knowmart:
+    host: 'knowmart-tls.{{ app_namespace }}.svc.cluster.local'
+    path: /api/internal/v1/knowmart

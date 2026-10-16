@@ -1,3 +1,4 @@
+{% set service_ca_needed = service_enabled or (generic_service_clients | default([]) | length > 0) or (generic_service_receivers | default([]) | length > 0) %}
 apiVersion: v1
 kind: ConfigMap
 metadata: {name: {{ application_name }}-runtime, namespace: {{ app_namespace }}}
@@ -5,7 +6,7 @@ data:
   ENV: production
   APP_SLUG: {{ application_name }}
   DEPLOYMENT_ID: {{ deployment_id | to_json }}
-  ALLOWED_HOSTS: {{ (['localhost','127.0.0.1',(application_name + '-api'),(application_name + '-api.') + app_namespace + '.svc.cluster.local', cfg.web_origin | urlsplit('hostname'), cfg.admin_origin | urlsplit('hostname')] + ([service_access_hosts.knowbase] if receiver_enabled else [])) | join(',') | to_json }}
+  ALLOWED_HOSTS: {{ (['localhost','127.0.0.1',(application_name + '-api'),(application_name + '-api.') + app_namespace + '.svc.cluster.local', cfg.web_origin | urlsplit('hostname'), cfg.admin_origin | urlsplit('hostname')] + ([service_access_hosts.knowbase] if receiver_enabled else []) + ([service_access_routes[application_name].host] if generic_service_receivers | default([]) | length > 0 else [])) | join(',') | to_json }}
   REDIS_HOST: redis.{{ data_namespace }}.svc.cluster.local
   REDIS_PORT: '6379'
   REDIS_DB: '0'
@@ -54,6 +55,27 @@ data:
   {{ prefix }}_SUBJECT_ALLOWLIST: {{ ('admin/' + service_bindings[relation].application) | to_json }}
   {{ prefix }}_REQUIRED_SCOPE: {{ service_bindings[relation].scope | to_json }}
 {% endfor %}
+{% endif %}
+{% for client in generic_service_clients | default([]) %}
+{% set p = (client.target ~ '_' ~ client.relation) | upper %}
+  {{ client.target | upper }}_INTERNAL_URL: https://{{ service_access_routes[client.target].host }}{{ service_access_routes[client.target].path }}
+  {{ p }}_SERVICE_APPLICATION: {{ client.application | to_json }}
+  {{ p }}_SERVICE_CLIENT_ID: {{ client.client_id | to_json }}
+  {{ p }}_SERVICE_SCOPE: {{ client.scope | to_json }}
+  {{ p }}_SERVICE_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
+  {{ p }}_SERVICE_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
+{% endfor %}
+{% for receiver in generic_service_receivers | default([]) %}
+{% set p = 'SERVICE_AUTH_' ~ (receiver.relation | upper) %}
+  {{ p }}_CASDOOR_APPLICATION: {{ receiver.client.application | to_json }}
+  {{ p }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
+  {{ p }}_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
+  {{ p }}_AUDIENCE: {{ receiver.client.client_id | to_json }}
+  {{ p }}_SUBJECT_ALLOWLIST: {{ ('admin/' + receiver.client.application) | to_json }}
+  {{ p }}_REQUIRED_SCOPE: {{ receiver.client.scope | to_json }}
+{% endfor %}
+{% if service_ca_needed and not service_enabled and not provider_enabled %}
+  SSL_CERT_FILE: /etc/sunmoon/service/ca.crt
 {% endif %}
 {% for key,value in (cfg.domain_runtime_env | default({})).items() %}
   {{ key }}: {{ value | to_json }}
@@ -172,6 +194,9 @@ spec:
 {% if service_enabled and role in ['api','worker'] %}
             - {secretRef: {name: {{ application_name }}-knowbase-service}}
 {% endif %}
+{% for client in generic_service_clients | default([]) if role in ['api','worker'] %}
+            - {secretRef: {name: {{ application_name }}-{{ client.target }}-{{ client.relation }}-service}}
+{% endfor %}
 {% if agent_releases_enabled | default(false) and role == 'api' %}
             - {secretRef: {name: {{ application_name }}-agent-releases-runtime}}
 {% endif %}
@@ -181,7 +206,7 @@ spec:
 {% if agent_releases_enabled | default(false) and role == 'api' %}
             - {name: agent-releases-ca, mountPath: /etc/sunmoon/agent-releases, readOnly: true}
 {% endif %}
-{% if service_enabled %}
+{% if service_ca_needed %}
             - {name: service-ca, mountPath: /etc/sunmoon/service, readOnly: true}
 {% endif %}
 {% if storage_enabled %}
@@ -196,7 +221,7 @@ spec:
 {% if agent_releases_enabled | default(false) and role == 'api' %}
         - {name: agent-releases-ca, secret: {secretName: {{ application_name }}-agent-releases-runtime, items: [{key: ca.crt, path: ca.crt}]}}
 {% endif %}
-{% if service_enabled %}
+{% if service_ca_needed %}
         - {name: service-ca, configMap: {name: {{ application_name }}-service-ca}}
 {% endif %}
 {% if storage_enabled %}
@@ -266,7 +291,7 @@ spec:
       ports: [{protocol: TCP, port: {{ ragflow_port }}}]
 ---
 {% endif %}
-{% if service_enabled %}
+{% if service_ca_needed %}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -275,7 +300,7 @@ data:
   ca.crt: |
 {{ workload_ca.content | b64decode | regex_replace('\n+$','') | indent(4,true) }}
 {% endif %}
-{% if service_enabled or receiver_enabled %}
+{% if service_enabled or receiver_enabled or service_ca_needed %}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -283,7 +308,7 @@ metadata: {name: {{ application_name }}-service-https-out, namespace: {{ app_nam
 spec:
   podSelector:
     matchExpressions:
-      - {key: app.kubernetes.io/name, operator: In, values: [{{ application_name }}-api{% if service_enabled %}, {{ application_name }}-worker{% endif %}]}
+      - {key: app.kubernetes.io/name, operator: In, values: [{{ application_name }}-api{% if service_enabled or generic_service_clients | default([]) | length > 0 %}, {{ application_name }}-worker{% endif %}]}
   policyTypes: [Egress]
   egress:
     - to:

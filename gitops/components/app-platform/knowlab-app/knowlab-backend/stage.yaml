@@ -26,5 +26,10 @@ stages:
   resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
 - name: knowlab-runtime
   path: runtime
-  dependsOn: [knowlab-identity]
-  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["storage.sops.yaml"] if knowlab_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if knowlab_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if knowlab_backend_deployment.knowbase_service.enabled | default(false) else []) + (["domain.sops.yaml"] if knowlab_backend_deployment.domain_secrets | default({}) | length > 0 else []) }}'
+  dependsOn: '{{ ["knowlab-identity"] + (["knowlab-knowmart-deliver-identity"] if knowlab_backend_deployment.service_clients | default([]) | selectattr("target", "equalto", "knowmart") | selectattr("relation", "equalto", "deliver") | selectattr("enabled") | list | length > 0 else []) }}'
+  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["storage.sops.yaml"] if knowlab_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if knowlab_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if knowlab_backend_deployment.knowbase_service.enabled | default(false) else []) + (["domain.sops.yaml"] if knowlab_backend_deployment.domain_secrets | default({}) | length > 0 else []) + (["knowmart-deliver-service.sops.yaml"] if knowlab_backend_deployment.service_clients | default([]) | selectattr("target", "equalto", "knowmart") | selectattr("relation", "equalto", "deliver") | selectattr("enabled") | list | length > 0 else []) }}'
+- name: knowlab-knowmart-deliver-identity
+  path: knowmart-deliver-identity
+  dependsOn: [casdoor, traefik]
+  enabled: '{{ knowlab_deployment.enabled and (knowlab_backend_deployment.service_clients | default([]) | selectattr("target", "equalto", "knowmart") | selectattr("relation", "equalto", "deliver") | selectattr("enabled") | list | length > 0) }}'
+  resources: [workload.yaml, provision.sops.yaml]

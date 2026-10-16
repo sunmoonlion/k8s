@@ -1,0 +1,114 @@
+---
+# One generic outbound service identity (SDD 0027 P1), included once per enabled entry of
+# service_clients with `client`. Same rules as ../service-identity (the knowbase pair), names
+# carry target and relation so one application can hold several relations.
+- name: Require a relation-specific client in its own isolated organization
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - client.target in application_names and client.target != application_name
+      - client.relation is match('^[a-z][a-z0-9]{1,15}$')
+      - client.target in service_access_routes | default({})
+      - client.application == 'sunmoonai-' + application_name + '-' + client.target + '-' + client.relation
+      - client.client_id == 'sunmoon-' + application_name + '-' + client.target + '-' + client.relation
+      - client.organization == 'sunmoon-workload-' + application_name + '-' + client.target + '-' + client.relation
+      - client.scope == client.target + ':' + client.relation
+      - client.token_seconds | int == 900
+      - client.job_revision is match('^[a-z0-9-]{1,16}$')
+- name: Bind this client's names
+  ansible.builtin.set_fact:
+    client_name: '{{ application_name }}-{{ client.target }}-{{ client.relation }}'
+    client_input: '{{ client.target }}-{{ client.relation }}'
+- name: Inspect recoverable credentials of this client
+  ansible.builtin.stat: {path: '{{ item }}/service-client-{{ client_input }}.yaml', follow: false}
+  loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+  register: client_files
+  no_log: true
+- name: Require root-only regular client input
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ client_files.results }}'
+  no_log: true
+- name: Restore missing client credentials without rotation
+  ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/service-client-{{ client_input }}.yaml', dest: '{{ cfg.private_dir }}/service-client-{{ client_input }}.yaml', remote_src: true, mode: '0600'}
+  when: not client_files.results[0].stat.exists and client_files.results[1].stat.exists
+  no_log: true
+- name: Refuse regeneration of an already declared client
+  ansible.builtin.assert:
+    quiet: true
+    that: client_files.results[0].stat.exists or client_files.results[1].stat.exists or query('fileglob', component_root + '/runtime/' + client_input + '-service.sops.yaml') | length == 0
+    fail_msg: Restore the private service client backup; a declared client secret must never be regenerated.
+- name: Initialize this client's independent credential once
+  ansible.builtin.copy:
+    dest: '{{ cfg.private_dir }}/service-client-{{ client_input }}.yaml'
+    force: false
+    mode: '0600'
+    content: 'client_secret: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+  when: not client_files.results[0].stat.exists and not client_files.results[1].stat.exists
+  no_log: true
+- name: Preserve a non-overwritten backup of this client
+  ansible.builtin.copy: {src: '{{ cfg.private_dir }}/service-client-{{ client_input }}.yaml', dest: '{{ cfg.backup_dir }}/service-client-{{ client_input }}.yaml', remote_src: true, force: false, mode: '0600'}
+  no_log: true
+- name: Require a byte-identical client backup
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/service-client-{{ client_input }}.yaml', '{{ cfg.backup_dir }}/service-client-{{ client_input }}.yaml']}
+  changed_when: false
+  no_log: true
+- name: Read this client's credential only in memory
+  ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/service-client-{{ client_input }}.yaml'}
+  register: client_input_bytes
+  no_log: true
+- name: Decode this client's credential in memory
+  ansible.builtin.set_fact:
+    client_secret: '{{ (client_input_bytes.content | b64decode | from_yaml).client_secret }}'
+  no_log: true
+- name: Reject reused browser, database or other service credentials
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - client_secret is match('^[a-zA-Z0-9]{40}$')
+      - client_secret not in [identity_credentials.web_secret, identity_credentials.admin_secret, app_credentials.runtime_password, app_credentials.migrator_password, redis_credentials.password, rabbitmq_credentials.password]
+      - workload_secret is not defined or not service_enabled | bool or client_secret != workload_secret
+      - client_secret not in generic_client_secrets.values()
+  no_log: true
+- name: Remember this client's secret for the runtime digest and the reuse check
+  ansible.builtin.set_fact:
+    generic_client_secrets: '{{ generic_client_secrets | combine({client_name: client_secret}) }}'
+  no_log: true
+- name: Read public CA for this client's strict HTTPS calls
+  ansible.builtin.slurp: {src: '{{ registry_config_dir }}/tls/ca.crt'}
+  register: workload_ca
+- name: Prepare this client's identity candidate directory
+  ansible.builtin.file: {path: '{{ build }}/{{ application_object }}/{{ client_input }}-identity', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+- name: Render this client's isolated identity initialization Job
+  ansible.builtin.template:
+    src: '{{ mechanism_root }}/service-client/workload.yaml.j2'
+    dest: '{{ build }}/{{ application_object }}/{{ client_input }}-identity/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+  vars: {service_target: '{{ client.target }}'}
+- name: Encrypt this client's provisioning and runtime secrets separately
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  loop:
+    - file: '{{ application_object }}/{{ client_input }}-identity/provision.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ client_name }}-provision', namespace: '{{ app_namespace }}'}
+        stringData: {client_secret: '{{ client_secret }}', ca.crt: '{{ workload_ca.content | b64decode }}'}
+    - file: '{{ application_object }}/runtime/{{ client_input }}-service.sops.yaml'
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ client_name }}-service', namespace: '{{ app_namespace }}'}
+        stringData: '{{ {(client.target ~ "_" ~ client.relation) | upper ~ "_SERVICE_CLIENT_SECRET": client_secret} }}'
+  loop_control: {loop_var: secret_item}
+  no_log: true
+- name: Render this client's explicit resource list
+  ansible.builtin.copy:
+    dest: '{{ build }}/{{ application_object }}/{{ client_input }}-identity/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":["workload.yaml","provision.sops.yaml"]} | to_nice_yaml }}'

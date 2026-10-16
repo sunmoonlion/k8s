@@ -21,6 +21,17 @@ knowlab_backend_deployment:
   # 普通用户所在组织（决策 D21、SDD 0014）：网页端应用挂这里；管理端仍在 built-in。
   identity_user_organization: sunmoonai
   identity_revision: v4
+  # 通用出站服务身份（SDD 0027 P1，机制在 common/backend/service-client）：用户验收通过后，把分身版本交付给 knowmart 登记。
+  service_clients:
+    - target: knowmart
+      relation: deliver
+      enabled: true
+      application: sunmoonai-knowlab-knowmart-deliver
+      client_id: sunmoon-knowlab-knowmart-deliver
+      organization: sunmoon-workload-knowlab-knowmart-deliver
+      scope: knowmart:deliver
+      job_revision: v1
+      token_seconds: 900
   api_port: 8000
   api_replicas: 1
   worker_replicas: 1

@@ -6,6 +6,15 @@
       - service_access_hosts.casdoor == 'casdoor-tls.' + app_namespace + '.svc.cluster.local'
       - service_access_hosts.knowbase == 'knowbase-tls.' + app_namespace + '.svc.cluster.local'
       - services_ingress_enabled | bool and services_casdoor_enabled | bool
+- name: Require each application route to be an exact internal host and API prefix
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.key in application_names and item.key not in service_access_hosts
+      - item.value.host == item.key + '-tls.' + app_namespace + '.svc.cluster.local'
+      - item.value.path is match('^/api/internal/v1/[a-z][a-z0-9-]*$')
+  loop: '{{ service_access_routes | default({}) | dict2items }}'
+  loop_control: {label: '{{ item.key }}'}
 - name: Create service transport candidate directory
   ansible.builtin.file: {path: '{{ build }}/ingress-platform/traefik/service-access', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
 - name: Prepare an independent recoverable internal TLS certificate
@@ -15,6 +24,10 @@
     tls_backup_dir: '{{ services_backup_dir }}/service-access'
     tls_declaration: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/tls.sops.yaml'
     tls_hostnames: '{{ service_access_hosts.values() | list }}'
+- name: Prepare and encrypt one independent TLS identity per application route
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/route-tls.yaml'
+  loop: '{{ service_access_routes | default({}) | dict2items }}'
+  loop_control: {loop_var: route, label: '{{ route.key }}'}
 - name: Render the cluster-local HTTPS routing objects
   ansible.builtin.template:
     src: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/workload.yaml.j2'
@@ -38,4 +51,4 @@
     dest: '{{ build }}/ingress-platform/traefik/service-access/kustomization.yaml'
     owner: '{{ cluster_operator }}'
     mode: '0644'
-    content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":["workload.yaml","tls.sops.yaml"]} | to_nice_yaml }}'
+    content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":["workload.yaml","tls.sops.yaml"] + (service_access_routes | default({}) | list | map("regex_replace", "^", "tls-") | map("regex_replace", "$", ".sops.yaml") | list)} | to_nice_yaml }}'

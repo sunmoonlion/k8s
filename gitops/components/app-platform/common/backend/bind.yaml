@@ -45,3 +45,27 @@
   ansible.builtin.set_fact:
     deployment_id: '{{ app_images.backend.deployment_id }}'
     migration_job: '{{ application_name }}-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
+# SDD 0027 P1：通用的跨应用服务身份（knowbase 那一对仍走上面的 knowbase_service / service_bindings，不动）。
+# 调用方 service_clients 每项一条关系；接收方 service_receivers 只写接受谁的哪种关系，身份从调用方配置推出来。
+- name: Bind generic outbound service clients
+  ansible.builtin.set_fact:
+    generic_service_clients: '{{ backend_cfg.service_clients | default([]) | selectattr("enabled") | list }}'
+- name: Bind generic inbound service relations from each caller's own declaration
+  ansible.builtin.set_fact:
+    generic_service_receivers: >-
+      {%- set out = [] -%}
+      {%- for r in backend_cfg.service_receivers | default([]) if r.enabled -%}
+        {%- set caller = (lookup("file", playbook_dir + "/../../gitops/components/app-platform/" + r.caller + "-app/" + r.caller + "-backend/config.yaml") | from_yaml)[r.caller + "_backend_deployment"] -%}
+        {%- set found = caller.service_clients | default([]) | selectattr("target", "equalto", application_name) | selectattr("relation", "equalto", r.relation) | list -%}
+        {%- set _ = out.append({"relation": r.relation, "caller": r.caller, "client": (found[0] if found | length == 1 else none)}) -%}
+      {%- endfor -%}
+      {{ out }}
+- name: Require every inbound relation to match exactly one enabled caller client
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.client is not none and item.client.enabled
+      - item.client.scope == application_name + ':' + item.relation
+    fail_msg: 'Service receiver {{ application_name }}:{{ item.relation }} has no single enabled client in {{ item.caller }}'
+  loop: '{{ generic_service_receivers }}'
+  loop_control: {label: '{{ item.caller }}:{{ item.relation }}'}

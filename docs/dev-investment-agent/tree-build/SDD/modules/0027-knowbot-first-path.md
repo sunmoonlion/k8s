@@ -40,13 +40,14 @@ knowlab ──交付──▶ knowmart  登记分身与版本（私有，只归�
 
 | 接口 | 谁调谁 | 身份 | 做什么 |
 | --- | --- | --- | --- |
-| knowlab → knowmart `POST /internal/knowbots/deliveries` | knowlab 后端 | 服务身份 `knowmart:deliver` | 交付一个验收通过的版本：所有者、分身名与说明、清单原文、摘要。幂等键 = knowlab 的交付单 id；同一分身已有该版本号且摘要不同则拒绝 |
-| investment → knowmart `GET /internal/owners/{owner}/knowbots/{id}@{version}` | investment 后端 | 服务身份 `knowmart:summon` | 取清单原文 + 摘要。**owner 由 investment 从已认证的会话里取**，浏览器给不了；owner 不符一律 404（不区分「不存在」与「不是你的」） |
+| knowlab → knowmart `POST /api/internal/v1/knowmart/deliveries` | knowlab 后端 | 服务身份 `knowmart:deliver` | 交付一个验收通过的版本：所有者、分身名与说明、清单原文、摘要。幂等键 = knowlab 的交付单 id；同一分身已有该版本号且摘要不同则拒绝 |
+| investment → knowmart `GET /api/internal/v1/knowmart/owners/{owner}/knowbots/{id}@{version}` | investment 后端 | 服务身份 `knowmart:summon` | 取清单原文 + 摘要。**owner 由 investment 从已认证的会话里取**，浏览器给不了；owner 不符一律 404（不区分「不存在」与「不是你的」） |
 | knowmart 网页端「我的分身」 | 用户 | 用户会话（sunmoonai，单点登录） | 只列本人的分身与版本、停用某一版；从工作台跳来时每位分身多一个「请这位」，点了按服务端登记的回跳目标跳回工作台，带 `knowbot=<id>@<version>` 与原 `ref`（不从链接接受回跳地址，[跨应用跳转规则](../architecture/cross-app-links.md)）；不出现上架、分享、导出、价格（`C-L4`） |
 | investment 收回跳 | investment 后端 | 用户会话 | 拿 `knowbot` 用上一行接口按会话里的 owner 核一次，核过才显示「已选」并允许提交；伪造或别人的分身得到「找不到」 |
 | 沙箱 MCP `sunmoon_knowlab`（只读） | 分身运行时 | investment 签发的运行令牌 | `list_my_data`、`read_my_data`：只能读令牌里列出的数据集（= 这一版的 `data_bindings`），且 knowlab 再核一次数据归令牌里的 owner |
 
 - **跳转与单点登录**：工作台到 knowmart 用现成的 `CrossAppLink`（业务参数 + `from=investment` + `ref`）。sunmoonai 组织里 investment、knowlab、knowmart 三个网页端应用在 Casdoor 打开「保持登录会话」与「自动登录」，在一处登录后跳到另两处不再输密码；退出登录同时结束 Casdoor 会话（公用电脑上下一位不会以上一位身份进入）。2026-10-16 实验核实（[记录](../../../../../scripts/results/opus-0027-P1b-sso-lab.20261016-1753.md)）：两个开关**都开**才免登（授权请求服务端直接 302 回调）；退出用 `/api/logout` 结束会话并跳回（只跳回登记过的地址）；会话时长由 `app.conf` 的 `sessionCookieLifeTime` 定（默认 30 天；所有者 2026-10-16 定 **12 小时**，即 `43200`，全局生效，管理端登录也一样）；边缘放行清单加 `/api/logout`。退出不存任何令牌：带本面 `client_id` 即可（实验核实 Casdoor 结束会话且只跳回登记过的地址），会话记录里仍不出现 id_token。一处退出只结束 Casdoor 会话，已登录着的其他应用本地会话留到自己过期（最长 1 小时）；全局单点退出见待办账 114。以后对外市场沿用同一套跳转。
+- **服务身份与内部入口（P1 已实现，未部署）**：knowmart 的内部接口统一在 `/api/internal/v1/knowmart` 下，经 traefik service-access 的内部入口 `knowmart-tls.<命名空间>.svc.cluster.local`（独立证书）。knowlab 的 `service_clients` 有 `knowmart:deliver`，investment 有 `knowmart:summon`，knowmart 的 `service_receivers` 接受这两种；应用代码读的环境变量见 `gitops/components/app-platform/common/backend/service-client/README.md`（调用方 `KNOWMART_INTERNAL_URL`、`KNOWMART_<关系>_SERVICE_*`；接收方 `SERVICE_AUTH_<关系>_*`）。knowlab 加为运行令牌公钥持有方放到 P5 一起做（只是加一条 `domain_secrets` 的 `workbench-signing` 公钥配置）。
 - **跨应用的用户标识用 Casdoor 用户 id（`sub`）**，三个应用各自的本地 actor id 不出应用（`C-D14`）。
 - 运行令牌沿用工作台已有的签名密钥对（`workbench-signing`：investment 私钥签，knowbase、relay 已持公钥），knowlab 加为公钥持有方；令牌带 `aud=knowlab`、`sub`、`knowbot`、`version`、`task`、`datasets`、`exp`，委托到终态即作废（同 0018 §四的生命周期规则）。
 
@@ -104,7 +105,7 @@ knowlab ──交付──▶ knowmart  登记分身与版本（私有，只归�
 
 | 卡 | 仓 | 内容 | 验收 |
 | --- | --- | --- | --- |
-| P1 | k8s | 服务身份共用机制从「只对 knowbase」改为通用（目标应用作参数）；加 knowlab→knowmart（deliver）、investment→knowmart（summon）两对身份与网络策略；knowlab 加为运行令牌公钥持有方 | 现有四个应用重新渲染后对象**逐字不变**（`C-R11`）；新身份能换到令牌 |
+| P1 | k8s | **已实现，未部署（2026-10-16）**：通用服务身份 `common/backend/service-client`（knowbase 那一对不动，见待办 115）；knowmart 内部入口（独立证书）；knowlab→knowmart（deliver）、investment→knowmart（summon）两对身份与网络策略。knowlab 的运行令牌公钥放到 P5 | 现有四个应用重新渲染后对象**逐字不变**（`C-R11`）；新身份能换到令牌 |
 | P1b | k8s + 应用模板 | 单点登录：（实验已核实，见 §3.2）identity 共用机制里 sunmoonai 网页端应用打开这两项（显式迁移，不靠漂移放行）；Casdoor `app.conf` 设 `sessionCookieLifeTime = 43200`；模板的退出登录同时结束 Casdoor 会话（带 client_id，不存令牌）；按实走重录边缘放行清单 | investment 登录后跳 knowlab、knowmart 不再输密码；退出后三处都要重新登录；边缘清单改前改后的录制一致 |
 | P2 | knowmart-app | 分身与版本表、`knowbot-manifest` v1 schema（真源）、交付与取清单两个 internal 接口、网页端「我的分身」（列出、请这位回跳、停用） | owner 过滤与不可改写的测试；伪造 owner、同版本不同摘要被拒 |
 | P3 | knowlab-app | 受理（六问 + 数据上传）、管理端受理队列与清单上传、测试与报告、用户验收、交付 | 从提交到交付走通；未验收不能交付；交付幂等 |

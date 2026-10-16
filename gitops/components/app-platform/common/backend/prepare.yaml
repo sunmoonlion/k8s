@@ -360,6 +360,18 @@
 - name: Prepare an independent relation-specific service identity
   ansible.builtin.include_tasks: '{{ mechanism_root }}/service-identity/prepare.yaml'
   when: service_enabled | bool
+- name: Start this application's generic service client secrets afresh
+  ansible.builtin.set_fact: {generic_client_secrets: {}}
+  no_log: true
+- name: Prepare each generic outbound service identity (SDD 0027 P1)
+  ansible.builtin.include_tasks: '{{ mechanism_root }}/service-client/prepare.yaml'
+  loop: '{{ generic_service_clients }}'
+  loop_control: {loop_var: client, label: '{{ client.target }}:{{ client.relation }}'}
+# Unconditional on purpose: a skipped registered task would overwrite workload_ca already read
+# above. The CA is public and identical either way; receivers need it to verify tokens over HTTPS.
+- name: Read public CA for service relations
+  ansible.builtin.slurp: {src: '{{ registry_config_dir }}/tls/ca.crt'}
+  register: workload_ca
 - name: Prepare the application's own configuration, secrets and network rules (0010)
   ansible.builtin.include_tasks: '{{ mechanism_root }}/domain/prepare.yaml'
 - name: Prepare the optional installer bucket and independent read/write identities
@@ -367,7 +379,7 @@
   when: agent_releases_enabled | bool
 - name: Bind runtime rollout to public configuration and private input changes
   ansible.builtin.set_fact:
-    runtime_config_digest: '{{ (([cfg, browser_clients, secret_input.content, redis_input.content, rabbitmq_input.content, identity_input.content] + ([agent_release_runtime] if agent_releases_enabled | bool else []) + ([s3_input.content] if storage_enabled | bool else []) + ([provider_runtime_data] if provider_enabled | bool else []) + ([workload_input.content,service_access_hosts] if service_enabled | bool else []) + ([service_bindings,service_access_hosts] if receiver_enabled | bool else []) + ([domain_secret_values, cross_app_env] if (domain_secrets_enabled | bool or cross_app_enabled | bool) else [])) | to_json) | hash("sha256") }}'
+    runtime_config_digest: '{{ (([cfg, browser_clients, secret_input.content, redis_input.content, rabbitmq_input.content, identity_input.content] + ([agent_release_runtime] if agent_releases_enabled | bool else []) + ([s3_input.content] if storage_enabled | bool else []) + ([provider_runtime_data] if provider_enabled | bool else []) + ([workload_input.content,service_access_hosts] if service_enabled | bool else []) + ([service_bindings,service_access_hosts] if receiver_enabled | bool else []) + ([domain_secret_values, cross_app_env] if (domain_secrets_enabled | bool or cross_app_enabled | bool) else []) + ([generic_service_clients, generic_client_secrets, service_access_routes] if generic_service_clients | length > 0 else []) + ([generic_service_receivers, service_access_routes] if generic_service_receivers | length > 0 else [])) | to_json) | hash("sha256") }}'
   no_log: true
 - name: Prepare public candidate directories
   ansible.builtin.file: {path: '{{ build }}/{{ application_object }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}

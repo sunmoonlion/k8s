@@ -26,3 +26,31 @@ spec:
             backend:
               service: {name: {{ 'knowbase-api' if name == 'knowbase' else 'casdoor' }}, port: {name: http}}
 {% endfor %}
+{% for name, route in (service_access_routes | default({})).items() %}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: {{ name }}-tls, namespace: {{ app_namespace }}}
+spec:
+  type: ExternalName
+  externalName: traefik.{{ ingress_namespace }}.svc.cluster.local
+  ports: [{name: https, port: 443}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ name }}-service-access
+  namespace: {{ app_namespace }}
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: sunmoon
+  tls: [{secretName: service-access-{{ name }}-tls, hosts: [{{ route.host }}]}]
+  rules:
+    - host: {{ route.host }}
+      http:
+        paths:
+          - path: {{ route.path }}
+            pathType: Prefix
+            backend:
+              service: {name: {{ name }}-api, port: {name: http}}
+{% endfor %}

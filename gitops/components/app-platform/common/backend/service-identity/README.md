@@ -1,5 +1,7 @@
 # 跨应用服务身份
 
+这里只管 knowbase 那一对（knowfeed 摄入、investment 检索），保持原样；新的关系一律用[通用机制](../service-client/README.md)。
+
 调用方配置来自各自后端config.yaml的knowledge_service；Knowledge使用knowledge_service_receiver.enabled启用接收，接收绑定由调用方字段派生，避免重复维护。原生application-stage/bootstrap编排[prepare.yaml](prepare.yaml)与[初始化模板](workload.yaml.j2)。
 
 ## 配置与秘密

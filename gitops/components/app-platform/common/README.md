@@ -9,7 +9,8 @@
 | backend/database、migration | 建库/运行与迁移账号隔离、schema核对 |
 | backend/redis、rabbitmq | 应用持久身份、键前缀/vhost与真实拒绝检查 |
 | backend/identity | Web/Admin注册与精确回调，不授予业务权限 |
-| [backend/service-identity](backend/service-identity/README.md) | Info摄入和Investment检索的独立服务身份 |
+| [backend/service-identity](backend/service-identity/README.md) | Info摄入和Investment检索的独立服务身份（knowbase 那一对） |
+| [backend/service-client](backend/service-client/README.md) | 通用的跨应用服务身份：调用方 `service_clients`、接收方 `service_receivers`（SDD 0027，先用于 knowmart） |
 | [backend/storage](backend/storage/README.md) | 应用原文桶、版本与受限S3身份 |
 | backend/runtime | API/Worker/Scheduler运行声明；Flux阶段依赖在各应用组件的stage.yaml |
 | web、admin | 分面独立的前端运行声明 |

@@ -17,6 +17,7 @@ TLS私钥由prepare生成/备份后SOPS发布，仅Traefik消费；客户端只�
 | `service_access_enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
 | `service_access_hosts.casdoor` | 文本/表达式 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
 | `service_access_hosts.knowbase` | 文本/表达式 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `service_access_routes.<应用>` | `host`、`path` | 应用的内部入口（SDD 0027）：host 必须是 `<应用>-tls.<app_namespace>.svc.cluster.local`，path 是 `/api/internal/v1/<名>`，只路由到 `<应用>-api` 的这个前缀。每条一张独立证书（私有目录 `service-access-<应用>`，密文 `tls-<应用>.sops.yaml`），不动 casdoor、knowbase 共用的那张；共用证书已签发后不会重签，所以新入口不能加进 `service_access_hosts`。调用方的 `service_clients` 按 target 找这里。 |
 
 ## 部署、检查与退回
 

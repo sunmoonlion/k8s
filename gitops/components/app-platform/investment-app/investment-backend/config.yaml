@@ -107,3 +107,15 @@ investment_backend_deployment:
     scope: knowbase:retrieve
     job_revision: v1
     token_seconds: 900
+  # 通用出站服务身份（SDD 0027 P1，机制在 common/backend/service-client）：工作台「请分身」后向 knowmart
+  # 按会话里的所有者取分身清单。名字按约定派生，prepare 会逐项核；目标的内部入口在 traefik service-access。
+  service_clients:
+    - target: knowmart
+      relation: summon
+      enabled: true
+      application: sunmoonai-investment-knowmart-summon
+      client_id: sunmoon-investment-knowmart-summon
+      organization: sunmoon-workload-investment-knowmart-summon
+      scope: knowmart:summon
+      job_revision: v1
+      token_seconds: 900
