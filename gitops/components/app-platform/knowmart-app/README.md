@@ -1,6 +1,6 @@
 # knowmart-app
 
-knowmart：分身（knowbot）的存放与「请」，现在只做私有模式（只能请自己的分身，后端强制按所有者过滤，界面叫「我的分身」）。现在是空应用：模板的骨架、认证与运行角色，没有业务功能。设计见 [0018](../../../../docs/dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md) 与 [0026](../../../../docs/dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「一之二」。
+knowmart：分身（knowbot）的存放与「请」，现在只做私有模式（只能请自己的分身，后端强制按所有者过滤，界面叫「我的分身」）。代码里已有分身存放与「请」（[0027](../../../../docs/dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md) P2：分身与版本表、交付与取清单两个内部接口、网页端「我的分身」），随 0027 P6 一起部署；目前集群里跑的仍是空应用那一版。内部入口在 traefik service-access 的 `service_access_routes.knowmart`，接受 knowlab 交付（deliver）与 investment 取清单（summon）两种服务关系（后端 config 的 `service_receivers`）。设计见 [0018](../../../../docs/dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md) 与 [0026](../../../../docs/dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「一之二」。
 
 ## 配置导航
 

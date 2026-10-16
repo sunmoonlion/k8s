@@ -34,6 +34,7 @@ knowlab ──交付──▶ knowmart  登记分身与版本（私有，只归�
 
 - **形状 = 工作台现在的专家包**（`investment-backend` `app/domain/workbench/packs.py` 的 `ExpertPack`：六问、步骤契约、验收规则、底稿布局、工具策略），去掉内置专用字段（`internal`），加 `data_bindings`（这一版能读的用户数据：knowlab 的数据集 id + 版本 + sha256）和 `rule_sources`（每条判断规则出自用户原文还是用户确认过的改写，`C-L1`）。
 - **schema 真源在 knowmart**（版本的提供方），investment 与 knowlab 各持锁文件，同 knowfeed→knowbase 的做法（`contracts/*-provider-lock.json`）。schema 变更走版本号，v1 冻结后只增可选字段。
+- **P2 实现时细化（2026-10-16）**：清单分两层。外层（`schema: knowbot-manifest/v1`、名字与说明、版本、`data_bindings`、`rule_sources`）归 knowmart，严格校验；`pack`（专家包形状的可执行部分）归执行它的工作台，knowmart 只核骨架（`pack_id`、`version` 等于外层版本、非空 `workflow`），完整形状由工作台按自己的模型校验，免得两处各维护一份执行格式。外层 schema 由 knowmart 后端模型生成，放 `knowmart-app/contracts/knowbot/v1/`（摘要见 `contract-manifest.json`）；JSON Schema 表达不了的跨字段规则以 knowmart 交付时的校验为准。摘要写作 `sha256:<十六进制>`。
 - 校验两处做：knowlab 上传时（不合格不让测）、knowmart 登记时（不合格不收）。investment 取到后按同一 schema 解析，失败拒绝运行。
 
 ### 3.2 接口
@@ -107,7 +108,7 @@ knowlab ──交付──▶ knowmart  登记分身与版本（私有，只归�
 | --- | --- | --- | --- |
 | P1 | k8s | **已实现，未部署（2026-10-16）**：通用服务身份 `common/backend/service-client`（knowbase 那一对不动，见待办 115）；knowmart 内部入口（独立证书）；knowlab→knowmart（deliver）、investment→knowmart（summon）两对身份与网络策略。knowlab 的运行令牌公钥放到 P5 | 现有四个应用重新渲染后对象**逐字不变**（`C-R11`）；新身份能换到令牌 |
 | P1b | k8s + 应用模板 | 单点登录：（实验已核实，见 §3.2）identity 共用机制里 sunmoonai 网页端应用打开这两项（显式迁移，不靠漂移放行）；Casdoor `app.conf` 设 `sessionCookieLifeTime = 43200`；模板的退出登录同时结束 Casdoor 会话（带 client_id，不存令牌）；按实走重录边缘放行清单 | investment 登录后跳 knowlab、knowmart 不再输密码；退出后三处都要重新登录；边缘清单改前改后的录制一致 |
-| P2 | knowmart-app | 分身与版本表、`knowbot-manifest` v1 schema（真源）、交付与取清单两个 internal 接口、网页端「我的分身」（列出、请这位回跳、停用） | owner 过滤与不可改写的测试；伪造 owner、同版本不同摘要被拒 |
+| P2 | knowmart-app | **已实现，未部署（2026-10-16）**：分身与版本表（数据库触发器保证版本只插不改）、`knowbot-manifest` v1 外层 schema（真源，契约在父仓 `contracts/knowbot/v1/`）、交付与取清单两个 internal 接口（按关系校验服务令牌，身份先于数据库会话）、网页端「我的分身」（列出、停用、「请这位」回跳带 `knowbot=<分身>@<版本>`）；部署配置开跨应用跳转、登录回跳名单加 `/knowbots` | owner 过滤与不可改写的测试；伪造 owner、同版本不同摘要被拒 |
 | P3 | knowlab-app | 受理（六问 + 数据上传）、管理端受理队列与清单上传、测试与报告、用户验收、交付 | 从提交到交付走通；未验收不能交付；交付幂等 |
 | P4 | investment-app | 分身目录端口（内置 + knowmart）、「请分身」跳转与收回跳核验、请时缓存清单、委托记来源与摘要 | 现有内置包行为不变；knowmart 的分身能请、能跑；伪造回跳与别人的分身被拒；knowmart 停了在跑的委托不受影响 |
 | P5 | knowlab-app + 沙箱 | `sunmoon_knowlab` 只读 MCP 与运行令牌校验；供给器给沙箱配它 | 只能读这一版绑定的本人数据；委托终态后读不到 |
