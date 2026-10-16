@@ -15,6 +15,36 @@
       - ragflow_port == 9380
       - ragflow_initialize_generation is match('^v[1-9][0-9]*$')
       - image_map.ragflow.source == 'docker.io/infiniflow/ragflow:v0.27.2'
+# OBJECT=data-platform/ragflow 不跑 valkey 的 prepare（OBJECT=all 时它按依赖排在前面，已备好 valkey_credentials）。
+# 这里只读 valkey 已有的私有输入：不生成、不恢复、不改写；没有就停，先 stage valkey。
+- name: Load existing Valkey credentials read-only when Valkey was not prepared in this run
+  when: valkey_credentials is not defined
+  block:
+    - name: Inspect the existing Valkey input pair
+      ansible.builtin.stat: {path: '{{ item }}', follow: false}
+      loop: ['{{ services_config_dir }}/valkey.yaml', '{{ services_backup_dir }}/valkey.yaml']
+      register: ragflow_valkey_inputs
+      no_log: true
+    - name: Require both Valkey inputs to exist as root-only regular files
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.stat.exists and item.stat.isreg | default(false) and not item.stat.islnk | default(false)
+          - item.stat.uid == 0 and item.stat.mode == '0600'
+        fail_msg: Valkey private input missing or insecure; stage data-platform/valkey first (RAGFlow never generates Valkey credentials).
+      loop: '{{ ragflow_valkey_inputs.results }}'
+      no_log: true
+    - name: Require the Valkey input pair to be byte identical
+      ansible.builtin.command: {argv: [cmp, --silent, '{{ services_config_dir }}/valkey.yaml', '{{ services_backup_dir }}/valkey.yaml']}
+      changed_when: false
+      no_log: true
+    - name: Read Valkey credentials only into memory
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/valkey.yaml'}
+      register: ragflow_valkey_bytes
+      no_log: true
+    - name: Retain Valkey credentials only in memory
+      ansible.builtin.set_fact: {valkey_credentials: '{{ ragflow_valkey_bytes.content | b64decode | from_yaml }}'}
+      no_log: true
 - name: Observe live image usage on the exact selected RAGFlow node
   ansible.builtin.command:
     argv: '{{ kube + ["-n",data_namespace,"get","pods","-l","app.kubernetes.io/name=ragflow","-o","json"] }}'

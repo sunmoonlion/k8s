@@ -87,6 +87,18 @@ git status --short gitops | awk '{print $2}' | sed -E 's#^gitops/(components/[^/
 
 要看到：全是 `exit=0`；`git status` 只有 `clusters/kind`（`stages.yaml` 加了两个应用的阶段）与两个新应用目录，tpl、knowfeed、knowbase、investment **没有任何一行**。有就停。
 
+第一次跑停在 `stages.py graph`（两个新后端少 `database`、`migration`、`redis` 三个目录，C 段漏交）；已补（各放一份说明，生成文件由 D3 的 stage 写进去），pull 后 D2 原样重跑。
+
+**D2b 待办 97 的修法实跑**（prepare 改为按阶段依赖排序；ragflow 单独 stage 时只读 valkey 已有的私有输入，不生成）：
+
+```bash
+cd ~/worktrees/qwen/k8s
+make -C infrastructure platform-stage OBJECT=data-platform/ragflow; echo "ragflow exit=$?"
+git status --short gitops/components/data-platform; echo status-done
+```
+
+要看到：`ragflow exit=0`（以前报 `'valkey_credentials' is undefined`）；`status-done` 前没有任何行（ragflow、valkey 的文件都不变）。有就停。
+
 **D3 构建两个新应用并 stage**：
 
 ```bash

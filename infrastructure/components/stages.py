@@ -85,7 +85,43 @@ def load_graph(components_root):
             for dependency in stage["dependencies"]:
                 if isinstance(dependency, str) and "{{" not in dependency and dependency not in names:
                     fail(f"stage {stage['name']} depends on undefined stage {dependency}")
-    return {"component_stages": stages, "stage_paths": stage_paths, "component_objects": sorted({s["object"] for s in stages}), "component_prepares": prepares}
+    return {"component_stages": stages, "stage_paths": stage_paths, "component_objects": sorted({s["object"] for s in stages}),
+            "component_prepares": order_prepares(prepares, stages)}
+
+
+def order_prepares(prepares, stages):
+    """prepare 按阶段依赖排序：依赖对象的 prepare 先跑（它备下的事实，如 valkey_credentials，后面的要用）。
+
+    只看写死的依赖名（Jinja 表达式此时还没求值，忽略）；对象之间若成环，环内保持原来的目录顺序。
+    只调顺序，不增不减。待办账 97：原来按目录字母序，data-platform/ragflow 排在 data-platform/valkey 前面。
+    """
+    object_of = {s["name"]: s["object"] for s in stages}
+    needs = {}
+    for s in stages:
+        deps = s["dependencies"] if isinstance(s["dependencies"], list) else []
+        for d in deps:
+            if isinstance(d, str) and "{{" not in d and d in object_of and object_of[d] != s["object"]:
+                needs.setdefault(s["object"], []).append(object_of[d])
+    rank = {p["object"]: i for i, p in enumerate(prepares)}
+    ordered, done, visiting = [], set(), set()
+
+    def visit(obj):
+        if obj in done or obj in visiting:
+            return
+        visiting.add(obj)
+        for dep in sorted(set(needs.get(obj, [])), key=lambda o: rank.get(o, -1)):
+            visit(dep)
+        visiting.discard(obj)
+        done.add(obj)
+        if obj in rank:
+            ordered.append(obj)
+
+    for p in prepares:
+        visit(p["object"])
+    by_object = {}
+    for p in prepares:
+        by_object.setdefault(p["object"], []).append(p)
+    return [p for obj in ordered for p in by_object[obj]]
 
 
 def select(data):
