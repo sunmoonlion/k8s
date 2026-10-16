@@ -98,7 +98,7 @@ R1 的替换脚本按这张表逐类写规则，每一类替换后单独列出�
 
 ## R0 冻结与前提 — Cursor 收尾，Qwen 与 Opus 核对
 
-1. Cursor 发完卡 47、48，两份回执已由 Opus 审过（卡 48 要先等 Qwen 的 0024 Windows 真机回执）。之后 Cursor 不再接卡，直到 R6 写「改名完成」。
+1. Cursor 发完卡 47、48，两份回执已由 Opus 审过（卡 48 要先等 Qwen 的 0024 Windows 真机回执）。之后 Cursor 不再接卡，直到冻结解除（R6 写「改名完成」之后，再做完「冻结解除之后」第 1、2 条，所有者 2026-10-16 定）。
 2. 其他工位（fable、kimi、luna、astra）冻结（见上表）。
 3. 两台机器上，五个工位 × `info-app`、`knowledge-app`（含 6 个子仓）都**干净且已推到 origin**；qwen 工位的 `k8s`、`investment-app`（含两个子仓）、`runtime`、`tpl-app` 也干净且已推。R3 会把前两组的旧检出整个挪开、从 origin 重新 clone，没推的提交会丢在备份目录里。远程机由 Opus 核，本地机由 Qwen 核：
 
@@ -646,9 +646,9 @@ make -C infrastructure platform-status; echo "exit=$?"
 
 要看到：清单只剩 R6.1 审过的 `??` 项；没有不 Ready 的 Kustomization；四个 `application-check` 与 `platform-status` 都是 0。
 
-**停点**：回执 `R6.2-qwen.<时间>.md` 连同 `R6.2-*.txt` 提交推送，Opus 审过在本节写「改名完成」，冻结解除，Cursor 恢复接卡（用新名字）。
+**停点**：回执 `R6.2-qwen.<时间>.md` 连同 `R6.2-*.txt` 提交推送，Opus 审过在本节写「改名完成」；冻结在「冻结解除之后」第 1、2 条（并进 master、两台机器五个工位对齐）做完后解除，Cursor 才恢复接卡（用新名字）。
 
-**状态**：**可执行（R6.2）** · 2026-10-16 · Opus。R5 通过后按现场核过一遍：清单、归属记号、私有文件键名（RAGFlow 仍是 `knowledge_token`）与现行配置一致；RAGFlow 一类只报带旧名的数据集。R6.1 已通过；所有者 2026-10-16 确认删除，**R6.2 可执行**。
+**状态**：**改名完成** · 2026-10-16 · Opus。R6.1 通过、所有者确认删除后做 R6.2：删除循环见上「审过」一条；补回执 `R6.2-qwen.20261016-1054.md`——hosts 演练副本可写、演练 `exit=0` 且 `diff` 只有第 26 行少了四个旧名，真改 `OK backup …hosts.bak-r6-20261016-104924`，有效行里没有旧名；删后清单 `R6.2-after.20261016-1051.txt` 十一类都空（声明的 34 个 Job 保留，Harbor 18G），Kustomization 全 Ready，四个 `application-check` 与 `platform-status` 都是 0。下一步是「冻结解除之后」第 1、2 条，做完冻结解除。
 
 ---
 
