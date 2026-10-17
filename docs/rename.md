@@ -269,6 +269,8 @@ GITEE_PREFIX=https://gitee.com/sunmoonlion/ ORIGIN_PUSH_GITEE=1 bash ~/worktrees
 **停点**：Opus 写 `R3-opus`（远程机）、Qwen 写 `R3-qwen`（本地机），Opus 审。
 **状态**：远程机**完成** · 2026-10-17 · Opus，回执 `R3-opus.*.md`：两组 exit=0；五个工位都「挂出」、`dirty=0`；qwen 工位在 R1 提交（`3fa5a54`、`130c966`），其余工位在各自原提交；子仓 url 都是新仓名、推送 GitHub 与 gitee；`repos.conf` 两行换新名；备份 `~/rename-backup/20261017-1212-investment-app`、`…-1214-runtime`。更正：远程机原来的 investment-app origin 也推两个地址，runtime 那次漏了 `ORIGIN_PUSH_GITEE=1`，跑完后已手工补齐（与 knowbench-app 相同），上面的命令已改。**Qwen 可以做本地机 R3**，回执写 `R3-qwen`。
 
+本地机 **通过** · 2026-10-17 · Opus。回执 `R3-qwen.20261017-1220.md`：两组 exit=0；五个工位都「挂出」、`dirty=0`，qwen 工位在 R1 提交、其余在各自原提交，与远程机相同；子仓 url 与推送是新仓名（GitHub + gitee）；sunmoon-link 的 remote 与 knowbench-app 布局一致；`repos.conf` 两行换新名（脚本改的是工作区，本地机 `toolboxes` 由所有者先还原这两行再拉 `a558370`）；备份 `~/rename-backup/20261017-1218-investment-app`、`…-1219-runtime`。**R3 通过，Qwen 可以做 R4（本地机）。**
+
 ## R4 同步配置 — 远程机 Opus，本地机 Qwen
 
 两台机器各核对两个文件：
