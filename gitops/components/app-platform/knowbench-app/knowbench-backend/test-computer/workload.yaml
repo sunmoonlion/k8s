@@ -74,6 +74,13 @@ spec:
         sunmoonai.com/agent-package: 'cd93d5a1d2ebb3fb1506c7cda3dc177997b7f3349361dc8a011a795e1dec1766'
     spec:
       automountServiceAccountToken: false
+      # 镜像在 Harbor 的 platform 项目：和沙箱一样显式带拉取凭据（不用运行时的服务账号，测试电脑不需要别的身份）
+      imagePullSecrets: [{name: registry-puller}]
+      # 测试电脑按公网名经边缘连进来（站点文件 edge-public）。集群的 DNS 最终经 WSL 走到 Windows，而所有者的 Windows hosts 把这些名字指到 127.0.0.1；
+      # 只给这个 Pod 把两个名字钉到边缘地址（与下面出站策略放行的是同一个地址），不改集群 DNS
+      hostAliases:
+        - ip: '43.153.135.74'
+          hostnames: [knowbench.sunmoonai.com, relay.sunmoonai.com]
       enableServiceLinks: false
       securityContext: {runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001, seccompProfile: {type: RuntimeDefault}}
       initContainers:
