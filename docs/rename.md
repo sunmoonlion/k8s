@@ -711,7 +711,7 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 > 要看到：ConfigMap 里没有 investment；`rollout exit=0`；两个 frpc Pod 是新起的；日志里有 knowbench 的代理启动。不用提交（没有改 Git），回执 `R5.2-qwen.<时间>.md` 推上来就停，Opus 从远程机再 curl 核边缘。
 
 **停点**：Qwen 的 `R5.2-qwen` 与 Opus 的 `R5.2-opus` 都审过，在本节写「通过」。
-**状态**：**可执行（第 1–5 步）** · 2026-10-17 · Opus；第 6 步所有者 2026-10-17 已批准（「按你建议」），Qwen 的回执审过后 Opus 做。
+**状态**：**通过** · 2026-10-17 · Opus。第 1 步经六次处理（证书装错、漏列的注册 Job、检查脚本没跟上 P1b/P5、frpc 没重启——都是 Opus 这边的漏洞，已修并记待办账 123、125）后全过；第 2–5 步过（`R5.2-qwen.20261017-2041.md`）；第 6 步边缘过（`R5.2-opus.*.md` 含复核）。
 
 ### R5.3 本地代理 0.5.0（Windows 与 Linux 包）、开测试电脑
 
@@ -815,7 +815,7 @@ git push origin qwen
 **回执**：`docs/rename-receipts/R5.3-qwen.<时间>.md`（Windows 包的 A 项表、Linux 输出与 Opus 值的逐项对照、配置 diff、四次 verify/upload 的结果字段、stage 改动、各 `exit`、Pod 与抹过码的日志行、所有者那台电脑的结果）。zip、tar.gz 不进库。
 
 **停点**：Opus 审回执，在本节写「通过」。
-**状态**：**已写好，待 R5.2 通过后可执行** · 2026-10-17 · Opus。
+**状态**：**可执行** · 2026-10-17 · Opus（R5.2 已通过，含边缘；sunmoon-link `1d8e838` 已推）。
 
 ### R5.4 测试账号、kimi key、测试电脑配对、走查（0027 P6 的浏览器部分）
 

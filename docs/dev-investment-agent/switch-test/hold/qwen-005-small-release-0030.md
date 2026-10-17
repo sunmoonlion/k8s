@@ -20,7 +20,6 @@
 | knowbench 网页 | `537743d`（含 `4acd320`、`37ada6a`） | 成稿导出 Word、Excel、PDF（0031）；左右分栏可拖、左侧导航可折叠、输入框长高上限放宽（待办 124） |
 | knowlab 父仓 | `117bea9` | 契约 schema 四份新增、子仓指针 |
 | knowbench 父仓 | `2959564` | 契约锁、子仓指针 |
-| k8s：frpc | `cc8057cd` | frpc 的滚动标识算上域名等配置项（0028 R5.2 发现：改了域名 frpc 不重启）。这一轮顺带重新暂存 frpc，Pod 会滚动一次 |
 
 Opus 在远程机核过：knowlab 后端全量 396 过；knowbench 后端全量（真库）1121 过；knowbench 网页 `pnpm check` 全过（295 条测试）；knowlab 网页类型、lint、92 条测试过。
 
@@ -70,7 +69,7 @@ for o in app-platform/knowlab-app app-platform/knowbench-app; do
   echo "===== build $o"; make -C infrastructure platform-build OBJECT=$o 2>&1 | tail -n 12; rc=${PIPESTATUS[0]}; echo "exit=$rc"; [ "$rc" = 0 ] || break
 done
 for f in $(git diff --name-only gitops | grep image.lock); do echo "$f: $(grep -E '^source_revision' $f)"; done
-for o in app-platform/knowlab-app app-platform/knowbench-app ingress-platform/frpc; do
+for o in app-platform/knowlab-app app-platform/knowbench-app; do
   echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
 done
 grep -rn "BEGIN PRIVATE KEY\|BEGIN PUBLIC KEY" gitops/ | head -3; echo key-check-done
