@@ -1,0 +1,51 @@
+== align wsl-dev 2026-10-17 13:07:50  HOME=/home/zymun  （预演，不改）
+  WOULD master/k8s 快进 90 个
+  WOULD master/sunmoon-link 快进 3 个
+  WOULD master/knowfeed-app 快进 4 个
+  WOULD master/knowbase-app 快进 4 个
+  WOULD master/knowbench-app 快进 8 个；挪走旧子仓目录: investment-backend investment-admin-frontend investment-web-frontend
+  WOULD master/tpl-app 快进 5 个
+  WOULD master/knowlab-app 快进 8 个
+  WOULD master/knowmart-app 快进 7 个
+  WOULD cursor/k8s 快进 90 个
+  WOULD cursor/sunmoon-link 快进 3 个
+  WOULD cursor/knowfeed-app 快进 4 个
+  WOULD cursor/knowbase-app 快进 4 个
+  WOULD cursor/knowbench-app 快进 8 个；挪走旧子仓目录: investment-backend investment-admin-frontend investment-web-frontend
+  WOULD cursor/tpl-app 快进 5 个
+  WOULD cursor/knowlab-app 快进 8 个
+  WOULD cursor/knowmart-app 快进 7 个
+  WOULD fable/k8s 快进 90 个
+  WOULD fable/sunmoon-link 快进 3 个
+  WOULD fable/knowfeed-app 快进 4 个
+  WOULD fable/knowbase-app 快进 4 个
+  WOULD fable/knowbench-app 快进 8 个；挪走旧子仓目录: investment-backend investment-admin-frontend investment-web-frontend
+  WOULD fable/tpl-app 快进 5 个
+  WOULD fable/knowlab-app 快进 8 个
+  WOULD fable/knowmart-app 快进 7 个
+  WOULD kimi/k8s 快进 90 个
+  WOULD kimi/sunmoon-link 快进 3 个
+  WOULD kimi/knowfeed-app 快进 4 个
+  WOULD kimi/knowbase-app 快进 4 个
+  WOULD kimi/knowbench-app 快进 8 个；挪走旧子仓目录: investment-backend investment-admin-frontend investment-web-frontend
+  WOULD kimi/tpl-app 快进 5 个
+  WOULD kimi/knowlab-app 快进 8 个
+  WOULD kimi/knowmart-app 快进 7 个
+  WOULD luna/k8s 快进 90 个
+  WOULD luna/sunmoon-link 快进 3 个
+  WOULD luna/knowfeed-app 快进 4 个
+  WOULD luna/knowbase-app 快进 4 个
+  WOULD luna/knowbench-app 快进 8 个；挪走旧子仓目录: investment-backend investment-admin-frontend investment-web-frontend
+  WOULD luna/tpl-app 快进 5 个
+  WOULD luna/knowlab-app 快进 8 个
+  WOULD luna/knowmart-app 快进 7 个
+  ok   qwen/k8s（比 master 多 1 个，都已推到 origin/qwen，等 master 跟上）
+  ok   qwen/sunmoon-link
+  ok   qwen/knowfeed-app
+  ok   qwen/knowbase-app
+  ok   qwen/knowbench-app
+  ok   qwen/tpl-app
+  ok   qwen/knowlab-app
+  ok   qwen/knowmart-app
+done_or_would=40 held=0 failed=0
+exit=0

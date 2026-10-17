@@ -1,0 +1,66 @@
+== align wsl-dev 2026-10-17 13:12:15  HOME=/home/zymun  --apply
+  DONE master/k8s 快进 90 个
+  DONE master/sunmoon-link 快进 3 个
+  DONE master/knowfeed-app 快进 4 个
+  DONE master/knowbase-app 快进 4 个
+  moved master/knowbench-app/investment-backend -> ~/rename-backup/20261017-131215-old-subrepos/master/knowbench-app/investment-backend
+  moved master/knowbench-app/investment-admin-frontend -> ~/rename-backup/20261017-131215-old-subrepos/master/knowbench-app/investment-admin-frontend
+  moved master/knowbench-app/investment-web-frontend -> ~/rename-backup/20261017-131215-old-subrepos/master/knowbench-app/investment-web-frontend
+  DONE master/knowbench-app 快进 8 个
+  DONE master/tpl-app 快进 5 个
+  DONE master/knowlab-app 快进 8 个
+  DONE master/knowmart-app 快进 7 个
+  DONE cursor/k8s 快进 90 个
+  DONE cursor/sunmoon-link 快进 3 个
+  DONE cursor/knowfeed-app 快进 4 个
+  DONE cursor/knowbase-app 快进 4 个
+  moved cursor/knowbench-app/investment-backend -> ~/rename-backup/20261017-131215-old-subrepos/cursor/knowbench-app/investment-backend
+  moved cursor/knowbench-app/investment-admin-frontend -> ~/rename-backup/20261017-131215-old-subrepos/cursor/knowbench-app/investment-admin-frontend
+  moved cursor/knowbench-app/investment-web-frontend -> ~/rename-backup/20261017-131215-old-subrepos/cursor/knowbench-app/investment-web-frontend
+  DONE cursor/knowbench-app 快进 8 个
+  DONE cursor/tpl-app 快进 5 个
+  DONE cursor/knowlab-app 快进 8 个
+  DONE cursor/knowmart-app 快进 7 个
+  DONE fable/k8s 快进 90 个
+  DONE fable/sunmoon-link 快进 3 个
+  DONE fable/knowfeed-app 快进 4 个
+  DONE fable/knowbase-app 快进 4 个
+  moved fable/knowbench-app/investment-backend -> ~/rename-backup/20261017-131215-old-subrepos/fable/knowbench-app/investment-backend
+  moved fable/knowbench-app/investment-admin-frontend -> ~/rename-backup/20261017-131215-old-subrepos/fable/knowbench-app/investment-admin-frontend
+  moved fable/knowbench-app/investment-web-frontend -> ~/rename-backup/20261017-131215-old-subrepos/fable/knowbench-app/investment-web-frontend
+  DONE fable/knowbench-app 快进 8 个
+  DONE fable/tpl-app 快进 5 个
+  DONE fable/knowlab-app 快进 8 个
+  DONE fable/knowmart-app 快进 7 个
+  DONE kimi/k8s 快进 90 个
+  DONE kimi/sunmoon-link 快进 3 个
+  DONE kimi/knowfeed-app 快进 4 个
+  DONE kimi/knowbase-app 快进 4 个
+  moved kimi/knowbench-app/investment-backend -> ~/rename-backup/20261017-131215-old-subrepos/kimi/knowbench-app/investment-backend
+  moved kimi/knowbench-app/investment-admin-frontend -> ~/rename-backup/20261017-131215-old-subrepos/kimi/knowbench-app/investment-admin-frontend
+  moved kimi/knowbench-app/investment-web-frontend -> ~/rename-backup/20261017-131215-old-subrepos/kimi/knowbench-app/investment-web-frontend
+  DONE kimi/knowbench-app 快进 8 个
+  DONE kimi/tpl-app 快进 5 个
+  DONE kimi/knowlab-app 快进 8 个
+  DONE kimi/knowmart-app 快进 7 个
+  DONE luna/k8s 快进 90 个
+  DONE luna/sunmoon-link 快进 3 个
+  DONE luna/knowfeed-app 快进 4 个
+  DONE luna/knowbase-app 快进 4 个
+  moved luna/knowbench-app/investment-backend -> ~/rename-backup/20261017-131215-old-subrepos/luna/knowbench-app/investment-backend
+  moved luna/knowbench-app/investment-admin-frontend -> ~/rename-backup/20261017-131215-old-subrepos/luna/knowbench-app/investment-admin-frontend
+  moved luna/knowbench-app/investment-web-frontend -> ~/rename-backup/20261017-131215-old-subrepos/luna/knowbench-app/investment-web-frontend
+  DONE luna/knowbench-app 快进 8 个
+  DONE luna/tpl-app 快进 5 个
+  DONE luna/knowlab-app 快进 8 个
+  DONE luna/knowmart-app 快进 7 个
+  ok   qwen/k8s（比 master 多 1 个，都已推到 origin/qwen，等 master 跟上）
+  ok   qwen/sunmoon-link
+  ok   qwen/knowfeed-app
+  ok   qwen/knowbase-app
+  ok   qwen/knowbench-app
+  ok   qwen/tpl-app
+  ok   qwen/knowlab-app
+  ok   qwen/knowmart-app
+done_or_would=40 held=0 failed=0
+exit=0
