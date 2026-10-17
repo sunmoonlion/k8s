@@ -3,7 +3,9 @@
 knowbench_agent_releases:
   enabled: true
   # 上传读回校验成功后才开启下载，避免网页提前出现不可用链接。
-  download_available: true
+  # 0028 R5：改名后 knowbench 名下还没有上传回执（旧的是 investment-agent-release-published.json），先关；
+  # R5.3 上传 0.5.0、读回校验后再开（R5.1 第一次执行停在这里，R5.1-qwen.20261017-1629.md）
+  download_available: false
   mode: object-storage
   external_url: ''
   bucket: agent-releases

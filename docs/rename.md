@@ -415,13 +415,26 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 **停点**：Qwen 写 `R5.1-qwen`（R5.0 的核对、构建与暂存的各 `exit`、改动分布、计划、比对第 1–2 节），Opus 审。
 **状态**：**可执行** · 2026-10-17 · Opus（改钉、迁移头、测试电脑开关已提交；R5.0 的核对脚本在远程机试跑过，24 个钉都在 HEAD 里）。
 
+> 2026-10-17 第一次执行（`R5.1-qwen.20261017-1629.md`）：R5.0 全过、六个构建全过；暂存 tpl、knowfeed、knowbase 都 0，**停在 knowbench**：安装包发布配置 `download_available: true`，暂存要求平台私有目录里有按应用名存的上传读回回执 `knowbench-agent-release-published.json`，而改名前的那份叫 `investment-…`，knowbench 名下还没有（R5.3 才上传 0.5.0）。Opus 漏看了这道检查。改法：`agent-releases/config.yaml` 先改 `download_available: false`（已提交），R5.3 上传、读回校验后再开并重新暂存 knowbench；**不复制旧回执改名**（那等于伪造校验）。R5.3 之前「接入电脑」页暂时不给下载，不影响别的。
+>
+> **第二次只续跑剩下的**（tpl、knowfeed、knowbase 不重来，产物都在工作区；knowbench 重新 stage 一遍，它是幂等的）：
+>
+> ```bash
+> cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+> for o in app-platform/knowbench-app app-platform/knowlab-app app-platform/knowmart-app ingress-platform/traefik ingress-platform/frpc data-platform/elk/collector app-platform/auth-app/casdoor; do
+>   echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
+> done
+> ```
+>
+> 要看到：七个都是 `exit=0`。然后照跑第 2 步块里 `done` 之后的核对，再做第 3、4 步。注意 `git pull` 前工作区有 stage 产物：`--ff-only` 只要没有冲突会照常快进（Opus 这次只改了 `agent-releases/config.yaml` 与本文，stage 产物不在其中）；拉不下来就停，原样贴进回执。
+
 ### R5.2 提交、发布、晋级、入口、hosts、边缘
 
 待写（R5.1 通过后填）。
 
 ### R5.3 本地代理 0.5.0、开测试电脑
 
-待写。
+待写。要包含：上传读回校验 0.5.0 的 Windows 包后，`agent-releases/config.yaml` 换钉并把 `download_available` 改回 `true`，重新暂存 knowbench（R5.1 第一次执行的教训）。
 
 ### R5.4 测试账号、kimi key、测试电脑配对、浏览器走查
 
