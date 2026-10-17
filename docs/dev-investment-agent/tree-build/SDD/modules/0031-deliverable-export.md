@@ -1,6 +1,6 @@
 # 成稿与表格导出：Word、Excel、PDF（0031）
 
-> 状态：**已定，实施中**。所有者 2026-10-17：「我看到workbuddy里的专家都将表格整理成excel文件，我们的查询财报时能不能最好把三大表也整理成excel文件？」「有时还有转word文档，txt太难看了，能做吗」「或者pdf」；Opus 提三个按钮的做法，所有者「按你建议」，排在 0030 的小发布一起上或紧随其后。Opus 起草。
+> 状态：**已定，已实现（2026-10-17，knowbench 网页 `4acd320`、父仓 `ed63d34`，本地）**，随 0030 小发布上线。所有者 2026-10-17：「我看到workbuddy里的专家都将表格整理成excel文件，我们的查询财报时能不能最好把三大表也整理成excel文件？」「有时还有转word文档，txt太难看了，能做吗」「或者pdf」；Opus 提三个按钮的做法，所有者「按你建议」，排在 0030 的小发布一起上或紧随其后。Opus 起草。
 
 ## 一、要解决什么
 
@@ -38,3 +38,11 @@
 | --- | --- |
 | knowbench 网页 | `lib/workbench/export/`（Markdown 解析成语法树后转 Word、取表格转 Excel，纯函数，单测）；文件视图加三个按钮；打印样式；`package.json` 加 `docx`、`exceljs`、`mdast-util-from-markdown`、`mdast-util-gfm`、`micromark-extension-gfm` |
 | 后端、部署 | 不改 |
+
+## 六、实现记录（2026-10-17）
+
+- `lib/workbench/export/`：`markdown.ts`（解析与取表、读数规则）、`docx.ts`、`xlsx.ts`、`actions.ts`（下载、打印）；两个库按需加载。
+- 文件视图在**完整读到**的 Markdown 上方给三个按钮（文件树与底稿列表点开的都是它）；只读了开头（大于 1 MiB）的不给导出；没有表格时 Excel 不可点。
+- PDF 不开新窗口：网站的 CSP 要求内联样式带 nonce，新窗口里的样式会被拦；改成把页面上已渲染的成稿复制进打印区，打印样式写在本站样式表 `globals.css` 的 `@media print`，打印框关掉即复原；标题暂换成文件名，作「另存为 PDF」的默认文件名。
+- 链接只把 `http(s):`、`mailto:` 做成超链接，别的当文字。
+- 测试：导出库 18 条（解析、读数、工作表名、xlsx 回读核数与百分比格式、docx 解包核标题表格链接字体、不安全链接）；文件视图 2 条（按钮、打印区与复原、无表格、只读了开头）。`pnpm check` 全过（类型、lint、i18n、288 条测试、`next build`）；远程机的 Node 25 自带 localStorage 与 jsdom 冲突，设置页 5 条要加 `NODE_OPTIONS=--no-experimental-webstorage` 才过，与本改动无关。
