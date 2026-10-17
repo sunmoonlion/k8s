@@ -610,6 +610,50 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 >
 > 全部原样贴进回执 `R5.2-qwen.<时间>.md` 推上来，然后停。Opus 看了再定怎么修。
 
+> 2026-10-17 第三次（`R5.2-qwen.20261017-1845.md`）：**根因找到了，是暂存脚本的 bug**。A3：共用的内部入口密文 `service-access-tls`（本该是 `casdoor-tls`、`knowbase-tls` 那张）里装的是 **knowlab 的证书**；A4：traefik 对 `casdoor-tls`、`knowbase-tls` 只能出示默认自签证书，`knowmart-tls`、`knowlab-tls` 正常。原因在 `traefik/service-access/prepare.yaml`：先给共用证书跑 `tls-identity`（结果记在变量 `app_tls`），再给每条应用入口各跑一次（**每次都重写 `app_tls`**，最后一条是 knowlab），最后才拿 `app_tls` 加密共用证书。0027 P1 加应用入口时埋下，P1–P5 攒着没暂存，R5.1 第一次暂存才发作；渲染比对对加密文件只比在不在，抓不到。knowlab-api 的 `SchemaNotReady` 是连带的：新迁移已跑到 `20261016_0006`，但 knowlab-runtime 被失败的注册 Job 卡住，Deployment 还是旧镜像。**私有目录里共用证书本身是对的，只是加密进 Git 的那份装错了。** 顺带：knowfeed 往 knowbase 灌数据也走 `knowbase-tls`，晋级后一直不通，修完一起恢复。
+>
+> **Opus 已修**（本提交）：共用证书紧跟它自己的 `tls-identity` 加密；两处加密前都断言读到的就是自己那份私钥与证书（`app_tls` 的 `source` 路径），读错了 stage 直接停。断言的写法在远程机用 Ansible 实跑过：读对了过、照旧 bug 的顺序读错了停。
+>
+> **第三次处理：重新暂存 traefik、发布晋级，核证书，再删五个失败的注册 Job 让 Flux 重建**：
+>
+> ```bash
+> cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+> export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl); NS=app-platform-dev
+> make -C infrastructure platform-stage OBJECT=ingress-platform/traefik; echo "stage exit=$?"
+> git status --short gitops     # 只应是 traefik/service-access 下的 tls*.sops.yaml（加密文件每次重写，四个都变是正常的）
+> grep -rn "BEGIN PRIVATE KEY\|BEGIN PUBLIC KEY" gitops/ | head -3; echo key-check-done
+> git add gitops && git -c core.editor=true commit -m "fix(traefik): 共用内部入口证书按它自己的身份重新加密（rename R5.2 第三次）"
+> make -C infrastructure flux-release; echo "release exit=$?"
+> sudo cat infrastructure/.build/flux/source-candidate.yaml | sudo tee infrastructure/environments/kind/flux-source.yaml >/dev/null
+> sudo chown "$(id -u):$(id -g)" infrastructure/environments/kind/flux-source.yaml 2>/dev/null
+> git add infrastructure/environments/kind/flux-source.yaml && git -c core.editor=true commit -m "release(kind): 晋级到 $(git rev-parse --short HEAD)（rename R5.2 第三次）"
+> make -C infrastructure flux-source-apply; echo "apply exit=$?"      # 注册 Job 还没重建，根可能照旧等超时，先不管
+> $K -n flux-system wait kustomization/traefik --for=condition=Ready --timeout=10m; echo "traefik wait exit=$?"
+> # 核：共用密文是不是 casdoor/knowbase 那张、traefik 出示的是不是它
+> $K -n $NS get secret service-access-tls -o jsonpath='{.data.tls\.crt}' | base64 -d | openssl x509 -noout -subject -ext subjectAltName
+> for h in casdoor-tls knowbase-tls; do
+>   echo "== $h"; $K -n $NS exec deploy/knowmart-api -- python -c "import ssl, socket; h = '$h.app-platform-dev.svc.cluster.local'; c = ssl.create_default_context(); c.check_hostname = False; c.verify_mode = ssl.CERT_NONE; s = c.wrap_socket(socket.create_connection((h, 443), timeout=10), server_hostname=h); print(ssl.DER_cert_to_PEM_cert(s.getpeercert(True)))" | openssl x509 -noout -subject -issuer
+> done
+> $K -n $NS exec deploy/knowmart-api -- python -c "import httpx; r = httpx.get('https://casdoor-tls.app-platform-dev.svc.cluster.local/.well-known/openid-configuration', verify='/etc/sunmoon/service/ca.crt', headers={'Host': 'casdoor.sunmoonai.com:30443'}, timeout=10); print('casdoor-tls', r.status_code)"
+> ```
+>
+> 要看到：`stage`、`release`、`traefik wait` 都是 0；共用密文的 SAN 里有 `casdoor-tls…` 与 `knowbase-tls…`；两个 `==` 下面的 issuer 都是 `SunMoon Registry Local CA`；最后一行 `casdoor-tls 200`。**有一项不对就停**（不删 Job）。都对了接着：
+>
+> ```bash
+> FAILED="knowbench-service-identity-f38d8ddcbb06-v1 knowbench-knowlab-read-identity-f38d8ddcbb06-v1 knowbench-knowmart-summon-identity-f38d8ddcbb06-v1 knowlab-knowbench-testrun-identity-2845ca9fa055-v1 knowlab-knowmart-deliver-identity-2845ca9fa055-v1"
+> for j in $FAILED; do echo "$j failed=$($K -n $NS get job $j -o jsonpath='{.status.failed}') succeeded=$($K -n $NS get job $j -o jsonpath='{.status.succeeded}')"; done   # 每行都要 failed=1 succeeded=（空）
+> for j in $FAILED; do $K -n $NS delete job $j; done
+> make -C infrastructure flux-source-apply; echo "apply exit=$?"
+> $K -n flux-system get kustomizations -o name | grep -v '/investment-' | xargs $K -n flux-system wait --for=condition=Ready --timeout=40m; echo "wait exit=$?"
+> $K -n flux-system get kustomizations | grep -v True
+> for j in $FAILED; do echo "$j $($K -n $NS get job $j -o jsonpath='{.status.succeeded}')"; done
+> $K -n $NS get deploy casdoor knowbench-api knowbench-worker knowlab-api knowmart-api
+> $K -n $NS get deploy knowlab-api -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+> git push origin qwen
+> ```
+>
+> 要看到：五个 Job 重建后 `succeeded` 都是 1；`wait exit=0`；`get kustomizations | grep -v True` 只剩表头与 `investment-*`；Deployment 都满；knowlab-api 的镜像是 `…@sha256:2845ca9f…`。`apply` 若又只是等根超时、而随后 `wait` 全 Ready，算过（照实写）。然后做第 1 步块末尾的 identity 两个字段核对，再做第 2–5 步。回执写新的 `R5.2-qwen.<时间>.md`。
+
 **停点**：Qwen 的 `R5.2-qwen` 与 Opus 的 `R5.2-opus` 都审过，在本节写「通过」。
 **状态**：**可执行（第 1–5 步）** · 2026-10-17 · Opus；第 6 步所有者 2026-10-17 已批准（「按你建议」），Qwen 的回执审过后 Opus 做。
 

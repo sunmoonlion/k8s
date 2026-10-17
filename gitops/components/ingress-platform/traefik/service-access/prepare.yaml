@@ -24,16 +24,14 @@
     tls_backup_dir: '{{ services_backup_dir }}/service-access'
     tls_declaration: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/tls.sops.yaml'
     tls_hostnames: '{{ service_access_hosts.values() | list }}'
-- name: Prepare and encrypt one independent TLS identity per application route
-  ansible.builtin.include_tasks: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/route-tls.yaml'
-  loop: '{{ service_access_routes | default({}) | dict2items }}'
-  loop_control: {loop_var: route, label: '{{ route.key }}'}
-- name: Render the cluster-local HTTPS routing objects
-  ansible.builtin.template:
-    src: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/workload.yaml.j2'
-    dest: '{{ build }}/ingress-platform/traefik/service-access/workload.yaml'
-    owner: '{{ cluster_operator }}'
-    mode: '0644'
+# 共用证书（casdoor、knowbase）必须紧跟着它自己的 tls-identity 加密：下面每条应用入口的 tls-identity 都会重写
+# app_tls，2026-10-17 R5.2 就是加密时 app_tls 已是最后一条入口（knowlab）的，共用密文装成了 knowlab 的证书，
+# traefik 对 casdoor-tls、knowbase-tls 只能出示默认证书，五个服务身份注册全部失败。
+- name: Require the slurped TLS identity to be the shared one
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - app_tls.results | map(attribute='source') | list == [services_config_dir ~ '/service-access/tls/server.key', services_config_dir ~ '/service-access/tls/server.crt']
 - name: Encrypt the internal TLS identity for Traefik only
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
   vars:
@@ -46,6 +44,16 @@
         type: kubernetes.io/tls
         data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
   no_log: true
+- name: Prepare and encrypt one independent TLS identity per application route
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/route-tls.yaml'
+  loop: '{{ service_access_routes | default({}) | dict2items }}'
+  loop_control: {loop_var: route, label: '{{ route.key }}'}
+- name: Render the cluster-local HTTPS routing objects
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/workload.yaml.j2'
+    dest: '{{ build }}/ingress-platform/traefik/service-access/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
 - name: Render explicit service access resource list
   ansible.builtin.copy:
     dest: '{{ build }}/ingress-platform/traefik/service-access/kustomization.yaml'

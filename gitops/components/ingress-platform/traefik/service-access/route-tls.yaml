@@ -8,6 +8,11 @@
     tls_backup_dir: '{{ services_backup_dir }}/service-access-{{ route.key }}'
     tls_declaration: '{{ playbook_dir }}/../../gitops/components/ingress-platform/traefik/service-access/tls-{{ route.key }}.sops.yaml'
     tls_hostnames: ['{{ route.value.host }}']
+- name: Require the slurped TLS identity to be this route's
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - app_tls.results | map(attribute='source') | list == [services_config_dir ~ '/service-access-' ~ route.key ~ '/tls/server.key', services_config_dir ~ '/service-access-' ~ route.key ~ '/tls/server.crt']
 - name: Encrypt the {{ route.key }} route TLS identity for Traefik only
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
   vars:
