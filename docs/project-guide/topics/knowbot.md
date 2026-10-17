@@ -2,7 +2,7 @@
 
 > 最后更新：2026-10-17 ｜ 设计真源 [0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)（第一条通路）、[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)（定位与合规） ｜ 规则 [`C-L1`–`C-L5`](../../dev-investment-agent/tree-build/rules/constraints.md#合规)
 >
-> **现状**：设计已定；P1（服务身份、内部入口）、P1b（单点登录）、P2（knowmart）、P3（knowlab，除「后端调模型生成草稿」与数据上传）、P4 第一部分（knowbench 请分身）的代码已写、已测、已推送，**未部署**（攒到 0027 P6 一次发布）；P5 的数据上传（knowlab「我的数据」、自己的对象存储桶）也已写未部署；P4 第二部分（knowbench 作为运行方跑测试，所有者定方案 A、有人值守）代码已写未部署，测试账号与测试电脑的部署声明已写、P6 时建（0027 §3.4）；P5 的运行时读用户数据也已写未部署：分身经工作台的工具服务 `list_my_data`、`read_my_data` 读，工作台按委托核、knowlab 按草稿与交付记录再核（契约 `knowbot-data/v1`，0027 §3.5）。集群里的 knowlab、knowmart 仍是空应用。运行方现在只有工作台 knowbench（2026-10-17 由 investment 改名，[0028](../../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)；集群里还是改名前的那一版，随 P6 按新名部署）。
+> **现状**：0027 P1–P5 的代码都已写、已测、已推送，**未部署**，随 0027 P6 与改名的集群切换（0028 R5）一起发布：服务身份与内部入口（P1）、单点登录（P1b）、knowmart（P2）、knowlab 的受理、草稿、测试、交付与「我的数据」（P3、P5）、knowbench 的「请分身」（P4 第一部分）、作为运行方有人值守地跑测试（P4 第二部分，0027 §3.4）、分身运行时读用户数据（P5，0027 §3.5）。**不做**：knowlab 后端调模型起草清单（所有者定「暂时不用」，运营照用户的方法手工写清单）。集群里的 knowlab、knowmart 现在还是空应用；运行方只有工作台 knowbench（2026-10-17 由 investment 改名，[0028](../../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)）。
 
 ## 1. 是什么，谁做什么
 
@@ -17,12 +17,17 @@
 ## 2. 一个分身从提交到使用
 
 ```text
-用户（knowlab 网页端）      提交想法＋数据＋验收用例，同意数据用于测试
-knowlab 后端               创建草稿：调模型把方法写成清单，投资判断的空缺回头问用户，每条规则记出处 —— 「待测试」
-我们（knowlab 管理端网页）  看待测试的草稿，逐条核规则出处，核过把测试交给管理端后端
-knowlab 管理端后端          「测试中」→ 按草稿的运行方调登记的运行方跑测试（我们的测试账号、预算上限、超时）
+用户（knowlab 网页端）      提交想法（六问或一份 skill）＋验收用例，同意数据用于测试；上传「我的数据」（PDF、Excel、CSV、文本）
+我们（knowlab 管理端网页）  看提交与方法原文，照它手工写分身清单、贴进来建草稿（现在不调模型起草，所有者定「暂时不用」）；
+                           清单里每条规则记出处，数据绑定只能指向这个用户自己的、没删的数据 —— 「待测试」
+                           逐条核规则出处，核过才能发起测试（预算上限、超时）
+knowlab 管理端后端          「测试中」→ 按草稿的运行方调登记的运行方跑测试（我们的测试账号与测试电脑）
+运行方（knowbench）         每条用例开一个对话、按草稿快照建委托照常驱动；分身读用户数据经工作台转到 knowlab 读文字
+                           跑到要人决定的地方（审批、开步前提问、反问）就报给 knowlab：运营在管理端答，投资判断转给用户，
+                           用户在网页端「需要我回答的问题」里答；等人的时间不算超时，最长 3 天
+knowlab 管理端后端          收结果（每条用例各步过没过，不含分析内容）
                            ├ 通过：交付 knowmart（版本只插不改，交付即可用）
-                           └ 未通过：报告给用户和我们，改好出新草稿再测；「测试中」超时可退回重跑
+                           └ 未通过：改清单出新草稿再测；「测试中」超时可退回重跑
 用户（运行方，如工作台）    「请分身」→ 跳到 knowmart「我的分身」选一个 → 跳回，运行方向 knowmart 核验并取清单，
                            钉死这一版、缓存在自己库里，用户给输入自己跑；运行时只读这一版绑定的、他自己的数据
 ```
@@ -46,7 +51,8 @@ knowlab 管理端后端          「测试中」→ 按草稿的运行方调登�
 | --- | --- | --- | --- |
 | `knowmart:deliver` | knowlab → knowmart | 交付测试通过的版本：`POST /api/internal/v1/knowmart/deliveries`（幂等：同交付单号同内容回原结果，不同则 409） | 两端已写 |
 | `knowmart:summon` | 运行方（knowbench）→ knowmart | 取清单：`GET /api/internal/v1/knowmart/owners/{所有者}/knowbots/{分身}@{版本}`（所有者由运行方从自己的登录会话里取；不是你的与不存在都是 404） | 两端已写 |
-| `knowbench:testrun` | knowlab → 运行方（knowbench） | 跑测试：`POST /api/internal/v1/knowbot-runtime/test-runs`，契约 `knowbot-test-run/v1` | 两端代码已写（有人值守：等人回答的问题报给 knowlab，运营答跑法、用户答投资判断）；测试账号与测试电脑待部署 |
+| `knowbench:testrun` | knowlab → 运行方（knowbench） | 跑测试：`POST /api/internal/v1/knowbot-runtime/test-runs`，契约 `knowbot-test-run/v1` | 两端代码已写（有人值守：等人回答的问题报给 knowlab，运营答跑法、用户答投资判断）；测试账号与测试电脑的部署声明已写，随 0027 P6（0028 R5）部署 |
+| `knowlab:read` | 运行方（knowbench）→ knowlab | 读分身绑定的用户数据：`POST /api/internal/v1/knowlab/knowbot-data/{list,read}`，契约 `knowbot-data/v1`；运行方先按委托核（委托在跑、数据在这一版的绑定里），knowlab 再按草稿与交付记录核；读出来是文字，按页给 | 两端已写（0027 §3.5） |
 
 接收方的环境变量是 `SERVICE_AUTH_<关系>_CALLERS` 加每个调用方一组 `SERVICE_AUTH_<关系>_<调用方>_*`；校验签名、签发方、受众（调用方 client_id）、精确主体与 scope，通过后知道是哪个调用方。knowbase 那一对旧关系（摄入、检索）仍走旧机制，迁移见待办账 115。
 
@@ -55,7 +61,8 @@ knowlab 管理端后端          「测试中」→ 按草稿的运行方调登�
 | 契约 | 真源 | 现状 |
 | --- | --- | --- |
 | 分身清单 `knowbot-manifest/v1`（外层） | `knowmart-app/contracts/knowbot/v1/`，由 knowmart 后端模型生成，测试核一致；knowlab 持锁 `knowlab-app/contracts/knowmart-knowbot-manifest-lock.json` | 已写 |
-| 测试 `knowbot-test-run/v1` | `knowlab-app/contracts/knowbot-test-run/v1/`（请求、结果两份 schema 与 `contract-manifest.json`），由 knowlab 后端 `app/domain/knowbots/test_run.py` 生成，测试核一致 | 已写；运行方实现在 P4 |
+| 测试 `knowbot-test-run/v1` | `knowlab-app/contracts/knowbot-test-run/v1/`（请求、结果、回答三份 schema 与 `contract-manifest.json`），由 knowlab 后端 `app/domain/knowbots/test_run.py` 生成，测试核一致；knowbench 持锁 | 两端已写 |
+| 读用户数据 `knowbot-data/v1` | `knowlab-app/contracts/knowbot-data/v1/`（列出、读取的请求与结果四份 schema），由 knowlab 后端 `app/domain/knowbots/data_read.py` 生成；knowbench 持锁 `knowbench-app/contracts/knowlab-knowbot-data-lock.json` | 两端已写 |
 
 清单分两层：外层（格式标识、名字与说明、版本、运行方、`data_bindings`、`rule_sources`）归 knowmart，严格校验；里面的 `pack`（步骤、验收、底稿的形状）归运行方，按运行方自己的模型完整校验。摘要是外层规范 JSON 的 sha256（`sha256:<十六进制>`）。
 
@@ -83,9 +90,12 @@ knowlab 管理端后端          「测试中」→ 按草稿的运行方调登�
 | knowmart 网页端 | `knowmart-web-frontend/app/app/[locale]/(dashboard)/knowbots/`、`components/knowbots/`、`contracts/knowbots.ts` |
 | knowlab 后端 | `knowlab-backend/app/app/domain/knowbots/`（测试契约、草稿状态与提交形状）、`application/services/knowbot_service.py`、`infrastructure/external/service_client.py`（通用出站客户端）与 `knowbot_clients.py`（运行方登记、交付 knowmart）、`infrastructure/repositories/knowbots.py`、`interfaces/endpoints/knowbot_routes.py`、迁移 `alembic/versions/20261016_0004_knowbots.py` |
 | knowlab 用户数据 | 后端 `app/domain/knowbots/datasets.py`（类型、大小、配额、绑定规则）、`application/services/knowbot_data.py`、`infrastructure/storage/object_storage.py`（`application-check` 用它在真实 API 里核对读写）、迁移 `20261016_0005_knowbot_datasets.py`；网页端 `components/knowbots/my-data.tsx`；部署 `knowlab-backend/storage/`、config 的 `object_storage` |
-| knowlab 网页端、管理端 | 网页端 `app/[locale]/(dashboard)/knowbots/`（我在做的分身、`new` 提交一个想法）、`components/knowbots/`；管理端 `app/[locale]/(dashboard)/knowbots/`（分身草稿）、`components/knowbots/knowbot-drafts.tsx`。管理端导航入口要角色 `admin`/`operator`，现网管理员还没有角色（待办账 98），在那之前直接输入地址进 |
+| knowlab 读用户数据（给运行方） | 后端 `app/domain/knowbots/data_read.py`（契约 `knowbot-data/v1` 与分页）、`data_schema.py`（生成 schema）、`application/services/knowbot_data_read.py`（按草稿与交付记录核）、`infrastructure/documents/text_extract.py`（PDF、Excel、CSV、文本抽文字，按 sha256 缓存）、`infrastructure/security/relation_auth.py`（关系 `read`）、`interfaces/endpoints/knowbot_data_routes.py`；部署 knowlab `service_receivers` 与 traefik `service_access_routes.knowlab` |
+| knowlab 有人值守 | 后端 `application/services/knowbot_questions.py`、迁移 `20261016_0006_knowbot_questions.py`；管理端 `components/knowbots/open-questions.tsx`；网页端 `components/knowbots/my-questions.tsx` |
+| knowlab 网页端、管理端 | 网页端 `app/[locale]/(dashboard)/knowbots/`（我在做的分身、`new` 提交一个想法）、`components/knowbots/`；管理端 `app/[locale]/(dashboard)/knowbots/`（分身草稿）、`components/knowbots/knowbot-drafts.tsx`。管理端导航入口要角色 `admin`/`operator`：身份初始化建好这两个角色、把 built-in 的 admin 放进 `admin`，各应用身份配置给 `ADMIN_AUTH_ROLE_ALLOWLIST=admin,operator`（待办账 98，已写未部署）；部署前直接输入地址进 |
 | 部署 | `gitops/components/app-platform/common/backend/service-client/`、各应用后端 `config.yaml` 的 `service_clients` / `service_receivers`、`ingress-platform/traefik/service-access/` |
 | 测试电脑 | sunmoon-link 仓 `agent/distribution/build-linux.mjs`（Linux 包）；部署 `knowbench-backend/test-computer/`、`agent-releases/config.yaml` 的 `linux` 一节与 `upload.py --tarball` |
 | knowbench 运行方（跑测试） | 后端 `app/domain/workbench/test_runs.py`（契约解析、期望判定、用例结果）、`application/workbench/test_runs.py`（受理、状态、回答、推进器）、`application/workbench/interactions.py`（回答交互、停止委托，网页与测试共用）、`infrastructure/security/relation_auth.py`、`interfaces/endpoints/knowbot_runtime_routes.py`、迁移 `20261017_0020_knowbot_test_runs.py`；锁 `knowbench-app/contracts/knowlab-test-run-lock.json` |
+| knowbench 读用户数据 | 后端 `application/workbench/knowbot_data.py`（按委托核）、`interfaces/mcp/workbench_mcp.py`（`list_my_data`、`read_my_data`）、`infrastructure/external/knowlab_data_client.py`；部署 `knowbench-backend/knowlab-read-identity/`；锁 `knowbench-app/contracts/knowlab-knowbot-data-lock.json` |
 | knowbench 后端、网页端 | 后端 `app/domain/workbench/knowbots.py`（清单→专家包与硬约束）、`application/workbench/catalog.py`（分身目录、钉住、`pack_for_task`）、`infrastructure/external/knowmart_client.py`、`interfaces/http/web/workbench_expert.py`（`POST /api/workbench/knowbots/pin`）、迁移 `alembic/versions/20261016_0019_knowbot_pins.py`；网页端专家首页「请我的分身」、`components/workbench/knowbot-arrival.tsx`（收回跳）；锁 `knowbench-app/contracts/knowmart-knowbot-manifest-lock.json` |
 | 单点登录 | 模板 `tpl-backend` 的 `auth_service.end_session`、两端退出接口与 `logged-out`；`common/backend/identity/provision.py.j2`；Casdoor `config.yaml` 的 `casdoor_session_lifetime_seconds` |
