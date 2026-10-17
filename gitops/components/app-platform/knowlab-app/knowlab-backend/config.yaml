@@ -55,13 +55,18 @@ knowlab_backend_deployment:
       scope: investment:testrun
       job_revision: v1
       token_seconds: 900
+  # 接收运行方读分身绑定的用户数据（SDD 0027 §3.5，契约 knowbot-data/v1）。内部入口在 traefik service-access
+  # 的 service_access_routes.knowlab；身份从调用方的 service_clients 推出来，不重复维护。
+  service_receivers:
+    - {relation: read, caller: investment, enabled: true}
   api_port: 8000
   api_replicas: 1
   worker_replicas: 1
   worker_concurrency: 2
   scheduler_replicas: 1
   resources:
-    api: {requests: {cpu: 100m, memory: 192Mi}, limits: {cpu: '2', memory: 768Mi}}
+    # 读用户数据时在 API 进程里解析 PDF 与 Excel（单个最大 50 MB，0027 §3.5），上限放宽到 1.5Gi
+    api: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: '2', memory: 1536Mi}}
     worker: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: '2', memory: 1Gi}}
     scheduler: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
   # RabbitMQ 4.3不允许非持久非独占队列；Celery控制/事件队列随连接退出。

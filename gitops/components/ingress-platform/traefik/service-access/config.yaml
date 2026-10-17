@@ -14,3 +14,7 @@ service_access_routes:
   investment:
     host: 'investment-tls.{{ app_namespace }}.svc.cluster.local'
     path: /api/internal/v1/knowbot-runtime
+  # 运行方读分身绑定的用户数据（SDD 0027 §3.5，契约 knowbot-data/v1）
+  knowlab:
+    host: 'knowlab-tls.{{ app_namespace }}.svc.cluster.local'
+    path: /api/internal/v1/knowlab

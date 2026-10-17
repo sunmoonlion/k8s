@@ -128,6 +128,16 @@ investment_backend_deployment:
       scope: knowmart:summon
       job_revision: v1
       token_seconds: 900
+    # 分身运行时读用户自己绑定的数据：工作台按委托核过，再向 knowlab 读（SDD 0027 §3.5，契约 knowbot-data/v1）
+    - target: knowlab
+      relation: read
+      enabled: true
+      application: sunmoonai-investment-knowlab-read
+      client_id: sunmoon-investment-knowlab-read
+      organization: sunmoon-workload-investment-knowlab-read
+      scope: knowlab:read
+      job_revision: v1
+      token_seconds: 900
   # 作为运行方接收 knowlab 的「跑测试」（契约 knowbot-test-run/v1，SDD 0027 决定 12）
   service_receivers:
     - {relation: testrun, caller: knowlab, enabled: true}
