@@ -536,6 +536,45 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 
 要看到：`deploy`、`status` 都是 0；`curl` 的 `verify=0`（正式证书），状态码 200 或 30x（经 frp 到了集群）。Opus 写 `R5.2-opus.<时间>.md`。之后所有者可用手机流量打开 `https://knowbench.sunmoonai.com:30443` 再看一眼。**不跑 `make edge-smoke`**（会替换现网单元）。
 
+> 2026-10-17 第一次执行（`R5.2-qwen.20261017-1821.md`）：提交、发布、晋级都成了（`b6405df6` → `2b6a6600`），`flux-source-apply` 等根 Kustomization 600 秒超时，`wait` 不全 Ready。卡在 **四个服务身份注册 Job 失败**（`knowbench-service-identity`、`knowbench-knowlab-read-identity`、`knowbench-knowmart-summon-identity`、`knowlab-knowbench-testrun-identity`，日志都是 `Service registration failed: ConnectError`），knowbench 的运行时与 knowbase 的运行时都在等它们（依赖链）。六个应用的 identity v4、各迁移、knowlab 存储的 Job 都成了。
+>
+> **Opus 只读核过**：这四个 Job 与成功了的 `knowlab-knowmart-deliver-identity` 渲染出来**完全同构**——同一个注册脚本、同一个地址（`casdoor-tls` → traefik 8443）、同样的出站策略与标签；注册脚本只连 Casdoor。所以不是配置写错。identity v4 直连 casdoor 的 8000 口都成了，失败的都要经 traefik 的内部入口，且这类 Job **只试一次**（`backoffLimit: 0`）。最像的解释是：晋级时一下子起几十个对象（新库、迁移、casdoor 滚动重启、六个 identity），这几个 Job 正好撞上入口或 DNS 一时连不上。注册 Job 只试一次是模板的老问题，记待办账 123（改模板要换 Job 的版本号，不在 R5 动）。
+>
+> **第一次停点处理：先只读取证，现在通了再删掉这四个失败的 Job 让 Flux 照原样重建**（Job 名与内容都不变；已完成的 Job 一个不碰）：
+>
+> ```bash
+> cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+> export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl); NS=app-platform-dev
+> FAILED="knowbench-service-identity-f38d8ddcbb06-v1 knowbench-knowlab-read-identity-f38d8ddcbb06-v1 knowbench-knowmart-summon-identity-f38d8ddcbb06-v1 knowlab-knowbench-testrun-identity-2845ca9fa055-v1"
+> # 1）取证（只读）
+> for j in $FAILED knowlab-knowmart-deliver-identity-2845ca9fa055-v1; do
+>   echo "== $j $($K -n $NS get job $j -o jsonpath='{.status.startTime} → {.status.completionTime} failed={.status.failed} succeeded={.status.succeeded}')"
+>   $K -n $NS logs job/$j --tail=5 2>&1 | grep -viE 'secret|password|token' | tail -3
+> done
+> $K -n $NS get events --sort-by=.lastTimestamp | grep -E 'identity|casdoor|knowlab-api' | tail -30
+> $K -n $NS get pods -l app.kubernetes.io/name=casdoor; $K -n ingress-platform-dev get pods; $K -n kube-system get pods -l k8s-app=kube-dns
+> $K -n $NS get deploy knowlab-api knowmart-api casdoor
+> $K -n $NS describe pod -l app.kubernetes.io/name=knowlab-api | sed -n '/^Events:/,$p' | tail -15
+> $K -n $NS logs deploy/knowlab-api --tail=40 | grep -iE 'error|exception|fail' | grep -viE 'secret|password|token' | tail -10
+> # 2）现在通不通：在一个本来就能出站到入口的在跑 Pod 里，只读地要一次 Casdoor 的公开 OIDC 配置
+> $K -n $NS exec deploy/knowmart-api -- python -c "import httpx; r = httpx.get('https://casdoor-tls.app-platform-dev.svc.cluster.local/.well-known/openid-configuration', verify='/etc/sunmoon/service/ca.crt', headers={'Host': 'casdoor.sunmoonai.com:30443'}, timeout=10); print('casdoor-tls', r.status_code)"
+> ```
+>
+> 要看到：最后一行 `casdoor-tls 200`。**不是 200 就停**（原样贴回执，不删任何东西）。是 200 才接着做：
+>
+> ```bash
+> for j in $FAILED; do echo "$j failed=$($K -n $NS get job $j -o jsonpath='{.status.failed}') succeeded=$($K -n $NS get job $j -o jsonpath='{.status.succeeded}')"; done
+> # 上面每行都要是 failed=1 succeeded=（空）；有一个不是就停
+> for j in $FAILED; do $K -n $NS delete job $j; done
+> make -C infrastructure flux-source-apply; echo "apply exit=$?"
+> $K -n flux-system get kustomizations -o name | grep -v '/investment-' | xargs $K -n flux-system wait --for=condition=Ready --timeout=40m; echo "wait exit=$?"
+> $K -n flux-system get kustomizations | grep -v True
+> for j in $FAILED; do echo "$j $($K -n $NS get job $j -o jsonpath='{.status.succeeded}')"; done
+> $K -n $NS get deploy casdoor knowbench-api knowbench-worker knowlab-api knowmart-api
+> ```
+>
+> 要看到：四个 Job 重建后 `succeeded` 都是 1；`wait exit=0`；`get kustomizations | grep -v True` 只剩表头与 `investment-*`；那几个 Deployment 都满。`apply` 若又是等根 Kustomization 超时、但随后 `wait` 全 Ready，算过（它只是等根的那 600 秒），照实写进回执。重建的 Job 又失败就停（贴它的日志与事件）。之后接着做第 1 步块末尾的 identity 两个字段核对与 `git push`（没有新提交时 push 什么也不做），再做第 2–5 步。回执写新的 `R5.2-qwen.<时间>.md`，取证那段整段贴上。
+
 **停点**：Qwen 的 `R5.2-qwen` 与 Opus 的 `R5.2-opus` 都审过，在本节写「通过」。
 **状态**：**可执行（第 1–5 步）** · 2026-10-17 · Opus；第 6 步所有者 2026-10-17 已批准（「按你建议」），Qwen 的回执审过后 Opus 做。
 
