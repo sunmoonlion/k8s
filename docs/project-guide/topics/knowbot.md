@@ -1,8 +1,8 @@
 # 分身（knowbot）：创建、存放、运行
 
-> 最后更新：2026-10-16 ｜ 设计真源 [0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)（第一条通路）、[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)（定位与合规） ｜ 规则 [`C-L1`–`C-L5`](../../dev-investment-agent/tree-build/rules/constraints.md#合规)
+> 最后更新：2026-10-17 ｜ 设计真源 [0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)（第一条通路）、[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)（定位与合规） ｜ 规则 [`C-L1`–`C-L5`](../../dev-investment-agent/tree-build/rules/constraints.md#合规)
 >
-> **现状**：设计已定；P1（服务身份、内部入口）、P1b（单点登录）、P2（knowmart）、P3（knowlab，除「后端调模型生成草稿」与数据上传）、P4 第一部分（knowbench 请分身）的代码已写、已测、已推送，**未部署**（攒到 0027 P6 一次发布）；P5 的数据上传（knowlab「我的数据」、自己的对象存储桶）也已写未部署；P4 第二部分（knowbench 作为运行方跑测试，所有者定方案 A、有人值守）代码已写未部署，测试账号与测试电脑的部署待定（0027 §3.4）；P5 的运行时读用户数据也已写未部署：分身经工作台的工具服务 `list_my_data`、`read_my_data` 读，工作台按委托核、knowlab 按草稿与交付记录再核（契约 `knowbot-data/v1`，0027 §3.5）。集群里的 knowlab、knowmart 仍是空应用。
+> **现状**：设计已定；P1（服务身份、内部入口）、P1b（单点登录）、P2（knowmart）、P3（knowlab，除「后端调模型生成草稿」与数据上传）、P4 第一部分（knowbench 请分身）的代码已写、已测、已推送，**未部署**（攒到 0027 P6 一次发布）；P5 的数据上传（knowlab「我的数据」、自己的对象存储桶）也已写未部署；P4 第二部分（knowbench 作为运行方跑测试，所有者定方案 A、有人值守）代码已写未部署，测试账号与测试电脑的部署声明已写、P6 时建（0027 §3.4）；P5 的运行时读用户数据也已写未部署：分身经工作台的工具服务 `list_my_data`、`read_my_data` 读，工作台按委托核、knowlab 按草稿与交付记录再核（契约 `knowbot-data/v1`，0027 §3.5）。集群里的 knowlab、knowmart 仍是空应用。运行方现在只有工作台 knowbench（2026-10-17 由 investment 改名，[0028](../../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)；集群里还是改名前的那一版，随 P6 按新名部署）。
 
 ## 1. 是什么，谁做什么
 

@@ -1,8 +1,8 @@
 # knowbench-app：工作台
 
-> 最后更新：2026-10-16 ｜ 按代码现状重写 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
+> 最后更新：2026-10-17 ｜ 由 investment-app 改名（[0028](../../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)） ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
-用户在网页里用自己的 Codex 做研究、请自己的分身的地方。按 2026-10-16 的定位，它是**分身线**上「使用」的那一环：分身由 knowlab 创建、存在 knowmart，用户在这里「请」来用自己的数据跑（[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)）。现在 knowlab、knowmart 还没建，分身以「专家包」的形式内置在本仓。
+用户在网页里用自己的 Codex 做研究、请自己的分身的地方。按 2026-10-16 的定位，它是**分身线**上「使用」的那一环：分身由 knowlab 创建、存在 knowmart，用户在这里「请」来用自己的数据跑（[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)）。knowlab、knowmart 已建成空应用，分身线代码已写未部署；过渡期内分身还以「专家包」的形式内置在本仓。仓与代码 2026-10-17 由 investment 改名为 knowbench，集群里现在跑的还是改名前那一版（`investment.sunmoonai.com`），随 0027 P6 按新名部署。
 
 ## 后端（`knowbench-backend/app/app/`）
 
@@ -41,4 +41,4 @@
 
 ## 部署
 
-`k8s/gitops/components/app-platform/knowbench-app/`：`database`、`migration`、`redis`、`rabbitmq`、`identity`、`service-identity`、`agent-releases`（安装包上传与校验）、`runtime`。对外开放的三个公网域名之一 `knowbench.sunmoonai.com`。
+`k8s/gitops/components/app-platform/knowbench-app/`：`database`、`migration`、`redis`、`rabbitmq`、`identity`、`service-identity`、`agent-releases`（安装包上传与校验）、`runtime`；分身线新加的 `knowmart-summon-identity`、`knowlab-read-identity`（出站服务身份）与 `test-computer`（分身测试的测试电脑），已写未部署。对外开放的三个公网域名之一：0028 R5 起是 `knowbench.sunmoonai.com`，之前是 `investment.sunmoonai.com`。

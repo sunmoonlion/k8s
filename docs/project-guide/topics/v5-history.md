@@ -58,7 +58,7 @@ git ls-tree -r --name-only 547a8f6d83cc296a86a7604697057465620c7edc -- sunmoonai
 | template-database-policy | B7o 模板精确六表/列 GRANT、独立四登录和真实拒绝；不是旧角色撤权工具 |
 | knowfeed-database-policy | B7p Info 15 表策略与真实领域用例/拒绝 |
 | knowbase-database-policy | B7q Knowledge 10 表策略、操作账及轮询/回执权限 |
-| knowbench-database-policy | B7r Knowbench 18 表策略、PG Saver、审批恢复/取消与事务权限 |
+| investment-database-policy | B7r Investment 18 表策略、PG Saver、审批恢复/取消与事务权限 |
 | template-broker-policy | B7s 三角色预建拓扑、生产/消费隔离及真实 Celery 拒绝 |
 | instance-broker-alignment | B7t 模板→三实例串行拓扑承接、目标 venv 与辅助服务隔离 |
 | joint-runtime-identity | B7u 四仓独立 DB/broker 的真实 Beat/Worker、事务/ACK/杀进程恢复；仍非业务切换 |
@@ -116,7 +116,7 @@ git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/knowbase-provid
 
 2026-09-13 固定 Backend `26aa0715f15e2c8df4713559063a9a2e3215a1c8`：
 完整后端 450 passed，独立真实 PG 角色 27 passed；Ruff/Pyright 通过。
-Info 分发帮助函数 6 passed、Knowbench 检索契约 7 passed；这些是历史固定版本结果，
+Info 分发帮助函数 6 passed、Investment 检索契约 7 passed；这些是历史固定版本结果，
 本轮删除文档没有重跑这些业务测试。原始命令、失败根因与修正经过见上方固定报告。
 
 数据面 `KnowledgeProvider` Port 统一类型与异常；RAGFlowProvider 负责供应商协议转换，
@@ -125,17 +125,17 @@ Info 分发帮助函数 6 passed、Knowbench 检索契约 7 passed；这些是�
 绑定及 DTO 兼容保留。没有接入 WeKnora、改跨 App 契约、迁移业务数据或部署。
 后续替换需适配器、契约扩展及消费者回归、索引/绑定/引用迁移和真实回执验证，不能只改 URL。
 
-### Knowbench 改名历史
+### Investment 改名历史
 
-`knowbench清理和改名.md` 已按用户要求退出当前工作树。其描述的是 Research 保留 Git
-历史、原地迁入 Knowbench 三组件拓扑的旧实施过程，不是当前发布操作指令。
+`investment清理和改名.md` 已按用户要求退出当前工作树。其描述的是 Research 保留 Git
+历史、原地迁入 Investment 三组件拓扑的旧实施过程，不是当前发布操作指令。
 `ResearchSession` 等仍可为合法领域术语，不能据历史改名要求全局替换 `research`。
 本次只删文档并修正两处引用，不改仓名、业务数据、运行资源或历史备份。
-现状见 [Knowbench 指南](../repos/knowbench-app.md)，当前发布边界见[发布与门禁](../overall-architecture.md)。
+现状见 [工作台指南（knowbench-app，原 investment-app）](../repos/knowbench-app.md)，当前发布边界见[发布与门禁](../overall-architecture.md)。
 原文仍在上述固定 k8s 提交中：
 
 ```sh
-git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/knowbench清理和改名.md
+git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/investment清理和改名.md
 ```
 
 ### Architecture v2 目录清退

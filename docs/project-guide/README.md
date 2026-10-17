@@ -1,12 +1,12 @@
 # `project-guide/` 目录
 
-**本目录只回答「项目现在是什么样」**，随代码覆盖式重写；不放规则，也不放脚本。2026-10-16 按 knowlab 定位与改名、`sunmoonai/` 移出后的现状整体重写。
+**本目录只回答「项目现在是什么样」**，随代码覆盖式重写；不放规则，也不放脚本。2026-10-16 按 knowlab 定位与改名、`sunmoonai/` 移出后的现状整体重写；2026-10-17 按工作台改名 knowbench、本地代理仓改名 sunmoon-link 更新。
 
 | 文件 / 目录 | 内容 |
 | --- | --- |
 | [`overall-architecture.md`](overall-architecture.md) | **先读这一份**：产品是什么、仓怎么分、东西跑在哪、应用与数据怎么流、部署与发布、身份、红线、去哪查、已知缺口 |
 | [`repos/`](repos/) | 一仓一文件：[`tpl-app`](repos/tpl-app.md) · [`knowfeed-app`](repos/knowfeed-app.md) · [`knowbase-app`](repos/knowbase-app.md) · [`knowbench-app`](repos/knowbench-app.md) · [`k8s`](repos/k8s.md) · [`sunmoon-link`](repos/sunmoon-link.md) |
-| [`topics/`](topics/) | 跨仓主题：[契约](topics/contracts.md) · [数据](topics/data.md)；[v5 历史索引](topics/v5-history.md)只用于取回退役材料。身份、发布的现状写在总览 §6、§7 |
+| [`topics/`](topics/) | 跨仓主题：[分身](topics/knowbot.md) · [契约](topics/contracts.md) · [数据](topics/data.md)；[v5 历史索引](topics/v5-history.md)只用于取回退役材料。身份、发布的现状写在总览 §6、§7 |
 | [`staging.md`](staging.md) | 接下来按什么顺序做——计划，不是进度 |
 | [`governance.md`](governance.md) | 权威排序、接手演练、什么不属于本目录 |
 | [`licensing.md`](licensing.md) | 第三方许可与本产品的关系 |

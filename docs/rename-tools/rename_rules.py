@@ -24,7 +24,7 @@ SKIP = re.compile(
     r"^k8s/sunmoonai/"  # 冻结的旧体系
     r"|/(results|thread|history|hold|node_modules|\.venv|\.next|dist)/|/switch-test/(done|inbox)/"
     r"|/eval/reports/|/preview/fixtures/|/alembic/versions/|^runtime/probe/"
-    r"|(^|/)CHECKPOINT[^/]*\.md$|/switch-test/review-log\.md$"  # 历史记录
+    r"|(^|/)CHECKPOINT[^/]*\.md$|/switch-test/review-log\.md$|/project-guide/topics/v5-history\.md$"  # 历史记录（v5 索引里有「提交:路径」，2026-10-17 R1 后补进来，手工还原）
     r"|^k8s/docs/rename|/tree-build/(decisions|owner-decisions-now)\.md$"  # 手册与回执；决定记录（原话与当时的名字）
     r"|/SDD/modules/00(25|28)-"  # 两次改名方案本身
     r"|(^|/)(pnpm-lock\.yaml|package-lock\.json)$"
