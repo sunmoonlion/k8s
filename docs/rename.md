@@ -752,6 +752,10 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 >
 > 要看到：`stage`、`release`、`apply`、`wait` 都是 0；Pod `Running`；`fetch` 的日志里摘要核对 `OK`、包按清单核过；主容器日志在等配对（码已抹）。然后接着第 5 步块里剩下的核对与第 6 步，回执 `R5.3-qwen.<时间>.md`。
 
+> 2026-10-17 第三次（`R5.3-qwen.20261017-2214.md`，Qwen 本地领先 6 个提交未推）：拉取凭据修好后镜像能拉、包核对通过，但主容器 `CrashLoopBackOff`，日志 `SITE_LAUNCH: 代理没有按安装包的方式启动`。原因：代理要求按安装包入口的方式起（`node --use-system-ca`；Linux 包的站点是 `edge-public` 系统信任，**不许**设 `NODE_EXTRA_CA_CERTS`），测试电脑的启动脚本直接 `node …/cli.js`。Opus 已改 `test-computer/workload.yaml.j2` 的 `run.sh`：三处（`init`、`pair`、`start`）都带 `--use-system-ca`，并清掉 `NODE_EXTRA_CA_CERTS`、`NODE_OPTIONS`；用 Opus 自己打的同一提交的 Linux 包在远程机核过——不带旗标复现 `SITE_LAUNCH`，带上后 `init` 正常写出配置。
+>
+> **处理（Qwen 选项 1）**：`git pull --rebase origin qwen`（Opus 只改了 test-computer 模板与本文）→ 照上面「第二次（第 5 步中）」那段从 `make … platform-stage OBJECT=app-platform/knowbench-app` 起再走一遍（提交信息写「fix(test-computer): 按安装包方式起代理」）→ 要看到 Pod `Running`、`getent hosts` 两个域名是 43.153.135.74、主容器日志在等配对（码抹掉）→ 接着第 5 步剩下的核对与第 6 步 → 最后一次 `git push origin qwen`（这 6 个提交连同新的一起推）。
+
 **1. Windows 包**（照卡 48 的 A，Windows 侧，官方 node.exe 24.19.0、在新检出里冻结安装的依赖、dev-kind 站点与 CA）：
 
 - 新目录检出：`…\sunmoon-probe-runs\windows-agent-050-release\src-1d8e838`，`git rev-parse HEAD` = `1d8e838cd46a262494387604f3d7f00cf3771b8e`，`git status --porcelain` 空。
