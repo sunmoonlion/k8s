@@ -182,12 +182,64 @@ bash /tmp/r2.sh
 
 要看到：5 行「GitHub 改名」；gitee `HTTP 200`；新地址都列得出分支：`qwen` 等于 `R1-opus` 的提交号（`knowbench-app 3fa5a549`、`knowbench-backend cc95605c`、`knowbench-web-frontend ceb30875`、`knowbench-admin-frontend 45fcf79a`、`sunmoon-link 130c966a`），`master` 与改名前相同。
 
-### R2.2 gitee 上的三个子仓与 sunmoon-link（**等所有者定**）
+### R2.2 gitee 上的三个子仓与 sunmoon-link（所有者 2026-10-17 定「都按建议」）
 
-R1 时核过：gitee 上 investment 的三个子仓是旧内容（日常只推 GitHub），`runtime` 是空仓。上次改名所有者定过「子仓也和父仓一样两边都有、两边一样」（2026-10-15），做法是先备份、改名、再从 GitHub 强推过去。这次照做要所有者点名同意强推（规矩 8）；`runtime` 那个空仓是改名后推上去，还是删掉不要，也请所有者定。定了再填命令。
+R1 时核过：gitee 上 investment 的三个子仓是旧内容（日常只推 GitHub），`runtime` 是空仓。所有者定：**三个子仓照上次（2026-10-15）做——先备份、改名、再从 GitHub 把全部分支与标签强推过去**（会覆盖 gitee 上的旧内容，所有者点名同意，备份是唯一退路，先做）；**`runtime` 空仓改名为 `sunmoon-link`，把 GitHub 的内容推上去**，以后两边一起推（R3 给它加 gitee 推送地址）。在 R2.1 通过之后做（GitHub 那边已是新名字）。
+
+```bash
+cat > /tmp/r2-2.sh <<'EOS'
+set -e
+read -rs GITEE_TOKEN; export GITEE_TOKEN                                   # 粘贴令牌回车，屏幕不回显
+OWNER=sunmoonlion; GH=https://github.com/$OWNER/
+B=~/rename-backup/gitee-old-0028-$(date +%Y%m%d-%H%M); mkdir -p "$B"
+PAIRS="investment-backend:knowbench-backend investment-web-frontend:knowbench-web-frontend investment-admin-frontend:knowbench-admin-frontend runtime:sunmoon-link"
+GCRED=(-c credential.helper= -c "credential.helper=!f() { echo username=$OWNER; echo password=\$GITEE_TOKEN; }; f")
+
+# 1. 备份旧内容（每个仓一个 bundle，含全部分支；空仓只记「空」）
+for pr in $PAIRS; do old=${pr%%:*}
+  git clone -q --mirror "https://gitee.com/$OWNER/$old.git" "$B/$old.git"
+  git -C "$B/$old.git" for-each-ref --format='%(objectname:short) %(refname)' > "$B/$old.refs"
+  if [ -s "$B/$old.refs" ]; then
+    git -C "$B/$old.git" bundle create "$B/$old.bundle" --all
+    git bundle verify "$B/$old.bundle" >/dev/null && echo "备份  $old  $(wc -l < "$B/$old.refs") 个引用"
+  else
+    echo "备份  $old  空仓（没有引用）"
+  fi
+done
+
+# 2. 改名：名称与路径两个字段都改
+for pr in $PAIRS; do old=${pr%%:*}; new=${pr##*:}
+  code=$(printf 'access_token=%s&name=%s&path=%s' "$GITEE_TOKEN" "$new" "$new" |
+         curl -sS -o /dev/null -w '%{http_code}' -X PATCH -d @- "https://gitee.com/api/v5/repos/$OWNER/$old")
+  echo "改名  $old → $new  HTTP $code"                                     # 要 200；不是 200 就停
+  [ "$code" = 200 ] || exit 1
+done
+
+# 3. 从 GitHub 取全部分支与标签，强推到 gitee，并删掉 gitee 上 GitHub 没有的分支
+M=$(mktemp -d)
+for pr in $PAIRS; do new=${pr##*:}
+  git clone -q --bare "${GH}$new.git" "$M/$new.git"
+  git -C "$M/$new.git" fetch -q origin '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*'
+  git "${GCRED[@]}" -C "$M/$new.git" push -q --force --prune "https://gitee.com/$OWNER/$new.git" 'refs/heads/*:refs/heads/*' 'refs/tags/*:refs/tags/*'
+  echo "推送  $new"
+done
+rm -rf "$M"
+
+# 4. 核对：两边的分支与标签逐条相同
+for pr in $PAIRS; do new=${pr##*:}
+  a=$(git ls-remote --heads --tags "${GH}$new.git" | sort); b=$(git ls-remote --heads --tags "https://gitee.com/$OWNER/$new.git" | sort)
+  printf '%-26s refs=%s %s\n' "$new" "$(echo "$a" | wc -l)" "$([ "$a" = "$b" ] && echo 一致 || echo 不一致)"
+done
+unset GITEE_TOKEN
+echo "备份目录 $B"
+EOS
+bash /tmp/r2-2.sh
+```
+
+要看到：三个子仓各有引用数的备份、`runtime` 记「空仓」；4 个改名都是 `HTTP 200`；最后 4 行都是「一致」。gitee 若因保护分支拒绝强推 `master`，停下，把报错写进回执（不要去关保护），交 Opus 定。
 
 **停点**：Qwen 写 `R2-qwen`（改名前后的地址、提交号对照、gitee 返回码），Opus 审过写「通过」。
-**状态**：R2.1 可以做；R2.2 待所有者定。
+**状态**：R2.1 可以做；R2.2 在 R2.1 通过后做（所有者已同意强推三个子仓）。
 
 ## R3 检出换名 — 远程机 Opus，本地机 Qwen
 
