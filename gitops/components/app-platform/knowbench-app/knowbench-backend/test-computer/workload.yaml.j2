@@ -76,6 +76,8 @@ spec:
         sunmoonai.com/agent-package: '{{ release.tarball_sha256 }}'
     spec:
       automountServiceAccountToken: false
+      # 镜像在 Harbor 的 platform 项目：和沙箱一样显式带拉取凭据（不用运行时的服务账号，测试电脑不需要别的身份）
+      imagePullSecrets: [{name: registry-puller}]
       enableServiceLinks: false
       securityContext: {runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001, seccompProfile: {type: RuntimeDefault}}
       initContainers:

@@ -726,6 +726,31 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 >
 > **第二次只续跑第 3–5 步**（第 1、2 步的产物都在本地机原处，不重打）。
 
+> 2026-10-17 第二次（第 5 步中）：测试电脑的 Pod 卡在 `Init:ImagePullBackOff`。原因：测试电脑的 Pod 用的是命名空间的默认服务账号，没带 Harbor 的拉取凭据（应用的 Pod 都用 `<应用>-runtime` 服务账号带 `registry-puller`，沙箱是显式带）。Opus 已在 `test-computer/workload.yaml.j2` 里给 Pod 显式加 `imagePullSecrets: [{name: registry-puller}]`（`app-platform-dev` 里有这个凭据）。
+>
+> **处理**：正在等的那段可以 Ctrl-C 停掉（集群里不会坏，旧的 Pod 只是拉不到镜像）。然后：
+>
+> ```bash
+> cd ~/worktrees/qwen/k8s && git status --short | head; git log --oneline origin/qwen..HEAD   # 看你本地还有哪些没推的提交
+> git pull --rebase origin qwen     # Opus 这次只改了 test-computer 的模板与本文，不碰你的改动
+> make -C infrastructure platform-stage OBJECT=app-platform/knowbench-app; echo "stage exit=$?"
+> git diff --stat gitops | tail -3   # 只应是 test-computer/workload.yaml（多一行 imagePullSecrets）与加密文件
+> git add gitops && git -c core.editor=true commit -m "fix(test-computer): Pod 带上 Harbor 拉取凭据（rename R5.3）"
+> make -C infrastructure flux-release; echo "release exit=$?"
+> sudo cat infrastructure/.build/flux/source-candidate.yaml | sudo tee infrastructure/environments/kind/flux-source.yaml >/dev/null
+> sudo chown "$(id -u):$(id -g)" infrastructure/environments/kind/flux-source.yaml 2>/dev/null
+> git add infrastructure/environments/kind/flux-source.yaml && git -c core.editor=true commit -m "release(kind): 晋级到 $(git rev-parse --short HEAD)（rename R5.3 测试电脑拉取凭据）"
+> make -C infrastructure flux-source-apply; echo "apply exit=$?"
+> export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl)
+> $K -n flux-system wait kustomization/knowbench-test-computer --for=condition=Ready --timeout=15m; echo "wait exit=$?"
+> $K -n app-platform-dev get pods | grep knowbench-test-computer
+> $K -n app-platform-dev logs deploy/knowbench-test-computer -c fetch --tail=20
+> $K -n app-platform-dev logs deploy/knowbench-test-computer --tail=30 | sed -E 's/[A-Z0-9]{4}-?[A-Z0-9]{4}/<码>/g'
+> git push origin qwen
+> ```
+>
+> 要看到：`stage`、`release`、`apply`、`wait` 都是 0；Pod `Running`；`fetch` 的日志里摘要核对 `OK`、包按清单核过；主容器日志在等配对（码已抹）。然后接着第 5 步块里剩下的核对与第 6 步，回执 `R5.3-qwen.<时间>.md`。
+
 **1. Windows 包**（照卡 48 的 A，Windows 侧，官方 node.exe 24.19.0、在新检出里冻结安装的依赖、dev-kind 站点与 CA）：
 
 - 新目录检出：`…\sunmoon-probe-runs\windows-agent-050-release\src-1d8e838`，`git rev-parse HEAD` = `1d8e838cd46a262494387604f3d7f00cf3771b8e`，`git status --porcelain` 空。
