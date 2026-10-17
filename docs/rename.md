@@ -537,7 +537,7 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 要看到：`deploy`、`status` 都是 0；`curl` 的 `verify=0`（正式证书），状态码 200 或 30x（经 frp 到了集群）。Opus 写 `R5.2-opus.<时间>.md`。之后所有者可用手机流量打开 `https://knowbench.sunmoonai.com:30443` 再看一眼。**不跑 `make edge-smoke`**（会替换现网单元）。
 
 **停点**：Qwen 的 `R5.2-qwen` 与 Opus 的 `R5.2-opus` 都审过，在本节写「通过」。
-**状态**：**可执行（第 1–5 步）** · 2026-10-17 · Opus；第 6 步待所有者批准。
+**状态**：**可执行（第 1–5 步）** · 2026-10-17 · Opus；第 6 步所有者 2026-10-17 已批准（「按你建议」），Qwen 的回执审过后 Opus 做。
 
 ### R5.3 本地代理 0.5.0、开测试电脑
 
