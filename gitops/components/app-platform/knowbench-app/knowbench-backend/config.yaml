@@ -7,7 +7,7 @@ knowbench_backend_deployment:
   database_extensions: []
   database_bootstrap_revision: v1
   migration_job_revision: v7
-  expected_schema_revision: '20261012_0018'
+  expected_schema_revision: '20261017_0020'
   private_dir: /etc/sunmoon/applications/sunmoon-kind/knowbench
   backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/knowbench
   deploy_budget_bytes: 2147483648
@@ -64,9 +64,10 @@ knowbench_backend_deployment:
   # 0010：工作台（0001-workbench）。沙箱、会合点、供给器在各自的组件；这里只是地址与开关。
   cross_app_enabled: true
   runner_replicas: 1
-  # 分身测试的测试电脑（SDD 0027 §3.4，见 test-computer/README.md）：先上传 Linux 包（agent-release-linux-upload）再开
+  # 分身测试的测试电脑（SDD 0027 §3.4，见 test-computer/README.md）：先上传 Linux 包（agent-release-linux-upload）再开；
+  # 0028 R5.3 上传 0.5.0 的 Linux 包、换钉之后才打开
   knowbot_test_computer:
-    enabled: true
+    enabled: false
     workspace: /workspace
     storage: 20Gi
   domain_env:

@@ -2,55 +2,56 @@
 # 2026-10-06 起钉 fable（各应用父仓的 fable 头，子仓就是父仓记录的那一个提交）。
 # 2026-10-07：账 54/55/56（结果边栏、知识库、公共数据入口移到管理后台）。knowfeed 后端与管理端未动。
 # 2026-10-16：六个应用都钉到单点登录那一版（退出结束 Casdoor 会话，SDD 0027 P1b；tpl-app edc6db6 及各实例同步提交）。
+# 2026-10-17：六个应用都钉到改名后（0028 R5，investment → knowbench）的 qwen/master 头：带 0027 P1b–P5（分身线）、knowbench 的本地代理命令改名。
 ---
 applications:
   tpl:
-    parent_revision: edc6db67584ed4a4689563bba533b5be0da3005e
-    backend_parent_revision: f0b96523f6d30f58731dbb77e7dd36e756fca731
-    backend_revision: f0b96523f6d30f58731dbb77e7dd36e756fca731
-    web_parent_revision: 7c68fee02f3a939c214e366b0d339dfc79a4f2dd
-    web_revision: 7c68fee02f3a939c214e366b0d339dfc79a4f2dd
+    parent_revision: 65b8b11d3c21717a0c768490e329e5e19e43e020
+    backend_parent_revision: ab7139389cbc40a04459a3403ffc5ee4c8e26d89
+    backend_revision: ab7139389cbc40a04459a3403ffc5ee4c8e26d89
+    web_parent_revision: 479c7e6ce6e69a5e4daf41bb55aed5f3b95a87c7
+    web_revision: 479c7e6ce6e69a5e4daf41bb55aed5f3b95a87c7
     admin_parent_revision: b89e474191109d807cdd50d56ecea971c0269a4a
     admin_revision: b89e474191109d807cdd50d56ecea971c0269a4a
   knowfeed:
-    parent_revision: ca0313c2a273e8000b9d717d05c205faaa55a764
-    backend_parent_revision: 44ca97468e249bf548eb87536e4a8123f848a4d3
-    backend_revision: 44ca97468e249bf548eb87536e4a8123f848a4d3
-    web_parent_revision: 0eafd05af48df6f1df0cdd6e25a8b5043415a589
-    web_revision: 0eafd05af48df6f1df0cdd6e25a8b5043415a589
-    admin_parent_revision: 18da7715eb575a7c9d0b494618bf23788e9ab3b4
-    admin_revision: 18da7715eb575a7c9d0b494618bf23788e9ab3b4
+    parent_revision: cf687a08dec2bcf70628085d501df1df9a08909b
+    backend_parent_revision: 5a287ac838ced8798f8f6179c59a506facf9a4d8
+    backend_revision: 5a287ac838ced8798f8f6179c59a506facf9a4d8
+    web_parent_revision: 4cc0125ff3d634f6915293fe010cb10c5dbabb43
+    web_revision: 4cc0125ff3d634f6915293fe010cb10c5dbabb43
+    admin_parent_revision: 0ca833ac6a321bafd8b6b2b7bfcf99c4c98c3e15
+    admin_revision: 0ca833ac6a321bafd8b6b2b7bfcf99c4c98c3e15
   knowbase:
-    parent_revision: 4a31214a117f95ebb4d68636a658fdec4fb81f3a
-    backend_parent_revision: 86dafb81a1c30a108aae885d1dd7c546b6b0872e
-    backend_revision: 86dafb81a1c30a108aae885d1dd7c546b6b0872e
-    web_parent_revision: 11dd9a81fd58638e3a8be2673793d47faf374667
-    web_revision: 11dd9a81fd58638e3a8be2673793d47faf374667
-    admin_parent_revision: 4d261719d183d25312106f91e7923ea8a59b89a9
-    admin_revision: 4d261719d183d25312106f91e7923ea8a59b89a9
+    parent_revision: 25942e22e9112b80eb9ad797d464b62c4857349f
+    backend_parent_revision: 6d71e108d7c814d0f5d6db777bdc4d3d6752b426
+    backend_revision: 6d71e108d7c814d0f5d6db777bdc4d3d6752b426
+    web_parent_revision: 31389c7efe483cd683a4324c4c6ebbe33e3b2a4b
+    web_revision: 31389c7efe483cd683a4324c4c6ebbe33e3b2a4b
+    admin_parent_revision: 9c9121d5d66a61f42f004fc589ec02b553b238c6
+    admin_revision: 9c9121d5d66a61f42f004fc589ec02b553b238c6
   knowbench:
-    parent_revision: 4cc00a148a6fa2babc2aba352ee9fd583eaf2ee3
-    backend_parent_revision: 9cf6298142b3115d2475c83ebd204669ea0d1ae9
-    backend_revision: 9cf6298142b3115d2475c83ebd204669ea0d1ae9
-    web_parent_revision: bcfc34e66e2ddd3d345ee83ea946509a23ba8151
-    web_revision: bcfc34e66e2ddd3d345ee83ea946509a23ba8151
-    admin_parent_revision: a21181a5ad45dd3bb37cd248bb50adba353f6b86
-    admin_revision: a21181a5ad45dd3bb37cd248bb50adba353f6b86
+    parent_revision: 3ff21d84479d19af8db39a512f60273b3a165524
+    backend_parent_revision: cc95605c6f789aba1560a0f0f2abf9fca45577ed
+    backend_revision: cc95605c6f789aba1560a0f0f2abf9fca45577ed
+    web_parent_revision: 78000be8e0de2ffc4778484c0ed4b0299121e752
+    web_revision: 78000be8e0de2ffc4778484c0ed4b0299121e752
+    admin_parent_revision: 45fcf79a1a8e59e3cf9a3dd43ece19b8f59a0267
+    admin_revision: 45fcf79a1a8e59e3cf9a3dd43ece19b8f59a0267
   # 2026-10-16 由 tpl-app 4b19daf 实例化的空应用（qwen-003）
   knowlab:
-    parent_revision: 145f79af2585a29fbb8bcbf4b6c3c60bf5c67d6a
-    backend_parent_revision: 4d563afb06d97d4fd70fe855896290a31041a1e7
-    backend_revision: 4d563afb06d97d4fd70fe855896290a31041a1e7
-    web_parent_revision: 884b235ebe80d986934b4e3bb1f71d661c395a7e
-    web_revision: 884b235ebe80d986934b4e3bb1f71d661c395a7e
-    admin_parent_revision: af4c3da38451a0f471193a1a850275dc3bddcd32
-    admin_revision: af4c3da38451a0f471193a1a850275dc3bddcd32
+    parent_revision: 20111255ed2166c1208c27ee5f6d36d710ca0af0
+    backend_parent_revision: 8731c9d6178731b5eb66f383d6d6bfb23b132bac
+    backend_revision: 8731c9d6178731b5eb66f383d6d6bfb23b132bac
+    web_parent_revision: 46b1b5cd5a8c8b2ddedb18c2e8eb1e459e6acc34
+    web_revision: 46b1b5cd5a8c8b2ddedb18c2e8eb1e459e6acc34
+    admin_parent_revision: 371abcee5022533d9433cf81710807e611a74918
+    admin_revision: 371abcee5022533d9433cf81710807e611a74918
   # 2026-10-16 由 tpl-app 4b19daf 实例化的空应用（qwen-003）
   knowmart:
-    parent_revision: f772a53d9dde4e9623aa69ef7a3ed0738c5bb686
-    backend_parent_revision: 6bc0fa0fa4d900d60bd1a27ed924afa44502d967
-    backend_revision: 6bc0fa0fa4d900d60bd1a27ed924afa44502d967
-    web_parent_revision: e4f3ebf543b01d90c0cb501ac3e85bf0db2913da
-    web_revision: e4f3ebf543b01d90c0cb501ac3e85bf0db2913da
+    parent_revision: fcf86135e842b39457476b88fe08954a8f344d37
+    backend_parent_revision: bfeb2aee7af1c8d3bcdba2973d632198101b8f69
+    backend_revision: bfeb2aee7af1c8d3bcdba2973d632198101b8f69
+    web_parent_revision: 170d35bd7da26abf281d737e678ad514ba1d4ca7
+    web_revision: 170d35bd7da26abf281d737e678ad514ba1d4ca7
     admin_parent_revision: ca50dc5478c1383c2ca71393017526eb24acc794
     admin_revision: ca50dc5478c1383c2ca71393017526eb24acc794

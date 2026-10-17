@@ -129,7 +129,7 @@ python3 /tmp/rename-tools/residual.py ~/worktrees/qwen
 
 **k8s 里只改真源，不手改渲染产物**：`workload.yaml`、`kustomization.yaml`、`image.lock.yaml` 只随目录 `git mv`，内容在 R5 由 stage 与构建链按新名重新生成；R1 提交后、R5 发布前，它们里面还是旧名字，属正常，R1 的提交在 R5 发布前不会进现网。
 
-**R5 要记着的连带**（R1 改了名字，R5 才会生效）：工作台的签名钥匙按新名重新生成后，knowbase 与 relay 持有的公钥要换成新的（`infrastructure/components/tasks/workbench-signing.yaml`）；knowbase 接收工作台检索的身份、knowmart 接收「取清单」、knowlab 调「跑测试」与接收「读数据」都按新名重建；本地机 Windows hosts 加 `knowbench.`、`knowbench-admin.sunmoonai.com`。
+**R5 要记着的连带**（R1 改了名字，R5 才会生效）：工作台的签名钥匙是平台级私有输入（`services_config_dir/workbench-signing.yaml`，`infrastructure/components/tasks/workbench-signing.yaml`），不随应用名变，R5 原样复用，knowbase 与 relay 的公钥不用换（2026-10-17 Opus 核过，更正此前「要换」的说法）；knowbase 接收工作台检索的身份、knowmart 接收「取清单」、knowlab 调「跑测试」与接收「读数据」都按新名重建；本地机 Windows hosts 加 `knowbench.`、`knowbench-admin.sunmoonai.com`。
 
 推送（Opus 在远程机，**先子仓后父仓**，只推 `qwen`）：
 
@@ -312,9 +312,120 @@ cd ~/five-repos-sync && cp config.sh config.sh.bak-rename-0028 && \
 
 **冻结解除** · 2026-10-17 · Opus：两台机器 × `~/master` 与五个工位 × 八组仓都在 master 上（新名字）。各工位照常工作，Cursor 恢复接卡，一律用新名字（`knowbench-app`、`knowbench-*`、`sunmoon-link`）。两台机器 `~/rename-backup/` 保留，删除另行决定。R5 等 Opus 把命令写好、状态写「可执行」后才开始。
 
-## R5 集群（并进 0027 P6）— 所有者 + Qwen
+## R5 集群（并进 0027 P6）— Qwen（本地机），所有者在几处亲手做
 
-待写：DNS、边缘、新安装包、按新名字部署、P6 其余各步、浏览器走查。
+> **状态写「可执行」之前不得开始。** 分四段，一段一停：R5.1 应用与共用组件（改钉已由 Opus 提交）→ R5.2 提交、发布、晋级、入口、hosts、边缘 → R5.3 本地代理 0.5.0（Windows 与 Linux 包）、开测试电脑 → R5.4 测试账号、kimi key、测试电脑配对、浏览器走查。R5 期间 Opus 不往 k8s 推任何东西（回执直接推，被拒就停）。
+>
+> 命令块都在 **bash** 里跑（规矩 9）；任何一步 `exit` 不是 0 就停在那一步，输出原样进回执，不重试、不退回。远程机资源小，Qwen 在本地机跑不受影响，但**构建、暂存一个一个来**。
+
+**这一轮动什么**（Opus 2026-10-17 核过）：
+- **六个应用都改钉**到改名后的 qwen/master 头（`infrastructure/applications/sources.yaml`，Opus 已提交）：带 0027 P1b–P5（单点登录、knowmart、knowlab 的受理测试交付与「我的数据」、knowbench 的请分身、有人值守的测试、读用户数据）与本地代理命令改名后的网页。knowbench 从空库起（库、角色、Redis、vhost、私有目录都是新名、新建）；knowlab、knowmart 在已有的空应用上升级迁移。
+- **迁移头**（Opus 已改）：knowbench `20261017_0020`、knowlab `20261016_0006`、knowmart `20261016_0004`，其余三个不变。迁移 Job 名里带后端镜像摘要，镜像一换名字就换，不撞不可变 Job。
+- **测试电脑先关**（`knowbot_test_computer.enabled: false`）：它要 0.5.0 的 Linux 包，R5.3 上传、换钉之后再开。
+- **自研镜像不重建**：沙箱、供给器、会合点的现行镜像里没有写死应用名（Opus 查过钉住的源码），记录 MCP 的地址由工作台按配置给。
+- **签名钥匙不变**：它是平台级私有输入 `services_config_dir/workbench-signing.yaml`，不随应用名变，暂存时原样复用；knowbase、relay 的公钥不用换，relay 不重新暂存。
+- **要重新暂存的共用组件**：`ingress-platform/traefik`（内部入口新增 knowmart、knowbench、knowlab 三条路由与各自证书，0027 P1、P5）、`ingress-platform/frpc`（公网域名 `knowbench`）、`data-platform/elk/collector`（应用名单）、`app-platform/auth-app/casdoor`（0027 P1b：会话 12 小时、单点退出）。
+- **旧对象不会被自动删**：Flux 根与各阶段都是 `prune: false`。晋级后改名前的 investment 的 Deployment / Job / Secret 留在集群里，旧阶段 `investment-*` 的 Flux Kustomization 因路径不在了会显示失败——**属预期，R5 不碰**，R6 按清单删。入口与边缘换成新域名后，旧应用从浏览器就打不开了；退路是退回晋级前的发布源（库、桶、私有目录都还在）。
+
+### R5.0 前提（只读）
+
+```bash
+cat > /tmp/r5-0.sh <<'EOS'
+WS=qwen bash ~/switch-test/human-local.sh > /tmp/r5-0-sync.txt 2>&1; echo "sync exit=$?"; tail -3 /tmp/r5-0-sync.txt
+cd ~/worktrees/qwen/k8s && git log --oneline -1 && git status --short | head -3
+python3 - <<'PY'
+import re, subprocess, pathlib
+s = pathlib.Path("infrastructure/applications/sources.yaml").read_text()
+bad = 0
+for app in ("tpl", "knowfeed", "knowbase", "knowbench", "knowlab", "knowmart"):
+    block = re.search(rf"(?m)^  {app}:\n(?:(?!^  \S).*\n?)*", s).group(0)
+    pin = dict(re.findall(r"(?m)^    (\w+): (\w+)", block))
+    for field, d in (("parent_revision", f"{app}-app"), ("backend_revision", f"{app}-app/{app}-backend"),
+                     ("web_revision", f"{app}-app/{app}-web-frontend"), ("admin_revision", f"{app}-app/{app}-admin-frontend")):
+        repo = pathlib.Path.home() / "worktrees/qwen" / d
+        ok = subprocess.run(["git", "-C", str(repo), "merge-base", "--is-ancestor", pin[field], "HEAD"]).returncode == 0
+        bad += not ok
+        print(f"{d:42} {pin[field][:10]} {'在本地 HEAD 里' if ok else '!! 本地没有或不是祖先'}")
+print("pins bad =", bad)
+PY
+make -C infrastructure platform-status > /tmp/r5-0-status.txt 2>&1; echo "status exit=$?"; tail -5 /tmp/r5-0-status.txt
+systemctl cat sunmoon-platform.target | grep -E '^(Requires|Wants)='
+grep -n "sunmoonai" /mnt/c/Windows/System32/drivers/etc/hosts
+make -C infrastructure preflight > /tmp/r5-0-preflight.txt 2>&1; echo "preflight exit=$?"; tail -5 /tmp/r5-0-preflight.txt
+EOS
+bash /tmp/r5-0.sh
+```
+
+要看到：`sync exit=0`；k8s 干净、含本节；`pins bad = 0`（24 行都在本地 HEAD 里）；`platform-status` 0；`sunmoon-platform.target` 是 **`Wants=`**；`preflight` 0（C 盘余量够，`infrastructure/host/README.md`「容量如何计算」）。Windows hosts 里现有的 `sunmoonai` 行原样贴进回执（R5.2 要按它加新域名）。
+
+### R5.1 构建、暂存、计划、渲染比对
+
+**1. 构建**（六个应用；时间长，挨个来，哪个不是 0 就停）：
+
+```bash
+cd ~/worktrees/qwen/k8s
+for o in app-platform/tpl-app app-platform/knowfeed-app app-platform/knowbase-app app-platform/knowbench-app app-platform/knowlab-app app-platform/knowmart-app; do
+  echo "===== build $o"; make -C infrastructure platform-build OBJECT=$o 2>&1 | tail -n 12; rc=${PIPESTATUS[0]}; echo "exit=$rc"; [ "$rc" = 0 ] || break
+done
+for f in $(git diff --name-only gitops | grep image.lock); do echo "$f: $(grep -E '^source_revision' $f)"; done
+```
+
+要看到：六个都是 `exit=0`；变了的镜像锁 18 个（六个应用各后端、网页、管理端），`source_revision` 等于 `sources.yaml` 里对应的提交。
+
+**2. 暂存**（先排齐拓扑，再逐个 stage；上次改名踩过的三处已写在前面：缺 `chart-source.yaml` 先跑 `services-tools`、`services-chart`；拓扑先 `topology-stage OBJECT=all` 单独排齐；**不要** `platform-stage OBJECT=all`——ragflow 的 prepare 顺序隐患还没修，待办账 97）：
+
+```bash
+make -C infrastructure services-tools; echo "tools exit=$?"
+make -C infrastructure services-chart; echo "chart exit=$?"; ls -l infrastructure/.build/components/chart-source.yaml
+make -C infrastructure topology-stage OBJECT=all; echo "topology exit=$?"
+for o in app-platform/tpl-app app-platform/knowfeed-app app-platform/knowbase-app app-platform/knowbench-app app-platform/knowlab-app app-platform/knowmart-app \
+         ingress-platform/traefik ingress-platform/frpc data-platform/elk/collector app-platform/auth-app/casdoor; do
+  echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
+done
+git status --short gitops | awk '{print $2}' | sed -E 's#^gitops/(components/[^/]+/[^/]+(/[^/]+)?|clusters/kind)/.*#\1#' | sort | uniq -c
+grep -rn "BEGIN PRIVATE KEY\|BEGIN PUBLIC KEY" gitops/ | head -3   # 必须没有
+ls gitops/components/app-platform/knowbench-app/knowbench-backend/database/ gitops/components/app-platform/knowbench-app/knowbench-backend/runtime/
+sudo ls /etc/sunmoon/applications/sunmoon-kind/
+```
+
+要看到：`tools`、`chart`、`topology` 与十个 stage 都是 `exit=0`；改动只在六个应用、`ingress-platform/traefik`、`ingress-platform/frpc`、`data-platform/elk`、`app-platform/auth-app`、`clusters/kind`（别处也有改动不必停，照贴，第 4 步的比对会逐个对象列出来）；没有 PEM；knowbench 的 `database/`、`runtime/` 下重新有了 `*.sops.yaml`（按新名全新生成，含 `knowmart-summon-service.sops.yaml`、`knowlab-read-service.sops.yaml`）；私有目录多出 `knowbench`（旧的 `investment` 还在，不动）。
+
+**3. 部署计划**：
+
+```bash
+for a in tpl knowfeed knowbase knowbench knowlab knowmart; do
+  echo "===== plan $a"; make -C infrastructure application-deployment-plan APP=$a 2>&1 | grep -E "schema|revision|ok=|failed=" | tail -4; echo "exit=${PIPESTATUS[0]}"
+done
+```
+
+要看到：六个 `exit=0`；迁移头 knowbench `20261017_0020`、knowlab `20261016_0006`、knowmart `20261016_0004`、knowfeed `20261015_0014`、knowbase `20260927_0007`、tpl `20260911_0003`。
+
+**4. 渲染比对**（改名前的渲染产物 vs 这次 stage 的，逐个 k8s 对象；基准 `8204fd7a` 是 R1 之前的 k8s 提交，P1–P5 一直没暂存过，那时 Git 里的渲染产物就是现网跑的那一版）：
+
+```bash
+T=$(date +%Y%m%d-%H%M)
+infrastructure/.venv/bin/python docs/rename-tools/r5_render_diff.py 8204fd7a > docs/rename-receipts/R5.1-render-diff.$T.txt; echo "exit=$?"
+sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
+```
+
+要看到：第 1 节「不可变 Job」**0 条**（有一条就停）。报告整份随回执提交，Opus 逐条审第 3–6 节。
+
+**这一段不提交 k8s 的工作区改动**（stage 产物留在工作区，Opus 审过渲染比对后在 R5.2 提交）。只提交回执与比对报告：`git add docs/rename-receipts && git commit -m "rename: R5.1 回执（Qwen）" && git push origin qwen`。
+
+**停点**：Qwen 写 `R5.1-qwen`（R5.0 的核对、构建与暂存的各 `exit`、改动分布、计划、比对第 1–2 节），Opus 审。
+**状态**：**可执行** · 2026-10-17 · Opus（改钉、迁移头、测试电脑开关已提交；R5.0 的核对脚本在远程机试跑过，24 个钉都在 HEAD 里）。
+
+### R5.2 提交、发布、晋级、入口、hosts、边缘
+
+待写（R5.1 通过后填）。
+
+### R5.3 本地代理 0.5.0、开测试电脑
+
+待写。
+
+### R5.4 测试账号、kimi key、测试电脑配对、浏览器走查
+
+待写。
 
 ## R6 下线旧对象 — Qwen
 
