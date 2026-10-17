@@ -292,6 +292,20 @@ cd ~/five-repos-sync && cp config.sh config.sh.bak-rename-0028 && \
 **停点**：Opus、Qwen 各写回执（Qwen 的含同步脚本最后一句），Opus 写「通过」。
 **状态**：远程机 `config.sh` 已改（2026-10-17，Opus；备份 `config.sh.bak-rename-0028`），`repos.conf` 已是新名，所有者让 Opus 代提交推送 `toolboxes` `a558370`（GitHub、gitee 两边一致，只改这两行）。本地机在 Qwen 的 R3 通过后做。
 
+## R4 之后：并 master、两台机器对齐、解除冻结（所有者 2026-10-17 同意「R4 通过就做」）
+
+上次是 R6 之后才并（「冻结解除之后」第 1、2 条），这次 R5 要和 P6 一起部署、可能拖几天，所以提前：集群按 `sources.yaml` 钉的提交部署，不看 master；R5 里要修的照样在 qwen 上改、改完再快进一次 master。
+
+2026-10-17 只读核过：26 个仓（8 父仓 + 18 子仓）的 `origin/master` 都是 `origin/qwen` 的祖先（可快进）；`origin/cursor`、`fable`、`kimi`、`luna` 都没有 qwen 之外的提交。
+
+1. **master 快进到 qwen**（Opus，远程机 qwen 工位）：每个仓 `git push origin origin/qwen:refs/heads/master`（先子仓后父仓；推送地址带 gitee 的一起推），推后 GitHub 与 gitee 的 `master` 逐个核对等于 `qwen`。回执 `master-ff-opus`。
+2. **工位分支跟上**（Opus，远程机跑一次）：`bash ~/worktrees/qwen/k8s/docs/dev-investment-agent/switch-test/align_workstations.sh push-branches` 预演，再 `--apply`：26 个仓的 `origin/cursor`、`fable`、`kimi`、`luna` 快进到 master。
+3. **远程机对齐**（Opus）：同一工具 `align` 预演 → `align --apply` → `list`。父仓快进到 master；子仓按新的 `.gitmodules` 初始化、接回工位分支、照 qwen 工位配推送地址；父仓里留下的旧名子仓目录（`investment-*`）挪进 `~/rename-backup/<时间>-old-subrepos/`。工具已加上 `investment-` → `knowbench-` 的对应。回执 `align-opus`。
+4. **本地机对齐**（Qwen）：同样 `align` 预演 → `--apply` → `list`，**结果先写到仓外**（`/tmp/align-*.txt`），再拷进回执目录（上次写进 qwen/k8s 自己把自己拦下了）。回执 `align-qwen`。
+5. 两台都 `list` 全 ok，Opus 写「冻结解除」：各工位照常工作，Cursor 恢复接卡（用新名字）。
+
+**状态**：待做（R4 通过后）。
+
 ## R5 集群（并进 0027 P6）— 所有者 + Qwen
 
 待写：DNS、边缘、新安装包、按新名字部署、P6 其余各步、浏览器走查。

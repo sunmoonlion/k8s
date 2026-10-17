@@ -25,7 +25,7 @@ subpaths_at() { git -C "$1" show "$2:.gitmodules" 2>/dev/null | git config -f /d
 lost_of() { local d=$1 br=$2
   if git -C "$d" rev-parse -q --verify "origin/$br" >/dev/null; then git -C "$d" rev-list --count HEAD --not "origin/$br" origin/master
   else git -C "$d" rev-list --count HEAD --not origin/master; fi; }
-new_name() { echo "$1" | sed -E 's/^info-/knowfeed-/; s/^knowledge-/knowbase-/'; }
+new_name() { echo "$1" | sed -E 's/^info-/knowfeed-/; s/^knowledge-/knowbase-/; s/^investment-/knowbench-/'; }
 
 row() {  # list 的一行：row <标签> <目录> <期望分支> <master 上的路径或空>
   local tag=$1 d=$2 want=$3 target=$4 br ahead behind dirty unpushed action note=""
