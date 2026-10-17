@@ -21,7 +21,7 @@
 | knowlab 父仓 | `117bea9` | 契约 schema 四份新增、子仓指针 |
 | knowbench 父仓 | `1d82d26` | 契约锁、子仓指针 |
 
-Opus 在远程机核过：knowlab 后端全量 396 过；knowbench 后端全量（真库）1123 过（含受理关口 8 条）；knowbench 网页 `pnpm check` 全过（295 条测试，受理关口只改了一个样式类）；knowlab 网页类型、lint、92 条测试过。
+Opus 在远程机核过：knowlab 后端全量 396 过；knowbench 后端全量（真库，含投递库与契约锁）1212 过、5 跳过（消息队列探针与跨仓向量，本来就不跑；含受理关口 8 条）；knowbench 网页 `pnpm check` 全过（295 条测试；受理关口只改了审查面一个样式类，审查面那组测试与 lint 另跑过）；knowlab 网页类型、lint、92 条测试过。
 
 ## 一、核对（只读）
 
