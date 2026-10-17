@@ -288,7 +288,7 @@ cd ~/five-repos-sync && cp config.sh config.sh.bak-rename-0028 && \
 两台机器都改完、Opus 核过远程机之后，改名窗口结束：Qwen 跑一次 `WS=qwen bash ~/switch-test/human-local.sh`，要能正常走完（不报找不到仓），本地 qwen 工位各仓随之对齐。
 
 **停点**：Opus、Qwen 各写回执（Qwen 的含同步脚本最后一句），Opus 写「通过」。
-**状态**：远程机 `config.sh` 已改（2026-10-17，Opus；备份 `config.sh.bak-rename-0028`），`repos.conf` 已是新名、待所有者在远程机提交推送 `toolboxes`。本地机在 Qwen 的 R3 通过后做。
+**状态**：远程机 `config.sh` 已改（2026-10-17，Opus；备份 `config.sh.bak-rename-0028`），`repos.conf` 已是新名，所有者让 Opus 代提交推送 `toolboxes` `a558370`（GitHub、gitee 两边一致，只改这两行）。本地机在 Qwen 的 R3 通过后做。
 
 ## R5 集群（并进 0027 P6）— 所有者 + Qwen
 
