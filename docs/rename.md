@@ -271,7 +271,24 @@ GITEE_PREFIX=https://gitee.com/sunmoonlion/ ORIGIN_PUSH_GITEE=1 bash ~/worktrees
 
 ## R4 同步配置 — 远程机 Opus，本地机 Qwen
 
-待写：`~/five-repos-sync/config.sh` 与 `mb` 的 `repos.conf` 换两个仓名；Qwen 跑一次 `human-local.sh` 验证，改名窗口结束。
+两台机器各核对两个文件：
+
+1. `~/five-repos-sync/config.sh` 的 `REPOS=(…)`：`"investment-app"` → `"knowbench-app"`，`"runtime"` → `"sunmoon-link"`。改前 `cp config.sh config.sh.bak-rename-0028`。这份文件不在 Git 里，各机一份。
+
+```bash
+cd ~/five-repos-sync && cp config.sh config.sh.bak-rename-0028 && \
+  sed -i -e 's/^  "investment-app"$/  "knowbench-app"/' -e 's/^  "runtime"$/  "sunmoon-link"/' config.sh && \
+  diff config.sh.bak-rename-0028 config.sh; sed -n '/^REPOS=/,/^)/p' config.sh
+```
+
+2. `mb` 的 `repos.conf`：R3 脚本已改好，这里只核对 `grep -n "master/" ~/toolboxes/Vlinux/utils/set-up-tools/model-switch/repos.conf`，应有 `$HOME/master/knowbench-app`、`$HOME/master/sunmoon-link`，没有 `investment-app`、`runtime`。这份文件在 `toolboxes` 仓里受版本管理：**远程机由所有者提交推送**（上次也是，`e8f584e`）；**本地机的 `toolboxes` 由所有者自己拉，Qwen 不提交、不拉、不还原**。R3 脚本两种状态都认（还是旧名就改，已是新名就跳过），所以所有者在 Qwen 跑 R3 之前或之后拉都行——之后拉的话先还原这两行再拉（`git -C ~/toolboxes checkout -- Vlinux/utils/set-up-tools/model-switch/repos.conf`）。
+
+`~/switch-test/human-*.sh` 是转发器，不用改；它转发到的 k8s 仓里那两份已在 R1 改好（子仓名、`sunmoon-link`）。
+
+两台机器都改完、Opus 核过远程机之后，改名窗口结束：Qwen 跑一次 `WS=qwen bash ~/switch-test/human-local.sh`，要能正常走完（不报找不到仓），本地 qwen 工位各仓随之对齐。
+
+**停点**：Opus、Qwen 各写回执（Qwen 的含同步脚本最后一句），Opus 写「通过」。
+**状态**：远程机 `config.sh` 已改（2026-10-17，Opus；备份 `config.sh.bak-rename-0028`），`repos.conf` 已是新名、待所有者在远程机提交推送 `toolboxes`。本地机在 Qwen 的 R3 通过后做。
 
 ## R5 集群（并进 0027 P6）— 所有者 + Qwen
 
