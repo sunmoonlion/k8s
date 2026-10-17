@@ -51,7 +51,7 @@ want = {
                 'web_parent_revision': '13f15c3d01548ebb9a307a06807b3b9578cd1702', 'web_revision': '13f15c3d01548ebb9a307a06807b3b9578cd1702'},
 }
 for app, keys in want.items():
-    m = re.search(rf'(?ms)^  {app}:\n(?:(?!^  \S).*\n?)*', s); assert m, app
+    m = re.search(rf'(?m)^  {app}:\n(?:^    .*\n)*', s); assert m, app
     block = new = m.group(0)
     for k, v in keys.items():
         new, n = re.subn(rf'(?m)^(    {k}: )\w+', rf'\g<1>{v}', new); assert n == 1, (app, k)
