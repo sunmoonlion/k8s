@@ -69,6 +69,8 @@
 
 - **knowlab 是新应用 `knowlab-app`**（2026-10-16 所有者定，原话「是新应用」）：由 `tpl-app` 实例化（后端、用户网页、管理后台），自己的库、迁移链与对象存储；investment 工作台作为测试与运行平台，只存分身的标识与版本，经版本化接口取。见 `SDD/modules/0026-knowlab.md`「一之二」。
 
+- **一个应用三块的叫法**（2026-10-17 所有者定，原话「我们为了以后讨论方便，先规定：用户端成为web端，运营管理后台称管理端，backend成为后端」）：给用户的网页叫 **web端**（`<名>-web-frontend`），给运营的管理后台叫 **管理端**（`<名>-admin-frontend`），服务端程序叫 **后端**（`<名>-backend`）。见 `turn/glossary.md`。
+
 - **工作台改名 knowbench、runtime 仓改名 sunmoon-link**（2026-10-17 所有者定）：investment「实际上是测试平台和用户的bot的使用平台，不一定就是investment」，先选 incubator，后定「就用knowbench」；深度乙、现有数据不要从空的开始、文档目录 `dev-investment-agent/` 不改、relay 不改、P5 做完再改名（都「按你的建议」）。runtime 仓：所有者先提改 knowlink，Opus 查出与下条 2026-10-16 的决定冲突后给 A/B/C，所有者选 B——**仓名改为 sunmoon-link**，与本地代理英文名一致；命令、安装包、计划任务照下条在 R5 发新 Windows 包时改。所有者曾问能否保留 investment 另起 knowbench，听完两种做法后定「那算了，还正常改名吧」。见 `SDD/modules/0028-knowbench-rename.md`、`docs/rename.md`。
 
 - **本地代理的英文名叫 sunmoon-link**（2026-10-16 所有者定，原话「我向把本地agent换个词，它与现在的agent一样，但是我们其实是代理」「我都被改名改怕了」；同日先定 knowlink，随即改：「本地代理不能用knowlink，它和其它know不是一系列的」「就用sunmoon-link」）：中文仍叫「本地代理」，界面不改；英文 agent 在 AI 语境里指智能体（那是分身干的事），本地程序只做转发。know 系列是云端产品，装在用户电脑上的客户端用品牌前缀 `sunmoon-`，所以从 `sunmoon-agent` 改为 `sunmoon-link`。**不搬家**：runtime 仓名不改（下面 2026-10-07「runtime 仓改名 agent」作废；2026-10-17 改定：仓名改为 sunmoon-link，见上条）、协议字段（如握手 `role=agent`）与代码内部命名不改；命令 `sunmoon-agent`、安装包名、Windows 计划任务 `SunMoonAgent-*` 等到下次发 Windows 代理新版本时顺带改为 sunmoon-link（安装时清掉旧任务，工作台「接入电脑」页的安装命令同步改，走正常发布卡真机验）。以后新写的文档用 sunmoon-link。
