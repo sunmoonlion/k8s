@@ -719,7 +719,7 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 >
 > 源码：sunmoon-link `1d8e838`（`1d8e838cd46a262494387604f3d7f00cf3771b8e`，0.5.0）。比改名那版 `ca9784c` 多一处修复（2026-10-17 所有者的工作对话生成 pptx 时中文文件名变成问号）：代理给 PowerShell 也设了往外部程序管道的编码 `$OutputEncoding`（UTF-8、无 BOM），第 1 步在 Windows 上用探针核。和 0.4.1（`76832a8`）比，进 Windows 包的文件只有 `sunmoon-agent.cmd` 改名 `sunmoon-link.cmd`，`pnpm-lock.yaml` 没变，所以**文件数仍是 109**、依赖在新检出里由 pnpm 10.24.0 按锁文件冻结安装（锁文件从 0.4.1 起没变，按校验和装出来就是同一套）。以前那份复制来的冻结目录丢了 pnpm 的链接结构、解析不出 `@openai/codex-win32-x64`（2026-10-17 Qwen 打包时撞上），不再用。安装脚本 `install.ps1.tmpl` 两边摘要都是 `f6219d61392a259de44379627c2d9706d5243aa90ce69812c644991af06ca125`（R1 已同步）。
 >
-> **Linux 包 Opus 已在远程机从同一提交打过一次**（同一提交打出同一个摘要），用上传工具同一套校验（`upload.py` 的 `verify_tarball`）核过：`tarballSha256 cd93d5a1d2ebb3fb1506c7cda3dc177997b7f3349361dc8a011a795e1dec1766`、`manifestSha256 4c059af55ff48ef4a2f2b20947659ce11d8691fa53b32018e8ba9c4a52eaca7f`、`139171755` 字节、133 个文件。本地机打出来的必须逐字一样。
+> **Linux 包以清单为准**：Opus 在远程机从同一提交打过一次，清单摘要 `4c059af55ff48ef4a2f2b20947659ce11d8691fa53b32018e8ba9c4a52eaca7f`、133 个文件，本地机打的必须与它一致。压缩包摘要随机器的 umask 不同（见下面第一次执行的说明），上传用本地机那份：`cd93d5a1d2ebb3fb1506c7cda3dc177997b7f3349361dc8a011a795e1dec1766`、`139171755` 字节。
 
 
 > 2026-10-17 第一次执行（`R5.3-qwen.20261017-2121.md`）：Windows 包全过（109 个文件、自检 pass、编码探针 `probe ok`；依赖改为在新检出里冻结安装）。Linux 包**清单摘要 `4c059af5…`、133 个文件、源码提交都与 Opus 打的一致**，只有压缩包摘要与大小不同。Opus 查明：不是工具版本（两边都是 tar 1.35、gzip 1.12），是**文件权限位**——远程机 umask 是 002（文件带组写），WSL 是 022，tar 把权限记在每个文件头里；Opus 把自己那份去掉组写重新归档，得到的正是 Qwen 的 `cd93d5a1…`、139171755 字节。内容同一由清单保证（上传与测试电脑都按清单逐个文件核）。**改用本地机打的这份**：上面的压缩包摘要与大小已换成 Qwen 的值，清单摘要不变。打包脚本没把权限归一，记待办账 128。
@@ -745,7 +745,7 @@ sha256sum ~/sunmoon-probe-runs/linux-050/sunmoon-link-0.5.0-1d8e838-linux-x64.ta
 git checkout -q qwen
 ```
 
-要看到：横线前空；`build exit=0`；输出的 `tarballSha256`、`manifestSha256`、`tarballBytes`、`files` 与上面 Opus 打的**完全一样**（不一样就停，两边的输出都贴进回执，不上传）。
+要看到：横线前空；`build exit=0`；`manifestSha256`、`files`、`sourceRevision` 与上面一致（不一致就停）；压缩包摘要与大小以本地机这份为准（第一次执行得到 `cd93d5a1…`、139171755）。
 
 **3. 改发行配置、校验、上传**（工具要求包的摘要与 `config.yaml` 一致，所以先写配置再校验；`download_available` 这一步还保持 `false`）：
 
