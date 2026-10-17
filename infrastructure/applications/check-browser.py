@@ -172,7 +172,12 @@ def _check_surfaces(settings, Browser, member, outcomes):
         if surface == 'web' and settings['application'] == 'knowbench':
             status, _, body = browser.request(origin + '/api/workbench/agent/install-command',
                                               method='POST', headers=headers)
-            require(status == 200, 'Install command was not issued')
+            if status == 404 and b'agent_download_unavailable' in body:
+                # 安装包下载开关关着（0028 R5.3 上传、读回校验之前）：明确说「下载不可用」也算对，报告里记 install_issued: false
+                install_issued = False
+                status = None
+            require(status in (200, None), 'Install command was not issued')
+        if surface == 'web' and settings['application'] == 'knowbench' and install_issued is not False:
             issued = json.loads(body)
             command = issued.get('command')
             require(isinstance(command, str) and command.startswith("irm '"),
@@ -186,8 +191,13 @@ def _check_surfaces(settings, Browser, member, outcomes):
         status, _, _ = browser.request(origin + '/api/auth/' + surface + '/logout',
                                        method='POST', headers={'Origin': origin})
         require(status == 403, surface + ': missing CSRF accepted')
-        status, _, _ = browser.request(origin + '/api/auth/' + surface + '/logout', method='POST', headers=headers)
-        require(status == 204, surface + ': logout rejected')
+        status, _, body = browser.request(origin + '/api/auth/' + surface + '/logout', method='POST', headers=headers)
+        # 单点退出（0027 P1b）：本地会话已结束，回 200 带去 Casdoor 结束会话的地址；没配 Casdoor 的退出地址时回 204
+        if status == 200:
+            ended = urlsplit(json.loads(body).get('logout_url') or '')
+            require(ended.scheme + '://' + ended.netloc == settings['provider'] and ended.path == '/api/logout',
+                    surface + ': logout did not hand over to the provider')
+        require(status in (200, 204), surface + ': logout rejected')
         status, _, _ = browser.request(origin + '/api/auth/' + surface + '/me')
         require(status == 401, surface + ': logged-out session accepted')
         outcomes[surface] = {'pkce_callback': True, 'authenticated_ssr': True,

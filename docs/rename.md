@@ -679,6 +679,22 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 >
 > 要看到：日志末行是 `Service registration failed: ConnectError`（同一原因）；重建后 `succeeded` 是 1；`wait exit=0`；`get kustomizations | grep -v True` 只剩表头与 `investment-*`（`platform` 也要 True）；Deployment 都满。然后接着做第 1 步块末尾的 identity 两个字段核对（那段 `for j in …identity-…-v4` 与 `get deploy`），再做第 2–5 步。回执写新的 `R5.2-qwen.<时间>.md`。
 
+> 2026-10-17 第五次（`R5.2-qwen.20261017-2016.md`）：第四次处理全过——第六个注册 Job 重建成功，**Kustomization 全 Ready（`platform` 也 True）**，各 Deployment 都满；第 1 步末尾 identity 核对过（`admin`、`operator` 两个角色恰好建了一次）；第 2 步入口四步全 0、knowbench 两个域名在、investment 没了。停在第 3 步：六个 `application-check` 都 2。**两个原因都是检查脚本没跟上这次上线的代码，不是集群的问题：**
+> - **knowlab**：对象存储的检查只认 `knowfeed|knowbase|knowbench`，knowlab 的「我的数据」桶是 0027 P5 才开的，第一次被检查（`gitops/components/data-platform/object-storage/verify.py`）。knowlab 后端带着这个检查要用的存储接口，补进白名单即可。
+> - **其余五个**：浏览器检查 `check-browser.py` 要求退出回 204；0027 P1b 起退出改成单点退出——本地会话结束后回 200 并带上去 Casdoor 结束会话的地址（`/api/logout`）。knowbench 还多一处：「接入电脑」的安装命令在下载开关关着时（R5.3 之前）明确回 404 `agent_download_unavailable`，检查却要求 200。
+>
+> **Opus 已改**（本提交）：存储白名单加 knowlab；浏览器检查的退出接受 204，或 200 且地址必须是 Casdoor 的 `/api/logout`（其后照旧核会话已失效）；安装命令接受 200（照旧核命令与过期时间），或 404 `agent_download_unavailable`（报告里记 `install_command_issued: false`，R5.3 开了下载后这里会变回 true）。都是仓里的检查脚本，**不用重新构建、暂存或晋级**。
+>
+> **第五次处理：重跑检查，过了接着第 4、5 步**：
+>
+> ```bash
+> cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+> for a in tpl knowfeed knowbase knowbench knowlab knowmart; do echo "===== check $a"; make -C infrastructure application-check APP=$a 2>&1 | grep -E "install_command_issued|pkce_callback|actual_application_storage|failed=|FAILED|ok=" | tail -4; echo "exit=${PIPESTATUS[0]}"; done
+> make -C infrastructure platform-status; echo "status exit=$?"
+> ```
+>
+> 要看到：六个 `exit=0`、`status exit=0`；knowbench 那行报告 `install_command_issued` 是 false（下载还关着，正常）。有不是 0 的就停，原样贴（检查任务带 `no_log`，不要为了看细节手动去跑它）。都过了接着做第 4 步（Windows hosts）、第 5 步（浏览器）。回执写新的 `R5.2-qwen.<时间>.md`。
+
 **停点**：Qwen 的 `R5.2-qwen` 与 Opus 的 `R5.2-opus` 都审过，在本节写「通过」。
 **状态**：**可执行（第 1–5 步）** · 2026-10-17 · Opus；第 6 步所有者 2026-10-17 已批准（「按你建议」），Qwen 的回执审过后 Opus 做。
 
