@@ -1,7 +1,7 @@
-# Qwen 发布卡 qwen-005：0030 计算工具与数值验收 + 成稿导出 + 分栏可拖 + 提示语（小发布）
+# Qwen 发布卡 qwen-005：0030 计算工具与数值验收 + 成稿导出 + 分栏可拖 + 受理关口 + 提示语（小发布）
 
 > 状态：**写好，暂缓**（放在 `hold/`）。**0028 R5、R6 都写了「通过」之后**移进 `inbox/qwen/` 才做。Opus 2026-10-17 写。
-> 依据：0030（C3：随 R5 之后的下一次发布上线）、0031（成稿导出）、待办账 121（Windows 工作说明）、124（分栏）、K17、K18；所有者 2026-10-17「把能做的先做」。
+> 依据：0030（C3：随 R5 之后的下一次发布上线）、0031（成稿导出）、待办账 121（Windows 工作说明）、124（分栏）、130（受理关口）、K17、K18；所有者 2026-10-17「把能做的先做」，受理关口「这个很重要。演示时已经出过这个洋相了」。
 
 ```text
 被测仓：k8s，qwen 工作树 ~/worktrees/qwen/k8s，分支 qwen
@@ -16,12 +16,13 @@
 | --- | --- | --- |
 | knowlab 后端 | `c979112` | 契约 `knowbot-data/v1` 加 `table`、`cells`：CSV、Excel 按格子读，数一律十进制字符串（0030 C1） |
 | knowlab 网页 | `0da34a3` | 「我的数据」提示数字类尽量传表格（K17）；验收用例写明期望值只能由用户填（K18） |
-| knowbench 后端 | `b2b9dc9`（含 `2e861ce`、`5f8e39e`、`b227b9c`） | 分身的 `compute`、`read_my_table`、计算记录、数值验收 `computed`/`identity`/`sourced`（0030 C1）；重做提示带上没过的各条；Windows 上写文件、跑脚本的说明（待办 121） |
-| knowbench 网页 | `537743d`（含 `4acd320`、`37ada6a`） | 成稿导出 Word、Excel、PDF（0031）；左右分栏可拖、左侧导航可折叠、输入框长高上限放宽（待办 124） |
+| knowbench 后端 | `ba92ce6`（含 `2e861ce`、`5f8e39e`、`b227b9c`、`b2b9dc9`） | 分身的 `compute`、`read_my_table`、计算记录、数值验收 `computed`/`identity`/`sourced`（0030 C1）；重做提示带上没过的各条；Windows 上写文件、跑脚本的说明（待办 121）；受理关口：问了不归这位专家的问题，停下问「照做 / 不做了」，不硬做、不报错（待办 130） |
+| knowbench 网页 | `e90ad98`（含 `4acd320`、`37ada6a`、`537743d`） | 成稿导出 Word、Excel、PDF（0031）；左右分栏可拖、左侧导航可折叠、输入框长高上限放宽（待办 124）；审查面的问题保留换行（待办 130） |
 | knowlab 父仓 | `117bea9` | 契约 schema 四份新增、子仓指针 |
-| knowbench 父仓 | `2959564` | 契约锁、子仓指针 |
+| knowbench 父仓 | `1d82d26` | 契约锁、子仓指针 |
+| k8s | 测试电脑模板 | Pod 带上脚本摘要，改了 `run.sh` 就换 Pod（R5.3 那次改了脚本，旧 Pod 崩到第 11 次才用上新的）；这次暂存会让测试电脑重启一次，配对凭据在卷上，不用重配 |
 
-Opus 在远程机核过：knowlab 后端全量 396 过；knowbench 后端全量（真库）1121 过；knowbench 网页 `pnpm check` 全过（295 条测试）；knowlab 网页类型、lint、92 条测试过。
+Opus 在远程机核过：knowlab 后端全量 396 过；knowbench 后端全量（真库）1123 过（含受理关口 8 条）；knowbench 网页 `pnpm check` 全过（295 条测试，受理关口只改了一个样式类）；knowlab 网页类型、lint、92 条测试过。
 
 ## 一、核对（只读）
 
@@ -33,7 +34,7 @@ git -C ~/worktrees/qwen/knowbench-app rev-parse HEAD; git -C ~/worktrees/qwen/kn
 make -C infrastructure platform-status; echo "status exit=$?"
 ```
 
-要看到：knowlab 父仓 `117bea97…`、后端 `c979112c…`、网页 `0da34a36…`、管理端 `371abcee…`；knowbench 父仓 `2959564b…`、后端 `b2b9dc9f…`、网页 `537743d9…`、管理端 `45fcf79a…`（不是就停，请所有者同步 qwen）；`status exit=0`。
+要看到：knowlab 父仓 `117bea97…`、后端 `c979112c…`、网页 `0da34a36…`、管理端 `371abcee…`；knowbench 父仓 `1d82d265…`、后端 `ba92ce6f…`、网页 `e90ad989…`、管理端 `45fcf79a…`（不是就停，请所有者同步 qwen）；`status exit=0`。
 
 ## 二、改钉（只动这两个应用的父仓、后端、网页，共十行）
 
@@ -45,9 +46,9 @@ want = {
   'knowlab': {'parent_revision': '117bea97fffb975995604edb023f482288eb083b',
               'backend_parent_revision': 'c979112c67f8cfd9a3cfbeaed7d36740ee27fed4', 'backend_revision': 'c979112c67f8cfd9a3cfbeaed7d36740ee27fed4',
               'web_parent_revision': '0da34a36a950df4e423432e6d05173d294c26882', 'web_revision': '0da34a36a950df4e423432e6d05173d294c26882'},
-  'knowbench': {'parent_revision': '2959564bca85919db5b17f616cd03685c976ed6c',
-                'backend_parent_revision': 'b2b9dc9fdd124bd1fb9e07808218c0feb890a4ba', 'backend_revision': 'b2b9dc9fdd124bd1fb9e07808218c0feb890a4ba',
-                'web_parent_revision': '537743d9aaa34dee14b3fa8ad01ead86e4a13d52', 'web_revision': '537743d9aaa34dee14b3fa8ad01ead86e4a13d52'},
+  'knowbench': {'parent_revision': '1d82d265362d1cf0ccb54ee6049d310346c41cf0',
+                'backend_parent_revision': 'ba92ce6f6821d68287f32acd621a8c702aa8b29b', 'backend_revision': 'ba92ce6f6821d68287f32acd621a8c702aa8b29b',
+                'web_parent_revision': 'e90ad989d3539f9254ba935242bbe1953f559904', 'web_revision': 'e90ad989d3539f9254ba935242bbe1953f559904'},
 }
 for app, keys in want.items():
     m = re.search(rf'(?ms)^  {app}:\n(?:(?!^  \S).*\n?)*', s); assert m, app
@@ -77,7 +78,7 @@ git status --short gitops | awk '{print $2}' | sed -E 's#^gitops/(components/[^/
 for a in knowlab knowbench; do make -C infrastructure application-deployment-plan APP=$a 2>&1 | grep -E "schema|revision|ok=|failed=" | tail -4; echo "plan $a exit=${PIPESTATUS[0]}"; done
 ```
 
-要看到：两个构建、两个暂存都是 0；变了的镜像锁 4 个（两个应用的后端、网页），`source_revision` 等于上面的钉；`key-check-done` 前没有文件名；计划核到 knowlab `20261016_0006`、knowbench `20261017_0020`（迁移头不变）。迁移 Job 名里带后端镜像摘要，换镜像就换名，不撞不可变 Job。
+要看到：两个构建、两个暂存都是 0；变了的镜像锁 4 个（两个应用的后端、网页），`source_revision` 等于上面的钉；`key-check-done` 前没有文件名；knowbench 暂存的改动里有 `test-computer/workload.yaml`，`git diff` 只多一条 `sunmoonai.com/scripts` 注解（别的行有变就停）；计划核到 knowlab `20261016_0006`、knowbench `20261017_0020`（迁移头不变）。迁移 Job 名里带后端镜像摘要，换镜像就换名，不撞不可变 Job。
 
 ## 四、提交、发布、晋级、检查
 
@@ -104,6 +105,9 @@ git push origin qwen
 | knowlab web端 新建分身 | 看验收用例那一栏 | 写着期望值只能由你自己填 |
 | knowbench 工作台 | 拖左侧导航与右栏的分割线；双击复原；点左侧导航的折叠钮再展开；刷新页面 | 宽度跟着变、刷新后还在；折叠状态记住 |
 | knowbench 工作台 | 在结果栏或底稿里打开一份 `.md` 成稿，点「下载 Word」「下载 Excel」「导出 PDF」 | Word 有标题与表格；Excel 每张表一张工作表、数是数字；PDF 打印框里只有成稿 |
+| knowbench 工作台（受理关口） | 请「财务分析与预测」，问一个无关的问题，例如「今天北京天气怎么样」 | 不报错；停下来说这个问题看起来不归这位专家、为什么、建议去哪问，两个按钮「照做」「不做了」；点「不做了」，委托显示「已取消」，说明是「专家看这个问题不归它，你选择了不做」 |
+| knowbench 工作台（受理关口） | 再请一次，问它本来做的事，例如「近两年按月收入怎么走，预测下两个季度」 | 照常往下做，不停下来问归不归 |
+| 测试电脑 | `kubectl -n <应用命名空间> get pod -l app.kubernetes.io/name=knowbench-test-computer`；看主容器日志 | `1/1 Running`；日志里没有新的连接码（配对还在） |
 | 计算工具（用 R5.4 的测试账号与 `r54-walk`） | knowlab 管理端照 R5.4 第 5 步建第 2 版草稿，这次贴 `docs/rename-tools/r54-walk/manifest-compute.json`（替换 `data_bindings` 占位），发起测试 | 测试通过；在 knowbench 测试账号那边打开这次委托，交回物里有 `raw` 的格子地址与 `growth` 的编号，同比约 0.1111 |
 
 ## 回执
