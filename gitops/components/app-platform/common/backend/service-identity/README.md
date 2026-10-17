@@ -12,6 +12,8 @@ service-identity.yaml保存到调用方private_dir，root0600；backup_dir逐字
 
 现有同名身份或配置漂移拒绝自动接管，文件编辑不是轮换。输入丢失时先恢复原备份；不能新生成secret覆盖既有Casdoor身份。
 
+初始化Job只跑一次（`backoffLimit: 0`、180秒期限）；脚本内连Casdoor遇连接失败或502/503/504按退避重试，最多120秒（晋级时几个应用同时起，Casdoor一时连不上，0028 R5.2；账123）。脚本改动跟着下一次后端镜像（Job名带镜像摘要）生效，已完成的Job不重跑。
+
 ## TLS和授权
 
 服务地址由[Traefik service-access](../../../../ingress-platform/traefik/service-access/README.md)派生，走集群内HTTPS、保留CA/SNI/域名验证，精确出站只到Traefik8443，不走宿主代理或硬编码节点IP。
