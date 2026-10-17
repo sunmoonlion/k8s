@@ -5,28 +5,28 @@ knowbench_agent_releases:
   # 上传读回校验成功后才开启下载，避免网页提前出现不可用链接。
   # 0028 R5：改名后 knowbench 名下还没有上传回执（旧的是 investment-agent-release-published.json），先关；
   # R5.3 上传 0.5.0、读回校验后再开（R5.1 第一次执行停在这里，R5.1-qwen.20261017-1629.md）
-  download_available: false
+  download_available: true
   mode: object-storage
   external_url: ''
   bucket: agent-releases
   reader: knowbench_release_reader
   writer: knowbench_release_writer
   job_revision: v1
-  version: 0.4.1
+  version: 0.5.0
   codex_version: 0.155.1
-  source_revision: 76832a8da4e65a8692fac453c35b5ef2081d0090
-  object_key: windows-x64/0.4.1/sunmoon-agent-0.4.1-76832a8-windows-x64.zip
-  zip_sha256: a2b52c052180988b43f8f6a999a5190d7f99a1cb4a26eddcdfd70fdf38424695
-  manifest_sha256: 7f72f68103d7c0d84237d8a3573ac0f2fd1cb6e796f75db321ea94cc8563a205
-  size_bytes: 175339288
+  source_revision: 1d8e838cd46a262494387604f3d7f00cf3771b8e
+  object_key: windows-x64/0.5.0/sunmoon-link-0.5.0-1d8e838-windows-x64.zip
+  zip_sha256: 2f3f3a4a4aec22a1f0db53a256c5a50b614b38367b9ed46280ed64fe100b8c5f
+  manifest_sha256: 39e42dd345b5891c3d812c44886d130b4d8a329d690e6214387091307b3e3428
+  size_bytes: 174294356
   # 分身测试的测试电脑用的 Linux 包（SDD 0027 §3.4）：sunmoon-link 仓 build-linux.mjs 从下面的提交打出，
   # 同一提交打出同一个摘要（本地机打包后先 agent-release-linux-verify 核对再上传）。只有测试电脑读它，不给用户下载
   linux:
-    version: 0.4.1
+    version: 0.5.0
     codex_version: 0.155.1
-    source_revision: 8845f56042db006b2c21255a74a6f961acfb3605
+    source_revision: 1d8e838cd46a262494387604f3d7f00cf3771b8e
     site: edge-public
-    object_key: linux-x64/0.4.1/sunmoon-agent-0.4.1-8845f56-linux-x64.tar.gz
-    tarball_sha256: 7bba9e6bd2d7d2f3ea56c0b0f3a1336df660733fbe5051d39ff2d9d230e8ac84
-    manifest_sha256: 796eadca6a0c5ac5215a890365359b97556a80188fbbca0b25bf4214ea10288b
-    size_bytes: 139173327
+    object_key: linux-x64/0.5.0/sunmoon-link-0.5.0-1d8e838-linux-x64.tar.gz
+    tarball_sha256: cd93d5a1d2ebb3fb1506c7cda3dc177997b7f3349361dc8a011a795e1dec1766
+    manifest_sha256: 4c059af55ff48ef4a2f2b20947659ce11d8691fa53b32018e8ba9c4a52eaca7f
+    size_bytes: 139171755

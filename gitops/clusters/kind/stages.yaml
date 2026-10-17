@@ -443,6 +443,25 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
+metadata: {name: knowbench-test-computer, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-backend/test-computer
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowbench-runtime}
+    - {name: knowbench-agent-releases}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
 metadata: {name: knowbench-web, namespace: flux-system}
 spec:
   interval: 5m
