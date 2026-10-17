@@ -897,7 +897,7 @@ $K -n app-platform-dev get configmap knowbench-runtime -o jsonpath='{.data.KNOWB
 git push origin qwen
 ```
 
-要看到：diff 只有注释一行换成注释加 `KNOWBOT_TEST_SUBJECT` 一行；各步都是 0；最后一行打出的是那个 ID。
+要看到：diff 只有注释一行换成注释加 `KNOWBOT_TEST_SUBJECT` 一行；各步都是 0；最后一行打出的是那个 ID。暂存出的改动里还会有 `test-computer/workload.yaml` 多一条 `sunmoonai.com/scripts` 注解（Opus `e2499661`：改了脚本就换 Pod，R5.3 那次的超时就是它），别的行有变就停；晋级后测试电脑重启一次，配对凭据在卷上——再看主容器日志，**不该再出连接码**，「我的电脑」里 `knowbot-test` 仍在线（出了连接码就停，写进回执）。
 
 **5. 走查：一个用假数据的分身从提交到在工作台里跑**（所有者以普通用户——自己的 sunmoonai 账号——操作，Qwen 核截图；截图不截 `code=`、`state=`）。材料在 `docs/rename-tools/r54-walk/`：`data.csv`（三行的小表）、`request.json`（要填的种子）、`manifest.json`（方法包；Opus 已用这次部署的代码核过——knowbench `cc95605` 收得下、knowlab `8731c9d` 受理与建草稿前的核对通过、knowmart `bfeb2ae` 外层校验通过；只用 `list_my_data`、`read_my_data`，计算工具随下一次小发布）。
 

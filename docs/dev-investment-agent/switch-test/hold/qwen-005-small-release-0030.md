@@ -20,7 +20,6 @@
 | knowbench 网页 | `e90ad98`（含 `4acd320`、`37ada6a`、`537743d`） | 成稿导出 Word、Excel、PDF（0031）；左右分栏可拖、左侧导航可折叠、输入框长高上限放宽（待办 124）；审查面的问题保留换行（待办 130） |
 | knowlab 父仓 | `117bea9` | 契约 schema 四份新增、子仓指针 |
 | knowbench 父仓 | `1d82d26` | 契约锁、子仓指针 |
-| k8s | 测试电脑模板 | Pod 带上脚本摘要，改了 `run.sh` 就换 Pod（R5.3 那次改了脚本，旧 Pod 崩到第 11 次才用上新的）；这次暂存会让测试电脑重启一次，配对凭据在卷上，不用重配 |
 
 Opus 在远程机核过：knowlab 后端全量 396 过；knowbench 后端全量（真库）1123 过（含受理关口 8 条）；knowbench 网页 `pnpm check` 全过（295 条测试，受理关口只改了一个样式类）；knowlab 网页类型、lint、92 条测试过。
 
@@ -78,7 +77,7 @@ git status --short gitops | awk '{print $2}' | sed -E 's#^gitops/(components/[^/
 for a in knowlab knowbench; do make -C infrastructure application-deployment-plan APP=$a 2>&1 | grep -E "schema|revision|ok=|failed=" | tail -4; echo "plan $a exit=${PIPESTATUS[0]}"; done
 ```
 
-要看到：两个构建、两个暂存都是 0；变了的镜像锁 4 个（两个应用的后端、网页），`source_revision` 等于上面的钉；`key-check-done` 前没有文件名；knowbench 暂存的改动里有 `test-computer/workload.yaml`，`git diff` 只多一条 `sunmoonai.com/scripts` 注解（别的行有变就停）；计划核到 knowlab `20261016_0006`、knowbench `20261017_0020`（迁移头不变）。迁移 Job 名里带后端镜像摘要，换镜像就换名，不撞不可变 Job。
+要看到：两个构建、两个暂存都是 0；变了的镜像锁 4 个（两个应用的后端、网页），`source_revision` 等于上面的钉；`key-check-done` 前没有文件名；`test-computer/workload.yaml` 不该再变（脚本摘要注解 R5.4 已经带上；变了就停）；计划核到 knowlab `20261016_0006`、knowbench `20261017_0020`（迁移头不变）。迁移 Job 名里带后端镜像摘要，换镜像就换名，不撞不可变 Job。
 
 ## 四、提交、发布、晋级、检查
 
@@ -107,7 +106,6 @@ git push origin qwen
 | knowbench 工作台 | 在结果栏或底稿里打开一份 `.md` 成稿，点「下载 Word」「下载 Excel」「导出 PDF」 | Word 有标题与表格；Excel 每张表一张工作表、数是数字；PDF 打印框里只有成稿 |
 | knowbench 工作台（受理关口） | 请「财务分析与预测」，问一个无关的问题，例如「今天北京天气怎么样」 | 不报错；停下来说这个问题看起来不归这位专家、为什么、建议去哪问，两个按钮「照做」「不做了」；点「不做了」，委托显示「已取消」，说明是「专家看这个问题不归它，你选择了不做」 |
 | knowbench 工作台（受理关口） | 再请一次，问它本来做的事，例如「近两年按月收入怎么走，预测下两个季度」 | 照常往下做，不停下来问归不归 |
-| 测试电脑 | `kubectl -n <应用命名空间> get pod -l app.kubernetes.io/name=knowbench-test-computer`；看主容器日志 | `1/1 Running`；日志里没有新的连接码（配对还在） |
 | 计算工具（用 R5.4 的测试账号与 `r54-walk`） | knowlab 管理端照 R5.4 第 5 步建第 2 版草稿，这次贴 `docs/rename-tools/r54-walk/manifest-compute.json`（替换 `data_bindings` 占位），发起测试 | 测试通过；在 knowbench 测试账号那边打开这次委托，交回物里有 `raw` 的格子地址与 `growth` 的编号，同比约 0.1111 |
 
 ## 回执
