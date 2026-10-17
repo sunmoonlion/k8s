@@ -413,7 +413,7 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 **这一段不提交 k8s 的工作区改动**（stage 产物留在工作区，Opus 审过渲染比对后在 R5.2 提交）。只提交回执与比对报告：`git add docs/rename-receipts && git commit -m "rename: R5.1 回执（Qwen）" && git push origin qwen`。
 
 **停点**：Qwen 写 `R5.1-qwen`（R5.0 的核对、构建与暂存的各 `exit`、改动分布、计划、比对第 1–2 节），Opus 审。
-**状态**：**可执行** · 2026-10-17 · Opus（改钉、迁移头、测试电脑开关已提交；R5.0 的核对脚本在远程机试跑过，24 个钉都在 HEAD 里）。
+**状态**：**通过** · 2026-10-17 · Opus（回执 `R5.1-qwen.20261017-1705.md`，三次执行、两处停点已处理；渲染比对逐条审过，见本节末「Opus 审渲染比对」）。
 
 > 2026-10-17 第一次执行（`R5.1-qwen.20261017-1629.md`）：R5.0 全过、六个构建全过；暂存 tpl、knowfeed、knowbase 都 0，**停在 knowbench**：安装包发布配置 `download_available: true`，暂存要求平台私有目录里有按应用名存的上传读回回执 `knowbench-agent-release-published.json`，而改名前的那份叫 `investment-…`，knowbench 名下还没有（R5.3 才上传 0.5.0）。Opus 漏看了这道检查。改法：`agent-releases/config.yaml` 先改 `download_available: false`（已提交），R5.3 上传、读回校验后再开并重新暂存 knowbench；**不复制旧回执改名**（那等于伪造校验）。R5.3 之前「接入电脑」页暂时不给下载，不影响别的。
 >
@@ -442,9 +442,102 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 >
 > 要看到：两个都是 `exit=0`。然后照跑第 2 步块里 `done` 之后的核对，再做第 3、4 步，回执照第一次的格式写全（含第 3 步六个迁移头、第 4 步比对第 1–2 节），比对报告随回执提交。这次 Opus 推上去的除了本处，还有几份分身设计文档（0029、0030、knowbot-todolist、术语），都不在 `gitops/` 下，不碰工作区的 stage 产物。
 
-### R5.2 提交、发布、晋级、入口、hosts、边缘
+> **Opus 审渲染比对**（`R5.1-render-diff.20261017-1705.txt`，2026-10-17）：
+> - 第 1 节不可变 Job 0 条；第 6 节加密文件两边各 144 个，新多 13 个都是 0027 P1–P5 的服务身份、knowlab 存储与三张内部入口证书。
+> - 第 3、4 节：六个应用的 identity 从 v3 换成 v4（新 Job 名，不撞旧的；旧的 v3 留着，`prune: false`）。v4 是待办 98（`2e564bb0`，10-16）：注册脚本在 Casdoor 的 built-in 里保证 `admin`、`operator` 两个角色并把 built-in/admin 放进 `admin`，浏览器身份加 `ADMIN_AUTH_ROLE_ALLOWLIST=admin,operator`。**六个后端都认这个开关**，所以晋级后六个管理端的业务页只给这两个角色看——R5.2 第 5 步要核 admin 仍进得去。其余新对象都是 P1–P5 的关系（knowmart summon、knowlab read、testrun、deliver）、knowlab 存储与三条内部入口。
+> - 第 5 节：casdoor 的 Deployment 多了 `ndots: 2` 与输入摘要注解——`92a7c0d2`、`c10c216c`（10-09）早在基准之前就进了 Git，只是 casdoor 一直没重新暂存，这次带上；**晋级时 casdoor 会滚动重启一次**，登录会断几十秒。knowlab 的内存 768Mi→1536Mi、临时盘 64Mi→256Mi 是 P5 抽文字要的。各运行时配置多出的项与 0027 P1–P5 一一对得上；knowbench 没有 `KNOWBOT_TEST_SUBJECT`（R5.4 才填），测试电脑关着。
+> - 结论：通过。
 
-待写（R5.1 通过后填）。
+### R5.2 提交、发布、晋级、入口、hosts、检查、边缘
+
+> 第 1–5 步 Qwen（本地机）；第 4 步的 UAC 与第 5 步的登录由所有者亲手做；第 6 步边缘由 **Opus 在远程机**做，要所有者另行批准（远程机的 traefik、frps 只在批准后动）。一步不是 0 就停。
+
+**1. 提交、发布、晋级**：
+
+```bash
+cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+git status --short | grep -v ' gitops/' ; echo "-----"   # 横线前应当什么都没有（只有 gitops/ 下的 stage 产物）
+git add gitops && git -c core.editor=true commit -m "deploy: 0028 改名（investment → knowbench）+ 0027 P1b–P5 上线（rename R5.2）"
+make -C infrastructure flux-release; echo "release exit=$?"
+sudo cat infrastructure/.build/flux/source-candidate.yaml | sudo tee infrastructure/environments/kind/flux-source.yaml >/dev/null
+sudo chown "$(id -u):$(id -g)" infrastructure/environments/kind/flux-source.yaml 2>/dev/null; git diff --stat infrastructure/environments/kind/flux-source.yaml
+git add infrastructure/environments/kind/flux-source.yaml && git -c core.editor=true commit -m "release(kind): 晋级到 $(git rev-parse --short HEAD)（rename R5.2）"
+make -C infrastructure flux-source-apply; echo "apply exit=$?"
+export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl)
+$K -n flux-system get kustomizations -o name | grep -v '/investment-' | xargs $K -n flux-system wait --for=condition=Ready --timeout=40m; echo "wait exit=$?"
+$K -n flux-system get kustomizations | grep -v True
+$K -n app-platform-dev get jobs | grep -E 'identity-.*-v4|identity-.*-v1|migrate' | grep -E 'know|tpl'
+$K -n data-platform-dev get jobs | grep knowlab-storage
+for j in $($K -n app-platform-dev get jobs -o name | grep -E 'identity-[0-9a-f]+-v4$'); do echo "$j $($K -n app-platform-dev logs $j | tail -n 1 | jq -c '{admin_roles_created, admin_role_members_added}')"; done
+$K -n app-platform-dev get deploy casdoor knowbench-api knowbench-worker knowlab-api knowmart-api
+git push origin qwen
+```
+
+要看到：`release`、`apply`、`wait` 都是 0；`get kustomizations | grep -v True` 只剩表头和 `investment-*` 那几行（旧阶段的路径不在了，失败属预期，R6 删）；新的 identity v4、各服务身份 v1、迁移、`knowlab-storage` 的 Job 都是 `Complete`；六行 identity 输出里 `admin_roles_created` 合起来恰好建过一次 `admin` 和 `operator`（谁先跑谁建，其余是空列表），`admin_role_members_added` 至多一行有 `admin`；那几个 Deployment 都 `READY` 满。**只贴 jq 取出的两个字段，不贴整段日志。**
+
+**2. 入口**（HAProxy 的 investment 两条分流换成 knowbench 两条，其余不变；会停几秒）：
+
+```bash
+make -C infrastructure entry-plan 2>&1 | grep -E "knowbench|investment" | head
+make -C infrastructure entry-preview; echo "preview exit=$?"
+make -C infrastructure entry-stop; echo "stop exit=$?"
+make -C infrastructure entry-deploy; echo "deploy exit=$?"
+make -C infrastructure entry-status; echo "status exit=$?"
+```
+
+要看到：`entry-plan` 里有 `knowbench.sunmoonai.com`、`knowbench-admin.sunmoonai.com`，没有 investment；四个都是 0。
+
+**3. 检查**：
+
+```bash
+for a in tpl knowfeed knowbase knowbench knowlab knowmart; do echo "===== check $a"; make -C infrastructure application-check APP=$a; echo "exit=$?"; done
+make -C infrastructure platform-status; echo "status exit=$?"
+```
+
+要看到：六个 `application-check` 与 `platform-status` 都是 0。
+
+**4. Windows hosts 加两个域名**（R5.0 回执里第 25 行的 investment 几个名字不删，R6 一起清；先在副本上演练，真改弹 UAC，所有者点「是」）：
+
+```bash
+cp docs/dev-investment-agent/switch-test/windows_hosts_add.ps1 /mnt/c/Users/zymun/hosts-add.ps1
+N="'knowbench.sunmoonai.com','knowbench-admin.sunmoonai.com'"
+cat /mnt/c/Windows/System32/drivers/etc/hosts > /mnt/c/Users/zymun/hosts-add-rehearsal
+powershell.exe -NoProfile -Command "\$env:HOSTS_FILE='C:\Users\zymun\hosts-add-rehearsal'; \$env:HOSTS_OUT='C:\Users\zymun\hosts-add-rehearsal.txt'; powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\zymun\hosts-add.ps1 knowbench.sunmoonai.com knowbench-admin.sunmoonai.com; 'exit=' + \$LASTEXITCODE"
+iconv -f GBK -t UTF-8 /mnt/c/Users/zymun/hosts-add-rehearsal.txt; diff /mnt/c/Windows/System32/drivers/etc/hosts /mnt/c/Users/zymun/hosts-add-rehearsal
+# 演练 exit=0、diff 只多一行「127.0.0.1 knowbench.sunmoonai.com knowbench-admin.sunmoonai.com」，才做真改：
+powershell.exe -NoProfile -Command "Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','C:\Users\zymun\hosts-add.ps1',$N"
+iconv -f GBK -t UTF-8 "/mnt/c/Users/zymun/AppData/Local/Temp/hosts-add-result.txt"
+rm -f /mnt/c/Users/zymun/hosts-add-rehearsal /mnt/c/Users/zymun/hosts-add-rehearsal.bak-add-* /mnt/c/Users/zymun/hosts-add-rehearsal.txt
+grep -n "knowbench" /mnt/c/Windows/System32/drivers/etc/hosts
+```
+
+**5. 浏览器**（所有者自己登录，Qwen 只核截图；截图不截地址栏里的 `code=`、`state=` 等回跳参数）：
+
+| 地址 | 用谁登录 | 要看到 |
+| --- | --- | --- |
+| `https://knowbench.sunmoonai.com:30443` | sunmoonai 账号 | 进得去工作台（空库，没有项目是正常的）；「接入电脑」页暂时没有下载按钮（R5.3 才开） |
+| `https://knowbench-admin.sunmoonai.com:30443` | admin | 进得去治理控制台，看得到业务页（不是「没有权限」） |
+| `https://knowbase-admin.sunmoonai.com:30443` | admin | 同上——管理端角色这次对老应用也生效，核一个老应用 |
+| `https://knowlab.sunmoonai.com:30443` | sunmoonai 账号 | 进得去，「我的数据」页打得开 |
+| `https://knowmart.sunmoonai.com:30443` | sunmoonai 账号 | 进得去 |
+| 在 knowbench 点退出，再开 knowlab | — | knowlab 也要求重新登录（0027 P1b 单点退出） |
+
+**回执**：`docs/rename-receipts/R5.2-qwen.<时间>.md`（各步 `exit`、`get kustomizations` 剩下的行、Job 状态、jq 两个字段、entry-plan 那几行、hosts 的 diff、截图描述），`git add docs/rename-receipts && git commit -m "rename: R5.2 回执（Qwen）" && git push origin qwen`。第 1 步的两个提交在第 1 步末尾已推。
+
+**6. 边缘**（Opus，远程机；所有者批准后，在 Qwen 的第 1–5 步回执审过之后做）：现网边缘还只认 `investment.sunmoonai.com`（`/api/logout` 已在放行清单里），改的只是域名换成 knowbench、为它签一张 Let's Encrypt 正式证书（DNS 10-17 已指向边缘）。
+
+```bash
+cd ~/worktrees/qwen/k8s && make -C infrastructure tools
+make -C infrastructure edge-plan       # 只看：Host 换成 knowbench.sunmoonai.com，别的不变
+make -C infrastructure edge-deploy; echo "deploy exit=$?"
+make -C infrastructure edge-status; echo "status exit=$?"
+curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://knowbench.sunmoonai.com:30443/
+```
+
+要看到：`deploy`、`status` 都是 0；`curl` 的 `verify=0`（正式证书），状态码 200 或 30x（经 frp 到了集群）。Opus 写 `R5.2-opus.<时间>.md`。之后所有者可用手机流量打开 `https://knowbench.sunmoonai.com:30443` 再看一眼。**不跑 `make edge-smoke`**（会替换现网单元）。
+
+**停点**：Qwen 的 `R5.2-qwen` 与 Opus 的 `R5.2-opus` 都审过，在本节写「通过」。
+**状态**：**可执行（第 1–5 步）** · 2026-10-17 · Opus；第 6 步待所有者批准。
 
 ### R5.3 本地代理 0.5.0、开测试电脑
 
