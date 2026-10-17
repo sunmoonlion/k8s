@@ -1,4 +1,4 @@
-# 改名执行手册：investment → knowbench、runtime → knowlink
+# 改名执行手册：investment → knowbench、runtime → sunmoon-link
 
 > 为什么改、改哪些、深度为什么选乙，见 [0028](dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)。本文只管**谁、按什么顺序、执行哪条命令、在哪停下等审**。做法照上一次改名（0025，手册在 Git 历史 `3951246c:docs/rename.md`），那次踩过的坑都写进了下面的规矩。
 >
@@ -51,12 +51,13 @@ cd ~/worktrees/qwen/k8s && git pull --rebase origin qwen && sed -n '/^## R<段�
 | --- | --- | --- |
 | 父仓（GitHub、gitee `sunmoonlion/`） | `investment-app` | `knowbench-app` |
 | 子仓（GitHub；gitee 有没有，R0 由 Qwen 核） | `investment-backend`、`investment-web-frontend`、`investment-admin-frontend` | `knowbench-backend`、`knowbench-web-frontend`、`knowbench-admin-frontend` |
-| 客户端仓（GitHub；gitee 有没有，R0 核） | `runtime` | `knowlink` |
+| 客户端仓（GitHub；gitee 有没有，R0 核） | `runtime` | `sunmoon-link` |
+| 本地代理的命令、安装包、Windows 计划任务（R5 发新包时改，2026-10-16 决定） | `sunmoon-agent`、`SunMoonAgent-*` | `sunmoon-link`、`SunMoonLink-*`（安装时清掉旧任务） |
 | 应用名（部署） | `investment` | `knowbench` |
 | 域名 | `investment.`、`investment-admin.sunmoonai.com`（公网边缘只有前者） | `knowbench.`、`knowbench-admin.sunmoonai.com` |
 | 存储（新建，不搬；所有者 2026-10-17 定从空的开始） | 库 `investment`、角色 `investment_runtime` / `investment_migrator`、Redis、vhost、桶 `investment-agent-releases`、私有目录 `…/sunmoon-kind/investment` | 同名换成 `knowbench…` |
 
-**不改**（0028 第一节、第六节）：「runtime」作普通词（清单 `runtime` 字段的字段名、`*_runtime` 角色后缀、gitops 的 `runtime/` 目录、`knowbot-runtime` 契约名）；relay；代理的包名 `@sunmoon/agent`、命令 `sunmoon-agent`、页面上的「本地代理」；文档目录 `dev-investment-agent/`；分身内容里的投资用语；历史回执、冻结原件、Git 历史。清单 `runtime` 字段的**值** `investment` 要改成 `knowbench`。
+**不改**（0028 第一节、第六节）：「runtime」作普通词（清单 `runtime` 字段的字段名、`*_runtime` 角色后缀、gitops 的 `runtime/` 目录、`knowbot-runtime` 契约名）；relay；代理的 npm 包名 `@sunmoon/agent`、协议字段（握手 `role=agent`）、代码内部命名、页面上的「本地代理」；文档目录 `dev-investment-agent/`；分身内容里的投资用语；历史回执、冻结原件、Git 历史。清单 `runtime` 字段的**值** `investment` 要改成 `knowbench`。
 
 ---
 

@@ -3,7 +3,7 @@
 #
 # 用法（必须用 bash 跑；zsh 不拆分 $VAR，循环会把五个工位当成一个词）：
 #   bash r3_checkout.sh investment-app knowbench-app
-#   bash r3_checkout.sh runtime knowlink
+#   bash r3_checkout.sh runtime sunmoon-link
 #
 # 做的事：旧主目录与五个工位的旧检出整目录挪进 ~/rename-backup/（不删）→ 按新名重新 clone 主目录 →
 # remote 照旧布局只换仓名（父仓：origin 推送地址逐条照抄、gitee remote；子仓：GitHub、gitee 两个推送地址）→

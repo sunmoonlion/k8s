@@ -1,6 +1,6 @@
 # 工作台应用改名：investment → knowbench（0028）
 
-> 状态：**已定，实施中**（2026-10-17 所有者：「那就先改名吧」）。所有者 2026-10-17 提出改名（「investment其实不合适了，它实际上是测试平台和用户的bot的使用平台，不一定就是investment」），先考虑 incubator（「我选了incubator，你看如何」），最终定名（「就用knowbench」）。深度、数据去留、文档目录三条所有者同日定「按你的建议」：**乙、从空的开始、`dev-investment-agent/` 这次不改**。同时定客户端仓 `runtime` 一并改名为 **knowlink**（「'/home/zym/worktrees/qwen/runtime'顺便也改名吧，改为knowlink」），见第六节。时机改为 P5 做完再改名（所有者问「现在p5做了一半，是不是把p5做完再改名更好？」，Opus 同意，见第五节「时机」）。Opus 起草。做法照 0025：远程写代码、配置与逐条步骤，本地集群上的部分由 Qwen 跑。
+> 状态：**已定，实施中**（2026-10-17 所有者：「那就先改名吧」）。所有者 2026-10-17 提出改名（「investment其实不合适了，它实际上是测试平台和用户的bot的使用平台，不一定就是investment」），先考虑 incubator（「我选了incubator，你看如何」），最终定名（「就用knowbench」）。深度、数据去留、文档目录三条所有者同日定「按你的建议」：**乙、从空的开始、`dev-investment-agent/` 这次不改**。客户端仓 `runtime` 一并改名：所有者先提 knowlink，与 2026-10-16 的决定冲突，改定为 **sunmoon-link**（所有者选 B），见第六节。时机改为 P5 做完再改名（所有者问「现在p5做了一半，是不是把p5做完再改名更好？」，Opus 同意，见第五节「时机」）。Opus 起草。做法照 0025：远程写代码、配置与逐条步骤，本地集群上的部分由 Qwen 跑。
 
 ## 一、为什么改、改成什么
 
@@ -65,12 +65,12 @@
 
 **分工照 0025（所有者 2026-10-14 定「改名确实只有你和qwen两个人干，我都不干」）**：Opus 在远程机 qwen 工位改全部内容、写全部命令、审每段回执；Qwen 在本地机做本地的一切（GitHub / gitee 改仓名、本地检出、同步配置、集群切换、浏览器核对）；所有者只在两边之间传话，外加只有所有者能做的几件：DNS 记录、批准边缘部署、登录与粘贴 key。执行手册写在 `k8s/docs/rename.md`（照 0025 那份的规矩：只执行写下的命令、一段一停、秘密不进回执、窗口内不跑同步脚本）。
 
-**要改名的远端仓（9 个）**：GitHub `investment-app`、`investment-backend`、`investment-web-frontend`、`investment-admin-frontend` → `knowbench-*`；`runtime` → `knowlink`；gitee 上 investment 父仓与 3 个子仓同样改（名称与路径两个字段都改）。
+**要改名的远端仓（9 个）**：GitHub `investment-app`、`investment-backend`、`investment-web-frontend`、`investment-admin-frontend` → `knowbench-*`；`runtime` → `sunmoon-link`；gitee 上 investment 父仓与 3 个子仓同样改（名称与路径两个字段都改）。
 
 | 段 | 谁 | 做什么 | 停点 |
 | --- | --- | --- | --- |
 | R0 | 所有者传话；Opus、Qwen 核 | 冻结：其他工位不碰 investment、runtime 与 k8s 的 gitops；两台机器各工位这两组仓干净且已推；Qwen 核 GitHub、gitee 的管理权限 | Opus 写「开工」 |
-| R1 | Opus | 改全部内容：knowbench 三个子仓与父仓（目录、构建、说明、应用键、环境变量、页面上的名字、契约锁）、其他应用的跨应用键与清单 `runtime` 值、knowlink 的站点文件与说明、k8s 的 gitops 与存储名与 Casdoor 声明与域名与服务身份、边缘 `edge_domains`；渲染比对；写好 R5、R6 的逐条命令 | 自测与渲染比对通过 |
+| R1 | Opus | 改全部内容：knowbench 三个子仓与父仓（目录、构建、说明、应用键、环境变量、页面上的名字、契约锁）、其他应用的跨应用键与清单 `runtime` 值、sunmoon-link 的站点文件与说明、k8s 的 gitops 与存储名与 Casdoor 声明与域名与服务身份、边缘 `edge_domains`；渲染比对；写好 R5、R6 的逐条命令 | 自测与渲染比对通过 |
 | R2 | Qwen | GitHub、gitee 上改 9 个仓的名字，核对新地址的分支 | Opus 审回执 |
 | R3 | Opus（远程机）、Qwen（本地机） | 两台机器各工位的检出换名、改 remote | 审回执 |
 | R4 | 同上 | 同步配置 `config.sh` 换仓名；Qwen 跑一次同步验证 | 审回执 |
@@ -82,14 +82,12 @@
 
 **回退**：R5 之前现网什么都没碰。R5 失败：新名字停到 0 副本；旧 investment 还在原样运行，旧域名没下线，旧代理照常能用。R6 做完才不可逆，所以 R6 只在 R5 走查通过以后做。
 
-## 六、客户端仓 runtime → knowlink（所有者 2026-10-17 定）
+## 六、客户端仓 runtime → sunmoon-link（所有者 2026-10-17 定）
 
-所有者原话：「'/home/zym/worktrees/qwen/runtime'顺便也改名吧，改为knowlink」。主语是所有者，对象是这个仓。
+**经过**：所有者先提「'/home/zym/worktrees/qwen/runtime'顺便也改名吧，改为knowlink」，Opus 没查旧决定就赞成了，还说它属于 know 产品线、命令名不改。随后查到 2026-10-16 所有者已定本地代理英文名 sunmoon-link（「本地代理不能用knowlink，它和其它know不是一系列的」「就用sunmoon-link」），Opus 更正并给 A（仓名不改）、B（仓名改 sunmoon-link）、C（knowlink）三案，所有者选 **B**。
 
-**改的**：GitHub 仓 `sunmoonlion/runtime` 改为 `sunmoonlion/knowlink`；`config.sh` 的仓名表；五个工位（cursor、fable、kimi、luna、qwen）的检出目录与 remote；本仓的 AGENTS.md 与 README；k8s 现行文档里把它当仓名写的地方（`components.md`、`engineering.md`、`0005-agent.md`、`0027`、`requirement.md`、`拓扑.md`、`agent-releases/README.md` 等约 15 份）。
+**改的**：
+- GitHub 仓 `sunmoonlion/runtime` 改为 `sunmoonlion/sunmoon-link`（gitee 若有同名仓一并改）；`config.sh` 的仓名表；五个工位（cursor、fable、kimi、luna、qwen）的检出目录与 remote；本仓的 AGENTS.md 与 README；k8s 现行文档里把它当仓名写的地方（`components.md`、`engineering.md`、`0005-agent.md`、`0027`、`requirement.md`、`拓扑.md`、`agent-releases/README.md`、switch-test 说明等）。
+- **命令、安装包名、Windows 计划任务**按 2026-10-16 的决定在「下次发 Windows 代理新版本」时改为 sunmoon-link：这次 R5 因为域名换了本来就要重打 Windows 包，就是那一次。安装时清掉旧的 `SunMoonAgent-*` 任务；工作台「接入电脑」页的安装命令同步改；走发布卡真机验。
 
-**不改的**：「runtime」作普通词的地方不动，比如分身清单的 `runtime` 字段、库角色 `*_runtime`、gitops 里的 `runtime/` 秘密目录、`knowbot-runtime` 接口。这些都不是仓名。历史回执与卡片不改。
-
-**为什么改**：仓名 runtime 和「运行方 runtime」（工作台、清单的 `runtime` 字段、`knowbot-runtime` 契约）同词异指，容易混；它出的是用户安装的产品，属于一条产品线。改仓名不涉及数据、域名和重新出包。
-
-**包名、命令名、显示名这次不改**（所有者 2026-10-17「都按你的建议」）：`@sunmoon/agent`、`sunmoon-agent`、页面上的「本地代理」照旧。命令名牵连 Windows 安装器的安装路径、服务名与升级逻辑，要改另起一轮。
+**不改的**：协议字段（握手 `role=agent`）与代码内部命名（2026-10-16 决定）；npm 包名 `@sunmoon/agent` 是内部命名，不改；中文「本地代理」照旧。「runtime」作普通词的地方（清单 `runtime` 字段、`*_runtime` 角色、gitops `runtime/` 秘密目录、`knowbot-runtime` 契约）不是仓名，不动。历史回执与卡片不改。
