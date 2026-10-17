@@ -1,6 +1,6 @@
 # 工作台应用改名：investment → knowbench（0028）
 
-> 状态：**名字已定，深度与数据去留待所有者定**。所有者 2026-10-17 提出改名（「investment其实不合适了，它实际上是测试平台和用户的bot的使用平台，不一定就是investment」），先考虑 incubator（「我选了incubator，你看如何」），最终定名（「就用knowbench」）。Opus 起草。做法照 0025：远程写代码、配置与逐条步骤，本地集群上的部分由 Qwen 跑。
+> 状态：**已定，待实施**。所有者 2026-10-17 提出改名（「investment其实不合适了，它实际上是测试平台和用户的bot的使用平台，不一定就是investment」），先考虑 incubator（「我选了incubator，你看如何」），最终定名（「就用knowbench」）。深度、数据去留、文档目录三条所有者同日定「按你的建议」：**乙、从空的开始、`dev-investment-agent/` 这次不改**。同时定客户端仓 `runtime` 一并改名为 **knowlink**（「'/home/zym/worktrees/qwen/runtime'顺便也改名吧，改为knowlink」），见第六节。时机改为 P5 做完再改名（所有者问「现在p5做了一半，是不是把p5做完再改名更好？」，Opus 同意，见第五节「时机」）。Opus 起草。做法照 0025：远程写代码、配置与逐条步骤，本地集群上的部分由 Qwen 跑。
 
 ## 一、为什么改、改成什么
 
@@ -37,7 +37,7 @@
 | **已存的数据** | 数据库 `investment` 与角色 `investment_runtime` / `investment_migrator`；Redis 用户与键前缀；RabbitMQ vhost；对象存储桶 `investment-agent-releases`（已发布的安装包）；私有目录 `/etc/sunmoon/applications/sunmoon-kind/investment`；SOPS 密文 15 份。**表名是 `workbench_*` / `agent_*`，不带应用名，不用改** | 见第四节 |
 | 文档 | k8s `docs/` 120 / 1136，`scripts/` 112 / 1388（多为历史卡与回执，不改）；总览、PRD、SDD、各仓 AGENTS、`repos/investment-app.md` 要改 | 现行文档约 40 份 |
 
-## 三、改多深（待所有者定）
+## 三、改多深：定为乙（所有者 2026-10-17）
 
 | 方案 | 改什么 | 不改什么 | 代价 |
 | --- | --- | --- | --- |
@@ -47,9 +47,9 @@
 
 **建议乙**，理由有两条。一是 0025 已经立了「改完存储层也不出现旧名」的规矩。二是 investment 的 P1b–P5 本来就攒着没部署，要在 P6 一次发布（0027 §八）：改名的代码在 P6 之前做完，P6 直接用新名字部署，就不用先按旧名发布一次、再切换一次。
 
-**文档目录 `dev-investment-agent/`：建议这次不改。** 它是项目文档的路径，不是应用名，所有仓的入口、Qwen 的记忆和历史卡都指着它。要改就单独做一轮，只动路径和指针，不和应用改名搅在一起。
+**文档目录 `dev-investment-agent/`：这次不改（所有者定）。** 它是项目文档的路径，不是应用名，所有仓的入口、Qwen 的记忆和历史卡都指着它。要改就单独做一轮，只动路径和指针，不和应用改名搅在一起。
 
-## 四、工作台现有数据（待所有者定）
+## 四、工作台现有数据：不要，从空的开始（所有者 2026-10-17）
 
 现网工作台库里的东西有：会话与对话记录、项目、本地记忆与资料库条目、电脑配对（所有者那台 Windows 电脑）、沙箱与凭据、预算账、审批记录。桶里是已发布的 Windows 安装包。
 
@@ -60,17 +60,17 @@
 
 建议不要，理由和 0025 一样：还在开发阶段，库里没有不能丢的东西。
 
-## 五、怎么做（按乙 + 从空的开始写，所有者定了再细化成逐条手册）
+## 五、怎么做（乙 + 从空的开始；动手前细化成逐条手册）
 
 分工同 0025。代码、配置、gitops、核对由远程（Opus）亲手写。gitee 改仓名、同步配置、DNS 记录、批准边缘部署由所有者做。本地集群上的部分由 Qwen 照远程写的步骤跑，远程逐段审回执。不经 Cursor。
 
 | 步 | 谁 | 做什么 | 停点 |
 | --- | --- | --- | --- |
 | 0 | 所有者 | 通知各工位暂停碰 investment；Qwen 空闲 | — |
-| 1 | 所有者 | gitee 把仓改名为 `knowbench-app`；`config.sh` 换仓名；两台机器上各工位的检出目录换名、改 remote | 远程核对各工位的 remote 与目录 |
+| 1 | 所有者 | gitee 把仓改名为 `knowbench-app`、GitHub 把 `runtime` 改名为 `knowlink`；`config.sh` 换两个仓名；两台机器上各工位的检出目录换名、改 remote | 远程核对各工位的 remote 与目录 |
 | 2 | 远程 | knowbench 仓内：目录、构建、说明、代码里的应用键与环境变量、页面上的名字、契约锁文件；单测、构建全过 | 远程自测通过 |
 | 3 | 远程 | 其它应用仓：跨应用键、knowlab 配置的 `runtime` 期望值、契约说明与测试；tpl 的同步清单；各仓自测通过 | 远程自测通过 |
-| 4 | 远程 | runtime：两个站点文件换域名；Windows 与 Linux 包的配置留到第 7 步按新摘要钉 | 测试通过 |
+| 4 | 远程 | knowlink（原 runtime）：两个站点文件换域名、仓内说明换仓名（第六节）；Windows 与 Linux 包的配置留到第 7 步按新摘要钉 | 测试通过 |
 | 5 | 远程 | k8s：gitops 目录、应用名表、存储名、Casdoor 声明、域名、服务身份与作用域、边缘 `edge_domains` 与路径放行；渲染比对（别的应用的渲染对象逐字不变，knowbench 除了名字逐项相同） | 渲染比对通过 |
 | 6 | 所有者 | 加 DNS 记录 `knowbench.sunmoonai.com` → 边缘机；批准 `make edge-deploy`（只多一个域名，旧域名在第 9 步前保留） | 远程用 `--resolve` 核对证书与放行 |
 | 7 | Qwen（本地） | 并进 P6：打新的 Windows 与 Linux 包、核摘要、上传到新桶；按新名字构建、发布、部署（新库、新 Casdoor 应用与服务身份、新私有目录）；其余照 0027 P6 | 远程审回执 |
@@ -78,6 +78,16 @@
 | 9 | Qwen（本地） | 下线旧的：旧 Deployment / Job / Secret、旧 Casdoor 应用与服务身份、旧库与角色、旧 Redis 与 vhost、旧桶、旧私有目录、边缘上的旧域名（要所有者批准）、Harbor 旧镜像仓库 | 远程审回执 |
 | 10 | 远程 | 文档：总览、PRD、SDD、各仓 AGENTS、`repos/investment-app.md` 改为 `repos/knowbench-app.md` | — |
 
-**时机**：0027 P5（运行时读数据）要新加一条 knowlab → 工作台的服务关系。改名放在 P5 之前，新关系直接用 knowbench 的名字，不用建了再改。所以顺序是：本方案第 1–5 步 → P5 → 第 6–9 步并进 P6。
+**时机：P5 做完再改名**（所有者 2026-10-17 提，Opus 同意）。改名的成本在已部署的东西上（库、身份、域名、安装包）；P5 的代码和 P1b–P4 一样攒到 P6 才部署，先按旧名写、改名时一起换，只多几个文件的文本替换。反过来先改名，第 1 步要所有者改仓名、各工位暂停，P5 就得等着。所以顺序是：P5 做完 → 本方案第 0–5 步 → 第 6–9 步并进 P6。
 
 **回退**：第 6 步之前现网什么都没碰。第 7、8 步失败：新名字停到 0 副本；旧 investment 还在原样运行，旧域名没下线，旧代理照常能用。第 9 步做完才不可逆，所以第 9 步只在第 8 步走查通过以后做。
+
+## 六、客户端仓 runtime → knowlink（所有者 2026-10-17 定）
+
+所有者原话：「'/home/zym/worktrees/qwen/runtime'顺便也改名吧，改为knowlink」。主语是所有者，对象是这个仓。
+
+**改的**：GitHub 仓 `sunmoonlion/runtime` 改为 `sunmoonlion/knowlink`；`config.sh` 的仓名表；五个工位（cursor、fable、kimi、luna、qwen）的检出目录与 remote；本仓的 AGENTS.md 与 README；k8s 现行文档里把它当仓名写的地方（`components.md`、`engineering.md`、`0005-agent.md`、`0027`、`requirement.md`、`拓扑.md`、`agent-releases/README.md` 等约 15 份）。
+
+**不改的**：「runtime」作普通词的地方不动，比如分身清单的 `runtime` 字段、库角色 `*_runtime`、gitops 里的 `runtime/` 秘密目录、`knowbot-runtime` 接口。这些都不是仓名。历史回执与卡片不改。
+
+**没说到的，单列待定**：本地代理现在的包名是 `@sunmoon/agent`，命令叫 `sunmoon-agent`，安装程序和页面上叫「本地代理」。这些要不要也改叫 knowlink，所有者没说。这次先只改仓名；要改显示名或命令名，另外定，因为命令名一改，已装好的代理和安装器都得跟着改。
