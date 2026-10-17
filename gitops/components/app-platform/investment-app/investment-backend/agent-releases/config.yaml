@@ -17,3 +17,14 @@ investment_agent_releases:
   zip_sha256: a2b52c052180988b43f8f6a999a5190d7f99a1cb4a26eddcdfd70fdf38424695
   manifest_sha256: 7f72f68103d7c0d84237d8a3573ac0f2fd1cb6e796f75db321ea94cc8563a205
   size_bytes: 175339288
+  # 分身测试的测试电脑用的 Linux 包（SDD 0027 §3.4）：runtime 仓 build-linux.mjs 从下面的提交打出，
+  # 同一提交打出同一个摘要（本地机打包后先 agent-release-linux-verify 核对再上传）。只有测试电脑读它，不给用户下载
+  linux:
+    version: 0.4.1
+    codex_version: 0.155.1
+    source_revision: 8845f56042db006b2c21255a74a6f961acfb3605
+    site: edge-public
+    object_key: linux-x64/0.4.1/sunmoon-agent-0.4.1-8845f56-linux-x64.tar.gz
+    tarball_sha256: 7bba9e6bd2d7d2f3ea56c0b0f3a1336df660733fbe5051d39ff2d9d230e8ac84
+    manifest_sha256: 796eadca6a0c5ac5215a890365359b97556a80188fbbca0b25bf4214ea10288b
+    size_bytes: 139173327

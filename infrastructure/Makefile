@@ -112,7 +112,7 @@ CONFIG_ARGS = $(foreach file,$(CONFIG_FILES),--extra-vars '@$(file)') --extra-va
 
 .PHONY: help tools images preflight check-images
 help:
-	@printf '%s\n' 'platform-plan/config/status OBJECT=<平台/应用/组件> 查看依赖、配置和运行状态' 'platform-stage OBJECT=... 生成选中对象的声明候选；不发布' 'platform-build OBJECT=<业务应用或前后端组件> 在线构建并发布固定摘要' 'platform-deploy/check OBJECT=all|... 原生整套或选中对象部署/真实检查' 'platform-start/stop 统一启停已安装的本机平台' 'platform-account-plan/view OBJECT=... 查看维护账号能力与私有位置' 'platform-account-import 导入已批准的管理员表预设；不改已有账号' 'platform-account-check/stage/rotate/recover 按组件维护已支持的账号；参见host/accounts.md' 'platform-install-lifecycle/enable-boot 宿主安装与开机管理，需明确维护批准' 'material-inventory 显示组件物料与Harbor关系，MATERIAL_OWNER可过滤' 'agent-release-verify/upload AGENT_ZIP=/绝对路径.zip 校验/条件上传固定Windows安装包' 'config 查看全部配置来源；各模块底层入口见对应README'
+	@printf '%s\n' 'platform-plan/config/status OBJECT=<平台/应用/组件> 查看依赖、配置和运行状态' 'platform-stage OBJECT=... 生成选中对象的声明候选；不发布' 'platform-build OBJECT=<业务应用或前后端组件> 在线构建并发布固定摘要' 'platform-deploy/check OBJECT=all|... 原生整套或选中对象部署/真实检查' 'platform-start/stop 统一启停已安装的本机平台' 'platform-account-plan/view OBJECT=... 查看维护账号能力与私有位置' 'platform-account-import 导入已批准的管理员表预设；不改已有账号' 'platform-account-check/stage/rotate/recover 按组件维护已支持的账号；参见host/accounts.md' 'platform-install-lifecycle/enable-boot 宿主安装与开机管理，需明确维护批准' 'material-inventory 显示组件物料与Harbor关系，MATERIAL_OWNER可过滤' 'agent-release-verify/upload AGENT_ZIP=/绝对路径.zip 校验/条件上传固定Windows安装包' 'agent-release-linux-verify/upload AGENT_LINUX_TGZ=/绝对路径.tar.gz 校验/条件上传分身测试电脑用的Linux包' 'config 查看全部配置来源；各模块底层入口见对应README'
 
 tools:
 	$(UV) venv --python '$(HOST_PYTHON)' --relocatable --allow-existing .venv
@@ -527,6 +527,11 @@ export AGENT_ZIP
 .PHONY: agent-release-upload agent-release-verify
 agent-release-upload agent-release-verify:
 	$(ANSIBLE) -i host/inventory.yaml ../gitops/components/app-platform/investment-app/investment-backend/agent-releases/upload.yaml $(CONFIG_ARGS) --extra-vars 'agent_release_action=$(patsubst agent-release-%,%,$@)'
+
+# 分身测试的测试电脑用的 Linux 包（SDD 0027 §3.4）：AGENT_LINUX_TGZ=/绝对路径.tar.gz
+.PHONY: agent-release-linux-upload agent-release-linux-verify
+agent-release-linux-upload agent-release-linux-verify:
+	$(ANSIBLE) -i host/inventory.yaml ../gitops/components/app-platform/investment-app/investment-backend/agent-releases/upload.yaml $(CONFIG_ARGS) --extra-vars 'agent_release_action=$(patsubst agent-release-linux-%,%,$@) agent_release_platform=linux'
 
 # Human accounts follow the same object classification; import changes presets only.
 .PHONY: platform-account-plan platform-account-import platform-account-view platform-account-check platform-account-stage platform-account-rotate platform-account-recover

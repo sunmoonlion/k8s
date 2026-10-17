@@ -64,6 +64,11 @@ investment_backend_deployment:
   # 0010：工作台（0001-workbench）。沙箱、会合点、供给器在各自的组件；这里只是地址与开关。
   cross_app_enabled: true
   runner_replicas: 1
+  # 分身测试的测试电脑（SDD 0027 §3.4，见 test-computer/README.md）：先上传 Linux 包（agent-release-linux-upload）再开
+  knowbot_test_computer:
+    enabled: true
+    workspace: /workspace
+    storage: 20Gi
   domain_env:
     WORKBENCH_ENABLED: 'true'
     WORKBENCH_REDIS_KEY_PREFIX: 'investment:workbench'

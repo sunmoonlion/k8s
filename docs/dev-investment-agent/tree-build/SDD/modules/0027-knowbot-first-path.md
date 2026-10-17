@@ -95,6 +95,8 @@ knowlab 管理端后端          草稿改「测试中」→ 调 investment 工�
 
 **测试账号与测试电脑（三件事所有者 2026-10-17 定「按你的建议」，见下；Linux 与 Windows 的差别记待办账 118）**：推进器要三样东西才能真跑——测试账号在 investment 登录过（有本地用户）、有自己的沙箱与模型 key、测试电脑已配对。这些都走现成的产品流程，P6 时由 Qwen 在本地机做、所有者在登录与粘贴 key 时亲手操作：Casdoor 里建 `knowbot-tester`（sunmoonai 组织）→ 用它登录工作台 → 设置页填 kimi 的 key、拉起沙箱 → 配对测试电脑。测试电脑是集群里一个常驻容器（本地代理 + Codex，工作区 `/workspace` 在持久卷上，自己定时删 7 天前的底稿目录），定了三件事：① **代理的 Linux 版从哪来**：代理源码在客户端仓 runtime，现在只发 Windows 安装包；建议在 runtime 出一个 Linux 发行包（同一套源码，Linux 上测试已全过），k8s 的镜像按版本与摘要钉住它，不在 k8s 里放代理源码副本。② **安全形态**：容器里不开代理的外层沙箱（容器本身就是隔离），网络策略只放行出站到会合点，不进别的命名空间；以非 root 运行、只读根文件系统。③ **配对**：容器第一次启动跑 `sunmoon-agent pair` 显示配对码，所有者用测试账号在工作台「接入电脑」里确认，凭据落在持久卷上，之后重启不用再配。配置项：investment 后端 `KNOWBOT_TEST_SUBJECT`（测试账号的 Casdoor 用户 id，建账号后才知道）、`KNOWBOT_TEST_WORKSPACE=/workspace`、`KNOWBOT_TEST_MONTHLY_LIMIT=1000`。
 
+**测试电脑已写、未部署（2026-10-17）**：runtime 仓出了 Linux 包（`build-linux.mjs`，同一套源码、同一提交打出同一个摘要；不带 Node；走公网边缘、系统信任的站点 `edge-public`；清单默认只认 Windows，Windows 安装器不会接受 Linux 包），钉在 `agent-releases/config.yaml` 的 `linux` 一节，发布用 `make agent-release-linux-verify/upload AGENT_LINUX_TGZ=…`（同 Windows 包的严格校验、条件上传、只读身份读回）。测试电脑是 investment 后端的 `test-computer` 阶段：复用沙箱镜像（钉好的 Node 与 Codex），初始化容器用发行包的只读身份取包、核摘要、按清单逐字节核对；主容器第一次没有凭据时在日志里显示连接码（所有者用测试账号在工作台确认），之后启动代理；非 root、只读根文件系统、不开外层沙箱；网络只放行 DNS、对象存储与边缘机的 30443；每小时删 7 天前的底稿目录。走公网边缘而不是集群内直连，是因为集群里平台域名本来就走公网解析，改集群 DNS 会影响所有后端；这样也和用户家里的电脑一样。**P6 顺序**：本地机打 Linux 包并核摘要等于配置 → `agent-release-linux-upload` → Casdoor 建 `knowbot-tester` → 所有者用它登录工作台、填 kimi 的 key、拉起沙箱 → stage 测试电脑 → 看日志里的连接码、所有者确认配对 → 填 `KNOWBOT_TEST_SUBJECT` 再 stage investment。
+
 **方案 B**（不选）：后端直接调模型逐步跑，不经沙箱与电脑，「运行正确」打折扣。**方案 C**（不选）：运营在测试账号上手动跑、在管理端回填结果。
 
 ## 四、状态与不变量

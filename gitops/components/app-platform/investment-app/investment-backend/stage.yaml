@@ -44,3 +44,8 @@ stages:
   dependsOn: [casdoor, traefik]
   enabled: '{{ investment_deployment.enabled and (investment_backend_deployment.service_clients | default([]) | selectattr("target", "equalto", "knowmart") | selectattr("relation", "equalto", "summon") | selectattr("enabled") | list | length > 0) }}'
   resources: [workload.yaml, provision.sops.yaml]
+- name: investment-test-computer
+  path: test-computer
+  dependsOn: [investment-runtime, investment-agent-releases]
+  enabled: '{{ investment_deployment.enabled and investment_backend_deployment.knowbot_test_computer.enabled | default(false) }}'
+  resources: [workload.yaml, download.sops.yaml]

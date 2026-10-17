@@ -33,6 +33,8 @@
       admin: {name: '{{ admin_cfg.casdoor_application }}', client_id: '{{ admin_cfg.casdoor_client_id }}', origin: '{{ admin_cfg.origin }}'}
     storage_enabled: '{{ (backend_cfg.object_storage.enabled | default(false)) | bool }}'
     agent_releases_enabled: '{{ lookup("vars", prepare_vars.application_name + "_agent_releases", default={}).enabled | default(false) | bool }}'
+    # 分身测试的测试电脑（SDD 0027 §3.4，只有 investment 有）
+    test_computer_enabled: '{{ (backend_cfg.knowbot_test_computer.enabled | default(false)) | bool }}'
     provider_enabled: '{{ (backend_cfg.knowledge_provider.enabled | default(false)) | bool }}'
     service_enabled: '{{ (backend_cfg.knowbase_service.enabled | default(false)) | bool }}'
     receiver_enabled: '{{ (backend_cfg.knowbase_service_receiver.enabled | default(false)) | bool }}'

@@ -42,6 +42,81 @@ def bundle(path='app/file.txt', *, duplicate=False):
     return stream, release
 
 
+def linux_bundle(*, link=False, platform='linux', tamper=False):
+    """Linux 包（分身测试的测试电脑用）：.tar.gz，根目录下是包的内容。"""
+    import tarfile
+    data = b'fixture linux file'
+    manifest = dict(schema=1, platform=platform, architecture='x64', relayProtocol=1,
+                    agentVersion='0.4.1', codexVersion='0.155.1', sourceRevision='c'*40,
+                    files=[dict(path='app/dist/cli.js', size=len(data), sha256=hashlib.sha256(data).hexdigest())])
+    body = json.dumps(manifest).encode()
+    stream = io.BytesIO()
+    with tarfile.open(fileobj=stream, mode='w:gz') as t:
+        def add(name, content):
+            info = tarfile.TarInfo(name)
+            info.size = len(content)
+            t.addfile(info, io.BytesIO(content))
+        root = tarfile.TarInfo('.')
+        root.type = tarfile.DIRTYPE
+        t.addfile(root)
+        add('./bundle-manifest.json', body)
+        add('./app/dist/cli.js', data + (b'x' if tamper else b''))
+        if link:
+            info = tarfile.TarInfo('./app/dist/evil')
+            info.type = tarfile.SYMTYPE
+            info.linkname = '/etc/passwd'
+            t.addfile(info)
+    release = dict(bucket='agent-releases', object_key='linux-x64/0.4.1/agent.tar.gz', version='0.4.1',
+                   source_revision='c'*40, codex_version='0.155.1', size_bytes=len(stream.getvalue()),
+                   tarball_sha256=hashlib.sha256(stream.getvalue()).hexdigest(),
+                   manifest_sha256=hashlib.sha256(body).hexdigest())
+    stream.seek(0)
+    return stream, release
+
+
+class LinuxBundleChecks(unittest.TestCase):
+    def test_verified_linux_inventory(self):
+        stream, release = linux_bundle()
+        checked = upload.verify_tarball(stream, release)
+        self.assertEqual(checked['files'], 2)
+        self.assertEqual(checked['tarball_sha256'], release['tarball_sha256'])
+
+    def test_links_tamper_platform_and_key_are_refused(self):
+        for kind in ('link', 'tamper', 'platform'):
+            stream, release = linux_bundle(**{kind: True} if kind != 'platform' else {'platform': 'win32'})
+            with self.subTest(kind=kind), self.assertRaises(ValueError):
+                upload.verify_tarball(stream, release)
+        stream, release = linux_bundle()
+        with self.assertRaises(ValueError):
+            upload.verify_tarball(stream, dict(release, object_key='windows-x64/0.4.1/agent.tar.gz'))
+        stream, release = linux_bundle()
+        with self.assertRaises(ValueError):
+            upload.verify_tarball(stream, dict(release, tarball_sha256='0'*64))
+
+    def test_linux_publish_uses_its_own_digest_and_content_type(self):
+        stream, release = linux_bundle()
+        writer, reader = Mock(), Mock()
+        writer.request.side_effect = [(200, {}, None), (403, {}, None)]
+        reader.request.side_effect = [(200, {'x-amz-meta-sha256': release['tarball_sha256'],
+                                             'x-amz-meta-manifest-sha256': release['manifest_sha256']},
+                                       (release['tarball_sha256'], release['size_bytes'])), (403, {}, None)]
+        result = upload.publish(stream, release, writer, reader,
+                                digest_key='tarball_sha256', content_type='application/gzip')
+        self.assertTrue(result['readback_verified'])
+        put = writer.request.call_args_list[0]
+        self.assertEqual(put.kwargs['digest'], release['tarball_sha256'])
+        self.assertEqual(put.kwargs['content_type'], 'application/gzip')
+
+    def test_linux_release_is_pinned_and_make_targets_exist(self):
+        cfg = yaml.safe_load((HERE / 'config.yaml').read_text())['investment_agent_releases']['linux']
+        self.assertRegex(cfg['object_key'], r'^linux-x64/0\.4\.1/.+\.tar\.gz$')
+        self.assertRegex(cfg['tarball_sha256'], '^[a-f0-9]{64}$')
+        self.assertRegex(cfg['source_revision'], '^[a-f0-9]{40}$')
+        makefile = (ROOT / 'infrastructure/Makefile').read_text()
+        self.assertIn('agent-release-linux-upload agent-release-linux-verify:', makefile)
+        self.assertIn('agent_release_platform=linux', makefile)
+
+
 class UploadChecks(unittest.TestCase):
     def test_verified_inventory(self):
         stream, release = bundle()

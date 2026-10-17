@@ -3,20 +3,31 @@
   hosts: kind_hosts
   gather_facts: false
   vars:
-    archive_path: '{{ lookup("env", "AGENT_ZIP") }}'
-    public_input: '{{ {"release":investment_agent_releases,"region":object_storage_region} }}'
+    # windows（默认）：用户的安装包 AGENT_ZIP；linux：分身测试的测试电脑用的包 AGENT_LINUX_TGZ（SDD 0027 §3.4）
+    release_platform: '{{ agent_release_platform | default("windows") }}'
+    linux: '{{ release_platform == "linux" }}'
+    archive_path: '{{ lookup("env", "AGENT_LINUX_TGZ") if linux | bool else lookup("env", "AGENT_ZIP") }}'
+    archive_flag: '{{ "--tarball" if linux | bool else "--zip" }}'
+    release_input: >-
+      {{ (investment_agent_releases.linux | combine({"bucket": investment_agent_releases.bucket,
+          "reader": investment_agent_releases.reader, "writer": investment_agent_releases.writer}))
+         if linux | bool else investment_agent_releases }}
+    public_input: '{{ {"release":release_input,"region":object_storage_region} }}'
+    receipt_name: '{{ "investment-agent-release-linux-published.json" if linux | bool else "investment-agent-release-published.json" }}'
   tasks:
     - name: Require an explicit archive and action
       ansible.builtin.assert:
         quiet: true
         that:
           - agent_release_action in ['verify', 'upload']
+          - release_platform in ['windows', 'linux']
+          - not linux | bool or investment_agent_releases.linux is mapping
           - archive_path is match('^/')
           - not ansible_check_mode
           - cluster_name == 'sunmoon-kind'
     - name: Verify ZIP, manifest and every bundle file before opening a network connection
       ansible.builtin.command:
-        argv: ['{{ ansible_playbook_python }}', '{{ playbook_dir }}/upload.py', --zip, '{{ archive_path }}']
+        argv: ['{{ ansible_playbook_python }}', '{{ playbook_dir }}/upload.py', '{{ archive_flag }}', '{{ archive_path }}']
         stdin: '{{ public_input | to_json }}'
       register: local_verification
       changed_when: false
@@ -42,7 +53,7 @@
           ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/capacity.yaml'
           vars:
             capacity_operation: agent-release-upload
-            capacity_planned_bytes: '{{ investment_agent_releases.size_bytes + 67108864 }}'
+            capacity_planned_bytes: '{{ release_input.size_bytes + 67108864 }}'
         - name: Check reader and writer private input ownership
           ansible.builtin.stat: {path: '{{ services_config_dir }}/investment-agent-releases.yaml', follow: false}
           register: credentials_file
@@ -61,7 +72,7 @@
           no_log: true
         - name: Conditional upload and independent streaming readback
           ansible.builtin.command:
-            argv: ['{{ ansible_playbook_python }}', '{{ playbook_dir }}/upload.py', --zip, '{{ archive_path }}', --apply,
+            argv: ['{{ ansible_playbook_python }}', '{{ playbook_dir }}/upload.py', '{{ archive_flag }}', '{{ archive_path }}', --apply,
                    --kubectl, '{{ inventory_dir }}/../.tools/bin/kubectl',
                    --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ data_namespace }}',
                    --ca, '{{ registry_config_dir }}/clients/ca.crt']
@@ -73,7 +84,7 @@
           ansible.builtin.debug: {msg: '{{ publication.stdout | from_json }}'}
         - name: Preserve a protected release receipt for the availability gate
           ansible.builtin.copy:
-            dest: '{{ services_config_dir }}/investment-agent-release-published.json'
+            dest: '{{ services_config_dir }}/{{ receipt_name }}'
             content: |
               {{ publication.stdout }}
             owner: root
