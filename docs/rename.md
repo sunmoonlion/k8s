@@ -243,7 +243,31 @@ bash /tmp/r2-2.sh
 
 ## R3 检出换名 — 远程机 Opus，本地机 Qwen
 
-待写：用 `docs/rename-tools/r3_checkout.sh`（上次的工具，按本次名字改过、先在草稿里演练）。
+两台机器做同样的事，**远程机先做**（Opus），`R3-opus` 审过、本节写进远程机的实际情况后，Qwen 再做本地机。**旧目录挪到 `~/rename-backup/`，不删。** 在 R2 全部通过之后做。
+
+为什么不用 `mb worktree remove`：git 不许摘下带子仓的工位，所以旧检出整目录挪开；R0 已证明它们都干净且已推，挪开的只是备份。
+
+工具 `k8s/docs/rename-tools/r3_checkout.sh`（上次的工具，0028 加了两项：旧主目录没有 gitee remote 时用 `GITEE_PREFIX`；`ORIGIN_PUSH_GITEE=1` 给 origin 补 gitee 推送地址）。**必须用 bash**：
+
+```bash
+# 远程机（Opus）：远程机的 origin 只推 GitHub，照旧
+bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh investment-app knowbench-app
+GITEE_PREFIX=https://gitee.com/sunmoonlion/ bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh runtime sunmoon-link
+# 本地机（Qwen）：本地机 investment-app 的 origin 推 GitHub、gitee 两个地址，sunmoon-link 照这个布局补上
+bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh investment-app knowbench-app
+GITEE_PREFIX=https://gitee.com/sunmoonlion/ ORIGIN_PUSH_GITEE=1 bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh runtime sunmoon-link
+```
+
+脚本做的事：先查前提（旧主目录与五个工位都在且干净、新名字的目录都不在、`repos.conf` 里恰有旧名一行），不满足就停、什么都不动 → 旧主目录与五个工位整目录挪进 `~/rename-backup/<时间>-<旧名>/` → 按新名 clone 主目录 → 父仓 remote 照旧布局只换仓名（`gitee` remote；origin 推送地址逐条照抄，runtime 新加 gitee）→ 子仓 remote 指向新仓名、推送地址 GitHub 与 gitee 各一、拨回同名分支 → 建跟踪 origin 的五个工位分支 → `repos.conf` 里旧名那一行换成新名（保持 `$HOME/...` 写法）→ 用 `model-branch.sh worktree add` 挂出五个工位（输出出现「从 master 新建」「失败」「冲突」就停）→ 打印核对。
+
+2026-10-17 在临时家目录里按远程机的布局（主目录 + 五个工位、子仓、`repos.conf` 副本，地址是真 GitHub）演练通过：两组都是五个工位「挂出」、`dirty=0`；qwen 工位停在 R1 提交（`3fa5a54`、`130c966`），其余工位停在各自原来的提交；子仓地址都是新仓名；`repos.conf` 两行换新名。
+
+注意：除 qwen 外，其他工位的分支此时还是改名前的内容（子仓目录仍叫 `investment-*`），但子仓 remote 已指向新仓。它们在 qwen 的改名提交并进 master 后再跟上；冻结期间不要在这些分支上提交。
+
+核对：脚本最后打印的核对原样进回执。要看到：每个工位 `branch` = 工位名、`head` = `origin`、`dirty=0`；子仓 `url` 是新仓名、`push` 是 GitHub 与 gitee 的新仓名；主目录 remote（新）与备份的（旧）相比只有仓名变了（runtime 多一个 gitee）；`repos.conf` 里是 `$HOME/master/<新名>`。
+
+**停点**：Opus 写 `R3-opus`（远程机）、Qwen 写 `R3-qwen`（本地机），Opus 审。
+**状态**：待做（R2.2 通过后，远程机先做）。
 
 ## R4 同步配置 — 远程机 Opus，本地机 Qwen
 
