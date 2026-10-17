@@ -306,7 +306,7 @@ cd ~/five-repos-sync && cp config.sh config.sh.bak-rename-0028 && \
 4. **本地机对齐**（Qwen）：同样 `align` 预演 → `--apply` → `list`，**结果先写到仓外**（`/tmp/align-*.txt`），再拷进回执目录（上次写进 qwen/k8s 自己把自己拦下了）。回执 `align-qwen`。
 5. 两台都 `list` 全 ok，Opus 写「冻结解除」：各工位照常工作，Cursor 恢复接卡（用新名字）。
 
-**状态**：待做（R4 通过后）。
+**状态**：第 1–3 步 **已做** · 2026-10-17 · Opus（回执 `align-opus.*.md`）：26 个仓 master 快进到 qwen，GitHub 与 gitee 逐个核对；104 个工位分支快进到 master；远程机 `align --apply` 40 个快进、15 个旧名子仓目录挪进 `~/rename-backup/20261017-125143-old-subrepos/`，0 HOLD，`list` 156 项全 ok。**Qwen 做第 4 步（本地机对齐）**。
 
 ## R5 集群（并进 0027 P6）— 所有者 + Qwen
 
