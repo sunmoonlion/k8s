@@ -717,14 +717,15 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 
 > 前提：R5.2 **含第 6 步边缘**已通过（测试电脑像用户的电脑一样经公网边缘的 `knowbench.sunmoonai.com` 连进来，边缘还认旧域名时它连不上）。第 1–5 步 Qwen（本地机）；第 6 步所有者亲手装。一步不是 0 就停。
 >
-> 源码：sunmoon-link `1d8e838`（`1d8e838cd46a262494387604f3d7f00cf3771b8e`，0.5.0）。比改名那版 `ca9784c` 多一处修复（2026-10-17 所有者的工作对话生成 pptx 时中文文件名变成问号）：代理给 PowerShell 也设了往外部程序管道的编码 `$OutputEncoding`（UTF-8、无 BOM），第 1 步在 Windows 上用探针核。和 0.4.1（`76832a8`）比，进 Windows 包的文件只有 `sunmoon-agent.cmd` 改名 `sunmoon-link.cmd`，`pnpm-lock.yaml` 没变，所以**文件数仍是 109**、依赖用 0.4.1 那份冻结的 Windows `node_modules`。安装脚本 `install.ps1.tmpl` 两边摘要都是 `f6219d61392a259de44379627c2d9706d5243aa90ce69812c644991af06ca125`（R1 已同步）。
+> 源码：sunmoon-link `1d8e838`（`1d8e838cd46a262494387604f3d7f00cf3771b8e`，0.5.0）。比改名那版 `ca9784c` 多一处修复（2026-10-17 所有者的工作对话生成 pptx 时中文文件名变成问号）：代理给 PowerShell 也设了往外部程序管道的编码 `$OutputEncoding`（UTF-8、无 BOM），第 1 步在 Windows 上用探针核。和 0.4.1（`76832a8`）比，进 Windows 包的文件只有 `sunmoon-agent.cmd` 改名 `sunmoon-link.cmd`，`pnpm-lock.yaml` 没变，所以**文件数仍是 109**、依赖在新检出里由 pnpm 10.24.0 按锁文件冻结安装（锁文件从 0.4.1 起没变，按校验和装出来就是同一套）。以前那份复制来的冻结目录丢了 pnpm 的链接结构、解析不出 `@openai/codex-win32-x64`（2026-10-17 Qwen 打包时撞上），不再用。安装脚本 `install.ps1.tmpl` 两边摘要都是 `f6219d61392a259de44379627c2d9706d5243aa90ce69812c644991af06ca125`（R1 已同步）。
 >
 > **Linux 包 Opus 已在远程机从同一提交打过一次**（同一提交打出同一个摘要），用上传工具同一套校验（`upload.py` 的 `verify_tarball`）核过：`tarballSha256 0ecde7eede64214c97d5a8cfb2c1005a158894346c35bc18f8552e9007b5c909`、`manifestSha256 4c059af55ff48ef4a2f2b20947659ce11d8691fa53b32018e8ba9c4a52eaca7f`、`139172356` 字节、133 个文件。本地机打出来的必须逐字一样。
 
-**1. Windows 包**（照卡 48 的 A，Windows 侧，官方 node.exe 24.19.0、0.4.1 同一份冻结依赖、dev-kind 站点与 CA）：
+**1. Windows 包**（照卡 48 的 A，Windows 侧，官方 node.exe 24.19.0、在新检出里冻结安装的依赖、dev-kind 站点与 CA）：
 
 - 新目录检出：`…\sunmoon-probe-runs\windows-agent-050-release\src-1d8e838`，`git rev-parse HEAD` = `1d8e838cd46a262494387604f3d7f00cf3771b8e`，`git status --porcelain` 空。
-- 组包：`node agent/distribution/build.mjs --node-exe <官方 node.exe> --dependencies <0.4.1 同一份 Windows agent 依赖目录> --site agent/distribution/sites/dev-kind.json --ca-pem agent/distribution/sites/dev-kind-ca.pem --output <新目录>\sunmoon-link-1d8e838`。
+- 冻结安装：在 `src-1d8e838\agent` 下用官方 node 24.19.0 自带的 corepack：`corepack pnpm@10.24.0 install --frozen-lockfile --ignore-scripts`；`node_modules\.pnpm\` 里要有 `@openai+codex@0.155.1-win32-x64`。
+- 组包：`node agent/distribution/build.mjs --node-exe <官方 node.exe> --dependencies <src-1d8e838\agent> --site agent/distribution/sites/dev-kind.json --ca-pem agent/distribution/sites/dev-kind-ca.pem --output <新目录>\sunmoon-link-1d8e838`。
 - 要看到：`sourceRevision` = `1d8e838c…`、`files` = **109**（不是就停，把 `app/dist` 与根目录的文件名列进回执）；包内 Node 跑 `windows-candidate.mjs`：`result: pass`、agent `0.5.0`、codex `0.155.1`、node `24.19.0`、`launchedAgent=false`；根目录有 `sunmoon-link.cmd`、没有 `sunmoon-agent.cmd`。
 - **编码探针**（这次的修复只能在真 Windows 上核）：用包内 node 跑 `node <k8s>\docs\rename-tools\r53_encoding_probe.mjs <新目录>\sunmoon-link-1d8e838\app`。要看到最后一行 `probe ok`（PowerShell 把带中文的 Python 经管道交给 python，中文文件名建得出来）；`probe FAILED` 就停，整段输出贴进回执。要本机装着 python（所有者那台有）。
 - 打 zip（Python `zipfile`、deflate、正斜杠，同 0.4.1）：`sunmoon-link-0.5.0-1d8e838-windows-x64.zip`，放 `~/sunmoon-probe-runs/windows-agent-050/`；记 ZIP SHA256、`size_bytes`、`manifestSha256`。
