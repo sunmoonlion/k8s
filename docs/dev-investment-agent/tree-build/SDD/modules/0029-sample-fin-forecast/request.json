@@ -1,0 +1,63 @@
+{
+  "title": "中国A股上市公司财务分析与预测",
+  "idea": {
+    "kind": "six_questions",
+    "answers": {
+      "solves": "对一家中国 A 股上市公司，用我上传的财报，把问题点到的科目和一组固定的核心指标算出来、看清走势；再对营业收入、归母净利润（问题点名的再加别的流量科目）做预测，每个预测都有回测、区间和假设。",
+      "not_solves": "不逐科目预测整套报表；比率不单独外推；数据里没有的不硬算、不冒充；只做 A 股上市公司。",
+      "inputs": "我上传的财报数据（格式待定，见缺口 G1）。",
+      "steps": "分析的科目 = 问题点到的科目 + 固定核心指标（营业收入、归母净利润、扣非净利润、经营现金流；毛利率、净利率、净资产收益率、经营现金流与净利润之比、收入与利润增速）。预测只预测营业收入、归母净利润（问题点名的再加别的流量科目），各自回测、各给区间与假设，比率由预测出的收入与利润推算。其余规则待答（G0、G2–G8）。",
+      "outputs": "待答（G9）。",
+      "correctness": "数据里没有的照实说算不出来，不硬算、不冒充；每个预测都带回测、区间与假设。具体用例待答（G10）。"
+    }
+  },
+  "runtime": "knowbench",
+  "cases": [
+    {
+      "case_id": "maotai-trend-forecast",
+      "input": {
+        "question": "贵州茅台近三年的营业收入和归母净利润走势如何？预测下两个季度。",
+        "answers": {}
+      },
+      "expectations": [
+        {
+          "artifact": "forecast",
+          "path": "rows",
+          "kind": "contains",
+          "value": "Q"
+        }
+      ]
+    },
+    {
+      "case_id": "maotai-missing-item",
+      "input": {
+        "question": "贵州茅台近三年的研发费用率是多少？",
+        "answers": {}
+      },
+      "expectations": [
+        {
+          "artifact": "note",
+          "path": "limitations",
+          "kind": "contains",
+          "value": "算不出来"
+        }
+      ]
+    },
+    {
+      "case_id": "company-not-in-data",
+      "input": {
+        "question": "帮我分析一下中国平安近三年的营业收入。",
+        "answers": {}
+      },
+      "expectations": [
+        {
+          "artifact": "scope",
+          "path": "stop_reason",
+          "kind": "contains",
+          "value": "没有"
+        }
+      ]
+    }
+  ],
+  "consent_test_data": true
+}

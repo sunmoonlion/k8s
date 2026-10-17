@@ -1,0 +1,692 @@
+{
+  "schema": "knowbot-manifest/v1",
+  "name": "中国A股上市公司财务分析与预测",
+  "tagline": "用我上传的财报，看清走势、做带区间的预测",
+  "version": "1",
+  "runtime": "knowbench",
+  "pack": {
+    "pack_id": "cn-a-share-fin-forecast",
+    "version": "1",
+    "title": "中国A股上市公司财务分析与预测（先验数据，再算指标，带回测与区间的预测）",
+    "name": "中国A股上市公司财务分析与预测",
+    "tagline": "用我上传的财报，看清走势、做带区间的预测",
+    "dossier": [
+      {
+        "key": "answer",
+        "title": "回答",
+        "kind": "text",
+        "artifact": "note",
+        "path": "answer",
+        "section": "answer"
+      },
+      {
+        "key": "crosscheck",
+        "title": "对照官方",
+        "kind": "table",
+        "artifact": "crosscheck",
+        "path": "items",
+        "section": "verified"
+      },
+      {
+        "key": "reconcile",
+        "title": "勾稽",
+        "kind": "table",
+        "artifact": "reconcile",
+        "path": "checks",
+        "section": "verified",
+        "folded": true
+      },
+      {
+        "key": "metrics",
+        "title": "指标表",
+        "kind": "table",
+        "artifact": "analysis",
+        "path": "metrics",
+        "section": "data"
+      },
+      {
+        "key": "forecast",
+        "title": "预测表",
+        "kind": "table",
+        "artifact": "forecast",
+        "path": "rows",
+        "section": "data"
+      },
+      {
+        "key": "limits",
+        "title": "局限",
+        "kind": "list",
+        "artifact": "note",
+        "path": "limitations",
+        "section": "limits"
+      },
+      {
+        "key": "sources",
+        "title": "出处",
+        "kind": "list",
+        "artifact": "note",
+        "path": "citations",
+        "section": "sources"
+      }
+    ],
+    "answers": {
+      "解决什么": "对一家中国 A 股上市公司，用我上传的财报，把问题点到的科目和一组固定的核心指标算出来、看清走势；再对营业收入、归母净利润（问题点名的再加别的流量科目）做预测，每个预测都有回测、区间和假设。",
+      "不解决什么": "不逐科目预测整套报表；比率不单独外推；数据里没有的不硬算、不冒充；只做 A 股上市公司。",
+      "输入是什么": "我上传的财报数据（格式待定，见缺口 G1）。"
+    },
+    "workflow": [
+      {
+        "step_id": "scope",
+        "title": "定范围",
+        "summary": "认出公司、期间、要看的科目和指标，确认它在你的数据里",
+        "why": "先确定看的是哪家公司、哪几期、哪些数；公司不在你上传的数据里就停下说明，不去别处找。",
+        "method_text": "Fix the scope before any number is used. Read data only with list_my_data and read_my_data, passing the task id given in the step instructions; there is no other data source. 1) Call list_my_data. 2) Identify the company the question is about (A-share security code and name). If it is not covered by any listed dataset, set `stop_reason` to say the user's data has no such company, leave `items` empty and stop; never look elsewhere. 3) Set `period` to the range the question asks for; if vague, use the latest five years available and say so in `assumptions`. 4) `items` = the line items the question names plus the fixed core metrics: operating revenue, net profit attributable to owners of the parent, net profit after non-recurring items, operating cash flow, gross margin, net margin, return on equity, operating cash flow to net profit, revenue and profit growth. 5) If a forecast is asked, list the quarters to forecast in `forecast.horizon` (at most 4). 6) List in `datasets` which of the user's datasets hold this company. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "tools": [
+          "list_my_data"
+        ],
+        "output_artifact": "scope",
+        "output_schema": {
+          "question": "string",
+          "company": {
+            "code": "string",
+            "name": "string"
+          },
+          "period": {
+            "start": "YYYY-Qn",
+            "end": "YYYY-Qn"
+          },
+          "items": [
+            "string"
+          ],
+          "forecast": {
+            "horizon": [
+              "YYYY-Qn"
+            ]
+          },
+          "datasets": [
+            "dataset_id"
+          ],
+          "stop_reason": "string|null",
+          "assumptions": [
+            "string"
+          ]
+        },
+        "acceptance": [
+          {
+            "kind": "json_object",
+            "label": "交回的格式对",
+            "message": "交回物不是 JSON 对象"
+          },
+          {
+            "kind": "required_keys",
+            "label": "必填项都有",
+            "message": "缺必填项",
+            "keys": [
+              "company",
+              "period",
+              "items",
+              "datasets"
+            ]
+          },
+          {
+            "kind": "non_empty",
+            "label": "认出了公司",
+            "message": "没有认出公司",
+            "path": "company.code"
+          }
+        ],
+        "on_reject": "human",
+        "max_reworks": 0,
+        "input_refs": [],
+        "reserve": "0.05",
+        "input_max_chars": 24000
+      },
+      {
+        "step_id": "profile",
+        "title": "数据摸底",
+        "summary": "看清你的数据有哪些表、哪些报告期、单位与合并口径",
+        "why": "先知道手里的数是什么样，后面的换算和对照才不会错。",
+        "input_refs": [
+          "scope"
+        ],
+        "method_text": "Profile the user's data for this company. Read data only with list_my_data and read_my_data, passing the task id given in the step instructions; there is no other data source. For each dataset in scope.datasets, read enough pages to list: the statements present (balance sheet, income statement, cash flow statement, annual report text), the report periods (Q1, H1, Q3, annual per year), whether values are cumulative per report period, the unit, and whether figures are consolidated or parent-only. If both consolidated and parent-only figures are present and the scope does not settle which to use, ask the user. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "tools": [
+          "list_my_data",
+          "read_my_data"
+        ],
+        "output_artifact": "profile",
+        "output_schema": {
+          "files": [
+            {
+              "dataset_id": "string",
+              "name": "string",
+              "statements": [
+                "string"
+              ]
+            }
+          ],
+          "periods": [
+            "YYYY-Qn|YYYY-H1|YYYY-annual"
+          ],
+          "unit": "string",
+          "consolidation": "consolidated|parent|mixed",
+          "cumulative": "boolean",
+          "data_until": "YYYY-MM-DD",
+          "notes": [
+            "string"
+          ]
+        },
+        "acceptance": [
+          {
+            "kind": "json_object",
+            "label": "交回的格式对",
+            "message": "交回物不是 JSON 对象"
+          },
+          {
+            "kind": "required_keys",
+            "label": "必填项都有",
+            "message": "缺必填项",
+            "keys": [
+              "files",
+              "periods",
+              "unit",
+              "consolidation"
+            ]
+          },
+          {
+            "kind": "list_min",
+            "label": "有报告期",
+            "message": "没有读到报告期",
+            "path": "periods",
+            "min_items": 1
+          }
+        ],
+        "on_reject": "rework",
+        "max_reworks": 1,
+        "reserve": "0.05",
+        "input_max_chars": 24000
+      },
+      {
+        "step_id": "reconcile",
+        "title": "勾稽",
+        "summary": "三张表之间、前后两期之间对不对得上",
+        "why": "数据本身对不上，后面的指标和预测都不可信；对不上的照实列出。",
+        "input_refs": [
+          "profile"
+        ],
+        "method_text": "Check the statements against each other for every period in scope. Read data only with list_my_data and read_my_data, passing the task id given in the step instructions; there is no other data source. Checks: total assets = total liabilities + total equity; net profit attributable to owners of the parent + minority interests = net profit; ending cash = beginning cash + net increase in cash (cash flow statement); this period's opening balance = last period's closing balance for the main balance sheet items. A difference above 1 yuan is a failure. List every check per period with both sides and the difference; do not stop on failures, they go to limitations and those periods are kept out of the forecast window. Every number must come from the user's data read in this task (cite file, table, row and period) or from an upstream artifact; never recall or estimate a number. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "tools": [
+          "read_my_data"
+        ],
+        "output_artifact": "reconcile",
+        "output_schema": {
+          "checks": [
+            {
+              "name": "string",
+              "period": "string",
+              "left": "number",
+              "right": "number",
+              "difference": "number",
+              "ok": "boolean",
+              "source": "string"
+            }
+          ],
+          "failed_periods": [
+            "string"
+          ]
+        },
+        "acceptance": [
+          {
+            "kind": "json_object",
+            "label": "交回的格式对",
+            "message": "交回物不是 JSON 对象"
+          },
+          {
+            "kind": "required_keys",
+            "label": "必填项都有",
+            "message": "缺必填项",
+            "keys": [
+              "checks",
+              "failed_periods"
+            ]
+          },
+          {
+            "kind": "list_min",
+            "label": "做了勾稽",
+            "message": "一条勾稽都没有",
+            "path": "checks",
+            "min_items": 1
+          }
+        ],
+        "on_reject": "rework",
+        "max_reworks": 1,
+        "reserve": "0.05",
+        "input_max_chars": 24000
+      },
+      {
+        "step_id": "extract",
+        "title": "取数",
+        "summary": "把要用到的科目按期取出来，季报累计数换成单季，每个数带出处",
+        "why": "每个数从哪来、怎么换算，先摆出来给你核对。",
+        "input_refs": [
+          "scope",
+          "profile"
+        ],
+        "method_text": "Extract every item in scope.items that is a line item, for every report period in scope.period. Read data only with list_my_data and read_my_data, passing the task id given in the step instructions; there is no other data source. Keep the cumulative value as reported and add the single-quarter value for income and cash flow items: Q1 = Q1 report; Q2 = half-year minus Q1; Q3 = Q3 report minus half-year; Q4 = annual minus Q3 report. Balance sheet items are point-in-time and are not converted. For each value give its source (dataset, statement, row label, period). An item the data does not have goes to `missing` with the reason; never substitute another item. Every number must come from the user's data read in this task (cite file, table, row and period) or from an upstream artifact; never recall or estimate a number. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "tools": [
+          "read_my_data"
+        ],
+        "output_artifact": "series",
+        "output_schema": {
+          "rows": [
+            {
+              "item": "string",
+              "period": "YYYY-Qn",
+              "cumulative": "number|null",
+              "single_quarter": "number|null",
+              "source": "string"
+            }
+          ],
+          "missing": [
+            {
+              "item": "string",
+              "reason": "string"
+            }
+          ],
+          "unit": "string"
+        },
+        "acceptance": [
+          {
+            "kind": "json_object",
+            "label": "交回的格式对",
+            "message": "交回物不是 JSON 对象"
+          },
+          {
+            "kind": "required_keys",
+            "label": "必填项都有",
+            "message": "缺必填项",
+            "keys": [
+              "rows",
+              "missing",
+              "unit"
+            ]
+          },
+          {
+            "kind": "list_min",
+            "label": "取到了数",
+            "message": "一个数都没取到",
+            "path": "rows",
+            "min_items": 1
+          }
+        ],
+        "on_reject": "rework",
+        "max_reworks": 1,
+        "reserve": "0.05",
+        "input_max_chars": 24000
+      },
+      {
+        "step_id": "analyze",
+        "title": "算指标与分析",
+        "summary": "按登记的口径算核心指标与问题点到的科目；分母不成立的标为不适用；发现只描述",
+        "why": "先把过去说清楚，预测才有依据；算不出来的照实说，不硬算。",
+        "input_refs": [
+          "scope",
+          "series",
+          "reconcile"
+        ],
+        "method_text": "Compute the core metrics per period from the series only. Definitions: gross margin = (operating revenue - operating cost) / operating revenue; net margin = net profit attributable to owners of the parent / operating revenue; return on equity = net profit attributable to owners of the parent / average equity attributable to owners of the parent (average of opening and closing; quarters not annualised); operating cash flow to net profit = net cash from operating activities / net profit attributable to owners of the parent; growth = year on year against the same period a year earlier. When a denominator is zero, negative or missing, mark the metric not applicable with the reason; never force a number. For each value give the numerator, the denominator and the formula. Then write at least two findings about trend and structure; describe only, do not say whether something is good or bad. Every number must come from the user's data read in this task (cite file, table, row and period) or from an upstream artifact; never recall or estimate a number. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "tools": [
+          "read_my_data"
+        ],
+        "output_artifact": "analysis",
+        "output_schema": {
+          "metrics": [
+            {
+              "name": "string",
+              "period": "YYYY-Qn",
+              "value": "number",
+              "numerator": "number",
+              "denominator": "number",
+              "formula": "string"
+            }
+          ],
+          "not_applicable": [
+            {
+              "name": "string",
+              "period": "string",
+              "reason": "string"
+            }
+          ],
+          "findings": [
+            {
+              "text": "string",
+              "numbers": [
+                "string"
+              ]
+            }
+          ]
+        },
+        "acceptance": [
+          {
+            "kind": "json_object",
+            "label": "交回的格式对",
+            "message": "交回物不是 JSON 对象"
+          },
+          {
+            "kind": "required_keys",
+            "label": "必填项都有",
+            "message": "缺必填项",
+            "keys": [
+              "metrics",
+              "not_applicable",
+              "findings"
+            ]
+          },
+          {
+            "kind": "list_min",
+            "label": "至少两条发现",
+            "message": "发现不足两条",
+            "path": "findings",
+            "min_items": 2
+          }
+        ],
+        "on_reject": "back",
+        "back_to": "extract",
+        "max_reworks": 0,
+        "reserve": "0.05",
+        "input_max_chars": 24000
+      },
+      {
+        "step_id": "crosscheck",
+        "title": "对照官方披露",
+        "summary": "拿取到的数和年报里公司自己披露的数逐项对照",
+        "why": "和公司自己披露的数一致，才说明取数和换算没错；对不上的两个数都列给你。",
+        "input_refs": [
+          "series",
+          "analysis"
+        ],
+        "method_text": "For each fiscal year in scope, read the annual report text in the user's data and find the table of key accounting data and financial indicators. Read data only with list_my_data and read_my_data, passing the task id given in the step instructions; there is no other data source. Compare operating revenue, net profit attributable to owners of the parent, net profit after non-recurring items, net cash from operating activities and weighted average return on equity with the values from the series and the analysis. A relative difference above 0.1% is a mismatch. List both values and the difference for every item; when they differ, the deliverable uses the annual report value and says so. If no annual report is in the data, say so and list nothing as matched. Every number must come from the user's data read in this task (cite file, table, row and period) or from an upstream artifact; never recall or estimate a number. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "tools": [
+          "read_my_data"
+        ],
+        "output_artifact": "crosscheck",
+        "output_schema": {
+          "items": [
+            {
+              "name": "string",
+              "year": "YYYY",
+              "ours": "number",
+              "reported": "number|null",
+              "relative_difference": "number|null",
+              "match": "boolean|null",
+              "source": "string"
+            }
+          ],
+          "no_report_years": [
+            "YYYY"
+          ]
+        },
+        "acceptance": [
+          {
+            "kind": "json_object",
+            "label": "交回的格式对",
+            "message": "交回物不是 JSON 对象"
+          },
+          {
+            "kind": "required_keys",
+            "label": "必填项都有",
+            "message": "缺必填项",
+            "keys": [
+              "items",
+              "no_report_years"
+            ]
+          }
+        ],
+        "on_reject": "rework",
+        "max_reworks": 1,
+        "reserve": "0.05",
+        "input_max_chars": 24000
+      },
+      {
+        "step_id": "forecast",
+        "title": "预测",
+        "summary": "只预测营业收入与归母净利润（问题点名的再加别的流量科目）：先回测，再给每季的点估计、区间和假设",
+        "why": "预测一定带回测、区间和假设；比率由预测出的收入与利润推算，不单独外推。方法写死，不合格不返工。",
+        "input_refs": [
+          "scope",
+          "series",
+          "reconcile",
+          "analysis"
+        ],
+        "method_text": "Forecast with the fixed method below only; do not choose another method. Items: operating revenue and net profit attributable to owners of the parent, plus any other flow item the question names. Use single-quarter values; leave out periods listed in reconcile.failed_periods. Method (seasonal year-on-year): next quarter = the same quarter a year earlier x (1 + the median year-on-year growth of the latest 4 quarters); the range uses the minimum and the maximum year-on-year growth of the latest 8 quarters instead of the median. Forecast at most 4 quarters, chaining forward. Backtest first: for each of the latest 4 actual quarters, forecast it from the data before it with the same rule and report the relative error, the mean error and how many actual values fall inside the range; with fewer than 12 quarters, do not backtest and say why. Derive margins for the forecast quarters from the forecast revenue and profit; do not extrapolate ratios on their own. Give at least two assumptions. Never call a forecast certain, a promise or a target. Show every computation with its inputs. Every number must come from the user's data read in this task (cite file, table, row and period) or from an upstream artifact; never recall or estimate a number. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "tools": [],
+        "output_artifact": "forecast",
+        "output_schema": {
+          "method": "string",
+          "backtest": {
+            "quarters": [
+              {
+                "period": "YYYY-Qn",
+                "actual": "number",
+                "forecast": "number",
+                "relative_error": "number",
+                "inside": "boolean"
+              }
+            ],
+            "mean_error": "number"
+          },
+          "rows": [
+            {
+              "item": "string",
+              "period": "YYYY-Qn",
+              "point": "number",
+              "low": "number",
+              "high": "number",
+              "inputs": "string"
+            }
+          ],
+          "derived": [
+            {
+              "name": "string",
+              "period": "YYYY-Qn",
+              "value": "number"
+            }
+          ],
+          "assumptions": [
+            "string"
+          ]
+        },
+        "acceptance": [
+          {
+            "kind": "json_object",
+            "label": "交回的格式对",
+            "message": "交回物不是 JSON 对象"
+          },
+          {
+            "kind": "required_keys",
+            "label": "必填项都有",
+            "message": "缺必填项",
+            "keys": [
+              "method",
+              "backtest",
+              "rows",
+              "assumptions"
+            ]
+          },
+          {
+            "kind": "list_min",
+            "label": "至少两条假设",
+            "message": "假设不足两条",
+            "path": "assumptions",
+            "min_items": 2
+          }
+        ],
+        "on_reject": "human",
+        "max_reworks": 0,
+        "reserve": "0.05",
+        "input_max_chars": 24000
+      },
+      {
+        "step_id": "writeup",
+        "title": "成稿",
+        "summary": "把前面各步写成一篇可核对的稿子，落到项目文件里；结论栏留空",
+        "why": "给你的是一篇能逐条核对的稿子：每个数有出处，对不上的、算不出来的照实写进局限。",
+        "input_refs": [
+          "scope",
+          "profile",
+          "reconcile",
+          "series",
+          "analysis",
+          "crosscheck",
+          "forecast"
+        ],
+        "method_text": "Write the deliverable in Chinese from the input artifacts only; do not read data again (writing the file is the only tool use). Order: answer in plain words first; the data with sources (dataset, statement, row, period); reconciliation and cross-check results; metrics and findings (describe only); the forecast table with method, backtest, ranges and assumptions; limitations; sources. `limitations` must include every missing item, every not-applicable metric, every failed reconciliation and every cross-check mismatch with reasons, and the forecast assumptions. Leave the conclusion section empty. No valuation, rating, target price, or advice to buy, sell or hold. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "tools": [],
+        "output_artifact": "note",
+        "output_file": "成稿.md",
+        "output_schema": {
+          "answer": "string",
+          "limitations": [
+            "string"
+          ],
+          "citations": [
+            "string"
+          ]
+        },
+        "acceptance": [
+          {
+            "kind": "json_object",
+            "label": "交回的格式对",
+            "message": "交回物不是 JSON 对象"
+          },
+          {
+            "kind": "required_keys",
+            "label": "必填项都有",
+            "message": "缺必填项",
+            "keys": [
+              "answer",
+              "limitations",
+              "citations"
+            ]
+          },
+          {
+            "kind": "non_empty",
+            "label": "回答不是空的",
+            "message": "回答为空",
+            "path": "answer"
+          },
+          {
+            "kind": "list_min",
+            "label": "写了局限",
+            "message": "没有写局限",
+            "path": "limitations",
+            "min_items": 1
+          },
+          {
+            "kind": "no_positioning_advice",
+            "label": "没有买卖建议",
+            "message": "出现了评级、目标价或买卖建议的措辞"
+          },
+          {
+            "kind": "max_chars",
+            "label": "不超过三万字",
+            "message": "成稿过长",
+            "max_chars": 30000
+          }
+        ],
+        "on_reject": "rework",
+        "max_reworks": 1,
+        "reserve": "0.05",
+        "input_max_chars": 24000
+      }
+    ]
+  },
+  "data_bindings": [],
+  "rule_sources": [
+    {
+      "rule": "只做 A 股上市公司；吸收财报体检",
+      "source": "user_text",
+      "ref": "U1 2026-10-15「把财报体检合并到财务分析与预测中」「中国A股上市公司财务分析与预测」"
+    },
+    {
+      "rule": "分析 = 问题点到的科目 + 固定核心指标（八项）",
+      "source": "user_confirmed",
+      "ref": "U2 2026-10-15 所有者「按这个定」"
+    },
+    {
+      "rule": "只预测营业收入、归母净利润（点名的再加流量科目）；各自回测、给区间与假设；比率由预测推算",
+      "source": "user_confirmed",
+      "ref": "U2 2026-10-15 所有者「按这个定」"
+    },
+    {
+      "rule": "不逐科目预测整套报表",
+      "source": "user_confirmed",
+      "ref": "U2 2026-10-15 所有者「按这个定」"
+    },
+    {
+      "rule": "数据里没有的不硬算、不冒充（缺项、不适用照实写）",
+      "source": "user_text",
+      "ref": "U3 2026-10-13「这正是我们要的不硬算、不冒充」"
+    },
+    {
+      "rule": "只用用户上传的数据",
+      "source": "user_text",
+      "ref": "U4 2026-10-16「逻辑来自用户idea，数据来自用户上传的数据」"
+    },
+    {
+      "rule": "八步的顺序与有无勾稽、对照官方",
+      "source": "pending_user",
+      "ref": "G0"
+    },
+    {
+      "rule": "数据格式：合并报表、报告期累计数、近 5 年、单位元，另附年报",
+      "source": "pending_user",
+      "ref": "G1"
+    },
+    {
+      "rule": "勾稽四条，差额超过 1 元算不平；不平照实列出、不进预测窗口",
+      "source": "pending_user",
+      "ref": "G2"
+    },
+    {
+      "rule": "季报累计换算单季：Q2=半年−Q1，Q3=三季−半年，Q4=年报−三季；资产负债表不换算",
+      "source": "pending_user",
+      "ref": "G3"
+    },
+    {
+      "rule": "核心指标口径（毛利率、净利率、ROE 用平均归母净资产、现金流比、同比）",
+      "source": "pending_user",
+      "ref": "G4"
+    },
+    {
+      "rule": "分母为 0、为负或缺数时标不适用",
+      "source": "pending_user",
+      "ref": "G5"
+    },
+    {
+      "rule": "对照年报主要会计数据五项，相对差超过 0.1% 算对不上，以年报为准",
+      "source": "pending_user",
+      "ref": "G6"
+    },
+    {
+      "rule": "预测方法：季节性同比法，区间用近 8 季同比最小最大",
+      "source": "pending_user",
+      "ref": "G7"
+    },
+    {
+      "rule": "回测最近 4 季；不足 12 季不回测；最多预测 4 季",
+      "source": "pending_user",
+      "ref": "G8"
+    },
+    {
+      "rule": "成稿结构与结论栏留空",
+      "source": "pending_user",
+      "ref": "G9"
+    },
+    {
+      "rule": "公司不在数据里就停；合并与母公司混在一起时问用户",
+      "source": "pending_user",
+      "ref": "G11"
+    }
+  ]
+}
