@@ -252,10 +252,8 @@ R2.2 **通过** · 2026-10-17 · Opus。回执 `R2.2-qwen.20261017-1209.md`：�
 工具 `k8s/docs/rename-tools/r3_checkout.sh`（上次的工具，0028 加了两项：旧主目录没有 gitee remote 时用 `GITEE_PREFIX`；`ORIGIN_PUSH_GITEE=1` 给 origin 补 gitee 推送地址）。**必须用 bash**：
 
 ```bash
-# 远程机（Opus）：远程机的 origin 只推 GitHub，照旧
-bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh investment-app knowbench-app
-GITEE_PREFIX=https://gitee.com/sunmoonlion/ bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh runtime sunmoon-link
-# 本地机（Qwen）：本地机 investment-app 的 origin 推 GitHub、gitee 两个地址，sunmoon-link 照这个布局补上
+# 两台机器的 investment-app 的 origin 都推 GitHub、gitee 两个地址，sunmoon-link 照这个布局补上（ORIGIN_PUSH_GITEE=1）
+# 远程机（Opus，已做，见状态）；本地机（Qwen）：
 bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh investment-app knowbench-app
 GITEE_PREFIX=https://gitee.com/sunmoonlion/ ORIGIN_PUSH_GITEE=1 bash ~/worktrees/qwen/k8s/docs/rename-tools/r3_checkout.sh runtime sunmoon-link
 ```
@@ -269,7 +267,7 @@ GITEE_PREFIX=https://gitee.com/sunmoonlion/ ORIGIN_PUSH_GITEE=1 bash ~/worktrees
 核对：脚本最后打印的核对原样进回执。要看到：每个工位 `branch` = 工位名、`head` = `origin`、`dirty=0`；子仓 `url` 是新仓名、`push` 是 GitHub 与 gitee 的新仓名；主目录 remote（新）与备份的（旧）相比只有仓名变了（runtime 多一个 gitee）；`repos.conf` 里是 `$HOME/master/<新名>`。
 
 **停点**：Opus 写 `R3-opus`（远程机）、Qwen 写 `R3-qwen`（本地机），Opus 审。
-**状态**：待做（R2.2 通过后，远程机先做）。
+**状态**：远程机**完成** · 2026-10-17 · Opus，回执 `R3-opus.*.md`：两组 exit=0；五个工位都「挂出」、`dirty=0`；qwen 工位在 R1 提交（`3fa5a54`、`130c966`），其余工位在各自原提交；子仓 url 都是新仓名、推送 GitHub 与 gitee；`repos.conf` 两行换新名；备份 `~/rename-backup/20261017-1212-investment-app`、`…-1214-runtime`。更正：远程机原来的 investment-app origin 也推两个地址，runtime 那次漏了 `ORIGIN_PUSH_GITEE=1`，跑完后已手工补齐（与 knowbench-app 相同），上面的命令已改。**Qwen 可以做本地机 R3**，回执写 `R3-qwen`。
 
 ## R4 同步配置 — 远程机 Opus，本地机 Qwen
 
