@@ -21,7 +21,7 @@ knowmart_backend_deployment:
   # 普通用户所在组织（决策 D21、SDD 0014）：网页端应用挂这里；管理端仍在 built-in。
   identity_user_organization: sunmoonai
   identity_revision: v4
-  # 跨应用跳转（SDD 0027）：工作台带用户来「我的分身」选一位，按登记的回跳地址回去（investment 的工作台）
+  # 跨应用跳转（SDD 0027）：工作台带用户来「我的分身」选一位，按登记的回跳地址回去（knowbench 的工作台）
   cross_app_enabled: true
   domain_env:
     # 登录完能回到「我的分身」（从工作台带来的 from、ref 不丢）；其余同模板默认
@@ -30,7 +30,7 @@ knowmart_backend_deployment:
   # 不重复维护。内部入口在 traefik service-access 的 service_access_routes.knowmart。
   service_receivers:
     - {relation: deliver, caller: knowlab, enabled: true}
-    - {relation: summon, caller: investment, enabled: true}
+    - {relation: summon, caller: knowbench, enabled: true}
   api_port: 8000
   api_replicas: 1
   worker_replicas: 1

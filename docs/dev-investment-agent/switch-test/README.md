@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | 远程助手 | 远程机 `~/worktrees/fable/*` | 写代码、文档、设计、发布卡、任务页；审读 |
 | **Cursor** | 本地机 `~/worktrees/fable/k8s` | 只跑 `inbox/cursor/` 里的卡；不看 astra 的箱子，不从账本领活 |
-| **astra** | 本地机 `~/worktrees/fable/runtime` | 只改 `runtime/agent`，只按 `inbox/astra/` 里的 `astra-NNN.md` 做；箱子空就没有任务 |
+| **astra** | 本地机 `~/worktrees/fable/sunmoon-link` | 只改 `sunmoon-link/agent`，只按 `inbox/astra/` 里的 `astra-NNN.md` 做；箱子空就没有任务 |
 | 所有者 | 两边 | 两个脚本都带 `WS=<工位>`（不猜，哪个工位都不特殊）；传话；真机验收 |
 
 本目录：`README.md`（本文，约定）、`human-local.sh`（**所有者在本地机上跑，拉：同步仓与副本，列出待办**）、`human-remote.sh`（**所有者在本地机上跑，推：把本地助手已提交的结果推回远程，顺带补提交漏掉的改动与父仓 gitlink**）、`inbox/<助手名>/`（每个助手一个收件箱：`cursor`、`astra`、`kimi`、`luna`、`qwen` 是本地助手的，远程写、各自做、互不看；`opus` 是在 qwen 工位做设计与审读的 Opus 的，它再给 `qwen` 写任务页；`fable` 是远程助手的，所有者或别的工位要派活给远程时放这里）、`done/`（已办与归档）、`hold/`（写好但暂缓的卡，不是待办）、`review-log.md`（远程的审读与交接记录，只追加）、做完的都归 `done/`。测试脚本不放这里，放被测仓。
@@ -72,7 +72,7 @@ bash scripts/<脚本名>.sh > "$out" 2>&1; echo "exit=$?" >> "$out"; tail -3 "$o
 git status --short
 git add scripts/results/ <待办让改的文件>
 git commit -m "test(local): <待办文件名> 结果"
-#       被测仓是子仓（如 investment-app/investment-backend）时只在子仓提交；父仓的 gitlink 由 human-remote.sh 提交
+#       被测仓是子仓（如 knowbench-app/knowbench-backend）时只在子仓提交；父仓的 gitlink 由 human-remote.sh 提交
 
 # 4. 对话里一句：「跑完了」
 ```
@@ -138,7 +138,7 @@ Windows 上跑 `.ps1`：`powershell -ExecutionPolicy Bypass -File scripts\<脚�
 | --- | --- | --- |
 | Codex CLI | **0.155.1**，与远程机同版 | 探针与联调：`codex app-server`（云端角色）、`codex exec-server`（用户机器角色） |
 | Python 3.10+、uv | 近期版 | 后端测试；探针的 `websockets` venv（`uv venv .venv && uv pip install --python .venv/bin/python websockets`） |
-| Node.js 20+、pnpm 9+ | 近期版 | `runtime` 仓 |
+| Node.js 20+、pnpm 9+ | 近期版 | `sunmoon-link` 仓 |
 | Docker | 近期版 | Postgres 容器：`docker run -d --rm --name pgtest -e POSTGRES_PASSWORD=t -e POSTGRES_USER=t -p 127.0.0.1:55432:5432 postgres:16-alpine` |
 | kind + kubectl | 现有 | 集群相关测试 |
 
@@ -159,7 +159,7 @@ echo "主机 $(hostname)  时间 $(date -Is)  工位 ${WS}  系统 $(uname -srm)
 echo "内存 $(free -h | awk '/Mem:/{print $2" 总 / "$7" 可用"}')  磁盘 $(df -h / | awk 'NR==2{print $4" 可用"}')"
 echo "Python $(python3 -V 2>&1)  Node $(node --version 2>/dev/null || echo 无)  Docker $(docker --version 2>/dev/null || echo 无)"
 echo "Codex $(codex --version 2>/dev/null || echo 无)  CODEX_HOME=${CODEX_HOME:-未设}"
-for r in k8s knowfeed-app investment-app knowbase-app tpl-app runtime; do
+for r in k8s knowfeed-app knowbench-app knowbase-app tpl-app runtime; do
   d="${HOME}/worktrees/${WS}/${r}"; [ -e "${d}/.git" ] || continue
   printf "%-16s %s  %s\n" "${r}" "$(git -C "${d}" rev-parse --short HEAD)" "$(git -C "${d}" branch --show-current)"
   for s in "${d}"/*-backend; do [ -e "${s}/.git" ] && printf "  %-14s %s  %s\n" "$(basename "${s}")" "$(git -C "${s}" rev-parse --short HEAD)" "$(git -C "${s}" branch --show-current)"; done

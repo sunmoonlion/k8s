@@ -46,7 +46,7 @@
     service_env_prefix: '{{ "KNOWBASE_APP_SERVICE" if application_name == "knowfeed" else "KNOWBASE_RETRIEVAL_SERVICE" }}'
     service_bindings:
       ingest: '{{ (lookup("file", repo + "/gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml") | from_yaml).knowfeed_backend_deployment.knowbase_service }}'
-      retrieve: '{{ (lookup("file", repo + "/gitops/components/app-platform/investment-app/investment-backend/config.yaml") | from_yaml).investment_backend_deployment.knowbase_service }}'
+      retrieve: '{{ (lookup("file", repo + "/gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml") | from_yaml).knowbench_backend_deployment.knowbase_service }}'
     all_candidate_files: '{{ core_candidate_files + (["agent-releases/workload.yaml","agent-releases/provision.sops.yaml","agent-releases/kustomization.yaml","runtime/agent-releases.sops.yaml"] if agent_releases_enabled else []) + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) + (["service-identity/workload.yaml","service-identity/provision.sops.yaml","service-identity/kustomization.yaml","runtime/service.sops.yaml"] if service_enabled else []) }}'
     selected_application_components: '{{ selection.applications[application_name] }}'
     selected_backend: '{{ application_name + "-backend" in selected_application_components }}'
@@ -60,7 +60,7 @@
         quiet: true
         that:
           - not ansible_check_mode
-          - application_name in ['tpl','knowfeed','knowbase','investment','knowlab','knowmart']
+          - application_name in ['tpl','knowfeed','knowbase','knowbench','knowlab','knowmart']
           - application_action == 'check'
           - application_action == 'plan' or cfg.enabled | bool
           - selected_application_components | length > 0
@@ -117,7 +117,7 @@
           - cfg.redis_user == application_name + '_runtime'
           - cfg.redis_key_pattern == application_name + ':*'
           - not provider_enabled or (application_name == 'knowbase' and not storage_enabled)
-          - not service_enabled or (application_name in ['knowfeed','investment'] and service_access_enabled | bool)
+          - not service_enabled or (application_name in ['knowfeed','knowbench'] and service_access_enabled | bool)
           - not receiver_enabled or (application_name == 'knowbase' and provider_enabled and service_access_enabled | bool)
           - not receiver_enabled or (service_bindings.ingest.enabled | bool and service_bindings.retrieve.enabled | bool)
           - not receiver_enabled or service_bindings.ingest.client_id != service_bindings.retrieve.client_id
@@ -214,7 +214,7 @@
         - name: Wait for current generation Ready at the promoted digest
           ansible.builtin.command:
             argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
-          loop: '{{ [application_name + "-database",application_name + "-migration",application_name + "-redis",application_name + "-rabbitmq",application_name + "-identity",application_name + "-runtime",application_name + "-web",application_name + "-admin"] + (["investment-agent-releases"] if agent_releases_enabled else []) + ([application_name + "-storage"] if storage_enabled else []) + ([application_name + "-provider"] if provider_enabled else []) + ([application_name + "-service-identity"] if service_enabled else []) }}'
+          loop: '{{ [application_name + "-database",application_name + "-migration",application_name + "-redis",application_name + "-rabbitmq",application_name + "-identity",application_name + "-runtime",application_name + "-web",application_name + "-admin"] + (["knowbench-agent-releases"] if agent_releases_enabled else []) + ([application_name + "-storage"] if storage_enabled else []) + ([application_name + "-provider"] if provider_enabled else []) + ([application_name + "-service-identity"] if service_enabled else []) }}'
           register: stage
           changed_when: false
           until:

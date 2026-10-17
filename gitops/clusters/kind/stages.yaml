@@ -62,15 +62,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: investment-admin, namespace: flux-system}
+metadata: {name: knowbench-admin, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/investment-app/investment-admin-frontend
+  path: ./components/app-platform/knowbench-app/knowbench-admin-frontend
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: investment-runtime}
+    - {name: knowbench-runtime}
     - {name: traefik}
   prune: false
   deletionPolicy: Orphan
@@ -81,12 +81,12 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: investment-database, namespace: flux-system}
+metadata: {name: knowbench-database, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/investment-app/investment-backend/database
+  path: ./components/app-platform/knowbench-app/knowbench-backend/database
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: postgresql}
@@ -99,15 +99,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: investment-migration, namespace: flux-system}
+metadata: {name: knowbench-migration, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/investment-app/investment-backend/migration
+  path: ./components/app-platform/knowbench-app/knowbench-backend/migration
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: investment-database}
+    - {name: knowbench-database}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -117,15 +117,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: investment-redis, namespace: flux-system}
+metadata: {name: knowbench-redis, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/investment-app/investment-backend/redis
+  path: ./components/app-platform/knowbench-app/knowbench-backend/redis
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: investment-migration}
+    - {name: knowbench-migration}
     - {name: redis}
   prune: false
   deletionPolicy: Orphan
@@ -136,15 +136,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: investment-rabbitmq, namespace: flux-system}
+metadata: {name: knowbench-rabbitmq, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/investment-app/investment-backend/rabbitmq
+  path: ./components/app-platform/knowbench-app/knowbench-backend/rabbitmq
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: investment-redis}
+    - {name: knowbench-redis}
     - {name: rabbitmq}
   prune: false
   deletionPolicy: Orphan
@@ -155,15 +155,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: investment-identity, namespace: flux-system}
+metadata: {name: knowbench-identity, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/investment-app/investment-backend/identity
+  path: ./components/app-platform/knowbench-app/knowbench-backend/identity
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: investment-rabbitmq}
+    - {name: knowbench-rabbitmq}
     - {name: casdoor}
   prune: false
   deletionPolicy: Orphan
@@ -174,17 +174,17 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: investment-runtime, namespace: flux-system}
+metadata: {name: knowbench-runtime, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/investment-app/investment-backend/runtime
+  path: ./components/app-platform/knowbench-app/knowbench-backend/runtime
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: investment-identity}
-    - {name: investment-agent-releases}
-    - {name: investment-service-identity}
+    - {name: knowbench-identity}
+    - {name: knowbench-agent-releases}
+    - {name: knowbench-service-identity}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -194,12 +194,12 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: investment-service-identity, namespace: flux-system}
+metadata: {name: knowbench-service-identity, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/investment-app/investment-backend/service-identity
+  path: ./components/app-platform/knowbench-app/knowbench-backend/service-identity
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: casdoor}
@@ -213,12 +213,12 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: investment-agent-releases, namespace: flux-system}
+metadata: {name: knowbench-agent-releases, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/investment-app/investment-backend/agent-releases
+  path: ./components/app-platform/knowbench-app/knowbench-backend/agent-releases
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: object-storage}
@@ -231,15 +231,15 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: investment-web, namespace: flux-system}
+metadata: {name: knowbench-web, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/investment-app/investment-web-frontend
+  path: ./components/app-platform/knowbench-app/knowbench-web-frontend
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: investment-runtime}
+    - {name: knowbench-runtime}
     - {name: traefik}
   prune: false
   deletionPolicy: Orphan
@@ -374,7 +374,7 @@ spec:
     - {name: knowbase-provider}
     - {name: ragflow-runtime}
     - {name: knowfeed-service-identity}
-    - {name: investment-service-identity}
+    - {name: knowbench-service-identity}
   prune: false
   deletionPolicy: Orphan
   wait: true

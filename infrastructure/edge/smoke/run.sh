@@ -29,16 +29,16 @@ docker run -d --name sunmoon-edge-smoke-frpc --network host -e FRP_AUTH_TOKEN="$
 sleep 4
 r() { curl -sk --max-time 10 --resolve "$1:30443:127.0.0.1" "https://$1:30443$2" "${@:3}"; }
 echo "== 检查"
-for h in investment relay; do
+for h in knowbench relay; do
   check "$h 经隧道回显正确 Host" "r $h.sunmoonai.com /hello | grep -q '\"host\":\"$h.sunmoonai.com'"
 done
 check "casdoor 放行的登录路径经隧道回显正确 Host" "r casdoor.sunmoonai.com /login/oauth/authorize | grep -q '\"host\":\"casdoor.sunmoonai.com'"
 check "casdoor 没放行的路径 403（管理界面不对公网）" "[ \"\$(r casdoor.sunmoonai.com /api/get-users -o /dev/null -w '%{http_code}')\" = 403 ] && [ \"\$(r casdoor.sunmoonai.com / -o /dev/null -w '%{http_code}')\" = 403 ]"
-check "proto=https 保留到后端" "r investment.sunmoonai.com /x | grep -q '\"proto\":\"https\"'"
-check "X-Forwarded-For 第一个是真实来源" "r investment.sunmoonai.com /x | grep -q '\"xff\":\"127.0.0.1'"
+check "proto=https 保留到后端" "r knowbench.sunmoonai.com /x | grep -q '\"proto\":\"https\"'"
+check "X-Forwarded-For 第一个是真实来源" "r knowbench.sunmoonai.com /x | grep -q '\"xff\":\"127.0.0.1'"
 check "未列出的域名 404" "[ \"\$(r harbor.sunmoonai.com / -o /dev/null -w '%{http_code}')\" = 404 ]"
-check "80 跳 30443" "curl -s -o /dev/null -w '%{redirect_url}' --resolve investment.sunmoonai.com:80:127.0.0.1 http://investment.sunmoonai.com/a | grep -q '^https://investment.sunmoonai.com:30443/a'"
-check "SSE 分三次到达（不被缓冲）" "r investment.sunmoonai.com /sse -N | awk '{print systime()}' | uniq | wc -l | grep -qE '^[23]$'"
+check "80 跳 30443" "curl -s -o /dev/null -w '%{redirect_url}' --resolve knowbench.sunmoonai.com:80:127.0.0.1 http://knowbench.sunmoonai.com/a | grep -q '^https://knowbench.sunmoonai.com:30443/a'"
+check "SSE 分三次到达（不被缓冲）" "r knowbench.sunmoonai.com /sse -N | awk '{print systime()}' | uniq | wc -l | grep -qE '^[23]$'"
 check "WebSocket 升级透传 101" "curl -sk -i --max-time 5 --http1.1 --resolve relay.sunmoonai.com:30443:127.0.0.1 -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: c21va2Utc21va2Utc21va2U=' https://relay.sunmoonai.com:30443/ws 2>/dev/null | head -1 | grep -q ' 101 '"
 docker run -d --name sunmoon-edge-smoke-badfrpc --network host -e FRP_AUTH_TOKEN="wrong-token-wrong-token-wrong-token" \
   -v "$here/frpc.toml.tmpl:/etc/frp/frpc.toml:ro" "$frpc_image" -c /etc/frp/frpc.toml >/dev/null; sleep 3

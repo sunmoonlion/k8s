@@ -84,7 +84,7 @@
 
 ## 六、代码怎么放
 
-和 investment、knowfeed 一样：`features/<功能>/{api,model,ui}`，由同一份测试守着。网页端两个功能：`shell`、`catalog`。管理端一个：`registry`。契约都对着真后端录下来的返回逐份检查。
+和 knowbench、knowfeed 一样：`features/<功能>/{api,model,ui}`，由同一份测试守着。网页端两个功能：`shell`、`catalog`。管理端一个：`registry`。契约都对着真后端录下来的返回逐份检查。
 
 ## 七、验证
 

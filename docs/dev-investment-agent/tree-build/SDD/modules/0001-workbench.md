@@ -1,6 +1,6 @@
 # `0001-workbench` 工作台后端
 
-> 跑在内网；映射 `investment-app/investment-backend`。账房、方向盘、顾问、审批分发、验收、交付，以及每个用户 app-server 的唯一客户端。
+> 跑在内网；映射 `knowbench-app/knowbench-backend`。账房、方向盘、顾问、审批分发、验收、交付，以及每个用户 app-server 的唯一客户端。
 > 不调模型（`C-A9`），不执行工具。
 
 ## 内部的六块
@@ -59,7 +59,7 @@
 
 ## 实现状态（2026-09-24，第三段）
 
-已落在 `investment-backend/app`：迁移 `20260924_0008_workbench`；`domain/workbench`（状态表、对象、专家包 `SMOKE`/`DATA_QUERY`）；`infrastructure/workbench`（仓储、app-server 客户端）；`application/workbench`（账本、会话服务、runner、顾问、验收）；`interfaces/endpoints/workbench_routes.py`（`/api/workbench`）；第五个进程角色 `runner`。测试 457 通过；本机真链 14 项 pass（`k8s/scripts/local-integration/workbench-chain.sh`）。
+已落在 `knowbench-backend/app`：迁移 `20260924_0008_workbench`；`domain/workbench`（状态表、对象、专家包 `SMOKE`/`DATA_QUERY`）；`infrastructure/workbench`（仓储、app-server 客户端）；`application/workbench`（账本、会话服务、runner、顾问、验收）；`interfaces/endpoints/workbench_routes.py`（`/api/workbench`）；第五个进程角色 `runner`。测试 457 通过；本机真链 14 项 pass（`k8s/scripts/local-integration/workbench-chain.sh`）。
 
 未做：`F-LEDGER-02` 只重建命令队列，runner 重启丢未决工具审批；runner 多实例分片；`DATA_QUERY` 需知识 MCP（第四段）；`F-SIGNAL-01`；`D10` 令牌签发。
 

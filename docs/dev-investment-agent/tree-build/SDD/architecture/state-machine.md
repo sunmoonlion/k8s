@@ -1,7 +1,7 @@
 # 两层状态机
 
 > Task 与 Attempt。工作台实现转换；网页按它渲染；沙箱与本地代理不持有状态。
-> 起点是 `investment-app` 现有的 Run 状态机、事件表与 Outbox；按能力收窄：首版单委托、无并行。
+> 起点是 `knowbench-app` 现有的 Run 状态机、事件表与 Outbox；按能力收窄：首版单委托、无并行。
 
 **状态机与 workflow 的分工**：状态机管纵向（这个 Task 现在算什么），workflow 管横向（走到第几步）。步骤前进只动游标，不动状态词。workflow 不得自己定义状态（`P0`）。方向盘是 Session 属性，不是状态词（[方向盘](wheel.md)）。
 

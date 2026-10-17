@@ -166,7 +166,7 @@ def test_records_mcp_is_configured_only_when_both_parts_are_given():
     without = target.render("u2", target.SandboxSpec(**base), "tok" * 12)
     with_both = target.render(
         "u2",
-        target.SandboxSpec(**base, records_mcp_url="http://investment-api.app-platform-dev.svc.cluster.local:8000/api/mcp/workbench", records_mcp_token="jwt-0123456789abcdef"),
+        target.SandboxSpec(**base, records_mcp_url="http://knowbench-api.app-platform-dev.svc.cluster.local:8000/api/mcp/workbench", records_mcp_token="jwt-0123456789abcdef"),
         "tok" * 12,
     )
     env = lambda d: {e["name"]: e for e in d["deployment"]["spec"]["template"]["spec"]["containers"][0]["env"]}  # noqa: E731

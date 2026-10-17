@@ -24,11 +24,11 @@ runtime/
 - **执行隔离**：Windows 用内层 Codex 沙箱 + 严格协议过滤（不嵌套外沙箱；`init` 实际试跑受限命令，有可用的 elevated 环境优先用，否则探 unelevated，都不行就拒绝启动，不自动提权）；Linux 用 bwrap 外沙箱。
 - **本机上限**（`C-A11`）：根目录白名单、沙箱模式、网络；越出的写与对外动作本机当面确认；放宽类改动要在本机确认窗里点允许。
 - **版本成对**（`C-C8`）：exec-server 与沙箱里的 app-server 钉同一版，会合点在握手里核对，不匹配拒绝连接。
-- **安装与配对**：网页「接入电脑」给一行命令；安装包由 investment 发放（对象存储桶 `agent-releases`）；连会合点用 investment 签发、会合点就地验签的短期令牌。
+- **安装与配对**：网页「接入电脑」给一行命令；安装包由 knowbench 发放（对象存储桶 `agent-releases`）；连会合点用 knowbench 签发、会合点就地验签的短期令牌。
 - **数据不经云端**：用户在别的电脑上看不到这台电脑的文件，文件只在装着代理的那台电脑上。
 
 设计：[0005 代理](../../dev-investment-agent/tree-build/SDD/modules/0005-agent.md)、[0012 Windows 安装与首次接入](../../dev-investment-agent/tree-build/SDD/modules/0012-agent-onboarding.md)、安全模型见 [`SDD/architecture/security.md`](../../dev-investment-agent/tree-build/SDD/architecture/security.md)「本地上限」。
 
 ## 发版
 
-走发布卡：在 runtime 里构建 Windows 安装包 → 改 `k8s/gitops/components/app-platform/investment-app/investment-backend/agent-releases/config.yaml`（版本、ZIP 与清单摘要、对象名，唯一输入）→ `make -C infrastructure agent-release-verify` / `agent-release-upload AGENT_ZIP=<绝对路径>` 校验并条件上传 → 按发布链部署 investment → 在所有者的 Windows 上真机验。说明见该目录 `README.md`。
+走发布卡：在 runtime 里构建 Windows 安装包 → 改 `k8s/gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml`（版本、ZIP 与清单摘要、对象名，唯一输入）→ `make -C infrastructure agent-release-verify` / `agent-release-upload AGENT_ZIP=<绝对路径>` 校验并条件上传 → 按发布链部署 knowbench → 在所有者的 Windows 上真机验。说明见该目录 `README.md`。

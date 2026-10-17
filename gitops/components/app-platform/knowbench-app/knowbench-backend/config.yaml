@@ -1,0 +1,143 @@
+# 投资应用基础运行配置；跨应用业务、模型Key和执行环境另行接入验收。
+---
+knowbench_backend_deployment:
+  database: knowbench
+  database_runtime_user: knowbench_runtime
+  database_migrator_user: knowbench_migrator
+  database_extensions: []
+  database_bootstrap_revision: v1
+  migration_job_revision: v7
+  expected_schema_revision: '20261012_0018'
+  private_dir: /etc/sunmoon/applications/sunmoon-kind/knowbench
+  backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/knowbench
+  deploy_budget_bytes: 2147483648
+  redis_user: knowbench_runtime
+  redis_key_pattern: knowbench:*
+  # 工作台事件通知只允许本应用的频道，不开放其他应用或管理命令。
+  redis_pubsub_channel_pattern: knowbench:workbench:*
+  redis_identity_revision: v3
+  rabbitmq_user: knowbench_runtime
+  rabbitmq_vhost: knowbench
+  rabbitmq_queue: knowbench.default
+  rabbitmq_identity_revision: v2
+  identity_organization: built-in
+  # 普通用户所在组织（决策 D21、SDD 0014）：网页端应用挂这里；管理端仍在 built-in。
+  identity_user_organization: sunmoonai
+  identity_revision: v4
+  api_port: 8000
+  api_replicas: 1
+  worker_replicas: 1
+  worker_concurrency: 2
+  scheduler_replicas: 1
+  resources:
+    api:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: '2'
+        memory: 768Mi
+    worker:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: '2'
+        memory: 1Gi
+    scheduler:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: '1'
+        memory: 512Mi
+    runner:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: '1'
+        memory: 512Mi
+  celery_control_queue_exclusive: true
+  celery_event_queue_exclusive: true
+  domain_runtime_env: {}
+  # 0010：工作台（0001-workbench）。沙箱、会合点、供给器在各自的组件；这里只是地址与开关。
+  cross_app_enabled: true
+  runner_replicas: 1
+  # 分身测试的测试电脑（SDD 0027 §3.4，见 test-computer/README.md）：先上传 Linux 包（agent-release-linux-upload）再开
+  knowbot_test_computer:
+    enabled: true
+    workspace: /workspace
+    storage: 20Gi
+  domain_env:
+    WORKBENCH_ENABLED: 'true'
+    WORKBENCH_REDIS_KEY_PREFIX: 'knowbench:workbench'
+    WORKBENCH_ENVIRONMENT_KEY: user-pc
+    WORKBENCH_POLL_SECONDS: '1.0'
+    WORKBENCH_RUNNER_ID: '{{ cluster_name }}-r1'
+    WORKBENCH_PROVISIONER_URL: 'http://sandbox-provisioner.{{ sandbox_namespace }}.svc.cluster.local:8080'
+    WORKBENCH_RELAY_ADMIN_URL: 'ws://relay.{{ relay_namespace }}.svc.cluster.local:47100'
+    WORKBENCH_RELAY_PUBLIC_URL: 'wss://relay.sunmoonai.com:{{ entry_port }}'
+    # 作为运行方跑分身测试（SDD 0027 §3.4）：测试电脑的工作区、每月测试费用上限（所有者定 1000 元）。
+    # 测试账号 KNOWBOT_TEST_SUBJECT 在 P6 建好 knowbot-tester 后填；不填时推进器不启动、测试接口回 503
+    KNOWBOT_TEST_WORKSPACE: /workspace
+    KNOWBOT_TEST_MONTHLY_LIMIT: '1000'
+    WORKBENCH_TOKEN_ISSUER: sunmoon-workbench
+    WORKBENCH_SANDBOX_MODEL_PROVIDER: kimi
+    WORKBENCH_SANDBOX_MODEL: kimi-k3
+    WORKBENCH_SANDBOX_PROVIDER_BASE_URL: https://api.moonshot.cn/v1
+    WORKBENCH_RECORDS_MCP_ENABLED: 'true'
+    WORKBENCH_RECORDS_MCP_URL: 'http://knowbench-api.{{ app_namespace }}.svc.cluster.local:8000/api/mcp/workbench'
+    WORKBENCH_TRUSTED_PROXY_CIDRS: '127.0.0.1/32,10.247.0.0/16'
+  domain_secrets:
+    # Fernet 密钥（后端用 cryptography.Fernet 加密用户的模型 key）：2026-10-06 第 7 步登记 key 报 internal_error，原因是默认的 40 位随机串不是 Fernet 格式
+    WORKBENCH_CREDENTIAL_KEY: {source: random, format: fernet}
+    WORKBENCH_AGENT_PAIRING_HMAC_KEY: {source: random}
+    WORKBENCH_PROVISIONER_TOKEN: {source: component-input, name: sandbox-provisioner, key: token}
+    WORKBENCH_RELAY_ADMIN_TOKEN: {source: component-input, name: relay, key: admin_token}
+    WORKBENCH_TOKEN_SIGNING_KEY: {source: workbench-signing, key: private_key_pem}
+  domain_secrets_roles: [api, runner]
+  domain_egress:
+    - {name: provisioner, roles: [api], namespace_var: sandbox_namespace, pod_labels: {app.kubernetes.io/name: sandbox-provisioner}, ports: [8080]}
+    # runner 也要到会合点的管理口：它隔 10 秒问一次谁在线，登记「我的机器」、置在线离线（账 49）
+    - {name: relay-admin, roles: [api, runner], namespace_var: relay_namespace, pod_labels: {app.kubernetes.io/name: relay}, ports: [47100]}
+    - {name: sandboxes, roles: [runner], namespace_var: sandbox_namespace, pod_labels: {sunmoonai.com/sandbox: 'true'}, ports: [47800]}
+  domain_ingress:
+    - {name: sandboxes, namespace_var: sandbox_namespace, pod_labels: {sunmoonai.com/sandbox: 'true'}}
+
+  # 所有者 2026-09-29 定：撤销 knowbench → knowbase 的检索身份（没有使用方了）。
+  # 2026-10-06 暂时保留：knowbase 的接收端把 ingest 与 retrieve 两个绑定写死成一对（阶段依赖、校验、运行声明、
+  # 检查都按两个来），关掉这一个要先改共用模板。待办 23 撞上了，先按原样部署，撤销另开一轮（迁移账本 21）。
+  knowbase_service:
+    enabled: true
+    application: sunmoonai-knowbench-knowbase-retrieve
+    client_id: sunmoon-knowbench-knowbase-retrieve
+    organization: sunmoon-workload-knowbench-knowbase
+    scope: knowbase:retrieve
+    job_revision: v1
+    token_seconds: 900
+  # 通用出站服务身份（SDD 0027 P1，机制在 common/backend/service-client）：工作台「请分身」后向 knowmart
+  # 按会话里的所有者取分身清单。名字按约定派生，prepare 会逐项核；目标的内部入口在 traefik service-access。
+  service_clients:
+    - target: knowmart
+      relation: summon
+      enabled: true
+      application: sunmoonai-knowbench-knowmart-summon
+      client_id: sunmoon-knowbench-knowmart-summon
+      organization: sunmoon-workload-knowbench-knowmart-summon
+      scope: knowmart:summon
+      job_revision: v1
+      token_seconds: 900
+    # 分身运行时读用户自己绑定的数据：工作台按委托核过，再向 knowlab 读（SDD 0027 §3.5，契约 knowbot-data/v1）
+    - target: knowlab
+      relation: read
+      enabled: true
+      application: sunmoonai-knowbench-knowlab-read
+      client_id: sunmoon-knowbench-knowlab-read
+      organization: sunmoon-workload-knowbench-knowlab-read
+      scope: knowlab:read
+      job_revision: v1
+      token_seconds: 900
+  # 作为运行方接收 knowlab 的「跑测试」（契约 knowbot-test-run/v1，SDD 0027 决定 12）
+  service_receivers:
+    - {relation: testrun, caller: knowlab, enabled: true}

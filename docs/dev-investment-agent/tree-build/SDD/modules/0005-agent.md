@@ -1,6 +1,6 @@
 # `0005-agent` 本地代理
 
-> 用户机器上唯一要装的东西。映射 `runtime` 仓。包 `codex exec-server`，出站连会合点，守本地上限。不跑模型循环，不接触 key。
+> 用户机器上唯一要装的东西。映射 `sunmoon-link` 仓。包 `codex exec-server`，出站连会合点，守本地上限。不跑模型循环，不接触 key。
 
 ## 一个代理里有什么
 
@@ -33,7 +33,7 @@
 
 ## 实现状态（2026-09-24）
 
-`runtime/agent/`（`@sunmoon/agent` 0.1.0，TypeScript）：exec-server 守护（Linux 外沙箱 = 随包 bwrap）、出站桥（会合点协议 v1）、协议过滤（`process/start`、fs 写、`http/request`）、CLI `init|roots|ceiling|start|status`；27 个单元测试；一机与容器形态联调 pass。未做见 `runtime/CHECKPOINT.md`：弹窗、令牌签发、macOS 外沙箱、Windows 启动、勾选上送、网络硬禁。
+`sunmoon-link/agent/`（`@sunmoon/agent` 0.1.0，TypeScript）：exec-server 守护（Linux 外沙箱 = 随包 bwrap）、出站桥（会合点协议 v1）、协议过滤（`process/start`、fs 写、`http/request`）、CLI `init|roots|ceiling|start|status`；27 个单元测试；一机与容器形态联调 pass。未做见 `runtime/CHECKPOINT.md`：弹窗、令牌签发、macOS 外沙箱、Windows 启动、勾选上送、网络硬禁。
 
 ## 平台
 

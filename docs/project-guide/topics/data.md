@@ -11,7 +11,7 @@
 | tpl | `tpl` | 自己的 ACL 用户与键前缀；自己的 vhost | — | — |
 | knowfeed | `knowfeed` | 同上 | 桶 `knowfeed-originals`（原件与数据集文件，键前缀 `knowfeed/`） | — |
 | knowbase | `knowbase` | 同上 | 不自己存原件：只读 knowfeed 桶的 `knowfeed/` 前缀 | RAGFlow 数据集 `sunmoon-kind-knowbase-default`（派生，可重建，`C-D5`） |
-| investment | `investment` | 同上 | 桶 `agent-releases`（本地代理安装包，私有、带版本） | — |
+| knowbench | `knowbench` | 同上 | 桶 `agent-releases`（本地代理安装包，私有、带版本） | — |
 | Casdoor | `casdoor` | — | — | — |
 | knowlab（未建） | 将有自己的库 | — | 将有自己的存储：用户上传的数据集归它（先答 `C-D12` 五问） | — |
 
@@ -24,8 +24,8 @@ MongoDB、Neo4j 在平台里已部署，**应用还没用**。
 | 数据 | 在哪 | 说明 |
 | --- | --- | --- |
 | 用户的文件、工作区 | 用户自己的电脑 | 本地代理只让沙箱读写他加进白名单的目录；不经云端 |
-| 对话、项目、底稿、运行记录 | investment 的库 | 结果明文入库（`C-D10`） |
-| 模型 key | investment 的密钥库与他自己的沙箱进程环境 | 不进任何表、事件、日志、界面（`C-D10`、`I8`） |
+| 对话、项目、底稿、运行记录 | knowbench 的库 | 结果明文入库（`C-D10`） |
+| 模型 key | knowbench 的密钥库与他自己的沙箱进程环境 | 不进任何表、事件、日志、界面（`C-D10`、`I8`） |
 | 沙箱里的 Codex 状态 | 每用户一个 PVC（`CODEX_HOME`） | 回收沙箱时保留，`purge` 才删 |
 | 用户为分身上传的数据（将来） | knowlab | 分身运行时只读这一份，不接 knowbase、knowfeed（`C-L2`） |
 

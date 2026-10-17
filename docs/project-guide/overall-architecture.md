@@ -8,7 +8,7 @@
 
 ## 1. 这个项目是什么
 
-**把用户自己的研究方法做成他自己的分身。**用户带来一个想法（最好是一份 skill）和自己的数据；我们在 **knowlab** 里把它工程化、测试好，交付成一个**分身**（英文 knowbot）；分身存在 **knowmart** 里属于他的位置；用户在 **investment 工作台**里「请」自己的分身，用自己的数据跑。
+**把用户自己的研究方法做成他自己的分身。**用户带来一个想法（最好是一份 skill）和自己的数据；我们在 **knowlab** 里把它工程化、测试好，交付成一个**分身**（英文 knowbot）；分身存在 **knowmart** 里属于他的位置；用户在 **knowbench 工作台**里「请」自己的分身，用自己的数据跑。
 
 | 前提（定了不再讨论） | 意思 |
 | --- | --- |
@@ -23,7 +23,7 @@
 
 需求的真源是 [需求](../dev-investment-agent/tree-build/PRD/requirement.md)；做到哪了、每一站谁做见 [流水线](../dev-investment-agent/pipeline.md)；所有者的决定见 [决策](../dev-investment-agent/tree-build/decisions.md)。
 
-**现在有什么**（2026-10-16）：investment 工作台（聊天、工作、「专家」三种对话与项目——「专家」将改叫「分身」；每用户一个沙箱、会合点、供给器；Windows 本地代理经网页一行命令安装配对）；knowfeed 采集、knowbase 数据集与语义层（经 MCP 给沙箱）；我们作为第一个普通用户在做的分身「中国A股上市公司财务分析与预测」（[0023](../dev-investment-agent/tree-build/SDD/modules/0023-fin-forecast.md)）。**还没上线**：knowlab-app、knowmart-app 已建成空应用并部署；分身的创建、存放与「请」代码写了大半，未部署（[分身](topics/knowbot.md)）。
+**现在有什么**（2026-10-16）：knowbench 工作台（聊天、工作、「专家」三种对话与项目——「专家」将改叫「分身」；每用户一个沙箱、会合点、供给器；Windows 本地代理经网页一行命令安装配对）；knowfeed 采集、knowbase 数据集与语义层（经 MCP 给沙箱）；我们作为第一个普通用户在做的分身「中国A股上市公司财务分析与预测」（[0023](../dev-investment-agent/tree-build/SDD/modules/0023-fin-forecast.md)）。**还没上线**：knowlab-app、knowmart-app 已建成空应用并部署；分身的创建、存放与「请」代码写了大半，未部署（[分身](topics/knowbot.md)）。
 
 ## 2. 仓
 
@@ -34,7 +34,7 @@
 | [`tpl-app`](repos/tpl-app.md) | 模板：一个标准应用长什么样，其余应用由它实例化；公共缺陷先修模板再同步实例 | 三个子仓：后端、网页、管理端 |
 | [`knowfeed-app`](repos/knowfeed-app.md) | 采集：从公开来源取原件、建数据集、质量检查、向 knowbase 登记 | 同上 |
 | [`knowbase-app`](repos/knowbase-app.md) | 加工入库：数据集目录、口径、语义层，经 MCP 给沙箱；文档入库与检索（RAGFlow） | 同上 |
-| [`investment-app`](repos/investment-app.md) | 工作台：网页、工作台后端（对话、项目、分身运行、账、验收、交付）、给沙箱的记录 MCP、本地代理安装包的发放 | 同上 |
+| [`knowbench-app`](repos/knowbench-app.md) | 工作台：网页、工作台后端（对话、项目、分身运行、账、验收、交付）、给沙箱的记录 MCP、本地代理安装包的发放 | 同上 |
 | `knowlab-app` | 创建分身：受理、工程化、测试、交付（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)、[0027](../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
 | `knowmart-app` | 存放分身与「请」（先做私有模式，[0018](../dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md)、[0027](../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
 | [`k8s`](repos/k8s.md) | 部署与项目文档：宿主、仓库、入口、建群、Flux、全部平台组件与应用的部署声明；本目录也在此 | 无业务源码（自研的会合点、沙箱、供给器源码除外） |
@@ -53,16 +53,16 @@
 ──────────              ──────────────────────              ────────────────────────────────
 浏览器 ──https 443──▶   Traefik（TLS、证书）──▶ frps  ◀──隧道（frpc 主动连出）── frpc ─▶ 内网 Traefik ─▶ 应用、Casdoor
 本地代理 ─wss 443──▶    会合点 relay  ◀──wss 出站──────────────────────────── 沙箱 Pod（每用户一个）
-                                       ◀──wss 出站（管理通道）──────────────── investment 工作台管理者
+                                       ◀──wss 出站（管理通道）──────────────── knowbench 工作台管理者
                                                                                供给器 ─▶ Kubernetes API（建/删沙箱）
-                                                                               沙箱 ─MCP─▶ investment-api、knowbase-api
+                                                                               沙箱 ─MCP─▶ knowbench-api、knowbase-api
                                                                                沙箱 ─https 出站─▶ 模型厂商
 ```
 
 ### 3.2 现网
 
 - **内网站点 = 所有者机器的 WSL**：宿主上的 Harbor 与入口 HAProxy（`30443`，只看 SNI 分流、不解密），一个三节点 KIND 集群 `sunmoon-kind`，数据盘挂在 `/mnt/sunmoon-data`。
-- **公网边缘 = 东京云 VM**：Traefik + frps，对公网只放 `investment`、`casdoor`、`relay.sunmoonai.com`；knowfeed、knowbase 与各管理端只在所有者机器上可用。
+- **公网边缘 = 东京云 VM**：Traefik + frps，对公网只放 `knowbench`、`casdoor`、`relay.sunmoonai.com`；knowfeed、knowbase 与各管理端只在所有者机器上可用。
 - 集群里的后端**不按公网名互连**：访问 Casdoor、会合点、供给器一律走集群内 Service（`*_BACKCHANNEL_ENDPOINT` 等）；公网名只出现在交给浏览器与本地代理的地址里。
 
 拓扑的图与一次「工作」的顺序：[`k8s/docs/拓扑.md`](../拓扑.md)；裁定与风险：[拓扑设计](../dev-investment-agent/tree-build/SDD/architecture/topology.md)。
@@ -79,13 +79,13 @@
                  knowbase ── 语义层 / RAGFlow 索引           │ 测试通过才交付
                     │（内部工具；以后 knowmart 的数据线）   knowmart（私有：只有本人看得见，只放能用的版本）
                     ▼                                       │ 请（跳过去选、跳回）
-                 （现在仍经 MCP sunmoon_knowbase 接进沙箱，  运行方（现在是 investment 工作台）：用户请自己的分身，自己跑
+                 （现在仍经 MCP sunmoon_knowbase 接进沙箱，  运行方（现在是 knowbench 工作台）：用户请自己的分身，自己跑
                    工作台对用户开放前改为默认不接，0026）
 ```
 
 | 应用 | 用户来做什么 | 管理员来做什么 |
 | --- | --- | --- |
-| investment | 聊天、让代理干活、请自己的分身；管工作区与项目 | 「缺数据的需求」（链去 knowfeed 管理端发起采集）、研究运行时 |
+| knowbench | 聊天、让代理干活、请自己的分身；管工作区与项目 | 「缺数据的需求」（链去 knowfeed 管理端发起采集）、研究运行时 |
 | knowbase | 看有哪些数据、数据到哪一天、口径怎么算 | 数据集版本、登记、工具调用情况 |
 | knowfeed | （网页端没有功能页） | 批准申请、发起采集、看批次、关注清单 |
 
@@ -98,7 +98,7 @@
 | 每步只写自己的库 | 跨应用不用分布式事务；投递走 Outbox/Inbox，消费方幂等 |
 | 新数据先定归属 | 新增数据实体先答五问（`C-D12`）；原始证据先存再处理、不覆盖（`C-D13`）（[数据](topics/data.md)） |
 
-investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/modules/0017-three-kinds-of-conversation.md)）；工作区 = 本地代理里加的白名单目录；底稿与结果放右边栏。
+knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/modules/0017-three-kinds-of-conversation.md)）；工作区 = 本地代理里加的白名单目录；底稿与结果放右边栏。
 
 ## 5. 一个标准应用长什么样
 
@@ -111,7 +111,7 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
 └── <名>-web-frontend/     Next.js 网页端
 ```
 
-- **后端一个不可变镜像，多个运行角色**：API、Worker（Celery）、Scheduler（Celery beat，单副本）、Migration（一次性 Job）；investment 另有工作台管理者（代码里叫 runner）。
+- **后端一个不可变镜像，多个运行角色**：API、Worker（Celery）、Scheduler（Celery beat，单副本）、Migration（一次性 Job）；knowbench 另有工作台管理者（代码里叫 runner）。
 - **分层**：`domain/`、`application/`（服务、DTO、Port）、`infrastructure/`（ORM、外部适配、Celery、存储）、`interfaces/`（`http/` 是模板面，`endpoints/` 是领域面）；结构不变量在 `app/tests/test_kernel_invariants.py`。
 - **前端**：Next.js + React + Tailwind + shadcn + next-intl，`output: 'standalone'`，源码在内层 `app/`；请求只走同源 `/api/`；会话由后端的 cookie 承载。
 - 各仓还留着旧体系的部署材料（应用父仓的 `dev-to-prod-deploy/`、后端的 `db-provisioner/` 与 `*-access-bootstrap/`、tpl-app 的 `k8s-deployment/`）：**现行部署不用它们**，部署只在 `k8s` 仓。
@@ -144,9 +144,9 @@ investment 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD
 | --- | --- |
 | 浏览器 | Casdoor OIDC 授权码 → 后端会话 cookie。每个应用的 Admin 与 Web 是两个独立边界：各有 client、回调、cookie、会话命名空间、Origin |
 | 组织 | 管理端只收 `built-in` 组织的令牌（admin 只用于 Casdoor 和管理后台）；网页端只收 `sunmoonai` 组织（所有者日常用自己的 sunmoonai 账号，[0014](../dev-investment-agent/tree-build/SDD/modules/0014-user-organization.md)） |
-| 服务间 | client credentials，按关系各一个身份：knowfeed → knowbase `knowbase:ingest`，investment → knowbase `knowbase:retrieve`；接收方核 audience 与主体绑定表。分身线的新关系（`knowmart:deliver`、`knowmart:summon`、`investment:testrun`）走通用机制 `common/backend/service-client`，已写未部署（[分身](topics/knowbot.md) §4） |
-| 沙箱 | investment 给每个沙箱签发短期令牌：调记录 MCP 与 knowbase MCP；模型 key 只在沙箱进程环境里 |
-| 本地代理 | 网页里一行命令安装与配对；连会合点用 investment 签发、会合点就地验签的短期令牌，可吊销 |
+| 服务间 | client credentials，按关系各一个身份：knowfeed → knowbase `knowbase:ingest`，knowbench → knowbase `knowbase:retrieve`；接收方核 audience 与主体绑定表。分身线的新关系（`knowmart:deliver`、`knowmart:summon`、`knowbench:testrun`）走通用机制 `common/backend/service-client`，已写未部署（[分身](topics/knowbot.md) §4） |
+| 沙箱 | knowbench 给每个沙箱签发短期令牌：调记录 MCP 与 knowbase MCP；模型 key 只在沙箱进程环境里 |
+| 本地代理 | 网页里一行命令安装与配对；连会合点用 knowbench 签发、会合点就地验签的短期令牌，可吊销 |
 
 ## 8. 规则来自哪里
 

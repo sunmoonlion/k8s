@@ -35,10 +35,10 @@
 | --- | --- |
 | **密码表的一个真口令推到远端了** | `密码修改表.md` 在提交 `b1e58263`（10-05）里加了第 15d 行（新集群 Kibana 只读账号），「当前密码」一列是 40 位的真口令，随分支推到了 GitHub 和 Gitee。表里自己写着「本表……不 push」。`master` 上这张表本来就有 21 个开发口令，所以这是沿用的做法，不是新口子；但 15d 是这次新放进去的。建议：仓库是私有的就接受，否则把这个只读账号轮换掉 |
 | 应用是 master 版 | `infrastructure/applications/sources.yaml` 钉的十二个子仓提交全是 master + luna 那一个提交。fable 上 9 月以来的后端、页面、迁移都不在新集群里 |
-| 数据库迁移版本也是 master 的 | 新体系按 `expected_schema_revision` 核迁移：knowfeed `20260913_0009`（fable 是 `20260929_0013`）、knowbase `20260911_0006`（fable `20260927_0007`）、investment `20260925_0011`（fable `20260929_0012`）、tpl 相同 |
+| 数据库迁移版本也是 master 的 | 新体系按 `expected_schema_revision` 核迁移：knowfeed `20260913_0009`（fable 是 `20260929_0013`）、knowbase `20260911_0006`（fable `20260927_0007`）、knowbench `20260925_0011`（fable `20260929_0012`）、tpl 相同 |
 | relay 用的是旧集群的镜像 | `relay-platform/relay/image.lock.yaml` 钉的是旧 KIND 的 `relay v1-r3`。luna 工位里的 `relay.py` 和 fable 的逐字相同（9 月 28 日合过），多半就是 fable 的 relay；要 luna 确认那个镜像是从哪次提交构建的 |
 | 沙箱供给器默认关 | 写了契约但 `enabled: false`：现有镜像把网络策略写死 `edge`、动态 Pod 不满足 restricted PSS，要经应用构建链重建才能开 |
-| investment → knowbase 的检索身份还开着 | `investment-backend/config.yaml` 里 `knowbase_service.enabled: true`。所有者 9 月 29 日已定撤销（迁移账本第 21 行） |
+| knowbench → knowbase 的检索身份还开着 | `knowbench-backend/config.yaml` 里 `knowbase_service.enabled: true`。所有者 9 月 29 日已定撤销（迁移账本第 21 行） |
 | 旧体系的两处改动没进新体系 | fable 在 `sunmoonai/relay-platform`、`sunmoonai/sandbox-platform`、`sunmoonai/kind-infrastructure` 下有改动（relay 的令牌撤销、沙箱镜像入口脚本等）。新体系的 relay 靠镜像摘要带过去了（待确认），沙箱的要重建时一起 |
 | 合并时会撞的只有一处 | k8s：`fable` 只改过 `密码修改表.md` 两行，`AGENTS.md`、`.gitignore` 没改，新目录和 fable 不重叠。子仓：前端的 `mybuild/` fable 没碰过，干净；三个后端的 `postgres.py` 两边各修了一遍，**以 fable 的为准**（账本 H66、迁移账本第 43 行） |
 
@@ -51,7 +51,7 @@
 | 应用配置 | 3、4、6、13、18、27、33、36、38、40；20（删旧项） | 后端模板只渲染数据库、Celery、RabbitMQ、S3、服务身份这些共用项；应用自己的配置项全部放各后端 `config.yaml` 的 `domain_runtime_env`（现在是空的） |
 | 存储权限 | 5、17 | 对象存储的桶策略：knowfeed 自己的桶读写列，knowbase 对 knowfeed 的桶只读对象 |
 | 数据库权限 | 22、28、30 | 新体系给运行身份的是「表 CRUD + sequence」，不按表列清单。这三行多半不用再做，要 luna 核一句 |
-| 网络 | 8、34 | 新体系默认拒绝出站，按标签放行：knowfeed 到巨潮、东方财富的出站；沙箱到 investment 的 `/api/mcp/workbench` |
+| 网络 | 8、34 | 新体系默认拒绝出站，按标签放行：knowfeed 到巨潮、东方财富的出站；沙箱到 knowbench 的 `/api/mcp/workbench` |
 | 沙箱与供给器 | 31、32、35 | 供给器开起来之前要重建镜像；重建时把 Codex 配置（关 `multi_agent`、`goals`；新的 `records_mcp_*`）一起带上 |
 | 身份 | 21 | `knowbase_service.enabled` 改 false，去掉那个绑定 |
 | 资源 | 7、14、15、19 | knowbase 镜像大 600 MB；knowfeed 的 Worker 内存按 1.2 GB 核 |

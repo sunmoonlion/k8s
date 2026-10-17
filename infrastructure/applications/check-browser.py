@@ -101,7 +101,7 @@ def run(settings):
     report = {'entry_port': settings['entry_port'], 'protocol_checks': outcomes,
         'web_member_organization': settings['user_organization'] if member else None,
         'browser_ui_clicks_verified': False, 'business_provider_configured': False}
-    if settings['application'] == 'investment':
+    if settings['application'] == 'knowbench':
         report['install_command_issued'] = install_issued is True
     print(json.dumps(report))
 
@@ -169,7 +169,7 @@ def _check_surfaces(settings, Browser, member, outcomes):
             status, _, body = browser.request(origin + '/api/web/v1/runs/00000000-0000-5000-8000-000000000001')
             require(status == 503 and json.loads(body).get('error', {}).get('code') == 'provider_unavailable',
                     'Production template unexpectedly exposes a reference business fixture')
-        if surface == 'web' and settings['application'] == 'investment':
+        if surface == 'web' and settings['application'] == 'knowbench':
             status, _, body = browser.request(origin + '/api/workbench/agent/install-command',
                                               method='POST', headers=headers)
             require(status == 200, 'Install command was not issued')

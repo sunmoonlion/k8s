@@ -2,7 +2,7 @@
 
 > 2026-09-29 远程助手整理，供所有者定「先做哪些」。只是盘点，没有改任何页面。
 > 设计稿：[`0002-web-design`](0002-web-design.md)（初稿，所有者还没改定）。
-> 盘点对象：`investment-web-frontend` 分支 `fable` 提交 `df02507`；后端 `investment-backend` `4113013`。
+> 盘点对象：`knowbench-web-frontend` 分支 `fable` 提交 `df02507`；后端 `knowbench-backend` `4113013`。
 > 方法：读页面、组件、契约与后端路由的代码；**没有把页面跑起来看**，所以「样子好不好」不在这份盘点里。
 
 ## 一句话

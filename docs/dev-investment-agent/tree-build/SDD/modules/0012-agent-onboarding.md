@@ -26,7 +26,7 @@
 ```json
 {
   "site": "dev-kind",
-  "web_origin": "https://investment.sunmoonai.com:30443",
+  "web_origin": "https://knowbench.sunmoonai.com:30443",
   "relay_url": "wss://relay.sunmoonai.com:30443",
   "trust": { "mode": "bundled-ca", "ca_file": "site/ca.pem", "ca_sha256": "<组包时算出的证书 DER SHA-256 全长>" }
 }
@@ -46,7 +46,7 @@
 **用户看到的命令**（网页一键复制）：
 
 ```powershell
-irm 'https://investment.sunmoonai.com:30443/api/agent-install/<一次性凭证>/script' | iex
+irm 'https://knowbench.sunmoonai.com:30443/api/agent-install/<一次性凭证>/script' | iex
 ```
 
 - 不改执行策略、不带 `-ExecutionPolicy Bypass`、不关应用控制；`irm | iex` 在内存里执行，`RemoteSigned` 不涉及。

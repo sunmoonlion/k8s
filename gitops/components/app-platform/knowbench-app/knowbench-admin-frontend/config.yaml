@@ -1,0 +1,12 @@
+# 浏览器入口；后端身份配置读取同一来源。运行配置与本组件声明同处。
+---
+knowbench_admin_deployment:
+  origin: https://knowbench-admin.sunmoonai.com:30443
+  casdoor_application: sunmoonai-knowbench-admin
+  casdoor_client_id: sunmoon-kind-knowbench-admin
+  port: 3000
+  replicas: 1
+  resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
+  # 管理端自己的明文配置（账 56）：「缺数据的需求」页链去 knowfeed 管理端发起采集
+  env:
+    KNOWFEED_ADMIN_URL: https://knowfeed-admin.sunmoonai.com:30443

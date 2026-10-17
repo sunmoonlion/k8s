@@ -17,4 +17,4 @@
 - 资讯源、采集任务、原文、版本、去重、分类、标签、摘要和预警属于 `info-app`。
 - 文档转换、OCR、格式识别等通用处理能力可由 `tools-app` 提供。
 - RAGFlow 入库、知识检索和问答通过 `knowledge-app` 封装，不由爬虫直接调用 RAGFlow 私有 API。
-- 投资分析、研究观点和投资结论属于 `investment-app` 的使用场景。
+- 投资分析、研究观点和投资结论属于 `knowbench-app` 的使用场景。

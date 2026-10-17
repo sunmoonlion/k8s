@@ -82,7 +82,7 @@ try:
     result=execute('knowbase-api',(root/'verify-runtime.py').read_text(),records)
     records.update(result);save_probe()
     if args.http_service_identities:
-        # fable 的 investment 后端没有 HTTP 检索端口（知识检索改走沙箱里的 MCP），原来的 verify-investment-http.py 已删；检索绑定的撤销见账 21
+        # fable 的 knowbench 后端没有 HTTP 检索端口（知识检索改走沙箱里的 MCP），原来的 verify-knowbench-http.py 已删；检索绑定的撤销见账 21
         result['scope']='Actual Info HTTPS ingestion with Casdoor token, real Scheduler/Outbox/Worker'
     # Clean derived content using the provider's own DML/S3 identity, not an App administrator.
     binding=json.loads(Path(secret['binding_path']).read_text())

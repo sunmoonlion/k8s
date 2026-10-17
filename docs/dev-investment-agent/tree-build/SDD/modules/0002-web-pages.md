@@ -1,4 +1,4 @@
-# investment 的页面（第 7 步）
+# knowbench 的页面（第 7 步）
 
 > 状态：**六段都做完了**（2026-10-04）。所有者看过第 1、2 段：「现在总的可以，以后再改细节」；第 3 至 6 段等所有者看。细节记在第八节。
 > 设计在 [`PRD/apps/investment.md`](../../PRD/apps/investment.md) 与 [`PRD/apps/investment-expert.md`](../../PRD/apps/investment-expert.md)。本文记做法、做到哪、没做到的。
@@ -44,7 +44,7 @@ contracts/      接口的写法（zod）
 
 聊天页和工作页都要用的东西不放在哪个功能里，放在公共的位置：把 Codex 的一件事变成一行（`lib/workbench/items.ts`）、一段对话上能做的动作（`lib/workbench/conversation.ts`）、输入框、一行命令或一次查数据的样子、「没有数据」卡片、对话的名字（都在 `components/workbench/`）。
 
-这套放法先在 investment 里用。knowfeed、knowbase 做页面时（第 8、9 步）照此办，届时把检查搬进模板。
+这套放法先在 knowbench 里用。knowfeed、knowbase 做页面时（第 8、9 步）照此办，届时把检查搬进模板。
 
 ## 三、第 1 段做了什么
 
@@ -82,7 +82,7 @@ contracts/      接口的写法（zod）
 
 截图：`step7-3-run.png`（专家处理中）、`step7-3-run-step2.png`（点了第 2 步，看它交回了什么）、`step7-3-run-stop.png`（停止前问一句）、`step7-3-run-waiting.png` 与 `step7-3-run-waiting-review.png`（勾稽不平，停下来问我）、`step7-3-run-nodata.png`（没有数据）、`step7-3-work-stopped.png`（被我停下之后的工作页）。
 
-### 后端（investment-backend `3883855`）
+### 后端（knowbench-backend `3883855`）
 
 | 项 | 做法 |
 | --- | --- |
@@ -134,7 +134,7 @@ contracts/      接口的写法（zod）
 | 不显示文件列表 | 文件在用户的机器上，第一期不做远程浏览 |
 | 别处跟着接上的 | 侧栏里的项目都是链接了，工作区标题旁边有「全部」；从项目页点「新聊天」「新工作」到首页时项目已经选好 |
 
-后端的一处小改（investment-backend `fable` 最新）：项目详情里的底稿每一行多给专家的名字、终态的白话、花了多少。原来只给代号。
+后端的一处小改（knowbench-backend `fable` 最新）：项目详情里的底稿每一行多给专家的名字、终态的白话、花了多少。原来只给代号。
 
 ## 三之六、第 5、6 段做了什么
 
@@ -195,7 +195,7 @@ contracts/      接口的写法（zod）
 | # | 问题 | 处理 |
 | --- | --- | --- |
 | 1 | 正式构建下，每一页都有一条内容安全策略的报错：「加载中」那一页的脚本没有带随机数，被浏览器拦了。没动过的旧页面上也有 | **没有改**。是底座的问题，页面照常显示。记在账本 H52 |
-| 2 | 字体没有生效：样式里无衬线字体的变量指向它自己，页面用的是浏览器默认的衬线字体。模板与三个应用的网页端都这样 | 已改：用系统自带的字体，不下载字体文件。模板、knowfeed、knowbase、investment 四个网页端都改了。管理端没有改（账本 H53） |
+| 2 | 字体没有生效：样式里无衬线字体的变量指向它自己，页面用的是浏览器默认的衬线字体。模板与三个应用的网页端都这样 | 已改：用系统自带的字体，不下载字体文件。模板、knowfeed、knowbase、knowbench 四个网页端都改了。管理端没有改（账本 H53） |
 | 3 | 第 6 步录的聊天样例里，「问到没有数据的公司」那一轮是坏的：工具调用的类型名被替换坏了，所以没有「没有数据」的事件，也没有花费。第 6 步汇报时没有发现 | 已改，并加了检查。原因：拼出来的那一轮用单个字母当编号，回放时把别的词里的字母也换掉了 |
 | 4 | 开发模式下改了样式文件，页面还是旧的 | 是开发服务器的缓存。删掉 `.next/dev` 再开。只影响本机调试 |
 
@@ -221,17 +221,17 @@ contracts/      接口的写法（zod）
 
 | 仓库 | 提交 | 内容 |
 | --- | --- | --- |
-| investment-web-frontend | `d2db56b` | 第 1 段 |
-| investment-web-frontend | `0a2a1b6` | 第 2 段 |
-| investment-backend | `13a6ec4` | 第 2 段的样例与审批选项的字眼 |
-| investment-app | `027ae33` | 第 2 段两个子仓的指针 |
-| investment-backend | `3883855` | 第 3 段甲的后端：退回上限、每一步的为什么、「现在」 |
-| investment-web-frontend | `58cf10e`、`cfdc2da`、`e252499` | 第 3 段甲、第 3 段乙、第 4 段 |
-| investment-web-frontend | `c8599a7`、`8f6aeb5` | 第 5、6 段；后一个是把误改排版的一个文件恢复原样 |
-| investment-backend | `aac57ce`、`184b0cd`、`1f582c1` | 审查面的措辞；项目页底稿行的名字与终态；交回物字段的叫法 |
-| investment-app | `df45be5` | 到第 6 段为止的指针 |
-| investment-backend | `3935ced` 及之后一个 | 样例的两处修正 |
-| investment-app | `6fce162` | 两个子仓的指针 |
+| knowbench-web-frontend | `d2db56b` | 第 1 段 |
+| knowbench-web-frontend | `0a2a1b6` | 第 2 段 |
+| knowbench-backend | `13a6ec4` | 第 2 段的样例与审批选项的字眼 |
+| knowbench-app | `027ae33` | 第 2 段两个子仓的指针 |
+| knowbench-backend | `3883855` | 第 3 段甲的后端：退回上限、每一步的为什么、「现在」 |
+| knowbench-web-frontend | `58cf10e`、`cfdc2da`、`e252499` | 第 3 段甲、第 3 段乙、第 4 段 |
+| knowbench-web-frontend | `c8599a7`、`8f6aeb5` | 第 5、6 段；后一个是把误改排版的一个文件恢复原样 |
+| knowbench-backend | `aac57ce`、`184b0cd`、`1f582c1` | 审查面的措辞；项目页底稿行的名字与终态；交回物字段的叫法 |
+| knowbench-app | `df45be5` | 到第 6 段为止的指针 |
+| knowbench-backend | `3935ced` 及之后一个 | 样例的两处修正 |
+| knowbench-app | `6fce162` | 两个子仓的指针 |
 | tpl-web-frontend、knowfeed-web-frontend、knowbase-web-frontend | `0ee328f`、`d2acc6d`、`8c7536d` | 字体 |
 
 ## 八、以后要改的细节

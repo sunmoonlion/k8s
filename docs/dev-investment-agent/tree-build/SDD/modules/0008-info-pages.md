@@ -46,14 +46,14 @@
 
 | 项 | 做法 | 改在哪 |
 | --- | --- | --- |
-| 登录之后回到原来要去的那一页 | 登录页认一个 `next` 参数，交给后端当回跳地址。只认本站、本语言下的路径，别的一律回默认页 | **模板先改**（tpl-web-frontend `ebd804b`），再同步到 knowfeed、knowbase、investment 三个网页端 |
-| 登录之后默认去哪 | 原来是模板的占位页。knowfeed 改成「我的申请」；investment 改成工作台 | knowfeed-web-frontend、investment-web-frontend `4c6500a` |
+| 登录之后回到原来要去的那一页 | 登录页认一个 `next` 参数，交给后端当回跳地址。只认本站、本语言下的路径，别的一律回默认页 | **模板先改**（tpl-web-frontend `ebd804b`），再同步到 knowfeed、knowbase、knowbench 三个网页端 |
+| 登录之后默认去哪 | 原来是模板的占位页。knowfeed 改成「我的申请」；knowbench 改成工作台 | knowfeed-web-frontend、knowbench-web-frontend `4c6500a` |
 | 第 6 步漏录的样例 | 「等批准」那个申请的详情当时没有录，预览里那一页打不开。已补，并加了检查 | knowfeed-backend `9f97792` |
 | 管理接口的真实返回也录下来 | 管理端没有预览，但契约可以先对着真实返回核对。录在管理端的 `preview/fixtures/` 下 | knowfeed-backend `af658b1` |
 
 ## 五、代码怎么放
 
-和 investment 一样：`features/<功能>/{api,model,ui}`，由同一份测试守着（`tests/unit/feature-boundaries.test.ts`）。网页端两个功能：`shell`、`requests`。管理端一个：`intake`。契约都对着真后端录下来的返回逐份检查。
+和 knowbench 一样：`features/<功能>/{api,model,ui}`，由同一份测试守着（`tests/unit/feature-boundaries.test.ts`）。网页端两个功能：`shell`、`requests`。管理端一个：`intake`。契约都对着真后端录下来的返回逐份检查。
 
 管理端沿用它底座现成的样式（表格、按钮、对话框），没有引入网页端的组件。
 

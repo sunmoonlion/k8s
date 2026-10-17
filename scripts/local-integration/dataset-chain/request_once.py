@@ -48,7 +48,7 @@ async def main(action: str, first: str, second: str | None) -> dict:
                     first,
                     actor_id=second,
                     reason="本机联调",
-                    origin_app="investment",
+                    origin_app="knowbench",
                     origin_ref="local-integration:1",
                 )
             elif action == "approve":

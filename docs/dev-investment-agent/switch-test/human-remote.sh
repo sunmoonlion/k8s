@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 所有者在本地机上跑的（推）：本地助手说「跑完了」之后，把它写下的结果和其它改动提交，并同步回远程。
-# 用法：WS=<工位> bash ~/switch-test/human-remote.sh    （工位必须给，不猜；先推子仓与 runtime，再由 sync-five-repos.sh 同步父仓）
+# 用法：WS=<工位> bash ~/switch-test/human-remote.sh    （工位必须给，不猜；先推子仓与 sunmoon-link，再由 sync-five-repos.sh 同步父仓）
 # 推之前每个仓都先 fetch：远程助手这期间推了新提交的话，本地提交 rebase 到它上面再推；冲突就停。所以不必先跑 human-local.sh。
 # 跑完把最后打印的「仓 提交号」告诉远程助手。
 set -euo pipefail
@@ -11,15 +11,15 @@ fi
 WS="$WS"
 WORKTREE_ROOT="${WORKTREE_ROOT:-$HOME/worktrees/$WS}"
 SYNC_SCRIPT="${SYNC_SCRIPT:-$HOME/five-repos-sync/sync-five-repos.sh}"
-FIVE="k8s knowfeed-app investment-app knowbase-app tpl-app knowlab-app knowmart-app"
+FIVE="k8s knowfeed-app knowbench-app knowbase-app tpl-app knowlab-app knowmart-app"
 # 父仓下的全部子仓（前端也在内：2026-10-08 luna 的网页修复因只列了两个后端而没推上来）
 SUBS="knowfeed-app/knowfeed-backend knowfeed-app/knowfeed-web-frontend knowfeed-app/knowfeed-admin-frontend
-  investment-app/investment-backend investment-app/investment-web-frontend investment-app/investment-admin-frontend
+  knowbench-app/knowbench-backend knowbench-app/knowbench-web-frontend knowbench-app/knowbench-admin-frontend
   knowbase-app/knowbase-backend knowbase-app/knowbase-web-frontend knowbase-app/knowbase-admin-frontend
   tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend
   knowlab-app/knowlab-backend knowlab-app/knowlab-web-frontend knowlab-app/knowlab-admin-frontend
   knowmart-app/knowmart-backend knowmart-app/knowmart-web-frontend knowmart-app/knowmart-admin-frontend"
-OTHERS="$SUBS runtime"
+OTHERS="$SUBS sunmoon-link"
 pushed=()
 changed=()
 
@@ -61,17 +61,17 @@ commit_if_dirty() { # 仓目录 标签
 }
 
 echo "===== 1. 检查本地仓库（工位 $WS）"
-for r in $FIVE runtime; do check_repo "$WORKTREE_ROOT/$r" "$r" || exit 1; done
+for r in $FIVE sunmoon-link; do check_repo "$WORKTREE_ROOT/$r" "$r" || exit 1; done
 for r in $SUBS; do
   check_repo "$WORKTREE_ROOT/$r" "$r" yes || exit 1
 done
 
-echo "===== 2. 先提交并推送子仓与 runtime"
+echo "===== 2. 先提交并推送子仓与 sunmoon-link"
 for r in $OTHERS; do
   d="$WORKTREE_ROOT/$r"
   commit_if_dirty "$d" "$r" || { echo "✗ $r 提交失败"; exit 1; }
   # 子仓没有新提交（当前提交已在远端某分支上）就不推，免得给每个子仓都建一个工位分支
-  if [ "$r" != runtime ] && [ -n "$(git -C "$d" branch -r --contains HEAD 2>/dev/null)" ]; then continue; fi
+  if [ "$r" != sunmoon-link ] && [ -n "$(git -C "$d" branch -r --contains HEAD 2>/dev/null)" ]; then continue; fi
   rebase_on_origin "$d" "$r" || exit 1
   # 子模块 update 后通常 detached；推当前 HEAD，不能依赖可能不存在或过期的本地分支。
   git -C "$d" push -q origin "HEAD:refs/heads/$WS" || { echo "✗ $r push 失败，停止回传"; exit 1; }
@@ -92,5 +92,5 @@ fi
 
 echo "===== 4. 告诉远程助手这一句："
 line="本地回来了"
-for r in $FIVE runtime ${pushed[@]+"${pushed[@]}"}; do d="$WORKTREE_ROOT/$r"; line="$line；$r $(git -C "$d" rev-parse --short HEAD)"; done
+for r in $FIVE sunmoon-link ${pushed[@]+"${pushed[@]}"}; do d="$WORKTREE_ROOT/$r"; line="$line；$r $(git -C "$d" rev-parse --short HEAD)"; done
 echo "$line"

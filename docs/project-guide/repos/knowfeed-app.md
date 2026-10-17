@@ -20,7 +20,7 @@
 - **向 knowbase 登记**：服务身份 `knowbase:ingest`（`infrastructure/external/knowbase_app.py`），契约 `knowfeed-knowbase-artifact` v1，schema 真源在 knowbase，本仓只持锁 `contracts/knowbase-provider-lock.json`。没过质量检查的数据不登记。
 - **原件与数据集文件**放在自己的对象存储桶 `knowfeed-originals`，键前缀 `knowfeed/`（原文 `knowfeed/original/…`、数据集 `knowfeed/securities/…/datasets/…`）；knowbase 只按登记的位置**只读**取文件。
 - 记录来源的 `source_app` 值：采集服务写 `knowfeed-app`，数据集登记器写 `knowfeed`（两种，不合并）。
-- investment 管理端的「缺数据的需求」链到本应用管理端发起采集。
+- knowbench 管理端的「缺数据的需求」链到本应用管理端发起采集。
 
 ## 界面
 

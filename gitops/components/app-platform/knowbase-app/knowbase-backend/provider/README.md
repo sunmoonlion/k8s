@@ -23,7 +23,7 @@ plan只读；stage除了私有输入/候选文件，还调用已运行RAGFlow官
 
 ## 真实业务探针
 
-接收启用时，实际Info ObjectStorage适配器创建随机原文，Info实际客户端携独立Casdoor令牌HTTPS投递；检查Knowledge持久摄入日记的认证主体，由真实Scheduler/Outbox/Worker完成解析，再由实际Investment领域Port持另一身份HTTPS获取中文证据与原文引用。
+接收启用时，实际Info ObjectStorage适配器创建随机原文，Info实际客户端携独立Casdoor令牌HTTPS投递；检查Knowledge持久摄入日记的认证主体，由真实Scheduler/Outbox/Worker完成解析，再由实际Knowbench领域Port持另一身份HTTPS获取中文证据与原文引用。
 
 同时检查幂等/冲突、缺失/篡改令牌、服务关系交叉、浏览器分面拒绝、租户/数据集与版本过滤；未启接收时仅既有L2检查。不能由此推定完整Info爬取、Agent工具执行、PDF或浏览器全集通过。
 

@@ -1,6 +1,6 @@
 # 专家包 `FIN_FORECAST` 第 2 版：逐步说明
 
-> 这一份把**现在上架的**「财务分析与预测」专家包（profile）原样摊开：每一步给用户看什么、喂给模型什么方法、用什么工具、交回什么、怎么验收、不过去哪。真源是代码 `investment-backend/app/app/domain/workbench/packs.py` 里的 `FIN_FORECAST`（2026-10-15 按投资后端 `a6e6ceb` 整理）；两边不一致时以代码为准。为什么这样设计见 [`0023-fin-forecast.md`](0023-fin-forecast.md)，评测真值见 [`0023-fin-forecast-answer-key.md`](0023-fin-forecast-answer-key.md)。
+> 这一份把**现在上架的**「财务分析与预测」专家包（profile）原样摊开：每一步给用户看什么、喂给模型什么方法、用什么工具、交回什么、怎么验收、不过去哪。真源是代码 `knowbench-backend/app/app/domain/workbench/packs.py` 里的 `FIN_FORECAST`（2026-10-15 按投资后端 `a6e6ceb` 整理）；两边不一致时以代码为准。为什么这样设计见 [`0023-fin-forecast.md`](0023-fin-forecast.md)，评测真值见 [`0023-fin-forecast-answer-key.md`](0023-fin-forecast-answer-key.md)。
 >
 > **第 3 版已定方向**（[决策](../../decisions.md)「专家收成一位」）：改名「中国A股上市公司财务分析与预测」，吸收财报体检，只做 A 股上市公司，Olist 下掉，演示贵州茅台，预测改为带季节性的方法。第 3 版做出来后本文随之重写；第 8 节先列出要改的地方。
 

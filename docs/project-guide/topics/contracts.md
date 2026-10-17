@@ -7,13 +7,13 @@
 | 契约 | 提供方（真源） | 调用方 | 现状 |
 | --- | --- | --- | --- |
 | **artifact v1**：knowfeed 向 knowbase 登记一个新版本 | `knowbase-app/contracts/artifact/v1/` | knowfeed（锁 `knowfeed-app/contracts/knowbase-provider-lock.json`），服务身份 `knowbase:ingest` | 在用 |
-| **retrieval v1**：检索与引用 | `knowbase-app/contracts/retrieval/v1/`（request、response、citation） | investment（锁 `investment-app/contracts/knowbase-retrieval-provider-lock.json`），服务身份 `knowbase:retrieve` | 提供方在；**investment 后端现在没有调用它的代码，只剩锁文件**——investment 取数据走的是沙箱里的 MCP（下一行） |
-| **knowbase MCP**：`/api/mcp/knowledge`（服务名 `sunmoon_knowbase`） | knowbase `interfaces/mcp/knowbase_mcp.py` | 沙箱里的 Codex，带 investment 签发的短期令牌 | 在用；工作台对用户开放前改为默认不接（`C-L2`） |
-| **knowbot-manifest v1**：分身清单外层 | `knowmart-app/contracts/knowbot/v1/`（由 knowmart 后端模型生成） | knowlab（交付，服务身份 `knowmart:deliver`；锁 `knowlab-app/contracts/knowmart-knowbot-manifest-lock.json`）、运行方（取清单，`knowmart:summon`；investment 锁 `investment-app/contracts/knowmart-knowbot-manifest-lock.json`） | 已写，未部署（[分身](knowbot.md)） |
-| **knowbot-test-run v1**：运行方跑测试 | `knowlab-app/contracts/knowbot-test-run/v1/`（由 knowlab 后端模型生成） | 运行方实现，knowlab 调用（`<运行方>:testrun`） | 两端已写，未部署（investment 持锁 `investment-app/contracts/knowlab-test-run-lock.json`；有人值守，[0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md) §3.4） |
-| **knowbot-data v1**：运行方读分身绑定的用户数据 | `knowlab-app/contracts/knowbot-data/v1/`（由 knowlab 后端模型生成：`python -m app.domain.knowbots.data_schema`） | 运行方调用（`knowlab:read`；investment 锁 `investment-app/contracts/knowlab-knowbot-data-lock.json`） | 两端已写，未部署（[0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md) §3.5） |
-| **工作台 MCP**：`/api/mcp/workbench` | investment `interfaces/mcp/workbench_mcp.py` | 沙箱里的 Codex（读本项目别的对话与底稿） | 在用 |
-| **会合点协议**：本地代理、沙箱、工作台管理者的握手与透传 | 会合点源码 `k8s/infrastructure/applications/component-images/relay/`（`service-v1.md`、`local-permission-v1.md/.json`） | 本地代理（锁 `runtime/agent/contracts/relay-permissions.lock.json`）、沙箱、investment | 在用；协议字段（如 `role=agent`）不随产品改名 |
+| **retrieval v1**：检索与引用 | `knowbase-app/contracts/retrieval/v1/`（request、response、citation） | knowbench（锁 `knowbench-app/contracts/knowbase-retrieval-provider-lock.json`），服务身份 `knowbase:retrieve` | 提供方在；**knowbench 后端现在没有调用它的代码，只剩锁文件**——knowbench 取数据走的是沙箱里的 MCP（下一行） |
+| **knowbase MCP**：`/api/mcp/knowledge`（服务名 `sunmoon_knowbase`） | knowbase `interfaces/mcp/knowbase_mcp.py` | 沙箱里的 Codex，带 knowbench 签发的短期令牌 | 在用；工作台对用户开放前改为默认不接（`C-L2`） |
+| **knowbot-manifest v1**：分身清单外层 | `knowmart-app/contracts/knowbot/v1/`（由 knowmart 后端模型生成） | knowlab（交付，服务身份 `knowmart:deliver`；锁 `knowlab-app/contracts/knowmart-knowbot-manifest-lock.json`）、运行方（取清单，`knowmart:summon`；knowbench 锁 `knowbench-app/contracts/knowmart-knowbot-manifest-lock.json`） | 已写，未部署（[分身](knowbot.md)） |
+| **knowbot-test-run v1**：运行方跑测试 | `knowlab-app/contracts/knowbot-test-run/v1/`（由 knowlab 后端模型生成） | 运行方实现，knowlab 调用（`<运行方>:testrun`） | 两端已写，未部署（knowbench 持锁 `knowbench-app/contracts/knowlab-test-run-lock.json`；有人值守，[0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md) §3.4） |
+| **knowbot-data v1**：运行方读分身绑定的用户数据 | `knowlab-app/contracts/knowbot-data/v1/`（由 knowlab 后端模型生成：`python -m app.domain.knowbots.data_schema`） | 运行方调用（`knowlab:read`；knowbench 锁 `knowbench-app/contracts/knowlab-knowbot-data-lock.json`） | 两端已写，未部署（[0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md) §3.5） |
+| **工作台 MCP**：`/api/mcp/workbench` | knowbench `interfaces/mcp/workbench_mcp.py` | 沙箱里的 Codex（读本项目别的对话与底稿） | 在用 |
+| **会合点协议**：本地代理、沙箱、工作台管理者的握手与透传 | 会合点源码 `k8s/infrastructure/applications/component-images/relay/`（`service-v1.md`、`local-permission-v1.md/.json`） | 本地代理（锁 `sunmoon-link/agent/contracts/relay-permissions.lock.json`）、沙箱、knowbench | 在用；协议字段（如 `role=agent`）不随产品改名 |
 | **web-interaction v1**：同一个应用内后端 ↔ 网页端 | `tpl-app/contracts/web-interaction-v1.consumer-vectors.json`（共享测试向量） | 各应用后端 DTO 与网页端 zod | 定义齐全，但各实例默认适配器是 `UnavailableWebInteractionAdapter`（返回 503），**没接线** |
 
 判断一个契约面能不能用，看上表「现状」与对应的 [`repos/`](../repos/) 文件，**不要看契约文件是否齐全**。
@@ -29,7 +29,7 @@ schema 真源放在**提供方**仓，调用方**只放锁文件、不放 schema
 ## 3. DTO 与引用
 
 - 所有契约 DTO 是 Pydantic 模型，`extra=forbid`：未声明的字段一律拒收（`C-C5`）；前端对应 zod。`contract_version` 写在 manifest 与 DTO 两处，须一致。
-- 引用的 `source_href` 全平台只有一个形状：`/api/web/v1/citations/{evidence_id}/source`，相对路径，由各自的 origin 解析（`C-C6`）。同形的地方现在有五处，改一处要一起改：`knowbase-app/contracts/retrieval/v1/citation.schema.json`（真源）、knowbase `application/dto/retrieval.py`、`application/dto/interaction.py`、investment `application/dto/interaction.py`、`investment-web-frontend/app/contracts/interaction.ts`。复核：knowbase `tests/test_knowledge_retrieval.py`、investment `tests/test_interaction_contract.py`。
+- 引用的 `source_href` 全平台只有一个形状：`/api/web/v1/citations/{evidence_id}/source`，相对路径，由各自的 origin 解析（`C-C6`）。同形的地方现在有五处，改一处要一起改：`knowbase-app/contracts/retrieval/v1/citation.schema.json`（真源）、knowbase `application/dto/retrieval.py`、`application/dto/interaction.py`、knowbench `application/dto/interaction.py`、`knowbench-web-frontend/app/contracts/interaction.ts`。复核：knowbase `tests/test_knowledge_retrieval.py`、knowbench `tests/test_interaction_contract.py`。
 
 ## 4. 跨应用消息里放什么
 

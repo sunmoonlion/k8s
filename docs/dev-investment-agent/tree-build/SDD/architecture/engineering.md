@@ -4,13 +4,13 @@
 
 | 模块 | 仓 | 技术栈 | 新旧 |
 | --- | --- | --- | --- |
-| 工作台后端 | `investment-app/investment-backend` | Python、FastAPI、SQLAlchemy、PostgreSQL、Outbox；app-server 客户端用 `websockets` | 改造 |
-| 网页 | `investment-app/investment-web-frontend` | Next.js 16、同源 `/api/`、事件流 | 改造 |
+| 工作台后端 | `knowbench-app/knowbench-backend` | Python、FastAPI、SQLAlchemy、PostgreSQL、Outbox；app-server 客户端用 `websockets` | 改造 |
+| 网页 | `knowbench-app/knowbench-web-frontend` | Next.js 16、同源 `/api/`、事件流 | 改造 |
 | 沙箱池 | `k8s` 仓新部署单元 + 一个小镜像（Codex CLI 钉版 + 出站桥） | 容器；出站桥 Python 或 Node，与代理共用协议实现 | 新 |
 | 会合点 | 新仓 `relay`（或先放 `k8s/platforms/`，`D16` 待定） | Python asyncio + websockets 起步；延迟不达标再换 Go | 新 |
-| 本地代理 | `runtime` 仓 | TypeScript/Node（Codex CLI 是 npm 包，同一运行时）；随包带钉版 Codex；签名分发 | 新（仓已有，内容换） |
+| 本地代理 | `sunmoon-link` 仓 | TypeScript/Node（Codex CLI 是 npm 包，同一运行时）；随包带钉版 Codex；签名分发 | 新（仓已有，内容换） |
 | 知识服务 | `knowbase-app` | 现状 + MCP 服务端 + 用户资料入库 | 改造 |
-| 评测 | 先落 `investment-backend` 的 `eval/` | Python | 新 |
+| 评测 | 先落 `knowbench-backend` 的 `eval/` | Python | 新 |
 
 **退役仓**：`desktop-app`（本地 worktree、`~/master` 副本、`repos.conf` 条目一并删；GitHub 仓由所有者删）。
 
@@ -43,7 +43,7 @@
 
 ### 细则：后端
 
-三个后端（knowfeed、knowbase、investment）和模板（tpl-app）是同一套骨架，规则相同。
+三个后端（knowfeed、knowbase、knowbench）和模板（tpl-app）是同一套骨架，规则相同。
 
 | 层 | 目录 | 放什么 | 可以引用 |
 | --- | --- | --- | --- |
@@ -92,7 +92,7 @@
 
 | 后端 | 文件数 | 其中 |
 | --- | --- | --- |
-| investment | 0 | 工作台的 5 个已改（2026-09-29，`656a93d`）；模板带来的 2 个已改（2026-09-29，A6）；旧运行时的 5 个已随删除消失 |
+| knowbench | 0 | 工作台的 5 个已改（2026-09-29，`656a93d`）；模板带来的 2 个已改（2026-09-29，A6）；旧运行时的 5 个已随删除消失 |
 | knowfeed | 2 | 都是 2026-09-13 之前的：采集服务（1933 行）与它的投递，**等集群迁移完成再改**（所有者 2026-09-29 定）。采集器 2 个、原件对账已改（2026-09-29，A7 甲）；模板带来的 2 个已改（A6） |
 | knowbase | 5 | 都是 2026-09-13 之前的：入库 3 个、检索、投递，**等集群迁移完成再改**（所有者 2026-09-29 定）。模板带来的 2 个已改（A6） |
 
@@ -105,7 +105,7 @@
 | knowfeed | `domain/info_identity_v1.py` | `httpx`。只用来解析地址、不发请求，规则本身是冻结的。**例外**，所有者 2026-09-29 同意，不用改 |
 | knowfeed | `application/securities/dataset/sqlite_writer.py`（远程 2026-09-27 写的） | `sqlite3`。**已改**（2026-09-29，A7 甲） |
 | knowbase | `application/services/dataset_query.py`（远程 2026-09-24 写的） | `sqlite3`。**已改**（2026-09-29） |
-| investment | `application/workbench/provisioning.py` | `httpx`、`websockets`。**已改**（2026-09-29） |
+| knowbench | `application/workbench/provisioning.py` | `httpx`、`websockets`。**已改**（2026-09-29） |
 
 「模板带来的 2 个」是登录服务与可靠投递，已在模板里改好并同步到三个后端（2026-09-29）。可靠投递的旧路径还留着一个只做转发的文件，为的是部署目录里的集成测试能照常跑；集群迁移完成后删。
 
@@ -113,16 +113,16 @@
 
 | 项 | 位置 | 处理 |
 | --- | --- | --- |
-| 旧运行时，路由还注册着 | investment-backend 的 `application/agent`、`domain/agent`、`infrastructure/agent`、`infrastructure/graph` | **已删**（2026-09-29，investment-backend `0c1a030`）。连同路由、后台任务、定时任务、检索客户端、配置项、依赖包、32 个测试文件，共删约 1.2 万行 |
-| 15 个 2026-07 至 2026-09-11 的旧脚本 | investment-backend `app/scripts/` | **已删**（同上） |
+| 旧运行时，路由还注册着 | knowbench-backend 的 `application/agent`、`domain/agent`、`infrastructure/agent`、`infrastructure/graph` | **已删**（2026-09-29，knowbench-backend `0c1a030`）。连同路由、后台任务、定时任务、检索客户端、配置项、依赖包、32 个测试文件，共删约 1.2 万行 |
+| 15 个 2026-07 至 2026-09-11 的旧脚本 | knowbench-backend `app/scripts/` | **已删**（同上） |
 | 模板带来的 2 个脚本 | 三个后端与模板的 `app/scripts/pair_fixture.py`、`delivery_runtime_probe.py` | 留着，要在模板里处理 |
 | 打镜像时没有排除 `scripts/`、`eval/` | 三个后端仓库根的 `.dockerignore` | **已补**（2026-09-29） |
-| 旧运行时的表还在库里 | investment 的数据库 | 已发布的迁移不删不改；以后用新的迁移去掉 |
-| 旧运行时的历史设计文档 | investment-backend `docs/mooc-manus-v4-*`（3 份）与 `docs/adr/`（18 份） | **已删**（2026-09-29 所有者定，investment-backend `0c22ea6`） |
-| 父仓库里的检索契约消费锁 | `investment-app/contracts/knowbase-retrieval-provider-lock.json` | 所有者 2026-09-29 定撤销检索身份；这份锁到时一并删 |
+| 旧运行时的表还在库里 | knowbench 的数据库 | 已发布的迁移不删不改；以后用新的迁移去掉 |
+| 旧运行时的历史设计文档 | knowbench-backend `docs/mooc-manus-v4-*`（3 份）与 `docs/adr/`（18 份） | **已删**（2026-09-29 所有者定，knowbench-backend `0c22ea6`） |
+| 父仓库里的检索契约消费锁 | `knowbench-app/contracts/knowbase-retrieval-provider-lock.json` | 所有者 2026-09-29 定撤销检索身份；这份锁到时一并删 |
 | 接口层两套放法并存 | 三个后端 | 工作台路由挪到 `http/web`；其余随改随挪 |
-| 首页还挂着旧的研究工作区，约 829 行 | investment-web-frontend | 随前端改造处理 |
-| 应用层里放着对外的实现（会合点管理通道、供给器、Redis 发布、令牌签名） | investment-backend `application/workbench/` | 前三样**已挪到基础设施层**（2026-09-29，`0d55ab6`）。令牌签名还在应用层，规则没定（账本 H3） |
+| 首页还挂着旧的研究工作区，约 829 行 | knowbench-web-frontend | 随前端改造处理 |
+| 应用层里放着对外的实现（会合点管理通道、供给器、Redis 发布、令牌签名） | knowbench-backend `application/workbench/` | 前三样**已挪到基础设施层**（2026-09-29，`0d55ab6`）。令牌签名还在应用层，规则没定（账本 H3） |
 
 **留待后面做的事都记在 [工程结构整改的账本](../../structure-ledger.md)。** 上表只说现状，以账本为准。
 
@@ -130,7 +130,7 @@
 
 | 项 | 为什么暂缓 |
 | --- | --- |
-| 会合点、沙箱供给器、沙箱桥的代码现在放在 k8s 仓里，它们是对外提供服务的产品代码，更合适的位置是 `runtime` 仓 | 要动部署，等集群迁移完成。是远程的建议，所有者没有定 |
+| 会合点、沙箱供给器、沙箱桥的代码现在放在 k8s 仓里，它们是对外提供服务的产品代码，更合适的位置是 `sunmoon-link` 仓 | 要动部署，等集群迁移完成。是远程的建议，所有者没有定 |
 | 前端的结构 | 所有者要大改，另行讨论 |
 
 ## 第一期切法

@@ -1,6 +1,6 @@
 # `dev-investment-agent/` 目录
 
-**开发 investment-app 那个 agent 所需要的全部。**
+**开发 knowbench-app 那个 agent 所需要的全部。**
 
 这个 agent 要做的事,是把[一次 turn 的九站](pipeline.md)从人手里一格一格接过去。
 它的专业领域是投资,但**树上每个节点的题目都是「某一环节怎么脚本化」,不是投资业务怎么做**。

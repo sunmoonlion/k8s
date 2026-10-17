@@ -38,7 +38,7 @@ k8s/
 
 | 目录 | 装什么 | 命名空间 |
 | --- | --- | --- |
-| `components/app-platform/` | `auth-app/casdoor`；`tpl-app`、`knowfeed-app`、`knowbase-app`、`investment-app`（每个应用下分前后端组件，后端下有 database、migration、redis、rabbitmq、identity、runtime 等阶段）；`common/`（应用共用的部署机制） | `app-platform-dev` |
+| `components/app-platform/` | `auth-app/casdoor`；`tpl-app`、`knowfeed-app`、`knowbase-app`、`knowbench-app`（每个应用下分前后端组件，后端下有 database、migration、redis、rabbitmq、identity、runtime 等阶段）；`common/`（应用共用的部署机制） | `app-platform-dev` |
 | `components/data-platform/` | PostgreSQL、Redis / Valkey、对象存储、RAGFlow（含 Infinity、text-embeddings）、ELK、Neo4j、MongoDB | `data-platform-dev` |
 | `components/messaging-platform/` | RabbitMQ | `messaging-platform-dev` |
 | `components/ingress-platform/` | 内网 Traefik（TLS 终止、按 Host 路由，不做授权）、frpc | `ingress-platform-dev` |

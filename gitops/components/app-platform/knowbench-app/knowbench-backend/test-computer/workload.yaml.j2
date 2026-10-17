@@ -1,0 +1,132 @@
+{% set release = knowbench_agent_releases.linux %}
+{% set tc = cfg.knowbot_test_computer %}
+# 分身测试的测试电脑（SDD 0027 §3.4）：与用户同一份代码的本地代理（Linux 包），只配对给测试账号
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: knowbench-test-computer
+  namespace: {{ app_namespace }}
+  annotations: {kustomize.toolkit.fluxcd.io/prune: disabled}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: {{ tc.storage }}}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: knowbench-test-computer-scripts, namespace: {{ app_namespace }}}
+data:
+  fetch.sh: |
+    # 取钉住的 Linux 包：只读身份从私有桶取、核归档摘要、解开、按清单逐字节核对。已核过的版本不重取
+    set -eu
+    umask 0077
+    target="/data/releases/{{ release.version }}-{{ release.tarball_sha256[:12] }}"
+    if [ ! -f "$target/.verified" ]; then
+      rm -rf /data/releases/.incoming
+      mkdir -p /data/releases/.incoming/x
+      printf 'user = "%s:%s"\n' "$(cat /run/download/access-key)" "$(cat /run/download/secret-key)" > /tmp/curl.conf
+      curl -q --config /tmp/curl.conf --fail --silent --show-error --proto '=https' --max-redirs 0 \
+        --cacert /run/download/ca.crt --aws-sigv4 "aws:amz:$(cat /run/download/region):s3" \
+        -o /data/releases/.incoming/agent.tar.gz \
+        "$(cat /run/download/endpoint)/{{ knowbench_agent_releases.bucket }}/{{ release.object_key }}"
+      rm -f /tmp/curl.conf
+      echo "{{ release.tarball_sha256 }}  /data/releases/.incoming/agent.tar.gz" | sha256sum -c -
+      tar -xzf /data/releases/.incoming/agent.tar.gz -C /data/releases/.incoming/x --no-same-owner --no-same-permissions
+      node /data/releases/.incoming/x/installer/verify-linux.mjs /data/releases/.incoming/x {{ release.manifest_sha256 }}
+      mv /data/releases/.incoming/x "$target"
+      touch "$target/.verified"
+      rm -rf /data/releases/.incoming
+    fi
+    ln -sfn "$target" /data/agent.next && mv -T /data/agent.next /data/agent
+  run.sh: |
+    # 第一次没有凭据：日志里显示连接码，所有者用测试账号在工作台「接入电脑」里确认；之后直接启动
+    set -eu
+    export HOME=/data/home SUNMOON_AGENT_HOME=/data/home/.sunmoon-agent
+    mkdir -p "$SUNMOON_AGENT_HOME" "{{ tc.workspace }}/底稿"
+    agent() { node /data/agent/app/dist/cli.js "$@"; }
+    if [ ! -f "$SUNMOON_AGENT_HOME/config.json" ]; then
+      agent init --root "{{ tc.workspace }}" --no-outer-sandbox --name knowbot-test
+    fi
+    paired() { node -e 'process.exit(require(process.env.SUNMOON_AGENT_HOME + "/config.json").token ? 0 : 1)'; }
+    until paired; do
+      echo '{"event":"pairing","hint":"用测试账号 knowbot-tester 在工作台「接入电脑」里输入下面的连接码"}'
+      agent pair || sleep 10
+    done
+    # 测试产出保留 7 天：每小时删一次 7 天前的底稿目录（只动 底稿/对话-*）
+    ( while true; do
+        find "{{ tc.workspace }}/底稿" -mindepth 1 -maxdepth 1 -type d -name '对话-*' -mtime +7 -exec rm -rf {} + || true
+        sleep 3600
+      done ) &
+    exec node /data/agent/app/dist/cli.js start
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: knowbench-test-computer, namespace: {{ app_namespace }}}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: knowbench-test-computer}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowbench-test-computer
+        app.kubernetes.io/part-of: knowbench
+        sunmoonai.com/object-storage-client: 'true'
+      annotations:
+        sunmoonai.com/agent-package: '{{ release.tarball_sha256 }}'
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext: {runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001, seccompProfile: {type: RuntimeDefault}}
+      initContainers:
+        - name: fetch
+          image: {{ registry_address }}/platform/{{ test_computer_image.repository }}@{{ test_computer_image.digest }}
+          imagePullPolicy: IfNotPresent
+          command: [/bin/bash, /scripts/fetch.sh]
+          env: [{name: HOME, value: /tmp}]
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: scripts, mountPath: /scripts, readOnly: true}
+            - {name: download, mountPath: /run/download, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      containers:
+        - name: agent
+          image: {{ registry_address }}/platform/{{ test_computer_image.repository }}@{{ test_computer_image.digest }}
+          imagePullPolicy: IfNotPresent
+          command: [/usr/bin/tini, --, /bin/bash, /scripts/run.sh]
+          env: [{name: TMPDIR, value: /tmp}]
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: '2', memory: 2Gi}}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: data, mountPath: {{ tc.workspace }}, subPath: workspace}
+            - {name: scripts, mountPath: /scripts, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: knowbench-test-computer}}
+        - {name: scripts, configMap: {name: knowbench-test-computer-scripts, defaultMode: 0555}}
+        - {name: download, secret: {secretName: knowbench-test-computer-download, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 1Gi}}
+---
+# 只放行 DNS、对象存储（取包）与公网边缘的 30443（会合点与网页地址）。模型在测试账号的云端沙箱里调，这里不出外网
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowbench-test-computer-egress, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowbench-test-computer}}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ data_namespace }}}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: object-storage}}
+      ports: [{protocol: TCP, port: {{ object_storage_port }}}]
+    - to:
+        - ipBlock: {cidr: {{ test_computer_edge_ip }}/32}
+      ports: [{protocol: TCP, port: 30443}]

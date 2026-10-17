@@ -1,5 +1,5 @@
 ---
-# 工作台的令牌签名密钥对（ES256）：一处生成、三处引用——investment 用私钥签，knowbase 与 relay 用公钥验。
+# 工作台的令牌签名密钥对（ES256）：一处生成、三处引用——knowbench 用私钥签，knowbase 与 relay 用公钥验。
 # 平台级私有输入 services_config_dir/workbench-signing.yaml（主备非覆盖），和别的组件输入一个做法。
 # 结果只放在内存变量 workbench_signing（private_key_pem / public_key_pem）。
 - name: Generate a candidate ES256 key pair only in memory
@@ -17,7 +17,7 @@
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
   vars:
     component_input_name: workbench-signing
-    component_input_manifest: app-platform/investment-app/investment-backend/runtime/domain.sops.yaml
+    component_input_manifest: app-platform/knowbench-app/knowbench-backend/runtime/domain.sops.yaml
     component_initial_input: '{{ workbench_signing_candidate.stdout | from_json }}'
   no_log: true
 - name: Bind the signing key pair in memory only

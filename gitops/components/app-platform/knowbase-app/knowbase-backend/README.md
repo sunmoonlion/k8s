@@ -29,7 +29,7 @@ Job输入/镜像改变须审核并更新对应revision，经发布晋级生成�
 
 ## 应用特定依赖
 
-knowledge_provider指定dataset/tenant与Info原文只读边界，knowledge_service_receiver开启服务接收。输入、远端准备、验收及失败清理必须按[provider维护](provider/README.md)；调用方绑定由Info/Investment各自配置派生，不在此复制。
+knowledge_provider指定dataset/tenant与Info原文只读边界，knowledge_service_receiver开启服务接收。输入、远端准备、验收及失败清理必须按[provider维护](provider/README.md)；调用方绑定由Info/Knowbench各自配置派生，不在此复制。
 
 ## 操作与恢复
 
@@ -40,7 +40,7 @@ make -C infrastructure application-check APP=knowbase
 
 plan只读；check会创建限定随机数据库/消息/业务探针并精确清理，失败保留现场，不是纯查看。配置候选、构建、固定发布及bootstrap统一见[应用维护流程](../../../../../infrastructure/applications/README.md)。口令备份不是数据库备份；既有数据更新先准备数据库与外部依赖恢复路径，不能拿Git回退代替。
 
-基础登录、消息及实际Knowfeed→Knowbase→Investment中文检索链已验；完整爬取、PDF/其它格式、浏览器全集与恢复演练仍有缺项。 记录见验收边界（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。
+基础登录、消息及实际Knowfeed→Knowbase→Knowbench中文检索链已验；完整爬取、PDF/其它格式、浏览器全集与恢复演练仍有缺项。 记录见验收边界（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。
 
 ## 后端字段
 

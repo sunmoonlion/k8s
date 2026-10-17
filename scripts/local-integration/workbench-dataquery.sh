@@ -2,12 +2,12 @@
 # 问数评测（0007 第一批）：工作台（账房 + runner，进程内）→ 沙箱容器（带知识 MCP 配置）→ 会合点 → 本地代理 → 本机；
 # 知识 MCP 由 knowbase-backend 的最小应用在本机起（uvicorn），沙箱经 host.docker.internal 访问。
 # 看什么：1) 沙箱里的 Codex 能列出并调用 sunmoon_knowbase 的三个工具；2) 基线臂与 DATA_QUERY 臂各跑 N 案；
-#         3) 判定只有 pass/fail/undecidable；4) 报告落 investment-backend/app/eval/reports/。
+#         3) 判定只有 pass/fail/undecidable；4) 报告落 knowbench-backend/app/eval/reports/。
 # 前提：workbench-chain.sh 的前提 + knowbase-backend 已 uv sync 且 datasets/ 里有 lesson23 sqlite。
 # 用法：bash scripts/local-integration/workbench-dataquery.sh [--limit N] [--arms baseline,pack] [--case-ids a,b]
 set -o pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"; K8S="$(cd "$HERE/../../.." && pwd)"; WS="$(cd "$K8S/.." && pwd)"
-RUNTIME="$WS/runtime"; BACKEND="$WS/investment-app/investment-backend/app"; KNOWBASE="$WS/knowbase-app/knowbase-backend/app"
+RUNTIME="$WS/sunmoon-link"; BACKEND="$WS/knowbench-app/knowbench-backend/app"; KNOWBASE="$WS/knowbase-app/knowbase-backend/app"
 source "$RUNTIME/scripts/env-header.sh"
 PY="$RUNTIME/.venv/bin/python"; IMAGE="${IMAGE:-sunmoon/sandbox:dev}"
 RELAY_PORT=47100; APP_PORT=47800; MCP_PORT=47900; USER_ID=local; AGENT_TOKEN=agent-secret; SANDBOX_TOKEN=sandbox-secret

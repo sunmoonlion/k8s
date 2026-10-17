@@ -73,16 +73,16 @@
     web_origins:
       knowfeed: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml") | from_yaml).knowfeed_web_deployment.origin }}'
       knowbase: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml") | from_yaml).knowbase_web_deployment.origin }}'
-      investment: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/investment-app/investment-web-frontend/config.yaml") | from_yaml).investment_web_deployment.origin }}'
+      knowbench: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml") | from_yaml).knowbench_web_deployment.origin }}'
       knowmart: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml") | from_yaml).knowmart_web_deployment.origin }}'
-    # 谁带人去哪（PRD/apps/README.md 4.1）：investment 去 knowfeed、knowbase，以及 knowmart「我的分身」（请分身，SDD 0027 P4）；
+    # 谁带人去哪（PRD/apps/README.md 4.1）：knowbench 去 knowfeed、knowbase，以及 knowmart「我的分身」（请分身，SDD 0027 P4）；
     # knowbase 去 knowfeed；knowfeed 去 knowbase
-    target_names: "{{ {'investment': ['knowfeed','knowbase','knowmart'], 'knowbase': ['knowfeed'], 'knowfeed': ['knowbase'], 'tpl': [], 'knowlab': [], 'knowmart': []}[application_name] }}"
+    target_names: "{{ {'knowbench': ['knowfeed','knowbase','knowmart'], 'knowbase': ['knowfeed'], 'knowfeed': ['knowbase'], 'tpl': [], 'knowlab': [], 'knowmart': []}[application_name] }}"
     cross_app_targets: >-
       {% set out = {} %}{% for n in target_names %}{% set _ = out.update({n: {'web_base_url': web_origins[n]}}) %}{% endfor %}{{ out | to_json }}
-    # 谁会把人带到这里、各自的回跳地址：investment 的工作台回跳；别的应用不回跳；自己不在名单里
+    # 谁会把人带到这里、各自的回跳地址：knowbench 的工作台回跳；别的应用不回跳；自己不在名单里
     cross_app_sources: >-
-      {% set out = {} %}{% for n in ['investment','knowbase','knowfeed'] if n != application_name %}{% set _ = out.update({n: ({'return_url': web_origins.investment + '/zh-CN/workbench?ref={ref}'} if n == 'investment' else {})}) %}{% endfor %}{{ out | to_json }}
+      {% set out = {} %}{% for n in ['knowbench','knowbase','knowfeed'] if n != application_name %}{% set _ = out.update({n: ({'return_url': web_origins.knowbench + '/zh-CN/workbench?ref={ref}'} if n == 'knowbench' else {})}) %}{% endfor %}{{ out | to_json }}
 - name: Use no cross application links unless enabled
   when: not cross_app_enabled | bool
   ansible.builtin.set_fact: {cross_app_env: {}}

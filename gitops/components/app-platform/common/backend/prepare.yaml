@@ -1,5 +1,5 @@
 ---
-# Shared backend prepare for tpl/info/knowledge/investment. Templates live in common/;
+# Shared backend prepare for tpl/info/knowledge/knowbench. Templates live in common/;
 # this file writes them under .build/components/<application_object>/ because the generic
 # renderer looks for j2 beside each stage path.
 - name: Bind application identity
@@ -64,7 +64,7 @@
       - cfg.redis_key_pattern == application_name + ':*'
       - cfg.redis_pubsub_channel_pattern | default('') in ['', application_name + ':workbench:*']
       - not provider_enabled | bool or (application_name == 'knowbase' and not storage_enabled | bool)
-      - not service_enabled | bool or (application_name in ['knowfeed','investment'] and service_access_enabled | bool)
+      - not service_enabled | bool or (application_name in ['knowfeed','knowbench'] and service_access_enabled | bool)
       - not receiver_enabled | bool or (application_name == 'knowbase' and provider_enabled | bool and service_access_enabled | bool)
       - not receiver_enabled | bool or (service_bindings.ingest.enabled | bool and service_bindings.retrieve.enabled | bool)
       - not receiver_enabled | bool or service_bindings.ingest.client_id != service_bindings.retrieve.client_id

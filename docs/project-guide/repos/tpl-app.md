@@ -2,7 +2,7 @@
 
 > 最后更新：2026-10-16 ｜ 按代码现状重写 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
-一个标准应用长什么样由本仓规定；knowfeed、knowbase、investment 由它实例化，将来的 knowlab-app、knowmart-app 也一样。**公共缺陷先修模板，再同步到各实例。**
+一个标准应用长什么样由本仓规定；knowfeed、knowbase、knowbench 由它实例化，将来的 knowlab-app、knowmart-app 也一样。**公共缺陷先修模板，再同步到各实例。**
 
 ## 结构
 

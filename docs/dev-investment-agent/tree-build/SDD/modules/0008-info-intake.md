@@ -113,7 +113,7 @@ A2 就是把现在只能用脚本调的五个管理接口做成页面。
 一个普通的链接，不传任何凭据。
 
 ```text
-https://<knowfeed 网页端>/<语言>/requests/new?code=600519&from=investment&ref=<不透明的引用>
+https://<knowfeed 网页端>/<语言>/requests/new?code=600519&from=knowbench&ref=<不透明的引用>
 ```
 
 | 参数 | 含义 | knowfeed 怎么对待 |

@@ -138,7 +138,7 @@ class KubeClient:
 
 
 def labels(user: str) -> dict[str, str]:
-    # sunmoonai.com/sandbox 是别的命名空间放行沙箱时选的标签（investment、knowbase 的入站策略）
+    # sunmoonai.com/sandbox 是别的命名空间放行沙箱时选的标签（knowbench、knowbase 的入站策略）
     return {"app": "sandbox", "user": user, "sunmoonai.com/managed-by": "sandbox-provisioner", "sunmoonai.com/sandbox": "true"}
 
 

@@ -28,7 +28,7 @@ def verify_application_logs(request, kube, env, args, reader, require):
     undeployed = []
     # Platforms bootstrap before applications. Absent/disabled applications are explicitly
     # reported; a declared enabled Deployment with missing/unready Pods is always a failure.
-    names=[app+'-'+role for app in ('tpl','knowfeed','knowbase','investment') for role in ('api','worker','scheduler','web','admin')]+['casdoor']
+    names=[app+'-'+role for app in ('tpl','knowfeed','knowbase','knowbench') for role in ('api','worker','scheduler','web','admin')]+['casdoor']
     for name in names:
         deployment=deployments.get(name)
         replicas=deployment['spec'].get('replicas',1) if deployment else 0

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 所有者在本地机上跑的（拉）：把全部仓和副本同步到远程助手推上来的最新状态，并列出待办。跑完之后的推回见 human-remote.sh。
 # 跑完后对 Cursor 说「请看 inbox/cursor」、对 astra 说「请看 inbox/astra」。本地助手不同步、不推；每条做完自己在被测仓本地提交（README「3c」）。
-# 用法：WS=<工位> bash ~/switch-test/human-local.sh    （工位必须给，不猜；同步该工位的五仓 + 子仓 + runtime）
+# 用法：WS=<工位> bash ~/switch-test/human-local.sh    （工位必须给，不猜；同步该工位的五仓 + 子仓 + sunmoon-link）
 # ~/switch-test 里的两个脚本只是转发器（本脚本生成），永远跑仓里当前工位的最新版；第一次或转发器还没生成时，
 # 直接跑仓里这份：WS=fable bash ~/worktrees/fable/k8s/docs/dev-investment-agent/switch-test/human-local.sh
 set -uo pipefail
@@ -11,10 +11,10 @@ if [ -z "${WS:-}" ]; then
 fi
 WS="$WS"
 K8S="$HOME/worktrees/$WS/k8s"; ST="$K8S/docs/dev-investment-agent/switch-test"
-FIVE="k8s knowfeed-app investment-app knowbase-app tpl-app knowlab-app knowmart-app"
+FIVE="k8s knowfeed-app knowbench-app knowbase-app tpl-app knowlab-app knowmart-app"
 # 父仓下的全部子仓（与 human-remote.sh 同一份）
 SUBS="knowfeed-app/knowfeed-backend knowfeed-app/knowfeed-web-frontend knowfeed-app/knowfeed-admin-frontend
-  investment-app/investment-backend investment-app/investment-web-frontend investment-app/investment-admin-frontend
+  knowbench-app/knowbench-backend knowbench-app/knowbench-web-frontend knowbench-app/knowbench-admin-frontend
   knowbase-app/knowbase-backend knowbase-app/knowbase-web-frontend knowbase-app/knowbase-admin-frontend
   tpl-app/tpl-backend tpl-app/tpl-web-frontend tpl-app/tpl-admin-frontend
   knowlab-app/knowlab-backend knowlab-app/knowlab-web-frontend knowlab-app/knowlab-admin-frontend
@@ -29,14 +29,14 @@ if [ "${1:-}" != "--after-sync" ]; then
 echo "===== 0. 先看本地有没有没推回的东西"
 # 本地助手的提交还没推回、或者还在做（有未提交改动）时，拉取只会报 git 的分叉错误；这里先说人话再停
 blocked=0
-for r in $FIVE $SUBS runtime; do
+for r in $FIVE $SUBS sunmoon-link; do
   d="$HOME/worktrees/$WS/$r"; [ -e "$d/.git" ] || continue
   # 先取远端：远程助手把本地提交合并进去后，旧的 origin/$WS 会把它们误报成「没推回」
   git -C "$d" fetch -q origin "$WS" 2>/dev/null || true
   dirty=$(git -C "$d" status --porcelain --ignore-submodules=all | head -1)
   ahead=$(git -C "$d" rev-list --count "origin/$WS..HEAD" 2>/dev/null || echo 0)
   # 子仓按父仓 gitlink 检出，可能来自另一工位；与 human-remote.sh 一样，
-  # 已在远端分支上的提交不算「没推回」。父仓和 runtime 仍须对齐本工位。
+  # 已在远端分支上的提交不算「没推回」。父仓和 sunmoon-link 仍须对齐本工位。
   if [[ "$r" == */* ]] && [ -n "$(git -C "$d" branch -r --contains HEAD --list 'origin/*' 2>/dev/null)" ]; then
     ahead=0
   fi
@@ -55,9 +55,9 @@ if [ -x "$HOME/five-repos-sync/sync-five-repos.sh" ]; then
 else
   for r in $FIVE; do pull "$HOME/worktrees/$WS/$r" "$r" || exit 1; done
 fi
-pull "$HOME/worktrees/$WS/investment-app/investment-backend" "investment-app/investment-backend" || exit 1
+pull "$HOME/worktrees/$WS/knowbench-app/knowbench-backend" "knowbench-app/knowbench-backend" || exit 1
 pull "$HOME/worktrees/$WS/knowbase-app/knowbase-backend" "knowbase-app/knowbase-backend" || exit 1
-pull "$HOME/worktrees/$WS/runtime" runtime || exit 1
+pull "$HOME/worktrees/$WS/sunmoon-link" sunmoon-link || exit 1
 
 # 1b. 子仓接回工位分支。five-repos-sync 的 submodule update 按父仓指针检出，子仓必然游离（detached）；
 # 游离状态下本地助手要先自己建分支才能提交，容易出错。这里把每个子仓接到本地 <工位> 分支：

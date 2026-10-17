@@ -8,7 +8,7 @@
 # 用法：bash scripts/local-integration/workbench-modes.sh   （在 k8s 仓根）
 set -o pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"; K8S="$(cd "$HERE/../../.." && pwd)"; WS="$(cd "$K8S/.." && pwd)"
-RUNTIME="$WS/runtime"; BACKEND="$WS/investment-app/investment-backend/app"
+RUNTIME="$WS/sunmoon-link"; BACKEND="$WS/knowbench-app/knowbench-backend/app"
 source "$RUNTIME/scripts/env-header.sh"
 PY="$RUNTIME/.venv/bin/python"; IMAGE="${IMAGE:-sunmoon/sandbox:dev}"
 RELAY_PORT=47100; APP_PORT=47800; USER_ID=local; AGENT_TOKEN=agent-secret; SANDBOX_TOKEN=sandbox-secret

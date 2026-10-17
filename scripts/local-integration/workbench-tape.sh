@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # 录磁带：用真的 Codex 跑几段像样的对话（聊天、项目里的聊天、工作），把对面发来的原始消息按轮次存下来。
-# 预览的样例里，聊天与工作页显示的事件由它重放而来（investment-backend tests/test_preview_fixtures.py）。
+# 预览的样例里，聊天与工作页显示的事件由它重放而来（knowbench-backend tests/test_preview_fixtures.py）。
 # 前提与 workbench-chain.sh 相同。每录一次花一点模型费用。
 # 用法：TAPE_OUT=<文件> bash scripts/local-integration/workbench-tape.sh   （在 k8s 仓根）
-#      不给 TAPE_OUT 就写到 investment-backend 的 tests/preview_tapes/conversations.json
+#      不给 TAPE_OUT 就写到 knowbench-backend 的 tests/preview_tapes/conversations.json
 set -o pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"; K8S="$(cd "$HERE/../../.." && pwd)"; WS="$(cd "$K8S/.." && pwd)"
-RUNTIME="$WS/runtime"; BACKEND="$WS/investment-app/investment-backend/app"
+RUNTIME="$WS/sunmoon-link"; BACKEND="$WS/knowbench-app/knowbench-backend/app"
 source "$RUNTIME/scripts/env-header.sh"
 PY="$RUNTIME/.venv/bin/python"; IMAGE="${IMAGE:-sunmoon/sandbox:dev}"
 RELAY_PORT=47100; APP_PORT=47800; USER_ID=local; AGENT_TOKEN=agent-secret; SANDBOX_TOKEN=sandbox-secret

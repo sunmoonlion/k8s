@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# 跨仓联调：工作台（investment-backend 账房 + runner）→ 沙箱容器（sandbox-platform）→ 会合点（relay-platform）→ 本地代理（runtime）→ 本机文件。
+# 跨仓联调：工作台（knowbench-backend 账房 + runner）→ 沙箱容器（sandbox-platform）→ 会合点（relay-platform）→ 本地代理（runtime）→ 本机文件。
 # 看什么：1) 工作台经 ws + 能力令牌起 thread；2) 用户 turn 在本机白名单目录写成，事件投影完整；3) 审批经工作台 Interaction 往返，
 #         批准后本地上限仍拒白名单外写入并留痕；4) 交出方向盘后用户 turn 被拒、取消后交回。
-# 前提：并列的四个仓 k8s / runtime / investment-app（子仓 investment-backend 已 uv sync）；docker 有 sunmoon/sandbox:dev；
+# 前提：并列的四个仓 k8s / runtime / knowbench-app（子仓 knowbench-backend 已 uv sync）；docker 有 sunmoon/sandbox:dev；
 #      Postgres 测试容器 pgtest（127.0.0.1:55432，库 agent_tests）；Kimi key 在 ~/.codex-probe-kimi/auth.json。
 # 用法：bash scripts/local-integration/workbench-chain.sh   （在 k8s 仓根）
 set -o pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"; K8S="$(cd "$HERE/../../.." && pwd)"; WS="$(cd "$K8S/.." && pwd)"
-RUNTIME="$WS/runtime"; BACKEND="$WS/investment-app/investment-backend/app"
+RUNTIME="$WS/sunmoon-link"; BACKEND="$WS/knowbench-app/knowbench-backend/app"
 source "$RUNTIME/scripts/env-header.sh"
 PY="$RUNTIME/.venv/bin/python"; IMAGE="${IMAGE:-sunmoon/sandbox:dev}"
 RELAY_PORT=47100; APP_PORT=47800; USER_ID=local; AGENT_TOKEN=agent-secret; SANDBOX_TOKEN=sandbox-secret

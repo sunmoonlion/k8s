@@ -6,9 +6,9 @@
 
 | 类 | 内容 | 真源 | 存储 | 保留 |
 | --- | --- | --- | --- | --- |
-| **账与状态** | Task、Attempt、Interaction、方向盘、幂等账、预算账、副作用账、证据账、Environment、Sandbox、本地上限变更 | 工作台 | PostgreSQL，`investment-backend` 的逻辑库（`C-D2` 一个 App 一条迁移链） | 永久；法务留存是 `F-POS-05` 的依据 |
+| **账与状态** | Task、Attempt、Interaction、方向盘、幂等账、预算账、副作用账、证据账、Environment、Sandbox、本地上限变更 | 工作台 | PostgreSQL，`knowbench-backend` 的逻辑库（`C-D2` 一个 App 一条迁移链） | 永久；法务留存是 `F-POS-05` 的依据 |
 | **事件** | Session、Task、Attempt 的事件流；Outbox | 工作台 | PostgreSQL 事件表 + Outbox 表（现有） | 永久；网页按 cursor 回放（`AT-15`） |
-| **产物 Artifact** | 步骤交回物、研究底稿、结果信封、覆盖前的备份版本 | 工作台 | 元数据在 PostgreSQL；正文在对象存储（`C-D4`，桶按领域归 investment）；**同时落用户工作区一份**，那份是用户的副本 | 永久；版本只增不改 |
+| **产物 Artifact** | 步骤交回物、研究底稿、结果信封、覆盖前的备份版本 | 工作台 | 元数据在 PostgreSQL；正文在对象存储（`C-D4`，桶按领域归 knowbench）；**同时落用户工作区一份**，那份是用户的副本 | 永久；版本只增不改 |
 | **会话记录** | Codex thread 的 rollout：第一层与第二层的全部 turn、工具调用、审批、token 用量 | **Codex**（`CODEX_HOME`） | 沙箱 pod 的 PVC | 与沙箱同寿命；PVC 丢了会话丢，账不丢 |
 | **用户资料** | 显式上传或勾选上送的文件 | 知识服务 | `knowbase-app` 库 + 对象存储 | 用户删即删 |
 | **密钥与令牌** | 用户模型 key、会合点令牌、app-server 能力令牌 | 密钥库 | k8s Secret（第一期）/ Vault | 撤换即失效；不入表、不入事件、不入日志（`I8`） |
@@ -46,7 +46,7 @@ PostgreSQL（账、事件、Artifact 元数据） ──真源──▶ 网页�
 
 ## 与现有表的关系
 
-`investment-backend` 现有 Run 状态机、事件表、Outbox/Inbox 是起点：Run 演进为 Task/Attempt 两层，事件表加 `session_id` 与 cursor，Outbox 不动。迁移按 `constraints.md`「做数据迁移时」的 expand → contract 走，不重建库。
+`knowbench-backend` 现有 Run 状态机、事件表、Outbox/Inbox 是起点：Run 演进为 Task/Attempt 两层，事件表加 `session_id` 与 cursor，Outbox 不动。迁移按 `constraints.md`「做数据迁移时」的 expand → contract 走，不重建库。
 
 ## 未决
 

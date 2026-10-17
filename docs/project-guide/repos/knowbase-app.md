@@ -20,9 +20,9 @@
 
 | 接口 | 给谁 | 说明 |
 | --- | --- | --- |
-| MCP `/api/mcp/knowledge`（服务名 `sunmoon_knowbase`） | 沙箱里的 Codex | 工具 `list_datasets`、`describe_schema`、`metric_definitions`、`run_sql`；沙箱带 investment 签发的短期令牌（变量 `KNOWBASE_MCP_*`） |
+| MCP `/api/mcp/knowledge`（服务名 `sunmoon_knowbase`） | 沙箱里的 Codex | 工具 `list_datasets`、`describe_schema`、`metric_definitions`、`run_sql`；沙箱带 knowbench 签发的短期令牌（变量 `KNOWBASE_MCP_*`） |
 | 入库契约 `knowfeed-knowbase-artifact` v1 | knowfeed（服务身份 `knowbase:ingest`） | schema 真源在本仓 `contracts/artifact/v1/` |
-| 检索契约 `knowledge-retrieval` v1 | investment（服务身份 `knowbase:retrieve`） | schema 真源在本仓 `contracts/retrieval/v1/`（含 citation） |
+| 检索契约 `knowledge-retrieval` v1 | knowbench（服务身份 `knowbase:retrieve`） | schema 真源在本仓 `contracts/retrieval/v1/`（含 citation） |
 
 两套契约都是**提供方**，调用方只持锁（[契约](../topics/contracts.md)）。
 

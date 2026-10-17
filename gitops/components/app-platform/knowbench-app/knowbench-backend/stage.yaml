@@ -1,0 +1,56 @@
+# 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
+# enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
+---
+prepare: {file: app-platform/common/backend/prepare.yaml, vars: {application_name: knowbench}}
+defaults: {enabled: '{{ knowbench_deployment.enabled }}', timeout: 8m}
+stages:
+- name: knowbench-database
+  path: database
+  dependsOn: [postgresql]
+  resources: [workload.yaml, bootstrap.sops.yaml, runtime.sops.yaml]
+- name: knowbench-migration
+  path: migration
+  dependsOn: [knowbench-database]
+  resources: [workload.yaml, auth.sops.yaml]
+- name: knowbench-redis
+  path: redis
+  dependsOn: [knowbench-migration, redis]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: knowbench-rabbitmq
+  path: rabbitmq
+  dependsOn: [knowbench-redis, rabbitmq]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: knowbench-identity
+  path: identity
+  dependsOn: [knowbench-rabbitmq, casdoor]
+  resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]
+- name: knowbench-runtime
+  path: runtime
+  dependsOn: '{{ ["knowbench-identity"] + (["knowbench-agent-releases"] if knowbench_agent_releases.enabled | default(false) else []) + (["knowbench-service-identity"] if knowbench_backend_deployment.knowbase_service.enabled | default(false) else []) + (["knowbench-knowmart-summon-identity"] if knowbench_backend_deployment.service_clients | default([]) | selectattr("target", "equalto", "knowmart") | selectattr("relation", "equalto", "summon") | selectattr("enabled") | list | length > 0 else []) + (["knowbench-knowlab-read-identity"] if knowbench_backend_deployment.service_clients | default([]) | selectattr("target", "equalto", "knowlab") | selectattr("relation", "equalto", "read") | selectattr("enabled") | list | length > 0 else []) }}'
+  resources: '{{ ["workload.yaml", "tls.sops.yaml"] + (["agent-releases.sops.yaml"] if knowbench_agent_releases.enabled | default(false) else []) + (["storage.sops.yaml"] if knowbench_backend_deployment.object_storage.enabled | default(false) else []) + (["provider.sops.yaml"] if knowbench_backend_deployment.knowledge_provider.enabled | default(false) else []) + (["service.sops.yaml"] if knowbench_backend_deployment.knowbase_service.enabled | default(false) else []) + (["domain.sops.yaml"] if knowbench_backend_deployment.domain_secrets | default({}) | length > 0 else []) + (["knowmart-summon-service.sops.yaml"] if knowbench_backend_deployment.service_clients | default([]) | selectattr("target", "equalto", "knowmart") | selectattr("relation", "equalto", "summon") | selectattr("enabled") | list | length > 0 else []) + (["knowlab-read-service.sops.yaml"] if knowbench_backend_deployment.service_clients | default([]) | selectattr("target", "equalto", "knowlab") | selectattr("relation", "equalto", "read") | selectattr("enabled") | list | length > 0 else []) }}'
+- name: knowbench-service-identity
+  path: service-identity
+  dependsOn: [casdoor, postgresql]
+  enabled: '{{ knowbench_deployment.enabled and knowbench_backend_deployment.knowbase_service.enabled | default(false) }}'
+  resources: [workload.yaml, provision.sops.yaml]
+- name: knowbench-agent-releases
+  path: agent-releases
+  dependsOn: [object-storage]
+  enabled: '{{ knowbench_deployment.enabled and knowbench_agent_releases.enabled | default(false) }}'
+  images: [aistor-mc]
+  resources: [workload.yaml, provision.sops.yaml]
+- name: knowbench-knowmart-summon-identity
+  path: knowmart-summon-identity
+  dependsOn: [casdoor, traefik]
+  enabled: '{{ knowbench_deployment.enabled and (knowbench_backend_deployment.service_clients | default([]) | selectattr("target", "equalto", "knowmart") | selectattr("relation", "equalto", "summon") | selectattr("enabled") | list | length > 0) }}'
+  resources: [workload.yaml, provision.sops.yaml]
+- name: knowbench-knowlab-read-identity
+  path: knowlab-read-identity
+  dependsOn: [casdoor, traefik]
+  enabled: '{{ knowbench_deployment.enabled and (knowbench_backend_deployment.service_clients | default([]) | selectattr("target", "equalto", "knowlab") | selectattr("relation", "equalto", "read") | selectattr("enabled") | list | length > 0) }}'
+  resources: [workload.yaml, provision.sops.yaml]
+- name: knowbench-test-computer
+  path: test-computer
+  dependsOn: [knowbench-runtime, knowbench-agent-releases]
+  enabled: '{{ knowbench_deployment.enabled and knowbench_backend_deployment.knowbot_test_computer.enabled | default(false) }}'
+  resources: [workload.yaml, download.sops.yaml]

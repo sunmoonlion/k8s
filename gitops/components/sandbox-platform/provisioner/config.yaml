@@ -1,6 +1,6 @@
 ---
 # Per-user sandbox factory. 2026-10-06 打开：镜像按 fable 源码重建（restricted PSS、命名空间参数化）后进入阶段图；
-# investment 的 WORKBENCH_PROVISIONER_TOKEN 读的就是这个组件的平台级输入，组件关着时输入不会生成。
+# knowbench 的 WORKBENCH_PROVISIONER_TOKEN 读的就是这个组件的平台级输入，组件关着时输入不会生成。
 services_sandbox_provisioner_enabled: true
 sandbox_provisioner_port: 8080
 sandbox_pvc_size: 2Gi

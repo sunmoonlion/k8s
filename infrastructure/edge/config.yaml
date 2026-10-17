@@ -1,7 +1,7 @@
 # 公网边缘第一期（SDD 0013）。只放公开参数；frp 令牌在私有文件里，不进 Git。
 ---
 edge_public_ip: 43.153.135.74
-edge_domains: [investment.sunmoonai.com, casdoor.sunmoonai.com, relay.sunmoonai.com]
+edge_domains: [knowbench.sunmoonai.com, casdoor.sunmoonai.com, relay.sunmoonai.com]
 # 沿用集群入口端口，应用里的 origin/回调不用改；改 443 另起一轮（SDD 0013 第七节）。
 edge_https_port: 30443
 edge_http_port: 80

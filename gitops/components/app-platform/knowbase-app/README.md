@@ -31,7 +31,7 @@ enabled=false只关闭本模块准入，不能停止Flux现有对象、删除身
 
 ## 验收边界
 
-基础登录、消息及实际Knowfeed→Knowbase→Investment中文检索链已验；完整爬取、PDF/其它格式、浏览器全集与恢复演练仍有缺项。 详情及尚待交付项见验收记录（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。
+基础登录、消息及实际Knowfeed→Knowbase→Knowbench中文检索链已验；完整爬取、PDF/其它格式、浏览器全集与恢复演练仍有缺项。 详情及尚待交付项见验收记录（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。
 
 ## 应用字段
 

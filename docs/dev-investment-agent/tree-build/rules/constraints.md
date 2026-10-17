@@ -179,7 +179,7 @@ knowlab 总原则（所有者 2026-10-16 定，设计见 [`0026-knowlab`](../SDD
 | --- | --- | --- |
 | 随测试自动跑 | 标了测试载体的那些 | 四仓 `tests/test_kernel_invariants.py`、`test_dormant_capabilities.py`、双端契约测试、`runtime/probe/` |
 | 随提交自动跑 | 本仓文档的机械不变量 | [`doc-gate.py`](../../tools/doc-gate.py)、[`anchor-gate.py`](../../tools/anchor-gate.py) |
-| 指针 | 全部 | 平台五仓根 `AGENTS.md`、组件 `CLAUDE.md`、`runtime` 仓 `AGENTS.md` |
+| 指针 | 全部 | 平台五仓根 `AGENTS.md`、组件 `CLAUDE.md`、`sunmoon-link` 仓 `AGENTS.md` |
 | 自检 | 全部 | 上面「怎么用」 |
 
 只有第一层不依赖人。规则要有载体，就做成跟着测试跑的；做不成的，老实标 ⚠。

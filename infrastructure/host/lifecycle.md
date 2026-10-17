@@ -9,7 +9,7 @@ make -C infrastructure platform-deploy
 make -C infrastructure platform-check
 ```
 
-`platform-deploy`读取各模块及应用原有`enabled`开关，依次执行宿主预检、Harbor物料/部署、入口、KIND、Flux/SOPS、基础声明、平台服务、tpl/info/knowledge/investment。每个模块使用独立Ansible进程，避免事实变量污染。配置选择文件`.build/host/deployment.mk`每次自动生成，不是用户配置。`platform-deploy-selected`是内部编排目标，日常调用前两条入口即可。
+`platform-deploy`读取各模块及应用原有`enabled`开关，依次执行宿主预检、Harbor物料/部署、入口、KIND、Flux/SOPS、基础声明、平台服务、tpl/info/knowledge/knowbench。每个模块使用独立Ansible进程，避免事实变量污染。配置选择文件`.build/host/deployment.mk`每次自动生成，不是用户配置。`platform-deploy-selected`是内部编排目标，日常调用前两条入口即可。
 
 不重新构建应用镜像，不自动发布或批准新GitOps声明；使用已晋级源和已有固定镜像。更改配置仍须render/stage、审阅提交、发布、显式晋级。组件README可独立更新；发布一致性核对只排除这些说明文件，其他GitOps文件仍须与晋级Git对象一致，未提交文件仍被拒绝。禁用开关跳过本模块，不删除已部署资源。现有数据盘、工具及物料、秘密主备、已发布镜像为前提；尚未验从空Windows主机完整引导，也未验删群后全量冷建。
 

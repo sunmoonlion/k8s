@@ -2,7 +2,7 @@
 
 设计见 SDD `0013-edge.md` 第五节。只出站连接边缘 frps，再由 `http2https` 转到本集群 Traefik 的 websecure Service。不改应用 origin、回调和 IngressRoute。
 
-配置照 `infrastructure/edge/smoke/frpc.toml.tmpl` 的字段。正式代理名和分组名是 `investment`、`casdoor`、`relay`。每个副本用自己的 Pod 名做 `user`，否则同名代理第二个副本会被 frps 拒绝。`loginFailExit` 保持 false；边缘 frps 未启动时客户端会一直重连。
+配置照 `infrastructure/edge/smoke/frpc.toml.tmpl` 的字段。正式代理名和分组名是 `knowbench`、`casdoor`、`relay`。每个副本用自己的 Pod 名做 `user`，否则同名代理第二个副本会被 frps 拒绝。`loginFailExit` 保持 false；边缘 frps 未启动时客户端会一直重连。
 
 镜像 `fatedier/frpc:v0.71.0` 的运行摘要是 linux/amd64 平台清单 `sha256:8dd029fa1f995629d6f31157f270633224f39492da079b099ce39dddaad3e191`。边缘冒烟钉的 `sha256:99ece6a2…` 是同一镜像的多架构索引。集群从 Harbor `platform/frpc` 拉取平台清单。
 

@@ -1,7 +1,7 @@
 # 本机权限报告接口
 
-提供方真源：[local-permission-v1.json](local-permission-v1.json)。消费者在 runtime/agent/contracts
-和 investment-backend/app/contracts 锁定规范化 JSON 的 SHA-256；改字段必须同时更新并验证两端。
+提供方真源：[local-permission-v1.json](local-permission-v1.json)。消费者在 sunmoon-link/agent/contracts
+和 knowbench-backend/app/contracts 锁定规范化 JSON 的 SHA-256；改字段必须同时更新并验证两端。
 本轮为第 2 段候选，镜像发布及真实工作台联调见 switch-test/inbox，不能据此判断现网已支持。
 
 ## 调用顺序

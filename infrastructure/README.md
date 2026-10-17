@@ -25,7 +25,7 @@ make -C infrastructure platform-check OBJECT=data-platform/postgresql
 物料按组件归属查看与准备见[artifacts](artifacts/README.md)，应用构建/部署见[applications](applications/README.md)；日常可先运行`make -C infrastructure material-inventory`定位所需文件与Harbor目标。
 
 Windows 代理安装包的校验、私有桶上传和下载开关见
-[investment-backend/agent-releases](../gitops/components/app-platform/investment-app/investment-backend/agent-releases/README.md)。
+[knowbench-backend/agent-releases](../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/README.md)。
 `agent-release-verify/upload` 使用同目录的固定发行配置，不属于应用镜像发布。
 
 ## 运行前提
@@ -56,7 +56,7 @@ make -C infrastructure preflight
 | 四应用在线构建、发布、部署和检查 | [applications](applications/README.md) |
 | 平台组件/应用参数 | [组件目录](../gitops/components/README.md) |
 
-Makefile显式加载模块与组件配置，再加载`SITE`（默认`environments/kind/site.yaml`）。模块专属字段与共享字段各维护一个来源；用户参数、模板、声明、说明按职责就近放置。`APP`须明确选择`tpl/info/knowledge/investment`；`COMPONENT`用于源码计划，选择`backend/web/admin`。
+Makefile显式加载模块与组件配置，再加载`SITE`（默认`environments/kind/site.yaml`）。模块专属字段与共享字段各维护一个来源；用户参数、模板、声明、说明按职责就近放置。`APP`须明确选择`tpl/info/knowledge/knowbench`；`COMPONENT`用于源码计划，选择`backend/web/admin`。
 
 ## 部署的依赖顺序
 

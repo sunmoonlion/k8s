@@ -1,6 +1,6 @@
 # 项目入口指针
 
-本仓是 SunMoonAI 平台的部署与项目文档仓，与 `tpl-app`、`knowfeed-app`、`knowbase-app`、`investment-app` **并列放置**（`runtime` 是客户端仓，不要求并列）。
+本仓是 SunMoonAI 平台的部署与项目文档仓，与 `tpl-app`、`knowfeed-app`、`knowbase-app`、`knowbench-app` **并列放置**（`runtime` 是客户端仓，不要求并列）。
 
 **先读这一份**——项目现在是什么样（产品定位、仓、拓扑、部署、红线、去哪查）：
 

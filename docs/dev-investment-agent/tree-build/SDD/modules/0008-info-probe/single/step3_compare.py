@@ -2,7 +2,7 @@
 数据集里的报表数来自东方财富；这里比的是「年报原文抽出的数」与它是否一致。"""
 import json, os, re, sqlite3, collections
 HERE = os.path.expanduser("~/annual-report-probe")
-DATASET = os.path.expanduser("~/worktrees/fable/investment-app/investment-backend/app/eval/fixtures/sh600009-financials-v2.dataset.bin")
+DATASET = os.path.expanduser("~/worktrees/fable/knowbench-app/knowbench-backend/app/eval/fixtures/sh600009-financials-v2.dataset.bin")
 TOLERANCE = 1.0
 STATEMENTS = ("balance_sheet", "income_statement", "cash_flow")
 NOTE = re.compile(r"[一二三四五六七八九十]*[（(][一二三四五六七八九十百零]+[)）]$")

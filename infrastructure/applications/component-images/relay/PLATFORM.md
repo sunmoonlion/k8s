@@ -40,7 +40,7 @@
 {"<user>": {"agent": "<代理令牌>", "sandbox": "<沙箱令牌>"}}
 ```
 
-令牌不进日志。公钥生成见 investment-backend `app.cli.workbench_token_keys`。
+令牌不进日志。公钥生成见 knowbench-backend `app.cli.workbench_token_keys`。
 
 ## 构建、部署与测
 

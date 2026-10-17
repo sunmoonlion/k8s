@@ -9,8 +9,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "docs/dev-investment-agent/switch-test/human-remote.sh"
-PARENTS = ("k8s", "knowfeed-app", "investment-app", "knowbase-app", "tpl-app")
-CHILDREN = ("investment-app/investment-backend", "knowbase-app/knowbase-backend")
+PARENTS = ("k8s", "knowfeed-app", "knowbench-app", "knowbase-app", "tpl-app")
+CHILDREN = ("knowbench-app/knowbench-backend", "knowbase-app/knowbase-backend")
 
 
 def run(*args, **kwargs):
@@ -106,11 +106,11 @@ class PublishTests(unittest.TestCase):
         repo = self.worktrees / child
         (repo / "results.txt").write_text("test evidence\n")
         # Reject a parent push if its gitlink has not already reached the child remote.
-        hook = self.origins["investment-app"] / "hooks/pre-receive"
+        hook = self.origins["knowbench-app"] / "hooks/pre-receive"
         hook.write_text(
             '#!/usr/bin/env bash\nset -euo pipefail\n'
             'while read -r old new ref; do\n'
-            '  expected=$(git rev-parse "$new:investment-backend")\n'
+            '  expected=$(git rev-parse "$new:knowbench-backend")\n'
             f'  actual=$(env -u GIT_DIR -u GIT_WORK_TREE git --git-dir="{self.origins[child]}" rev-parse fable)\n'
             '  test "$expected" = "$actual"\ndone\n'
         )
@@ -119,7 +119,7 @@ class PublishTests(unittest.TestCase):
         child_head = git(repo, "rev-parse", "HEAD")
         self.assertEqual(git(self.origins[child], "rev-parse", "fable"), child_head)
         self.assertEqual(
-            git(self.origins["investment-app"], "rev-parse", "fable:investment-backend"),
+            git(self.origins["knowbench-app"], "rev-parse", "fable:knowbench-backend"),
             child_head,
         )
 

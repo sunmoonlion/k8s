@@ -3,13 +3,13 @@
 # → 沙箱容器（带知识 MCP 配置）→ 会合点 → 本地代理 → 本机。区别三处：数据集是知识服务生成的 Olist 1/20 样例
 # （olist-ecommerce）；知识 MCP 打开语义层（DuckDB 方言，与题的真值一致）；默认只跑专家臂、十题、预算 20。
 # 看什么：1) 沙箱里的 Codex 能调用 sunmoon_knowbase 的工具并查到 olist-ecommerce；2) FIN_FORECAST 五步跑完；
-#         3) 判定只有 pass/fail/undecidable；4) 报告落 investment-backend/app/eval/reports/，成稿落 $ROOT。
-# 前提：workbench-chain.sh 的前提 + knowbase-backend、investment-backend 已 uv sync；第一次会下载 Olist 的
+#         3) 判定只有 pass/fail/undecidable；4) 报告落 knowbench-backend/app/eval/reports/，成稿落 $ROOT。
+# 前提：workbench-chain.sh 的前提 + knowbase-backend、knowbench-backend 已 uv sync；第一次会下载 Olist 的
 #       九个 parquet（约 55 MB）到 ~/.cache/sunmoon-olist。
 # 用法：bash scripts/local-integration/workbench-finforecast.sh [run_eval 的参数，覆盖下面的默认值]
 set -o pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"; K8S="$(cd "$HERE/../../.." && pwd)"; WS="$(cd "$K8S/.." && pwd)"
-RUNTIME="$WS/runtime"; BACKEND="$WS/investment-app/investment-backend/app"; KNOWBASE="$WS/knowbase-app/knowbase-backend/app"
+RUNTIME="$WS/sunmoon-link"; BACKEND="$WS/knowbench-app/knowbench-backend/app"; KNOWBASE="$WS/knowbase-app/knowbase-backend/app"
 source "$RUNTIME/scripts/env-header.sh"
 PY="$RUNTIME/.venv/bin/python"; IMAGE="${IMAGE:-sunmoon/sandbox:dev}"
 RELAY_PORT=47100; APP_PORT=47800; MCP_PORT=47900; USER_ID=local; AGENT_TOKEN=agent-secret; SANDBOX_TOKEN=sandbox-secret

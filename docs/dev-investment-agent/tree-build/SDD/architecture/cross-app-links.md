@@ -1,7 +1,7 @@
 # 跨应用跳转：一个应用把用户带到另一个应用
 
 > 产品层面的约定在 [`PRD/apps/README.md`](../../PRD/apps/README.md) 4.1。这一份写的是它落在代码里的样子。
-> 对应 [先后顺序](../../PRD/apps/README.md) 的第 5 步，2026-09-29 做完：先进模板，再同步到 knowfeed、knowbase、investment。
+> 对应 [先后顺序](../../PRD/apps/README.md) 的第 5 步，2026-09-29 做完：先进模板，再同步到 knowfeed、knowbase、knowbench。
 > 页面还没有用到它。第 7、8、9 步做页面时直接用。
 
 ## 一、约定
@@ -30,15 +30,15 @@
 
 | 配置 | 含义 | 例 |
 | --- | --- | --- |
-| `CROSS_APP_SOURCES_JSON` | 哪些应用可以把用户带到这里，各自的回跳地址。没写回跳地址的，页面上不显示「回到原处」 | `{"investment": {"return_url": "https://…/zh-CN/workbench?ref={ref}"}, "knowbase": {}}` |
+| `CROSS_APP_SOURCES_JSON` | 哪些应用可以把用户带到这里，各自的回跳地址。没写回跳地址的，页面上不显示「回到原处」 | `{"knowbench": {"return_url": "https://…/zh-CN/workbench?ref={ref}"}, "knowbase": {}}` |
 | `CROSS_APP_TARGETS_JSON` | 这个应用会把用户带去哪些应用，各自网页端的地址。没配的，页面上不显示去那里的链接 | `{"knowfeed": {"web_base_url": "https://knowfeed.example"}}` |
 
 | 应用 | 默认认谁带来的用户 | 默认带用户去哪 |
 | --- | --- | --- |
 | 模板 | 谁都不认 | 哪都不去 |
-| knowfeed | investment、knowbase，都没有回跳地址 | 哪都不去 |
-| knowbase | investment、knowfeed，都没有回跳地址 | 哪都不去 |
-| investment | 谁都不认 | 哪都不去 |
+| knowfeed | knowbench、knowbase，都没有回跳地址 | 哪都不去 |
+| knowbase | knowbench、knowfeed，都没有回跳地址 | 哪都不去 |
+| knowbench | 谁都不认 | 哪都不去 |
 
 | 配置写错了 | 后果 |
 | --- | --- |
@@ -78,9 +78,9 @@
 
 | 应用 | 键 | 去哪 | 路径 | 业务参数 |
 | --- | --- | --- | --- | --- |
-| investment | `info.request` | knowfeed | `requests/new` | `code` |
-| investment | `knowledge.catalog` | knowbase | `catalog` | — |
-| investment | `knowledge.dataset` | knowbase | `catalog/<数据集>` | — |
+| knowbench | `info.request` | knowfeed | `requests/new` | `code` |
+| knowbench | `knowledge.catalog` | knowbase | `catalog` | — |
+| knowbench | `knowledge.dataset` | knowbase | `catalog/<数据集>` | — |
 | knowbase | `info.request` | knowfeed | `requests/new` | `code` |
 | knowfeed | `knowledge.dataset` | knowbase | `catalog/<数据集>` | — |
 | knowfeed | `knowledge.catalog` | knowbase | `catalog` | — |
@@ -94,7 +94,7 @@
 <ReturnToOrigin>回到原处</ReturnToOrigin>
 ```
 
-拼出来的链接：`https://<knowfeed 网页端>/zh-CN/requests/new?code=600519&from=investment&ref=<委托编号>`
+拼出来的链接：`https://<knowfeed 网页端>/zh-CN/requests/new?code=600519&from=knowbench&ref=<委托编号>`
 
 ## 四、knowfeed 原来那一份
 
@@ -113,13 +113,13 @@ knowfeed 做采集申请时先写过一份专用的（2026-09-29，`3b5d037`）�
 | 模板 | `742fc11` | `0030678` | `f2546d7` |
 | knowfeed | `c55b2a8` | `9127094` | `64df53d` |
 | knowbase | `966d6d5` | `4af70ec` | `470b1b9` |
-| investment | `f99c398` | `f4be400` | `8618343` |
+| knowbench | `f99c398` | `f4be400` | `8618343` |
 
 都在 `fable` 分支。四个网页端的仓库原来没有 `fable` 分支，这次建了。
 
 ## 六、验证
 
-| 检查 | 模板 | knowfeed | knowbase | investment |
+| 检查 | 模板 | knowfeed | knowbase | knowbench |
 | --- | --- | --- | --- | --- |
 | 后端全部测试 | 316 过，5 跳过 | 1131 过，13 跳过 | 908 过，5 跳过 | 752 过，5 跳过 |
 | 后端代码检查、类型检查、分层四条规则 | 过 | 过 | 过 | 过 |

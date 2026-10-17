@@ -9,7 +9,7 @@
 | backend/database、migration | 建库/运行与迁移账号隔离、schema核对 |
 | backend/redis、rabbitmq | 应用持久身份、键前缀/vhost与真实拒绝检查 |
 | backend/identity | Web/Admin注册与精确回调，不授予业务权限 |
-| [backend/service-identity](backend/service-identity/README.md) | Info摄入和Investment检索的独立服务身份（knowbase 那一对） |
+| [backend/service-identity](backend/service-identity/README.md) | Info摄入和Knowbench检索的独立服务身份（knowbase 那一对） |
 | [backend/service-client](backend/service-client/README.md) | 通用的跨应用服务身份：调用方 `service_clients`、接收方 `service_receivers`（SDD 0027，先用于 knowmart） |
 | [backend/storage](backend/storage/README.md) | 应用原文桶、版本与受限S3身份 |
 | backend/runtime | API/Worker/Scheduler运行声明；Flux阶段依赖在各应用组件的stage.yaml |
@@ -31,7 +31,7 @@
 | `domain_egress` | 应用级出站放行，每条一个 NetworkPolicy | `name`、`roles`、`ports`，目标二选一：`namespace_var` + `pod_labels` 或 `cidrs` |
 | `domain_ingress` | 应用级入站放行，只到 api 端口 | `name`、`namespace_var`、`pod_labels` |
 
-实现：`backend/domain/prepare.yaml`（校验、读秘密、推链接），`backend/runtime/workload.yaml.j2`（渲染）。共享签名密钥对由 `infrastructure/components/tasks/workbench-signing.yaml` 准备，investment 用私钥，knowbase 与 relay 用公钥。
+实现：`backend/domain/prepare.yaml`（校验、读秘密、推链接），`backend/runtime/workload.yaml.j2`（渲染）。共享签名密钥对由 `infrastructure/components/tasks/workbench-signing.yaml` 准备，knowbench 用私钥，knowbase 与 relay 用公钥。
 
 ## 更新与不可变Job
 

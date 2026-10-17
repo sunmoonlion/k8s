@@ -62,8 +62,8 @@
 | **隐私不作产品约束**：有"资料不能出本机、不能上传"这类限制的，不是我们的客户 | 云端看得到会话、资料、工作区、每步产出；结果明文存放；验收能读正文 |
 | **不垫付 token**：模型费用由用户直接付给厂商 | BYOK：用户的 API key 放在我们的密钥库里，沙箱里的 Codex 用它调厂商；不接受订阅登录搬上云端 |
 | **工作区在本地**：用户的文件、Excel、工具、做到一半的东西都在他的机器上 | 执行环境在用户机器上；云端 Codex 按需读写，不要求整机上传 |
-| **循环在云、执行在本机**：Codex 的模型循环跑在我们给用户开的沙箱里，工具在用户机器上执行 | [部件](../SDD/architecture/components.md)、[拓扑](../SDD/architecture/topology.md)；已探针验证（`runtime` 仓 `probe/REPORT-2026-09-23-remote-exec.md`） |
-| **界面是网页**，本地只装一个签名的小代理 | 现有 `investment-web-frontend` 承担产品界面；不做 Electron |
+| **循环在云、执行在本机**：Codex 的模型循环跑在我们给用户开的沙箱里，工具在用户机器上执行 | [部件](../SDD/architecture/components.md)、[拓扑](../SDD/architecture/topology.md)；已探针验证（`sunmoon-link` 仓 `probe/REPORT-2026-09-23-remote-exec.md`） |
+| **界面是网页**，本地只装一个签名的小代理 | 现有 `knowbench-web-frontend` 承担产品界面；不做 Electron |
 | **边缘 + 内网**是正式部署拓扑：公网只有薄边缘，业务在我们自己的内网站点，深处的组件只出站 | [拓扑](../SDD/architecture/topology.md)，长期成立，不是过渡 |
 
 ## 二、整体要完成的功能
@@ -108,13 +108,13 @@
 
 | 新块 | 现有的什么 | 要做什么 |
 | --- | --- | --- |
-| 网页 | `investment-web-frontend`：Next.js 16、同源 `/api/`、OIDC 会话在后端 | 从"只剩官网"改回产品界面；按 `C-R6` 模板优先 |
-| 工作台后端 | `investment-backend`：FastAPI 四角色、Run 状态机、事件表、Outbox/Inbox、执行租约 | 状态机改成 Task/Attempt 两层；Pilot 链退役；加 app-server 客户端与审批分发 |
+| 网页 | `knowbench-web-frontend`：Next.js 16、同源 `/api/`、OIDC 会话在后端 | 从"只剩官网"改回产品界面；按 `C-R6` 模板优先 |
+| 工作台后端 | `knowbench-backend`：FastAPI 四角色、Run 状态机、事件表、Outbox/Inbox、执行租约 | 状态机改成 Task/Attempt 两层；Pilot 链退役；加 app-server 客户端与审批分发 |
 | 身份 | Casdoor：浏览器 OIDC + PKCE、服务身份 | 直接用；放内网，登录页经边缘出去 |
 | 知识服务 | `knowbase-app`（检索）、`knowfeed-app`（采集） | 加用户资料入库、MCP 封装、按用户限流 |
 | 部署 | `k8s`：`infrastructure/` 远程 kubeadm、`kind-infrastructure` 本机、`ingress-platform` Traefik、bundle 与门禁 | 内网站点用 kubeadm 那套；边缘裁一份薄的；沙箱池是新的一类部署单元 |
 
-**真正从零的**：沙箱池、会合点、本地代理（`runtime` 仓）、评测。
+**真正从零的**：沙箱池、会合点、本地代理（`sunmoon-link` 仓）、评测。
 
 **退役的**：桌面应用与 `desktop-app` 仓；本地 runtime 作为"驱动完整 Codex 的执行端"；加密与密钥整族；设备配对与吊销；跨网派发、租约与 fencing、断线暂停与对账（缩成会合点重连与方向盘交接）；三层类别判定与领域识别引导；LangGraph Pilot 链；"让用户能验证"。
 

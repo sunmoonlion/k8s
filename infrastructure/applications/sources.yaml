@@ -28,7 +28,7 @@ applications:
     web_revision: 11dd9a81fd58638e3a8be2673793d47faf374667
     admin_parent_revision: 4d261719d183d25312106f91e7923ea8a59b89a9
     admin_revision: 4d261719d183d25312106f91e7923ea8a59b89a9
-  investment:
+  knowbench:
     parent_revision: 4cc00a148a6fa2babc2aba352ee9fd583eaf2ee3
     backend_parent_revision: 9cf6298142b3115d2475c83ebd204669ea0d1ae9
     backend_revision: 9cf6298142b3115d2475c83ebd204669ea0d1ae9

@@ -97,10 +97,10 @@
           PLATFORM_KNOWBASE_BACKEND := {{ ("knowbase-backend" in selection.applications.knowbase) | lower }}
           PLATFORM_KNOWBASE_WEB := {{ ("knowbase-web-frontend" in selection.applications.knowbase) | lower }}
           PLATFORM_KNOWBASE_ADMIN := {{ ("knowbase-admin-frontend" in selection.applications.knowbase) | lower }}
-          PLATFORM_INVESTMENT := {{ (selection.applications.investment | length > 0) | lower }}
-          PLATFORM_INVESTMENT_BACKEND := {{ ("investment-backend" in selection.applications.investment) | lower }}
-          PLATFORM_INVESTMENT_WEB := {{ ("investment-web-frontend" in selection.applications.investment) | lower }}
-          PLATFORM_INVESTMENT_ADMIN := {{ ("investment-admin-frontend" in selection.applications.investment) | lower }}
+          PLATFORM_KNOWBENCH := {{ (selection.applications.knowbench | length > 0) | lower }}
+          PLATFORM_KNOWBENCH_BACKEND := {{ ("knowbench-backend" in selection.applications.knowbench) | lower }}
+          PLATFORM_KNOWBENCH_WEB := {{ ("knowbench-web-frontend" in selection.applications.knowbench) | lower }}
+          PLATFORM_KNOWBENCH_ADMIN := {{ ("knowbench-admin-frontend" in selection.applications.knowbench) | lower }}
           PLATFORM_KNOWLAB := {{ (selection.applications.knowlab | length > 0) | lower }}
           PLATFORM_KNOWLAB_BACKEND := {{ ("knowlab-backend" in selection.applications.knowlab) | lower }}
           PLATFORM_KNOWLAB_WEB := {{ ("knowlab-web-frontend" in selection.applications.knowlab) | lower }}

@@ -32,7 +32,7 @@
 | 入口 | [Traefik](ingress-platform/traefik/README.md)、[内部HTTPS](ingress-platform/traefik/service-access/README.md) |
 | 运维控制台 | [pgAdmin](ops-platform/pgadmin/README.md)、[RedisInsight](ops-platform/redisinsight/README.md)、[Flower](ops-platform/flower/README.md)、[Mongo Express](ops-platform/mongo-express/README.md) |
 | 会合/沙箱 | [Relay](relay-platform/relay/README.md)、[Sandbox provisioner](sandbox-platform/provisioner/README.md) |
-| 身份/应用 | [Casdoor](app-platform/auth-app/casdoor/README.md)、[Tpl](app-platform/tpl-app/README.md)、[Knowfeed](app-platform/knowfeed-app/README.md)、[Knowbase](app-platform/knowbase-app/README.md)、[Knowlab](app-platform/knowlab-app/README.md)、[Knowmart](app-platform/knowmart-app/README.md)、[Investment](app-platform/investment-app/README.md) |
+| 身份/应用 | [Casdoor](app-platform/auth-app/casdoor/README.md)、[Tpl](app-platform/tpl-app/README.md)、[Knowfeed](app-platform/knowfeed-app/README.md)、[Knowbase](app-platform/knowbase-app/README.md)、[Knowlab](app-platform/knowlab-app/README.md)、[Knowmart](app-platform/knowmart-app/README.md)、[Knowbench](app-platform/knowbench-app/README.md) |
 | 共享机制 | [common](app-platform/common/README.md) |
 
 目录归属与运行namespace分开，例如Casdoor数据库Job仍在data_namespace；四应用及Casdoor服务统一app_namespace。用户名在config或注明固定实现处，真实口令在私有主备/SOPS；端口标明内部Service、NodePort、宿主映射或公共TLS层。

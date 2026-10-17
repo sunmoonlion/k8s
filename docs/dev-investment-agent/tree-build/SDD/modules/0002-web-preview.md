@@ -33,7 +33,7 @@ pnpm preview            # 开发模式：改了页面马上看到
 
 | 应用 | 地址 |
 | --- | --- |
-| investment | `http://localhost:3100/__preview` |
+| knowbench | `http://localhost:3100/__preview` |
 | knowfeed | `http://localhost:3110/__preview` |
 | knowbase | `http://localhost:3120/__preview` |
 | 模板 | `http://localhost:3190/__preview` |
@@ -42,7 +42,7 @@ pnpm preview            # 开发模式：改了页面马上看到
 
 ## 三、样例
 
-### investment
+### knowbench
 
 | 情景 | 内容 | 接口返回 | 事件流 |
 | --- | --- | --- | --- |
@@ -81,14 +81,14 @@ pnpm preview            # 开发模式：改了页面马上看到
 | 网页端 `app/tests/unit/preview-server.test.ts` | 前门的测试，15 项 |
 | 后端 `tests/preview_recorder.py` | 记录器：存返回、把编号换成固定的。四个仓库逐字相同 |
 | 后端 `tests/test_preview_fixtures.py` | 造各种状态并录下来。平时就是一个测试；给了输出目录才写进网页端的仓库 |
-| investment 后端 `tests/preview_replay.py`、`preview_samples.py`、`preview_tapes/` | 重放的假对面、专家各步的样例、磁带 |
-| investment 后端 `tests/drivers/workbench_tape_driver.py`；k8s `scripts/local-integration/workbench-tape.sh` | 重新录磁带（要真的 Codex，花一点模型费用） |
+| knowbench 后端 `tests/preview_replay.py`、`preview_samples.py`、`preview_tapes/` | 重放的假对面、专家各步的样例、磁带 |
+| knowbench 后端 `tests/drivers/workbench_tape_driver.py`；k8s `scripts/local-integration/workbench-tape.sh` | 重新录磁带（要真的 Codex，花一点模型费用） |
 
 重录样例：
 
 ```bash
-cd investment-backend/app
-PREVIEW_FIXTURES_OUT=<investment-web-frontend>/app/preview/fixtures \
+cd knowbench-backend/app
+PREVIEW_FIXTURES_OUT=<knowbench-web-frontend>/app/preview/fixtures \
   DELIVERY_TEST_DATABASE_URL=… AGENT_TEST_DATABASE_URL=… \
   uv run pytest tests/test_preview_fixtures.py
 ```
@@ -121,12 +121,12 @@ PREVIEW_FIXTURES_OUT=<investment-web-frontend>/app/preview/fixtures \
 | 检查 | 结果 |
 | --- | --- |
 | 前门的测试 | 15 项过（四个网页端各跑一遍） |
-| 四个网页端：类型检查、代码检查、全部测试 | 过。模板 78、knowfeed 81、knowbase 80、investment 105 |
-| 真的起预览，把每个情景里录下来的每个读取都向预览要一遍 | investment 224 个、knowfeed 20 个，返回与样例逐字相同 |
+| 四个网页端：类型检查、代码检查、全部测试 | 过。模板 78、knowfeed 81、knowbase 80、knowbench 105 |
+| 真的起预览，把每个情景里录下来的每个读取都向预览要一遍 | knowbench 224 个、knowfeed 20 个，返回与样例逐字相同 |
 | 浏览器：目录页、仪表盘、没登录时被带到登录页、点登录回来 | 过，有截图 |
 | 记录器的测试 | 4 项过（四个后端） |
-| 造样例的测试 | investment 3 项、knowfeed 2 项过 |
-| 后端全部测试 | investment 768 过、5 跳过；knowfeed 1137 过、13 跳过。代码检查、类型检查、分层四条规则都过 |
+| 造样例的测试 | knowbench 3 项、knowfeed 2 项过 |
+| 后端全部测试 | knowbench 768 过、5 跳过；knowfeed 1137 过、13 跳过。代码检查、类型检查、分层四条规则都过 |
 
 ## 七、提交
 
@@ -137,7 +137,7 @@ PREVIEW_FIXTURES_OUT=<investment-web-frontend>/app/preview/fixtures \
 | 模板 | `61d45d3` | `c5a6095` | `3f0d142` |
 | knowfeed | `c0152f9` | `2e3ab59` | `549d8c3` |
 | knowbase | `f31755e` | `b9c0d60` | `1e50def` |
-| investment | `30afd8b` | `d60498d` | `8f032a8` |
+| knowbench | `30afd8b` | `d60498d` | `8f032a8` |
 
 ## 八、预览说明不了什么
 

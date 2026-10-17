@@ -6,9 +6,9 @@
 
 > **第 3 版方向（2026-10-15 所有者定，见 [决策](../../decisions.md)「专家收成一位」）**：问数与财报体检下架，本专家吸收财报体检，改名「中国A股上市公司财务分析与预测」，只做 A 股上市公司，Olist 下掉；演示公司贵州茅台（数据能否过 knowfeed 的 `Q-BASIS` 待改名后实采确认；被拦就先做「口径标到科目」再发布）。流程拟为：定范围（按证券代码）→ 数据摸底 → 勾稽 → 取数（季报累计数换算单季）→ 算指标与分析 → 对照官方披露 → 预测（带季节性、先回测、给区间）→ 成稿。分析 = 问题点到的科目 + 固定核心指标；预测只做营业收入、归母净利润等少数流量主项，比率由预测值推算，不逐科目预测整套报表。演示分两段：先问一家没采过、不在关注清单里的公司，演示「申请入库」到「待批准」为止（不采集）；再用事先采好的茅台走完全程。第 3 版设计另写，改名完成后实施；下文仍是第 1、2 版。
 
-> 2026-10-14：现网事故（定范围误选 600009 财报、取数超时）已修成第 2 版（investment-backend `c0f99e4`）；同日成稿步在 Windows 上耗满时限，工作台修在 `f89de88`、`ee5ee62`；底稿按次分开存与工作底稿栏在 `61f0266`、`a4f5396`；一起走发布卡 45，10-14 12:26 上线（晋级 `0c220052`）；会合点 `/service` 走卡 46，12:35 上线（晋级 `e9fd5285`）。真人验收待所有者；见第 5.2 节末的事故记录。
+> 2026-10-14：现网事故（定范围误选 600009 财报、取数超时）已修成第 2 版（knowbench-backend `c0f99e4`）；同日成稿步在 Windows 上耗满时限，工作台修在 `f89de88`、`ee5ee62`；底稿按次分开存与工作底稿栏在 `61f0266`、`a4f5396`；一起走发布卡 45，10-14 12:26 上线（晋级 `0c220052`）；会合点 `/service` 走卡 46，12:35 上线（晋级 `e9fd5285`）。真人验收待所有者；见第 5.2 节末的事故记录。
 > 状态（2026-10-13 收尾）：**已实施并上线**——数据集、专家包五步、十题与固定数据都在 fable；发布卡 44 上线（投资后端 `15769d5`、集群登记样例）；集群真跑演示题过（判定见 [`0023-fin-forecast-answer-key.md`](0023-fin-forecast-answer-key.md)）。**没做的**：其余 9 题没有真跑（所有者定不再单独跑），所以「十题过 ≥ 8」这条线没有量过；失败去向（交人、退回）只有单元测试，没有在真跑里触发过。依据：任务清单 opus-001（已撤，原文在 git 历史 `c8eecd22`）、账 96、[决策](../../decisions.md) 2026-10-13 一条。
-> 起点：investment-backend `e73ffa5`（`FIN_FORECAST` 版本 0，`status="preparing"`），knowbase-backend `548e84a`，k8s `451b3fae`。
+> 起点：knowbench-backend `e73ffa5`（`FIN_FORECAST` 版本 0，`status="preparing"`），knowbase-backend `548e84a`，k8s `451b3fae`。
 > 先读：[`0009-semantic`](0009-semantic.md)（口径与 SQL 怎么走）、[`0015`](0015-files-not-dossiers.md)（成稿落文件）、[`0018`](0018-advisor-market.md)（专家 = 知识库 + skill）、[审批](../architecture/approval.md)（工具级三档）。
 > 分工（所有者 2026-10-13 定，以这一条为准）：**Opus 主导**这位专家，从设计到切真；自己做的部分不经 fable 审读，每段自己写回执。远程机上能做的 Opus 自己做（设计、数据集、脚本、测试、专家包、评测题与跑分）；只有所有者本地才能做的（KIND 本地联调链、浏览器里的页面、真机演示）写任务页给 Qwen（`switch-test/inbox/qwen/`），**Qwen 的回执由 Opus 审**。fable 不再给 Opus 派任务；全部调好后由 fable **只做合并**（不审、不改），**发布也由 Opus 来做**。
 
@@ -306,7 +306,7 @@
 
 ## 六、评测 `fin_forecast_10`
 
-放 `investment-backend/app/eval/cases/fin_forecast_10.json`，格式与 `fin_review_13.json` 相同；`data_snapshot_id` 为 3.1 的 `data_version`；评测按语义层开着跑（`--dialect duckdb`）。真值查询的列名与口径名、`period` 一致。
+放 `knowbench-backend/app/eval/cases/fin_forecast_10.json`，格式与 `fin_review_13.json` 相同；`data_snapshot_id` 为 3.1 的 `data_version`；评测按语义层开着跑（`--dialect duckdb`）。真值查询的列名与口径名、`period` 一致。
 
 | # | `case_id` | 问题 | 真值查询的列 | 陷阱与必须提醒 |
 | --- | --- | --- | --- | --- |
@@ -323,7 +323,7 @@
 
 预测题的真值是「这份方法正确用在正确的数上」的结果，不是真实的未来；这在案例的 `description` 里写明。容差：金额 0.01，比率 0.0001，计数 0。
 
-做出来的样子（2026-10-13，第 2 段）：题在 `investment-backend/app/eval/cases/fin_forecast_10.json`，固定数据 `eval/fixtures/olist-ecommerce.dataset.bin`（即 1/20 样例，3858432 字节，`data_version` `olist-ecommerce-dcca129e2ea0cb56`），十题共 11 条真值查询，全部写 DuckDB 方言。测试在 `tests/test_eval_fin_forecast.py`。顺带改了评测的装载：`TruthStore` 在 DuckDB 模式下原来逐行 `executemany`，样例要 83 秒；改为每张表先写临时 CSV 再由 DuckDB 读入，0.74 秒，逐表逐行与 SQLite 相同（只改装载方式，判定不变）。
+做出来的样子（2026-10-13，第 2 段）：题在 `knowbench-backend/app/eval/cases/fin_forecast_10.json`，固定数据 `eval/fixtures/olist-ecommerce.dataset.bin`（即 1/20 样例，3858432 字节，`data_version` `olist-ecommerce-dcca129e2ea0cb56`），十题共 11 条真值查询，全部写 DuckDB 方言。测试在 `tests/test_eval_fin_forecast.py`。顺带改了评测的装载：`TruthStore` 在 DuckDB 模式下原来逐行 `executemany`，样例要 83 秒；改为每张表先写临时 CSV 再由 DuckDB 读入，0.74 秒，逐表逐行与 SQLite 相同（只改装载方式，判定不变）。
 
 **「10 题过 ≥ 8」怎么算**：一题算过 = 质量、引用、必须提醒三栏都过（比发布门严：发布门不看必须提醒）。只考边界的第 5 题没有真值查询，质量栏按现有判法算过，它的过不过实际由必须提醒决定。
 
@@ -348,7 +348,7 @@
 | 3 方法 | Opus | 第五节 | 专家包规矩测试全过；用真 Codex 对本地 knowbase 跑一遍五步；十题过 ≥ 8（按第六节的算法） |
 | 4 切真 | Opus；Qwen（本地 KIND 完整委托与浏览器） | `status="ready"`、`version="1"`、标题去「筹备中」、`preparing_note` 清空 | 后端全量测试过；回执附一次完整委托的事件摘要与成稿文件；本地浏览器里专家页与成稿 |
 
-**第 4 段提前切了代码**（所有者 2026-10-13：「现在好像要把筹备中改了吧，否则点击不了啊」）：investment-backend `FIN_FORECAST` 已是 `ready`、版本 `1`、标题去掉「筹备中」、`preparing_note` 清空。本地十题的线（第 3 段）照样要过；没过线就改方法、升版本。要在站点上点得到，还要合并与发布。
+**第 4 段提前切了代码**（所有者 2026-10-13：「现在好像要把筹备中改了吧，否则点击不了啊」）：knowbench-backend `FIN_FORECAST` 已是 `ready`、版本 `1`、标题去掉「筹备中」、`preparing_note` 清空。本地十题的线（第 3 段）照样要过；没过线就改方法、升版本。要在站点上点得到，还要合并与发布。
 
 每段写回执 `k8s/scripts/results/fin-forecast-<段>-<日期>.md`（Opus 的远程部分与 Qwen 的本地部分各一份，文件名里带 `-remote` / `-local`）；本地部分 Opus 审过才算这一段过。
 
