@@ -1,5 +1,5 @@
-digest: sha256:fb72d81acd69c05e27fa0e163e8b478075bfe559cd8787305abdc854df220309
+digest: sha256:e63b0294ad764e74795a81bd37a2b54217f01c3c43b3057cf3efcd96a395dc9a
 path: ./clusters/kind
 repository: oci://harbor.sunmoonai.com:30443/platform/deployments-kind
 requires_sops: true
-revision: 115c36916f90c203a52aa5b93239d6a6c8bc25ae
+revision: d2a977ed7d618c35fabf5b6a253a44ff3dac0da1
