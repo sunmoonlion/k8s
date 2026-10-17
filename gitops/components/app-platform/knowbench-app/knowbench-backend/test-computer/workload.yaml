@@ -75,6 +75,8 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
       annotations:
         sunmoonai.com/agent-package: 'cd93d5a1d2ebb3fb1506c7cda3dc177997b7f3349361dc8a011a795e1dec1766'
+        # 脚本改了 Pod 就换：ConfigMap 卷不会让在跑的进程重读（R5.3 改 run.sh 后旧 Pod 崩到第 11 次才用上新脚本）
+        sunmoonai.com/scripts: '1eac2401f78e7fac73c6ccc9c2555b87602df4a76b0a615c2f7653a828cd7ae4'
     spec:
       automountServiceAccountToken: false
       # 镜像在 Harbor 的 platform 项目：和沙箱一样显式带拉取凭据（不用运行时的服务账号，测试电脑不需要别的身份）

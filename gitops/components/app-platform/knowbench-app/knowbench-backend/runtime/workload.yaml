@@ -51,6 +51,7 @@ data:
   WORKBENCH_PROVISIONER_URL: "http://sandbox-provisioner.sandbox-platform-dev.svc.cluster.local:8080"
   WORKBENCH_RELAY_ADMIN_URL: "ws://relay.relay-platform-dev.svc.cluster.local:47100"
   WORKBENCH_RELAY_PUBLIC_URL: "wss://relay.sunmoonai.com:30443"
+  KNOWBOT_TEST_SUBJECT: "1929b2c2-760f-4d1a-bdc9-d1b55410003c"
   KNOWBOT_TEST_WORKSPACE: "/workspace"
   KNOWBOT_TEST_MONTHLY_LIMIT: "1000"
   WORKBENCH_TOKEN_ISSUER: "sunmoon-workbench"
@@ -92,7 +93,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: fcb6329a816424a48b5bd108d56dadb90d65c9a8e1cca22ef7b9e3ff033c28c8
+        sunmoonai.com/config-sha256: 827cab67fa59394faaf646dbf72a6583aee26dac3733849de2205b16bc7610ac
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -159,7 +160,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: fcb6329a816424a48b5bd108d56dadb90d65c9a8e1cca22ef7b9e3ff033c28c8
+        sunmoonai.com/config-sha256: 827cab67fa59394faaf646dbf72a6583aee26dac3733849de2205b16bc7610ac
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -218,7 +219,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: fcb6329a816424a48b5bd108d56dadb90d65c9a8e1cca22ef7b9e3ff033c28c8
+        sunmoonai.com/config-sha256: 827cab67fa59394faaf646dbf72a6583aee26dac3733849de2205b16bc7610ac
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -275,7 +276,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: fcb6329a816424a48b5bd108d56dadb90d65c9a8e1cca22ef7b9e3ff033c28c8
+        sunmoonai.com/config-sha256: 827cab67fa59394faaf646dbf72a6583aee26dac3733849de2205b16bc7610ac
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
