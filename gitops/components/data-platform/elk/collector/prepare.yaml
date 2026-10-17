@@ -5,7 +5,7 @@
     that:
       - elk_collector_namespace == 'sunmoon-log-collector'
       - elk_collector_state_directory == '/data/kind-local-storage/log-collector'
-      - elk_collector_applications | sort == ['casdoor','knowbench','knowbase','knowfeed','tpl']
+      - elk_collector_applications | sort == ['casdoor','knowbase','knowbench','knowfeed','tpl']
       - elk_collector_initial_budget_bytes | int >= 1073741824
       - elk_collector_memory_chunks | int >= 8 and elk_collector_memory_chunks | int <= 64
       - image_map['fluent-bit'].status == 'resolved'

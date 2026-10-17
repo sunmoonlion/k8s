@@ -427,6 +427,20 @@ sed -n '/^== 1/,/^== 3/p' docs/rename-receipts/R5.1-render-diff.$T.txt
 > ```
 >
 > 要看到：七个都是 `exit=0`。然后照跑第 2 步块里 `done` 之后的核对，再做第 3、4 步。注意 `git pull` 前工作区有 stage 产物：`--ff-only` 只要没有冲突会照常快进（Opus 这次只改了 `agent-releases/config.yaml` 与本文，stage 产物不在其中）；拉不下来就停，原样贴进回执。
+>
+> 2026-10-17 第二次执行（`R5.1-qwen.20261017-1646.md`）：knowbench、knowlab、knowmart、traefik、frpc 都 0，**停在 `data-platform/elk/collector`**：`prepare.yaml` 断言 `elk_collector_applications | sort == [...]`，右边的字面量原本按字母序写（`…,'investment','knowbase',…`），R1 整词替换后成了 `'knowbench','knowbase'`，不再是排好序的，排序后的实际值对不上。Qwen 的根因判断对。R1 的规则只换词、不重排；全仓带应用名的排序断言只有这一处（Opus 已搜）。改法：字面量改成 `['casdoor','knowbase','knowbench','knowfeed','tpl']`（已提交）。knowlab、knowmart 不在日志采集名单里是改名前就有的，不在 R5 加，记待办账 120。
+>
+> **第三次只续跑剩下的两个**（前八个的产物都在工作区，不重来）：
+>
+> ```bash
+> cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+> grep -n "elk_collector_applications | sort" gitops/components/data-platform/elk/collector/prepare.yaml   # 要看到 'knowbase','knowbench' 的次序
+> for o in data-platform/elk/collector app-platform/auth-app/casdoor; do
+>   echo "===== stage $o"; make -C infrastructure platform-stage OBJECT=$o; rc=$?; echo "exit=$rc"; [ "$rc" = 0 ] || break
+> done
+> ```
+>
+> 要看到：两个都是 `exit=0`。然后照跑第 2 步块里 `done` 之后的核对，再做第 3、4 步，回执照第一次的格式写全（含第 3 步六个迁移头、第 4 步比对第 1–2 节），比对报告随回执提交。这次 Opus 推上去的除了本处，还有几份分身设计文档（0029、0030、knowbot-todolist、术语），都不在 `gitops/` 下，不碰工作区的 stage 产物。
 
 ### R5.2 提交、发布、晋级、入口、hosts、边缘
 
