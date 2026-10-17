@@ -824,8 +824,83 @@ git push origin qwen
 **停点**：Opus 审回执，在本节写「通过」；之后 R6。
 **状态**：**已写好，待 R5.3 通过后可执行** · 2026-10-17 · Opus。
 
-## R6 下线旧对象 — Qwen
+## R6 下线旧对象 — Qwen（本地机）
 
-待写：R5 走查通过后，先列、再删、再核对。
+只在 **R5.4 写了「通过」之后**做（所有者 2026-10-17 定「从空的开始」，旧的在新应用验收通过前原样保留作退路，通过后按清单删除，不备份，0028 第四节）。删完就没有退路了。做法照上次改名跑通的 R6（Git 历史 `3951246c:docs/rename.md`）：清单写死、默认只列、一次删一类、删前核归属记号。
+
+工具 `docs/rename-tools/r6_cleanup.py`（Opus 2026-10-17 由上次的工具改成本次清单，从改名前的配置 `8204fd7a` 逐个抄出；在远程机核过：清单里的旧阶段名与现行 `stages.yaml` 没有重叠，knowbench 的名字与共用桶 `agent-releases` 都不会被认成旧名字）。列出来但不在清单里的标 `?? 不在清单，不删`，交 Opus 看。不打印口令、令牌、哈希。
+
+| 类 | 删什么 | 说明 |
+| --- | --- | --- |
+| `k8s` | 旧阶段的 Flux Kustomization `investment-*` 10 个（R5.2 后显示失败）与它们留下的对象（按阶段标签，先 Deployment/Job 后其余），等旧 Pod 退净 | 共享组件里没有改了名的 investment 对象（`8204fd7a` 的渲染产物里查过）；没带旧标签、名字以 `investment` 开头的其余对象只列不删 |
+| `job-history` | 三个命名空间里**已完成、且现行声明里已没有**的历史 Job | 现行声明的 Job 一个不删 |
+| `postgresql` | 库 `investment`；角色 `investment_runtime`、`investment_migrator` | 核注释 `sunmoon-kind/investment` |
+| `redis` | 用户 `investment_runtime` 与键 `investment:*` | |
+| `rabbitmq` | vhost `investment`（说明 `sunmoon:investment:managed-by-gitops`）与用户 `investment_runtime` | |
+| `object-storage` | 用户 `investment_release_reader`、`investment_release_writer`；策略 `investment-agent-releases-reader`、`-writer` | **桶 `agent-releases` 不删**：名字没改，knowbench 接着用（新身份 `knowbench_release_*`）。桶里 0.4.1 的旧包留着 |
+| `casdoor` | 应用 `sunmoonai-investment-web`、`-admin`、服务身份 `sunmoonai-investment-knowbase-retrieve`（以及 0027 P4/P5 当时只在 Git 里的 `…-knowlab-read`、`…-knowmart-summon`、`sunmoonai-knowlab-investment-testrun`，从没暂存过，找到 0 个是正常的）；对应的 `sunmoon-workload-*` 组织（里面不能有用户） | 核 clientId 与说明记号 |
+| `private` | 目录 `/etc/sunmoon/applications/sunmoon-kind/investment`、备份目录、构建候选；平台私有输入里的 `investment-agent-releases.yaml`、两个 `investment-agent-release*-published.json` 与备份 | |
+| `harbor` | `platform` 项目的 `investment-backend`、`-web-frontend`、`-admin-frontend` 三个仓库 | 必须在 `k8s` 之后 |
+| `harbor-gc` | 上一步删掉的镜像层 | `delete_untagged=false`，前后报占用 |
+| Windows hosts | `investment.`、`investment-admin.`、`investment-api.`、`investment-admin-api.sunmoonai.com` | `docs/rename-tools/r6_windows_hosts.ps1`：要求对应的新名字已在某一行（R5.2 加的那行），否则不改；只剩地址的行整行去掉；先备份 |
+
+不在 R6 里：**旧沙箱**（`sandbox` 命名空间里改名前的工作台给用户拉起的沙箱，不带旧阶段标签，回收归 SDD 0014 U4，同上次）；会合点里旧代理的登记（改名后的代理重新接入，旧登记不再用）；ELK 里旧应用的历史日志（按时间滚动）；阿里云 DNS 的 `investment.sunmoonai.com` 记录（边缘已不认它，删不删所有者定）。
+
+### R6.1 列清单（只读）
+
+```bash
+cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen && git log --oneline -1
+R6='sudo -n nsenter --target 1 --mount --wd=/home/zymun/worktrees/qwen/k8s -- infrastructure/.venv/bin/python docs/rename-tools/r6_cleanup.py'
+T=$(date +%Y%m%d-%H%M); $R6 list > docs/rename-receipts/R6.1-list.$T.txt 2>&1; echo "exit=$?"
+grep -E "^=====|\?\?" docs/rename-receipts/R6.1-list.$T.txt
+```
+
+要看到：`exit=0`（哪一类 `STOP` 就停）。清单整份随回执提交：`git add docs/rename-receipts/R6.1-* && git -c core.editor=true commit -m "rename: R6.1 清单（Qwen）" && git push origin qwen`。**停点**：Opus 逐类审（尤其 `??`），所有者确认删除后写「R6.1 通过」才删。
+
+### R6.2 删（按顺序，一类一类）
+
+```bash
+cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+R6='sudo -n nsenter --target 1 --mount --wd=/home/zymun/worktrees/qwen/k8s -- infrastructure/.venv/bin/python docs/rename-tools/r6_cleanup.py'
+T=$(date +%Y%m%d-%H%M)
+for c in k8s job-history postgresql redis rabbitmq object-storage casdoor private harbor harbor-gc; do
+  $R6 delete $c --confirm $c 2>&1 | tee -a docs/rename-receipts/R6.2-delete.$T.txt; rc=${PIPESTATUS[0]}; echo "== $c exit=$rc"; [ "$rc" = 0 ] || break
+done
+```
+
+要看到：十个 `exit=0`；每类「删后」里清单内的项都没了。任何一类不是 0 就停。
+
+**Windows hosts**（先在副本上演练，再真改；真改弹 UAC，所有者点「是」）：
+
+```bash
+chmod u+w /mnt/c/Users/zymun/hosts-r6-rehearsal* 2>/dev/null; rm -f /mnt/c/Users/zymun/hosts-r6-rehearsal*
+cp docs/rename-tools/r6_windows_hosts.ps1 /mnt/c/Users/zymun/rename-hosts-r6.ps1
+cat /mnt/c/Windows/System32/drivers/etc/hosts > /mnt/c/Users/zymun/hosts-r6-rehearsal   # 用 cat 新建，cp 会照搬只读
+test -w /mnt/c/Users/zymun/hosts-r6-rehearsal && echo writable
+powershell.exe -NoProfile -Command '$env:RENAME_HOSTS_FILE="C:\Users\zymun\hosts-r6-rehearsal"; $env:RENAME_HOSTS_OUT="C:\Users\zymun\hosts-r6-rehearsal.txt"; powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\zymun\rename-hosts-r6.ps1; "exit=$LASTEXITCODE"'
+iconv -f GBK -t UTF-8 /mnt/c/Users/zymun/hosts-r6-rehearsal.txt; diff /mnt/c/Windows/System32/drivers/etc/hosts /mnt/c/Users/zymun/hosts-r6-rehearsal
+# 上面 exit=0、diff 只是那一行少了四个 investment 名字，才真改（弹 UAC）
+powershell.exe -NoProfile -Command "Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','C:\Users\zymun\rename-hosts-r6.ps1'"
+iconv -f GBK -t UTF-8 "/mnt/c/Users/zymun/AppData/Local/Temp/rename-hosts-r6-result.txt"
+grep -nE 'sunmoonai' /mnt/c/Windows/System32/drivers/etc/hosts | grep -v '^[0-9]*:\s*#'
+rm -f /mnt/c/Users/zymun/hosts-r6-rehearsal /mnt/c/Users/zymun/hosts-r6-rehearsal.bak-r6-* /mnt/c/Users/zymun/hosts-r6-rehearsal.txt
+```
+
+要看到：`writable`；演练 `exit=0`、`diff` 只有 R5.0 回执里第 25 行那一行少了四个 investment 名字（harbor、www、casdoor 还在）；真改第一行 `OK backup …`，有效行里没有 `investment`。是 `STOP:` 就停。
+
+**删后核对**：
+
+```bash
+$R6 list 2>&1 | tee docs/rename-receipts/R6.2-after.$T.txt | grep -E "^=====|\?\?|exit="
+export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl)
+$K -n flux-system get kustomizations | grep -v True     # 只剩表头
+for a in tpl knowfeed knowbase knowbench knowlab knowmart; do echo "===== check $a"; make -C infrastructure application-check APP=$a; echo "exit=$?"; done
+make -C infrastructure platform-status; echo "exit=$?"
+```
+
+要看到：清单只剩 R6.1 审过的 `??` 项；Kustomization 全 Ready（`investment-*` 已没了）；六个 `application-check` 与 `platform-status` 都是 0。
+
+**停点**：回执 `R6.2-qwen.<时间>.md` 连同 `R6.2-*.txt` 提交推送，Opus 审过在本节写「改名完成」。
+**状态**：**已写好，待 R5.4 通过** · 2026-10-17 · Opus。
 
 ## R7 文档 — Opus
