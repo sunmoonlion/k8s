@@ -539,9 +539,108 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 **停点**：Qwen 的 `R5.2-qwen` 与 Opus 的 `R5.2-opus` 都审过，在本节写「通过」。
 **状态**：**可执行（第 1–5 步）** · 2026-10-17 · Opus；第 6 步所有者 2026-10-17 已批准（「按你建议」），Qwen 的回执审过后 Opus 做。
 
-### R5.3 本地代理 0.5.0、开测试电脑
+### R5.3 本地代理 0.5.0（Windows 与 Linux 包）、开测试电脑
 
-待写。要包含：上传读回校验 0.5.0 的 Windows 包后，`agent-releases/config.yaml` 换钉并把 `download_available` 改回 `true`，重新暂存 knowbench（R5.1 第一次执行的教训）。
+> 前提：R5.2 **含第 6 步边缘**已通过（测试电脑像用户的电脑一样经公网边缘的 `knowbench.sunmoonai.com` 连进来，边缘还认旧域名时它连不上）。第 1–5 步 Qwen（本地机）；第 6 步所有者亲手装。一步不是 0 就停。
+>
+> 源码：sunmoon-link `ca9784c`（`ca9784ca40d79d7b602c8c8d39fc138dc12b8c2c`，0.5.0）。和 0.4.1（`76832a8`）比，进 Windows 包的文件只有 `sunmoon-agent.cmd` 改名 `sunmoon-link.cmd`，`pnpm-lock.yaml` 没变，所以**文件数仍是 109**、依赖用 0.4.1 那份冻结的 Windows `node_modules`。安装脚本 `install.ps1.tmpl` 两边摘要都是 `f6219d61392a259de44379627c2d9706d5243aa90ce69812c644991af06ca125`（R1 已同步）。
+>
+> **Linux 包 Opus 已在远程机从同一提交打过一次**（同一提交打出同一个摘要），用上传工具同一套校验（`upload.py` 的 `verify_tarball`）核过：`tarballSha256 1aba8da141762c9fa662dd4556d4eb2feecce51b0636e1e8ba2fdeb06add1de3`、`manifestSha256 08002ab37e3e79cfbf5239c725a81b2ba347898ccd06e2bce893fb25d0b7a1ee`、`139169431` 字节、133 个文件。本地机打出来的必须逐字一样。
+
+**1. Windows 包**（照卡 48 的 A，Windows 侧，官方 node.exe 24.19.0、0.4.1 同一份冻结依赖、dev-kind 站点与 CA）：
+
+- 新目录检出：`…\sunmoon-probe-runs\windows-agent-050-release\src-ca9784c`，`git rev-parse HEAD` = `ca9784ca40d79d7b602c8c8d39fc138dc12b8c2c`，`git status --porcelain` 空。
+- 组包：`node agent/distribution/build.mjs --node-exe <官方 node.exe> --dependencies <0.4.1 同一份 Windows agent 依赖目录> --site agent/distribution/sites/dev-kind.json --ca-pem agent/distribution/sites/dev-kind-ca.pem --output <新目录>\sunmoon-link-ca9784c`。
+- 要看到：`sourceRevision` = `ca9784ca…`、`files` = **109**（不是就停，把 `app/dist` 与根目录的文件名列进回执）；包内 Node 跑 `windows-candidate.mjs`：`result: pass`、agent `0.5.0`、codex `0.155.1`、node `24.19.0`、`launchedAgent=false`；根目录有 `sunmoon-link.cmd`、没有 `sunmoon-agent.cmd`。
+- 打 zip（Python `zipfile`、deflate、正斜杠，同 0.4.1）：`sunmoon-link-0.5.0-ca9784c-windows-x64.zip`，放 `~/sunmoon-probe-runs/windows-agent-050/`；记 ZIP SHA256、`size_bytes`、`manifestSha256`。
+
+**2. Linux 包**（WSL）：
+
+```bash
+cd ~/worktrees/qwen/sunmoon-link && git fetch -q origin && git checkout -q ca9784ca40d79d7b602c8c8d39fc138dc12b8c2c && git status --porcelain | head -3; echo "-----"
+mkdir -p ~/sunmoon-probe-runs/linux-050
+node agent/distribution/build-linux.mjs --dependencies agent --site agent/distribution/sites/edge-public.json --output ~/sunmoon-probe-runs/linux-050/sunmoon-link-0.5.0-ca9784c-linux-x64; echo "build exit=$?"
+sha256sum ~/sunmoon-probe-runs/linux-050/sunmoon-link-0.5.0-ca9784c-linux-x64.tar.gz
+git checkout -q qwen
+```
+
+要看到：横线前空；`build exit=0`；输出的 `tarballSha256`、`manifestSha256`、`tarballBytes`、`files` 与上面 Opus 打的**完全一样**（不一样就停，两边的输出都贴进回执，不上传）。
+
+**3. 改发行配置、校验、上传**（工具要求包的摘要与 `config.yaml` 一致，所以先写配置再校验；`download_available` 这一步还保持 `false`）：
+
+```bash
+cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+WZIP=~/sunmoon-probe-runs/windows-agent-050/sunmoon-link-0.5.0-ca9784c-windows-x64.zip
+LTGZ=~/sunmoon-probe-runs/linux-050/sunmoon-link-0.5.0-ca9784c-linux-x64.tar.gz
+W_SHA=<第 1 步的 ZIP SHA256> W_SIZE=<第 1 步的 size_bytes> W_MAN=<第 1 步的 manifestSha256> python3 - <<'PY'
+import os, re, pathlib
+p = pathlib.Path('gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml'); s = p.read_text()
+win, linux = s.split('\n  linux:\n')
+rev = 'ca9784ca40d79d7b602c8c8d39fc138dc12b8c2c'
+def put(block, key, value):
+    new, n = re.subn(rf'(?m)^(\s+{key}: ).*$', lambda m: m.group(1) + value, block, count=1); assert n == 1, key; return new
+for k, v in [('version', '0.5.0'), ('source_revision', rev), ('object_key', 'windows-x64/0.5.0/sunmoon-link-0.5.0-ca9784c-windows-x64.zip'),
+             ('zip_sha256', os.environ['W_SHA']), ('manifest_sha256', os.environ['W_MAN']), ('size_bytes', os.environ['W_SIZE'])]:
+    win = put(win, k, v)
+for k, v in [('version', '0.5.0'), ('source_revision', rev), ('object_key', 'linux-x64/0.5.0/sunmoon-link-0.5.0-ca9784c-linux-x64.tar.gz'),
+             ('tarball_sha256', '1aba8da141762c9fa662dd4556d4eb2feecce51b0636e1e8ba2fdeb06add1de3'),
+             ('manifest_sha256', '08002ab37e3e79cfbf5239c725a81b2ba347898ccd06e2bce893fb25d0b7a1ee'), ('size_bytes', '139169431')]:
+    linux = put(linux, k, v)
+p.write_text(win + '\n  linux:\n' + linux)
+PY
+git diff gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml | grep '^[-+] ' 
+AGENT_ZIP="$WZIP" make -C infrastructure agent-release-verify; echo "win verify exit=$?"
+AGENT_ZIP="$WZIP" make -C infrastructure agent-release-upload; echo "win upload exit=$?"
+AGENT_LINUX_TGZ="$LTGZ" make -C infrastructure agent-release-linux-verify; echo "linux verify exit=$?"
+AGENT_LINUX_TGZ="$LTGZ" make -C infrastructure agent-release-linux-upload; echo "linux upload exit=$?"
+sudo ls -l /etc/sunmoon/services/sunmoon-kind/ | grep -E 'knowbench-agent-release(-linux)?-published'
+```
+
+要看到：diff 只有 Windows 六行、Linux 六行（`codex_version`、`enabled`、`download_available`、`site` 不变）；四个都是 0；两次 upload 都是 `uploaded:true`（或已存在时 `412` 读回一致）、`readback_verified:true`、`writer_read_denied:true`、`reader_write_denied:true`；私有目录里有 `knowbench-agent-release-published.json` 与 `knowbench-agent-release-linux-published.json`。**不复制、不改名任何旧回执**；失败就停，不删桶、不覆盖对象、不关 TLS。
+
+**4. 开下载、开测试电脑，重新暂存 knowbench**：
+
+```bash
+sed -i 's/^  download_available: false$/  download_available: true/' gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml
+python3 - <<'PY'
+import pathlib
+p = pathlib.Path('gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml'); s = p.read_text()
+old = '  knowbot_test_computer:\n    enabled: false\n'; assert s.count(old) == 1; p.write_text(s.replace(old, '  knowbot_test_computer:\n    enabled: true\n'))
+PY
+git diff --stat
+make -C infrastructure platform-stage OBJECT=app-platform/knowbench-app; echo "stage exit=$?"
+grep -rn "BEGIN PRIVATE KEY\|BEGIN PUBLIC KEY" gitops/ | head -3; echo key-check-done
+git status --short gitops | head -20
+make -C infrastructure application-deployment-plan APP=knowbench 2>&1 | grep -E "schema|revision|ok=|failed=" | tail -4; echo "plan exit=${PIPESTATUS[0]}"
+```
+
+要看到：`stage`、`plan` 都是 0；`key-check-done` 前没有文件名；改动在 knowbench 后端的 `agent-releases/`、`runtime/`（`agent-releases.sops.yaml` 与 `config-sha256`）、新出现的 `test-computer/`（`workload.yaml`、`download.sops.yaml`、`kustomization.yaml`）与 `clusters/kind`（测试电脑的阶段）；镜像锁不变；迁移头仍 `20261017_0020`。
+
+**5. 提交、发布、晋级、检查**：
+
+```bash
+git add gitops && git -c core.editor=true commit -m "deploy(knowbench): 本地代理 0.5.0（Windows 与 Linux 包）、开下载、开测试电脑（rename R5.3）"
+make -C infrastructure flux-release; echo "release exit=$?"
+sudo cat infrastructure/.build/flux/source-candidate.yaml | sudo tee infrastructure/environments/kind/flux-source.yaml >/dev/null
+sudo chown "$(id -u):$(id -g)" infrastructure/environments/kind/flux-source.yaml 2>/dev/null
+git add infrastructure/environments/kind/flux-source.yaml && git -c core.editor=true commit -m "release(kind): 晋级到 $(git rev-parse --short HEAD)（rename R5.3）"
+make -C infrastructure flux-source-apply; echo "apply exit=$?"
+export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl)
+$K -n flux-system get kustomizations -o name | grep '/knowbench-' | xargs $K -n flux-system wait --for=condition=Ready --timeout=30m; echo "wait exit=$?"
+make -C infrastructure application-check APP=knowbench; echo "check exit=$?"
+$K -n app-platform-dev get pods | grep -E 'knowbench-(test-computer|api)'
+$K -n app-platform-dev logs deploy/knowbench-test-computer --tail=30 | grep -E 'verified|0\.5\.0|连接码|pair' | sed -E 's/[A-Z0-9]{4}-?[A-Z0-9]{4}/<码>/g'
+git push origin qwen
+```
+
+要看到：`release`、`apply`、`wait`、`check` 都是 0；测试电脑的 Pod `Running`；日志里看得到包核对通过、版本 0.5.0、在等配对（连接码一律抹成 `<码>`，配对在 R5.4）。
+
+**6. 所有者的电脑升到 0.5.0 并重新接入**（所有者亲手做；新工作台是空库，旧的接入不认了，本来就要重新接入）：在 `https://knowbench.sunmoonai.com:30443` 的「接入电脑」页照着装 0.5.0。安装脚本会先卸下旧名字 `sunmoon-agent` 的代理与它的登录自启（旧配置 `.sunmoon-agent` 留着不删），再装 `sunmoon-link`，然后打开接入页；在网页上确认连接码。要看到：「我的电脑」里这台电脑在线、版本 0.5.0；开始菜单里是新名字；新建一个项目让工作对话写一个 `hello.txt`，一次写成。
+
+**回执**：`docs/rename-receipts/R5.3-qwen.<时间>.md`（Windows 包的 A 项表、Linux 输出与 Opus 值的逐项对照、配置 diff、四次 verify/upload 的结果字段、stage 改动、各 `exit`、Pod 与抹过码的日志行、所有者那台电脑的结果）。zip、tar.gz 不进库。
+
+**停点**：Opus 审回执，在本节写「通过」。
+**状态**：**已写好，待 R5.2 通过后可执行** · 2026-10-17 · Opus。
 
 ### R5.4 测试账号、kimi key、测试电脑配对、浏览器走查
 
