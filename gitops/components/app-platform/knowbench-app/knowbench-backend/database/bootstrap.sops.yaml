@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowbench-database-bootstrap
+    namespace: data-platform-dev
+stringData:
+    migrator_password: ENC[AES256_GCM,data:FZcObHOV69KQfY9jhQ2S4CsdH6hJGDguS3J4GiudmbRLryUo728hEA==,iv:fEslMHBs5XDV0uUNV2bh1LY8siKTQ7SnDh52P40DvLA=,tag:zVcoHqH+U/p53ODwJveExQ==,type:str]
+    runtime_password: ENC[AES256_GCM,data:4bqkZ6c8fU+mFR5n0pXxIjkBifrZ1X/NFrXq2ARjYxJVSJ9soG3kjQ==,iv:i96davDMw7EiZvcYYwsQw6wZGKoKg3gtsB8SiPpLk+c=,tag:3Ox47wAZ7O/x6BzcfPWBiQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBRdGRHRWpyMTI3dzQvcUlE
+            MFBCVzR2aDJzbVBJZTF0SDZSbWo5QnRBdWswCmpSNnJFb1oyZGhacHBZRDBFWUVm
+            ZURUYzJXT3k2dUtDYTEzN3VmTXhNQzAKLS0tIFFnaFZJWUxIck1EbFRxQzZab21G
+            ZEhvM1lJOVI1c28zbUZxRGJDTEZOdWsK1SYRIZBXrcQa+VsU9dqYgxxCrEMOwvSS
+            71Yp76ByWFfBVDdfz6qCVLEy4h1BzO1JcDeXRZIuIeHd4ZB0jLhUZA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-17T08:35:32Z"
+    mac: ENC[AES256_GCM,data:KIOh5FEreGkoU8v0w5AJDYDnMk04fYGfv5m1v+dRgQq/kTp7Sg/tisdeQ+4VQYpgRQt5dFsCG1mmctg5MGcJMD7P8MTYClDG0wb09NfhCTB8Q+vMX+iqvHVKJy2n2hN+ko2iDXiDPoDx9bESI45gENnv1//LchSRFwAf8vT06eY=,iv:kC9V7hpjgW9QHcHNGoo2eTMmRgXLuuMEEaEkSmGfI8c=,tag:oJR1/trJZjW91vavCPtyxA==,type:str]
+    version: 3.13.3

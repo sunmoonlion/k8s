@@ -1,6 +1,6 @@
 # Built and published through the native chain; written by application-lock-* after a successful publish.
 ---
-repository: investment-admin-frontend
-digest: sha256:1bed23812e863fad5e0ab46601d22e205111b02be74167b85d97a4cbf57c7aa1
-source_revision: c3c1e1d0524816df006acf250d8767282d8d8ac7
-deployment_id: investment-admin-frontend-1bed23812e863fad
+repository: knowbench-admin-frontend
+digest: sha256:73cb55e1ad5740422ae2581bd139b8301c06e182aec58d308c34444eafefc24c
+source_revision: 45fcf79a1a8e59e3cf9a3dd43ece19b8f59a0267
+deployment_id: knowbench-admin-frontend-73cb55e1ad574042

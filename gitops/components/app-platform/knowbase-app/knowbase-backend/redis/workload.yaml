@@ -102,7 +102,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'knowbase-redis-2047b5ba3716-v2', namespace: data-platform-dev}
+metadata: {name: 'knowbase-redis-620796b591e4-v2', namespace: data-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -116,7 +116,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:2047b5ba3716b6564f5a3d9e1203b0ba1a42adec90ae13501ec98227fcdc7a1c
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:620796b591e4b7a619b257f071855124d61a6755b2692c341a9c2d531dde3b77
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:

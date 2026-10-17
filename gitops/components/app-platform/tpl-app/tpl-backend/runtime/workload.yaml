@@ -4,7 +4,7 @@ metadata: {name: tpl-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: tpl
-  DEPLOYMENT_ID: "tpl-backend-9fbd424ed4d53599"
+  DEPLOYMENT_ID: "tpl-backend-395b14bed28e4f72"
   ALLOWED_HOSTS: "localhost,127.0.0.1,tpl-api,tpl-api.app-platform-dev.svc.cluster.local,tpl.sunmoonai.com,tpl-admin.sunmoonai.com"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -46,7 +46,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: e8d82c7e3a942a0fb2afe21bab98dc9f7c205fc6993eba3bf63e78ac36cdf5c4
+        sunmoonai.com/config-sha256: 72927b9c6562cd92ab05fcee95013b20747f9db0a3d7366a4ccf2298162f6f59
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -56,7 +56,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:9fbd424ed4d535997341c9c63ce8bdce65492be8e858cb9cb548fa5d0e5471c3
+          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:395b14bed28e4f728959310a83d74dafc45f100a592d04d85114cc44250d893f
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -104,7 +104,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: e8d82c7e3a942a0fb2afe21bab98dc9f7c205fc6993eba3bf63e78ac36cdf5c4
+        sunmoonai.com/config-sha256: 72927b9c6562cd92ab05fcee95013b20747f9db0a3d7366a4ccf2298162f6f59
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -114,7 +114,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:9fbd424ed4d535997341c9c63ce8bdce65492be8e858cb9cb548fa5d0e5471c3
+          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:395b14bed28e4f728959310a83d74dafc45f100a592d04d85114cc44250d893f
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -158,7 +158,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: e8d82c7e3a942a0fb2afe21bab98dc9f7c205fc6993eba3bf63e78ac36cdf5c4
+        sunmoonai.com/config-sha256: 72927b9c6562cd92ab05fcee95013b20747f9db0a3d7366a4ccf2298162f6f59
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -168,7 +168,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:9fbd424ed4d535997341c9c63ce8bdce65492be8e858cb9cb548fa5d0e5471c3
+          image: harbor.sunmoonai.com:30443/platform/tpl-backend@sha256:395b14bed28e4f728959310a83d74dafc45f100a592d04d85114cc44250d893f
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]

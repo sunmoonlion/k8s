@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'knowbase-identity-provision-v3', namespace: app-platform-dev}
+metadata: {name: 'knowbase-identity-provision-v4', namespace: app-platform-dev}
 data:
   provision.py: |
     """Register the two browser clients through Casdoor's supported API."""
@@ -39,6 +39,7 @@ data:
         created = []
         checked = []
         migrated = []
+        sso_migrated = []
         with httpx.Client(base_url=endpoint, headers={'Origin': origin}, trust_env=False, timeout=15) as client:
             def api(method, path, payload=None, params=None):
                 response = client.request(method, path, json=payload, params=params)
@@ -67,6 +68,34 @@ data:
                 org = api('GET', '/api/get-organization', params={'id': 'admin/' + user_organization})
             require(org and all(org.get(k) == v for k, v in desired_org.items()),
                     'Existing user organization differs; explicit migration required')
+            # Admin consoles show business pages to roles admin/operator (backend ADMIN_AUTH_ROLE_ALLOWLIST;
+            # Casdoor puts role objects into the token's roles claim). Roles live in built-in, shared by all
+            # applications: create when missing and add built-in/admin to admin. Additive only: never remove
+            # members or change other fields; concurrent jobs may race, so a failed add must re-read as present.
+            roles_created = []
+            role_members_added = []
+            for role_name, members in (('admin', ['built-in/admin']), ('operator', [])):
+                role_id = 'built-in/' + role_name
+                role = api('GET', '/api/get-role', params={'id': role_id})
+                if role is None:
+                    try:
+                        api('POST', '/api/add-role', {'owner': 'built-in', 'name': role_name, 'displayName': role_name,
+                                                      'description': 'sunmoon:admin-console-role:managed-by-gitops',
+                                                      'users': members, 'groups': [], 'roles': [], 'domains': [],
+                                                      'isEnabled': True,
+                                                      'createdTime': datetime.now(timezone.utc).isoformat()})
+                        roles_created.append(role_name)
+                    except RuntimeError:
+                        pass
+                    role = api('GET', '/api/get-role', params={'id': role_id})
+                require(role and role.get('isEnabled') is True, 'Admin console role missing or disabled')
+                missing = [m for m in members if m not in (role.get('users') or [])]
+                if missing:
+                    api('POST', '/api/update-role', dict(role, users=(role.get('users') or []) + missing),
+                        params={'id': role_id})
+                    role = api('GET', '/api/get-role', params={'id': role_id})
+                    role_members_added.append(role_name)
+                require(all(m in (role.get('users') or []) for m in members), 'Admin console role members missing')
             for surface, config in definitions.items():
                 for name in ('name', 'client_id'):
                     require(re.fullmatch(r'[a-z][a-z0-9-]{2,79}', config[name]), 'Invalid browser identity')
@@ -74,17 +103,22 @@ data:
                 require(frontend.scheme == 'https' and frontend.hostname and not frontend.username and
                         not frontend.password and not frontend.query and not frontend.fragment and frontend.path in ('', '/'),
                         'Frontend origin must be an exact HTTPS origin')
+                callback = config['origin'] + '/api/auth/' + surface + '/callback'
+                # SDD 0027: web clients share Casdoor's sign-in session (single sign-on); admin clients
+                # do not. Both register the logout landing next to the callback: Casdoor redirects
+                # back after logout only to a registered URI.
+                single_sign_on = surface == 'web'
                 desired = {
                     'owner': 'admin', 'name': config['name'], 'organization': surface_organization[surface],
                     'description': 'sunmoon:knowbase:' + surface + ':managed-by-gitops',
                     'displayName': 'SunMoon template ' + surface, 'category': 'Default', 'type': 'Web',
                     'clientId': config['client_id'], 'clientSecret': secrets[surface + '_secret'],
-                    'redirectUris': [config['origin'] + '/api/auth/' + surface + '/callback'],
+                    'redirectUris': [callback, config['origin'] + '/api/auth/' + surface + '/logged-out'],
                     'homepageUrl': config['origin'], 'cert': baseline['cert'],
                     'grantTypes': ['authorization_code'], 'tokenFormat': 'JWT', 'tokenSigningMethod': 'RS256',
                     'expireInHours': 1, 'refreshExpireInHours': 0,
                     'enablePassword': True, 'enableSignUp': False, 'enableGuestSignin': False,
-                    'enableSigninSession': False, 'isShared': False,
+                    'enableSigninSession': single_sign_on, 'enableAutoSignin': single_sign_on, 'isShared': False,
                     'signinMethods': [{'name': 'Password', 'displayName': 'Password', 'rule': 'All'}],
                 }
                 existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
@@ -98,12 +132,24 @@ data:
                     existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
                 drift = {k for k, v in desired.items() if existing.get(k) != v}
                 if drift == {'organization'} and surface == 'web' and existing.get('organization') == organization:
-                    # The only migration allowed here: a web client registered before SDD 0014
-                    # moves from built-in to the user organization. Anything else still stops.
+                    # First allowed migration: a web client registered before SDD 0014 moves
+                    # from built-in to the user organization.
                     moved = api('POST', '/api/update-application', dict(existing, organization=user_organization),
                                 params={'id': 'admin/' + config['name'], 'columns': 'organization'})
                     require(moved == 'Affected', 'Web application was not moved')
                     migrated.append(surface)
+                    existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
+                # SDD 0027: the second allowed migration, only from the exact previous shape (callback
+                # only, no sign-in session): turn on single sign-on for web and register the logout
+                # landing. Anything else still stops.
+                sso_keys = {'redirectUris', 'enableSigninSession', 'enableAutoSignin'}
+                drift = {k for k, v in desired.items() if existing.get(k) != v}
+                if (drift and drift <= sso_keys and existing.get('redirectUris') == [callback]
+                        and existing.get('enableSigninSession') is False and not existing.get('enableAutoSignin')):
+                    changed = api('POST', '/api/update-application', dict(existing, **{k: desired[k] for k in drift}),
+                                  params={'id': 'admin/' + config['name']})
+                    require(changed == 'Affected', 'Single sign-on settings were not applied')
+                    sso_migrated.append(surface)
                     existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
                 require(existing and all(existing.get(k) == v for k, v in desired.items()),
                         'Existing browser application differs; explicit migration required')
@@ -119,6 +165,8 @@ data:
             response = client.get(urlsplit(discovery['jwks_uri']).path)
             require(response.status_code == 200 and response.json().get('keys'), 'OIDC verification keys missing')
         print(json.dumps({'browser_clients': sorted(checked), 'created': created, 'migrated': migrated,
+                          'single_sign_on_migrated': sso_migrated, 'single_sign_on': ['web'],
+                          'admin_roles_created': roles_created, 'admin_role_members_added': role_members_added,
                           'user_organization': user_organization, 'admin_organization': organization,
                           'distinct_identities': True, 'exact_redirects': True, 'client_secrets_match': True,
                           'authorization_code_only': True, 'signup_disabled': True,
@@ -159,7 +207,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'knowbase-identity-2047b5ba3716-v3', namespace: app-platform-dev}
+metadata: {name: 'knowbase-identity-620796b591e4-v4', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -173,7 +221,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:2047b5ba3716b6564f5a3d9e1203b0ba1a42adec90ae13501ec98227fcdc7a1c
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:620796b591e4b7a619b257f071855124d61a6755b2692c341a9c2d531dde3b77
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:
@@ -191,7 +239,7 @@ spec:
             - {name: app, mountPath: /run/app, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: script, configMap: {name: 'knowbase-identity-provision-v3'}}
+        - {name: script, configMap: {name: 'knowbase-identity-provision-v4'}}
         - {name: admin, secret: {secretName: casdoor-initial-identity, items: [{key: init_data.json, path: init_data.json}], defaultMode: 0440}}
         - {name: app, secret: {secretName: knowbase-identity-provision, defaultMode: 0440}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}
@@ -203,6 +251,8 @@ data:
   CASDOOR_ENDPOINT: 'https://casdoor.sunmoonai.com:30443'
   CASDOOR_ORGANIZATION: 'built-in'
   WEB_CASDOOR_ORGANIZATIONS: 'sunmoonai'
+  # 管理端业务页给 admin、operator 两个角色看（待办 98）；角色由注册脚本在 built-in 里建好
+  ADMIN_AUTH_ROLE_ALLOWLIST: 'admin,operator'
   WEB_CASDOOR_APPLICATION: 'sunmoonai-knowbase-web'
   WEB_CASDOOR_CLIENT_ID: 'sunmoon-kind-knowbase-web'
   WEB_CASDOOR_REDIRECT_URI: 'https://knowbase.sunmoonai.com:30443/api/auth/web/callback'

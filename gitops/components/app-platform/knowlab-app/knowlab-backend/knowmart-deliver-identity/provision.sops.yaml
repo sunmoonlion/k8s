@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowlab-knowmart-deliver-provision
+    namespace: app-platform-dev
+stringData:
+    client_secret: ENC[AES256_GCM,data:SW5E9NyMT/XfC7Mvv7nUb3kwIRxkNMeqI37Ug8mUBge7G6zaN+JnBQ==,iv:u+RwiPq+pin3vHJG+eZS6kwju8KI8Z87tn8cVgZRRYQ=,tag:I/Uv33A2PE2Nz6BcQ59d9Q==,type:str]
+    ca.crt: ENC[AES256_GCM,data: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,iv:NNIWc3ZWlWZOr9kv3OPKJOCXesk0gpqdO1Dq5T6lhFk=,tag:Ejd5USDUstkEk5aylUOQSA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBacG42YWlMaUlHU2ovYWE3
+            VTBRMFBCQmNyc2VwTDFXNEg1QjluQWExaURZCmRhYmhBb2tsMGkwektSQmpDRnFz
+            Y1BobFBsT2J5WmNiRWd2VXFrc3pYaUEKLS0tIEFFZUJiZjFGbU1xbi9MWkVCT1hJ
+            dzFnamZ4aDBOYWF5cm1zUVY4WXptYXcKZGpwb9z5Kif641id2Wdfg5b8kY95irsS
+            u3vaD4AnwXVlSynetqw4QaUO0V0xoXr0Zb9vhZ630RriCajKebFJ7A==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-17T08:36:42Z"
+    mac: ENC[AES256_GCM,data:A+A23iWGQoRABnsJFI0pv6PmCmxFkUCGMjyfRYglULv73wRrmZbQbYDFYzqxrVyOX9ZU8ascU4V6yEdmXmfF0YaB5z7cjAAiXBXOiKSBvsK+yRkR8XKIZB4HtCNWAcHH4SnKUJfOr1Hc5xQtkEIMaEaLzR17+qKuYXRySkPv7R0=,iv:HpTp+Z6vvEVXJjhqwoT2JfrQILX/3Uqi1f0sVfiX3Is=,tag:He9ssMuL7lOvMUpXeJKpdA==,type:str]
+    version: 3.13.3

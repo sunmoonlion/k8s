@@ -35,7 +35,7 @@ data:
         storage.pause_on_chunks_overlimit on
     [INPUT]
         Name tail
-        Path /var/log/containers/tpl*_app-platform-dev_*.log,/var/log/containers/knowfeed*_app-platform-dev_*.log,/var/log/containers/knowbase*_app-platform-dev_*.log,/var/log/containers/investment*_app-platform-dev_*.log,/var/log/containers/casdoor*_app-platform-dev_*.log
+        Path /var/log/containers/tpl*_app-platform-dev_*.log,/var/log/containers/knowfeed*_app-platform-dev_*.log,/var/log/containers/knowbase*_app-platform-dev_*.log,/var/log/containers/knowbench*_app-platform-dev_*.log,/var/log/containers/casdoor*_app-platform-dev_*.log
         Tag kube.*
         multiline.parser cri
         DB /state/tail.db
@@ -93,7 +93,7 @@ spec:
       labels: {app.kubernetes.io/name: fluent-bit}
       annotations:
         sunmoonai.com/input-sha256: '002edc225a1a62794844daa394f14993336d24cba110bcbc1e32814da6435659'
-        sunmoonai.com/config-sha256: 'e960b31dfc564b877f9327a544bf649fc4ccfe2bb55ece594ac8412192312f81'
+        sunmoonai.com/config-sha256: '8b067a72f1ae8bccc4e1f28437157de121020e782389eba43c4803f8f0153c18'
     spec:
       serviceAccountName: log-collector
       automountServiceAccountToken: false

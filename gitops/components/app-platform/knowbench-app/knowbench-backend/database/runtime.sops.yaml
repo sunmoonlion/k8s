@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowbench-database-runtime
+    namespace: app-platform-dev
+stringData:
+    DATABASE_URL: ENC[AES256_GCM,data:W1FmNGf1YLC9pKUPvjm7D0t8MAu8R0x4PnYZkzBPlziw5hLXvIWOmF60gA3zOYuHvLQ2vulP3xoQBQm/axi4BdVUD9WIg7zbZOP735oh7FNVQfEbiw83AsNpP6bFwbF7PMupc7dlSXZUUjNJzlA4UmJ8rKuF6Eh1eIRGx8O9u/LEKvaGBcrN2baOLXRq,iv:1adXWdv0qSVBjZ5WhtSxbEtZpLrG85EwtgNONSjQLG8=,tag:ib8MK6/+67oMe1hmdM27Kw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBsVUhYQkU1T3pSTzEyajIx
+            M05jcjQ1U3lWdG00eXR4VG9kRzZaR29ZYWhnCnZ1WHB3Vk1SRHV4S3UyRUVyR3BN
+            bkl3MWxab2hocmpiYU5sdWdxdThNZXcKLS0tIEllVDNSTDVpZjRpdjRWNFhrS0Nh
+            K0RkanhvdzJoNjJBckhRUXdma3M2cHMK10vM8h9QP5EL4v972Y/reLev7sN0z64H
+            Pj6eBbx6IkJ2GDb+VDIMtRHR+HMeB36WM7AsVSd/4i2fNNpE58B0UA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-17T08:35:33Z"
+    mac: ENC[AES256_GCM,data:2lPk30WJLgApBq2UFoB+KpsJxAcP7TkNU55K8Z54FoTqbx8NnFkN7+sNNUTcKP4NjL2sZfZ3b1hNOx9/ICLxLeMf7dd7Jhglq6y3IcdlJ6BY0VT6J8voSEjrEO97+hxrU432ydMlTqQclxLhHjZaP3o9BXbjY6QKHeprHU8YeyQ=,iv:nPI//QYTdRxS+jkECLju36pn2+iaytlN+5KJD4EUgr0=,tag:lmalvM3rnpe09QHSVFn8Kw==,type:str]
+    version: 3.13.3

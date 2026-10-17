@@ -50,3 +50,81 @@ spec:
             pathType: Prefix
             backend:
               service: {name: knowbase-api, port: {name: http}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: knowmart-tls, namespace: app-platform-dev}
+spec:
+  type: ExternalName
+  externalName: traefik.ingress-platform-dev.svc.cluster.local
+  ports: [{name: https, port: 443}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: knowmart-service-access
+  namespace: app-platform-dev
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: sunmoon
+  tls: [{secretName: service-access-knowmart-tls, hosts: [knowmart-tls.app-platform-dev.svc.cluster.local]}]
+  rules:
+    - host: knowmart-tls.app-platform-dev.svc.cluster.local
+      http:
+        paths:
+          - path: /api/internal/v1/knowmart
+            pathType: Prefix
+            backend:
+              service: {name: knowmart-api, port: {name: http}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: knowbench-tls, namespace: app-platform-dev}
+spec:
+  type: ExternalName
+  externalName: traefik.ingress-platform-dev.svc.cluster.local
+  ports: [{name: https, port: 443}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: knowbench-service-access
+  namespace: app-platform-dev
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: sunmoon
+  tls: [{secretName: service-access-knowbench-tls, hosts: [knowbench-tls.app-platform-dev.svc.cluster.local]}]
+  rules:
+    - host: knowbench-tls.app-platform-dev.svc.cluster.local
+      http:
+        paths:
+          - path: /api/internal/v1/knowbot-runtime
+            pathType: Prefix
+            backend:
+              service: {name: knowbench-api, port: {name: http}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: knowlab-tls, namespace: app-platform-dev}
+spec:
+  type: ExternalName
+  externalName: traefik.ingress-platform-dev.svc.cluster.local
+  ports: [{name: https, port: 443}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: knowlab-service-access
+  namespace: app-platform-dev
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: sunmoon
+  tls: [{secretName: service-access-knowlab-tls, hosts: [knowlab-tls.app-platform-dev.svc.cluster.local]}]
+  rules:
+    - host: knowlab-tls.app-platform-dev.svc.cluster.local
+      http:
+        paths:
+          - path: /api/internal/v1/knowlab
+            pathType: Prefix
+            backend:
+              service: {name: knowlab-api, port: {name: http}}

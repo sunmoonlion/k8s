@@ -3,3 +3,6 @@ kind: Kustomization
 resources:
 - workload.yaml
 - tls.sops.yaml
+- storage.sops.yaml
+- knowmart-deliver-service.sops.yaml
+- knowbench-testrun-service.sops.yaml

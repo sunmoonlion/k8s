@@ -58,7 +58,7 @@ data:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'knowlab-migrate-e4987b12b5cb-v1', namespace: app-platform-dev}
+metadata: {name: 'knowlab-migrate-2845ca9fa055-v1', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 420
@@ -72,17 +72,17 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: migrate
-          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:e4987b12b5cb18b9b231a8b5f0819f28a7f1435df142befc1b090bab169cb2d2
+          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:2845ca9fa055b682d039117eea9cc20db106e2184820c3406d0672356af41d47
           imagePullPolicy: IfNotPresent
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
           envFrom: [{secretRef: {name: knowlab-migration-auth}}]
           env:
             - {name: ENV, value: production}
-            - {name: DEPLOYMENT_ID, value: 'a984354c1163e26a34ddd5601c2c428fa36c1f74'}
+            - {name: DEPLOYMENT_ID, value: '8731c9d6178731b5eb66f383d6d6bfb23b132bac'}
             - {name: ADMIN_FRONTEND_BASE_URL, value: 'https://knowlab-admin.sunmoonai.com:30443'}
             - {name: WEB_FRONTEND_BASE_URL, value: 'https://knowlab.sunmoonai.com:30443'}
-            - {name: EXPECTED_SCHEMA_REVISION, value: '20260911_0003'}
+            - {name: EXPECTED_SCHEMA_REVISION, value: '20261016_0006'}
           command: [/bin/sh, -ec]
           args: ['python -m app.bootstrap.migration upgrade && python /verify/verify.py']
           volumeMounts:

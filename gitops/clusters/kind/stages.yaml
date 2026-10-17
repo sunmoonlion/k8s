@@ -62,194 +62,6 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: knowbench-admin, namespace: flux-system}
-spec:
-  interval: 5m
-  retryInterval: 30s
-  timeout: 8m
-  path: ./components/app-platform/knowbench-app/knowbench-admin-frontend
-  sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn:
-    - {name: knowbench-runtime}
-    - {name: traefik}
-  prune: false
-  deletionPolicy: Orphan
-  wait: true
-  decryption:
-    provider: sops
-    secretRef: {name: sops-age}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata: {name: knowbench-database, namespace: flux-system}
-spec:
-  interval: 5m
-  retryInterval: 30s
-  timeout: 8m
-  path: ./components/app-platform/knowbench-app/knowbench-backend/database
-  sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn:
-    - {name: postgresql}
-  prune: false
-  deletionPolicy: Orphan
-  wait: true
-  decryption:
-    provider: sops
-    secretRef: {name: sops-age}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata: {name: knowbench-migration, namespace: flux-system}
-spec:
-  interval: 5m
-  retryInterval: 30s
-  timeout: 8m
-  path: ./components/app-platform/knowbench-app/knowbench-backend/migration
-  sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn:
-    - {name: knowbench-database}
-  prune: false
-  deletionPolicy: Orphan
-  wait: true
-  decryption:
-    provider: sops
-    secretRef: {name: sops-age}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata: {name: knowbench-redis, namespace: flux-system}
-spec:
-  interval: 5m
-  retryInterval: 30s
-  timeout: 8m
-  path: ./components/app-platform/knowbench-app/knowbench-backend/redis
-  sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn:
-    - {name: knowbench-migration}
-    - {name: redis}
-  prune: false
-  deletionPolicy: Orphan
-  wait: true
-  decryption:
-    provider: sops
-    secretRef: {name: sops-age}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata: {name: knowbench-rabbitmq, namespace: flux-system}
-spec:
-  interval: 5m
-  retryInterval: 30s
-  timeout: 8m
-  path: ./components/app-platform/knowbench-app/knowbench-backend/rabbitmq
-  sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn:
-    - {name: knowbench-redis}
-    - {name: rabbitmq}
-  prune: false
-  deletionPolicy: Orphan
-  wait: true
-  decryption:
-    provider: sops
-    secretRef: {name: sops-age}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata: {name: knowbench-identity, namespace: flux-system}
-spec:
-  interval: 5m
-  retryInterval: 30s
-  timeout: 8m
-  path: ./components/app-platform/knowbench-app/knowbench-backend/identity
-  sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn:
-    - {name: knowbench-rabbitmq}
-    - {name: casdoor}
-  prune: false
-  deletionPolicy: Orphan
-  wait: true
-  decryption:
-    provider: sops
-    secretRef: {name: sops-age}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata: {name: knowbench-runtime, namespace: flux-system}
-spec:
-  interval: 5m
-  retryInterval: 30s
-  timeout: 8m
-  path: ./components/app-platform/knowbench-app/knowbench-backend/runtime
-  sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn:
-    - {name: knowbench-identity}
-    - {name: knowbench-agent-releases}
-    - {name: knowbench-service-identity}
-  prune: false
-  deletionPolicy: Orphan
-  wait: true
-  decryption:
-    provider: sops
-    secretRef: {name: sops-age}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata: {name: knowbench-service-identity, namespace: flux-system}
-spec:
-  interval: 5m
-  retryInterval: 30s
-  timeout: 8m
-  path: ./components/app-platform/knowbench-app/knowbench-backend/service-identity
-  sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn:
-    - {name: casdoor}
-    - {name: postgresql}
-  prune: false
-  deletionPolicy: Orphan
-  wait: true
-  decryption:
-    provider: sops
-    secretRef: {name: sops-age}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata: {name: knowbench-agent-releases, namespace: flux-system}
-spec:
-  interval: 5m
-  retryInterval: 30s
-  timeout: 8m
-  path: ./components/app-platform/knowbench-app/knowbench-backend/agent-releases
-  sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn:
-    - {name: object-storage}
-  prune: false
-  deletionPolicy: Orphan
-  wait: true
-  decryption:
-    provider: sops
-    secretRef: {name: sops-age}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata: {name: knowbench-web, namespace: flux-system}
-spec:
-  interval: 5m
-  retryInterval: 30s
-  timeout: 8m
-  path: ./components/app-platform/knowbench-app/knowbench-web-frontend
-  sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn:
-    - {name: knowbench-runtime}
-    - {name: traefik}
-  prune: false
-  deletionPolicy: Orphan
-  wait: true
-  decryption:
-    provider: sops
-    secretRef: {name: sops-age}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
 metadata: {name: knowbase-admin, namespace: flux-system}
 spec:
   interval: 5m
@@ -412,6 +224,234 @@ spec:
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: knowbase-runtime}
+    - {name: traefik}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-admin, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-admin-frontend
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowbench-runtime}
+    - {name: traefik}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-database, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-backend/database
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: postgresql}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-migration, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-backend/migration
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowbench-database}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-redis, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-backend/redis
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowbench-migration}
+    - {name: redis}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-rabbitmq, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-backend/rabbitmq
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowbench-redis}
+    - {name: rabbitmq}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-identity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-backend/identity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowbench-rabbitmq}
+    - {name: casdoor}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-runtime, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-backend/runtime
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowbench-identity}
+    - {name: knowbench-agent-releases}
+    - {name: knowbench-service-identity}
+    - {name: knowbench-knowmart-summon-identity}
+    - {name: knowbench-knowlab-read-identity}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-service-identity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-backend/service-identity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: casdoor}
+    - {name: postgresql}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-agent-releases, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-backend/agent-releases
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: object-storage}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-knowmart-summon-identity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-backend/knowmart-summon-identity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: casdoor}
+    - {name: traefik}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-knowlab-read-identity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-backend/knowlab-read-identity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: casdoor}
+    - {name: traefik}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowbench-web, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowbench-app/knowbench-web-frontend
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: knowbench-runtime}
     - {name: traefik}
   prune: false
   deletionPolicy: Orphan
@@ -731,6 +771,65 @@ spec:
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: knowlab-identity}
+    - {name: knowlab-storage}
+    - {name: knowlab-knowmart-deliver-identity}
+    - {name: knowlab-knowbench-testrun-identity}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowlab-knowmart-deliver-identity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowlab-app/knowlab-backend/knowmart-deliver-identity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: casdoor}
+    - {name: traefik}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowlab-knowbench-testrun-identity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowlab-app/knowlab-backend/knowbench-testrun-identity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: casdoor}
+    - {name: traefik}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowlab-storage, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowlab-app/knowlab-backend/storage
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: object-storage}
   prune: false
   deletionPolicy: Orphan
   wait: true

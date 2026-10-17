@@ -3,3 +3,6 @@ kind: Kustomization
 resources:
 - workload.yaml
 - tls.sops.yaml
+- tls-knowmart.sops.yaml
+- tls-knowbench.sops.yaml
+- tls-knowlab.sops.yaml

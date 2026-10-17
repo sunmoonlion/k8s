@@ -6,3 +6,5 @@ resources:
 - agent-releases.sops.yaml
 - service.sops.yaml
 - domain.sops.yaml
+- knowmart-summon-service.sops.yaml
+- knowlab-read-service.sops.yaml

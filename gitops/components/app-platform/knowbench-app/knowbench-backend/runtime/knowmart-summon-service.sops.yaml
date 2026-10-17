@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowbench-knowmart-summon-service
+    namespace: app-platform-dev
+stringData:
+    KNOWMART_SUMMON_SERVICE_CLIENT_SECRET: ENC[AES256_GCM,data:3po7D6qa6SGnEBx1l+9hguPOiEmq1BKhEaCn6BUOW0+XQ87xGLbSrQ==,iv:yT/Ok0DKb82IwJ7IYruoAaKlYfDuwCGQVRWhWn91l+c=,tag:kjiYTh1eWOnw/S1MYTFExQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBHcXA3Zm5PbTRqZi9rYUFj
+            RCtTOGZ6cGt0YTUxY0d1cGpHbUZ4YUVTcVhZCkJIVkhWTVI5Z1lNQ1ArVU11S3Ni
+            Nkh1MlpJMVRZU1lUdlNieW9OZnJoVk0KLS0tIEluWUczMGJKWGlVbSs2RWM4dVRw
+            RkNIaWQzT2dDNjk2QXJGUDZHUjhSOHMKDt48iwRECHvyskTiDtItgFbPtzdRLDPr
+            BooRuT+ZpPexfWOFYh+OE0fmOe0gn053QH6vScKO0ZdXbslpSBf+tg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-17T08:23:56Z"
+    mac: ENC[AES256_GCM,data:XPat1mxREKY8Wm9RRKNiCn3aIH29i7RipbfxzSBO6eADn7A4/6wjvrATTtc10eM6QPxFg7fnujXS6goPNNdNFBwtgcUfsLBz9bh+lF+YJueyts1ynxoJUxttfjh61Jlej48O6oNoViTGD882AwKWAUVgpsi+dEqgNE5aTeRKRlg=,iv:Hn21Kwb6USKgIqu8/i15sMMDuZgYCXwTsfem///2cso=,tag:+aHXwb+R8QUAGknwfsSWtg==,type:str]
+    version: 3.13.3

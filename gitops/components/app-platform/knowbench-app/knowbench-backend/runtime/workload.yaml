@@ -1,48 +1,69 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: investment-runtime, namespace: app-platform-dev}
+metadata: {name: knowbench-runtime, namespace: app-platform-dev}
 data:
   ENV: production
-  APP_SLUG: investment
-  DEPLOYMENT_ID: "investment-backend-5a752f0f38f36c0f"
-  ALLOWED_HOSTS: "localhost,127.0.0.1,investment-api,investment-api.app-platform-dev.svc.cluster.local,investment.sunmoonai.com,investment-admin.sunmoonai.com"
+  APP_SLUG: knowbench
+  DEPLOYMENT_ID: "knowbench-backend-f38d8ddcbb06de59"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,knowbench-api,knowbench-api.app-platform-dev.svc.cluster.local,knowbench.sunmoonai.com,knowbench-admin.sunmoonai.com,knowbench-tls.app-platform-dev.svc.cluster.local"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
   REDIS_DB: '0'
-  CELERY_QUEUE: investment.default
+  CELERY_QUEUE: knowbench.default
   CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
   CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor.app-platform-dev.svc.cluster.local:8000
   CASDOOR_VERIFY_SSL: 'true'
   SESSION_COOKIE_SECURE: 'true'
   REFERENCE_INTERACTION_ENABLED: 'false'
   KNOWBASE_RETRIEVAL_URL: https://knowbase-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowledge/retrievals
-  KNOWBASE_RETRIEVAL_SERVICE_APPLICATION: "sunmoonai-investment-knowbase-retrieve"
-  KNOWBASE_RETRIEVAL_SERVICE_CLIENT_ID: "sunmoon-investment-knowbase-retrieve"
+  KNOWBASE_RETRIEVAL_SERVICE_APPLICATION: "sunmoonai-knowbench-knowbase-retrieve"
+  KNOWBASE_RETRIEVAL_SERVICE_CLIENT_ID: "sunmoon-knowbench-knowbase-retrieve"
   KNOWBASE_RETRIEVAL_SERVICE_SCOPE: "knowbase:retrieve"
   KNOWBASE_RETRIEVAL_SERVICE_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
   KNOWBASE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
   SSL_CERT_FILE: /etc/sunmoon/service/ca.crt
-  CROSS_APP_TARGETS_JSON: "{\"knowfeed\": {\"web_base_url\": \"https://knowfeed.sunmoonai.com:30443\"}, \"knowbase\": {\"web_base_url\": \"https://knowbase.sunmoonai.com:30443\"}}"
+  KNOWMART_INTERNAL_URL: https://knowmart-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowmart
+  KNOWMART_SUMMON_SERVICE_APPLICATION: "sunmoonai-knowbench-knowmart-summon"
+  KNOWMART_SUMMON_SERVICE_CLIENT_ID: "sunmoon-knowbench-knowmart-summon"
+  KNOWMART_SUMMON_SERVICE_SCOPE: "knowmart:summon"
+  KNOWMART_SUMMON_SERVICE_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  KNOWMART_SUMMON_SERVICE_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  KNOWLAB_INTERNAL_URL: https://knowlab-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowlab
+  KNOWLAB_READ_SERVICE_APPLICATION: "sunmoonai-knowbench-knowlab-read"
+  KNOWLAB_READ_SERVICE_CLIENT_ID: "sunmoon-knowbench-knowlab-read"
+  KNOWLAB_READ_SERVICE_SCOPE: "knowlab:read"
+  KNOWLAB_READ_SERVICE_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  KNOWLAB_READ_SERVICE_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  SERVICE_AUTH_TESTRUN_CALLERS: "knowlab"
+  SERVICE_AUTH_TESTRUN_KNOWLAB_CASDOOR_APPLICATION: "sunmoonai-knowlab-knowbench-testrun"
+  SERVICE_AUTH_TESTRUN_KNOWLAB_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  SERVICE_AUTH_TESTRUN_KNOWLAB_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  SERVICE_AUTH_TESTRUN_KNOWLAB_AUDIENCE: "sunmoon-knowlab-knowbench-testrun"
+  SERVICE_AUTH_TESTRUN_KNOWLAB_SUBJECT_ALLOWLIST: "admin/sunmoonai-knowlab-knowbench-testrun"
+  SERVICE_AUTH_TESTRUN_KNOWLAB_REQUIRED_SCOPE: "knowbench:testrun"
+  CROSS_APP_TARGETS_JSON: "{\"knowfeed\": {\"web_base_url\": \"https://knowfeed.sunmoonai.com:30443\"}, \"knowbase\": {\"web_base_url\": \"https://knowbase.sunmoonai.com:30443\"}, \"knowmart\": {\"web_base_url\": \"https://knowmart.sunmoonai.com:30443\"}}"
   CROSS_APP_SOURCES_JSON: "{\"knowbase\": {}, \"knowfeed\": {}}"
   WORKBENCH_ENABLED: "true"
-  WORKBENCH_REDIS_KEY_PREFIX: "investment:workbench"
+  WORKBENCH_REDIS_KEY_PREFIX: "knowbench:workbench"
   WORKBENCH_ENVIRONMENT_KEY: "user-pc"
   WORKBENCH_POLL_SECONDS: "1.0"
   WORKBENCH_RUNNER_ID: "sunmoon-kind-r1"
   WORKBENCH_PROVISIONER_URL: "http://sandbox-provisioner.sandbox-platform-dev.svc.cluster.local:8080"
   WORKBENCH_RELAY_ADMIN_URL: "ws://relay.relay-platform-dev.svc.cluster.local:47100"
   WORKBENCH_RELAY_PUBLIC_URL: "wss://relay.sunmoonai.com:30443"
+  KNOWBOT_TEST_WORKSPACE: "/workspace"
+  KNOWBOT_TEST_MONTHLY_LIMIT: "1000"
   WORKBENCH_TOKEN_ISSUER: "sunmoon-workbench"
   WORKBENCH_SANDBOX_MODEL_PROVIDER: "kimi"
   WORKBENCH_SANDBOX_MODEL: "kimi-k3"
   WORKBENCH_SANDBOX_PROVIDER_BASE_URL: "https://api.moonshot.cn/v1"
   WORKBENCH_RECORDS_MCP_ENABLED: "true"
-  WORKBENCH_RECORDS_MCP_URL: "http://investment-api.app-platform-dev.svc.cluster.local:8000/api/mcp/workbench"
+  WORKBENCH_RECORDS_MCP_URL: "http://knowbench-api.app-platform-dev.svc.cluster.local:8000/api/mcp/workbench"
   WORKBENCH_TRUSTED_PROXY_CIDRS: "127.0.0.1/32,10.247.0.0/16"
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: investment-celery-config, namespace: app-platform-dev}
+metadata: {name: knowbench-celery-config, namespace: app-platform-dev}
 data:
   celeryconfig.py: |
     # Native Celery 5.6 configuration; transient per-connection queues only.
@@ -53,35 +74,35 @@ data:
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: investment-api, namespace: app-platform-dev}
+metadata: {name: knowbench-api, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: investment-api}
+    matchLabels: {app.kubernetes.io/name: knowbench-api}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: investment-api
-        app.kubernetes.io/part-of: investment
+        app.kubernetes.io/name: knowbench-api
+        app.kubernetes.io/part-of: knowbench
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 9507dbb52408a89b050b0b64f2197f2348060df5aac85d3ec1eafbf9cdf38aef
+        sunmoonai.com/config-sha256: 84364038d674df8619b025cf6384ea08f420b5c7b7219a0874c046c02166ff3f
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: investment-runtime
+      serviceAccountName: knowbench-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:5a752f0f38f36c0f7345c08b1fb48a4e2b0c88d20e320105b46951e5f5b6b8ef
+          image: harbor.sunmoonai.com:30443/platform/knowbench-backend@sha256:f38d8ddcbb06de598af4ae358657e9c7211e519de9b24ab2b89ff727f1e9f37e
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -91,20 +112,22 @@ spec:
           livenessProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 3, periodSeconds: 20}
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
-            - {name: SERVICE_NAME, value: investment-api}
+            - {name: SERVICE_NAME, value: knowbench-api}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
             - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
             - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
-            - {configMapRef: {name: investment-runtime}}
-            - {configMapRef: {name: investment-browser-identity}}
-            - {secretRef: {name: investment-database-runtime}}
-            - {secretRef: {name: investment-rabbitmq-runtime}}
-            - {secretRef: {name: investment-redis-runtime}}
-            - {secretRef: {name: investment-browser-secrets}}
-            - {secretRef: {name: investment-domain-runtime}}
-            - {secretRef: {name: investment-knowbase-service}}
-            - {secretRef: {name: investment-agent-releases-runtime}}
+            - {configMapRef: {name: knowbench-runtime}}
+            - {configMapRef: {name: knowbench-browser-identity}}
+            - {secretRef: {name: knowbench-database-runtime}}
+            - {secretRef: {name: knowbench-rabbitmq-runtime}}
+            - {secretRef: {name: knowbench-redis-runtime}}
+            - {secretRef: {name: knowbench-browser-secrets}}
+            - {secretRef: {name: knowbench-domain-runtime}}
+            - {secretRef: {name: knowbench-knowbase-service}}
+            - {secretRef: {name: knowbench-knowmart-summon-service}}
+            - {secretRef: {name: knowbench-knowlab-read-service}}
+            - {secretRef: {name: knowbench-agent-releases-runtime}}
           resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "2", "memory": "768Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
@@ -113,40 +136,40 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
-        - {name: agent-releases-ca, secret: {secretName: investment-agent-releases-runtime, items: [{key: ca.crt, path: ca.crt}]}}
-        - {name: service-ca, configMap: {name: investment-service-ca}}
+        - {name: agent-releases-ca, secret: {secretName: knowbench-agent-releases-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+        - {name: service-ca, configMap: {name: knowbench-service-ca}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
-        - {name: celery-config, configMap: {name: investment-celery-config}}
+        - {name: celery-config, configMap: {name: knowbench-celery-config}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: investment-worker, namespace: app-platform-dev}
+metadata: {name: knowbench-worker, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: investment-worker}
+    matchLabels: {app.kubernetes.io/name: knowbench-worker}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: investment-worker
-        app.kubernetes.io/part-of: investment
+        app.kubernetes.io/name: knowbench-worker
+        app.kubernetes.io/part-of: knowbench
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 9507dbb52408a89b050b0b64f2197f2348060df5aac85d3ec1eafbf9cdf38aef
+        sunmoonai.com/config-sha256: 84364038d674df8619b025cf6384ea08f420b5c7b7219a0874c046c02166ff3f
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: investment-runtime
+      serviceAccountName: knowbench-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:5a752f0f38f36c0f7345c08b1fb48a4e2b0c88d20e320105b46951e5f5b6b8ef
+          image: harbor.sunmoonai.com:30443/platform/knowbench-backend@sha256:f38d8ddcbb06de598af4ae358657e9c7211e519de9b24ab2b89ff727f1e9f37e
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -154,16 +177,18 @@ spec:
           readinessProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 20}
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
-            - {name: SERVICE_NAME, value: investment-worker}
+            - {name: SERVICE_NAME, value: knowbench-worker}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
             - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
             - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
-            - {configMapRef: {name: investment-runtime}}
-            - {configMapRef: {name: investment-browser-identity}}
-            - {secretRef: {name: investment-database-runtime}}
-            - {secretRef: {name: investment-rabbitmq-runtime}}
-            - {secretRef: {name: investment-knowbase-service}}
+            - {configMapRef: {name: knowbench-runtime}}
+            - {configMapRef: {name: knowbench-browser-identity}}
+            - {secretRef: {name: knowbench-database-runtime}}
+            - {secretRef: {name: knowbench-rabbitmq-runtime}}
+            - {secretRef: {name: knowbench-knowbase-service}}
+            - {secretRef: {name: knowbench-knowmart-summon-service}}
+            - {secretRef: {name: knowbench-knowlab-read-service}}
           resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "2", "memory": "1Gi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
@@ -171,39 +196,39 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
-        - {name: service-ca, configMap: {name: investment-service-ca}}
+        - {name: service-ca, configMap: {name: knowbench-service-ca}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
-        - {name: celery-config, configMap: {name: investment-celery-config}}
+        - {name: celery-config, configMap: {name: knowbench-celery-config}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: investment-scheduler, namespace: app-platform-dev}
+metadata: {name: knowbench-scheduler, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: Recreate}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: investment-scheduler}
+    matchLabels: {app.kubernetes.io/name: knowbench-scheduler}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: investment-scheduler
-        app.kubernetes.io/part-of: investment
+        app.kubernetes.io/name: knowbench-scheduler
+        app.kubernetes.io/part-of: knowbench
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 9507dbb52408a89b050b0b64f2197f2348060df5aac85d3ec1eafbf9cdf38aef
+        sunmoonai.com/config-sha256: 84364038d674df8619b025cf6384ea08f420b5c7b7219a0874c046c02166ff3f
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: investment-runtime
+      serviceAccountName: knowbench-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:5a752f0f38f36c0f7345c08b1fb48a4e2b0c88d20e320105b46951e5f5b6b8ef
+          image: harbor.sunmoonai.com:30443/platform/knowbench-backend@sha256:f38d8ddcbb06de598af4ae358657e9c7211e519de9b24ab2b89ff727f1e9f37e
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
@@ -211,15 +236,15 @@ spec:
           readinessProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 10}
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
-            - {name: SERVICE_NAME, value: investment-scheduler}
+            - {name: SERVICE_NAME, value: knowbench-scheduler}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
             - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
             - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
-            - {configMapRef: {name: investment-runtime}}
-            - {configMapRef: {name: investment-browser-identity}}
-            - {secretRef: {name: investment-database-runtime}}
-            - {secretRef: {name: investment-rabbitmq-runtime}}
+            - {configMapRef: {name: knowbench-runtime}}
+            - {configMapRef: {name: knowbench-browser-identity}}
+            - {secretRef: {name: knowbench-database-runtime}}
+            - {secretRef: {name: knowbench-rabbitmq-runtime}}
           resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
@@ -227,57 +252,57 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
-        - {name: service-ca, configMap: {name: investment-service-ca}}
+        - {name: service-ca, configMap: {name: knowbench-service-ca}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
-        - {name: celery-config, configMap: {name: investment-celery-config}}
+        - {name: celery-config, configMap: {name: knowbench-celery-config}}
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: investment-runner, namespace: app-platform-dev}
+metadata: {name: knowbench-runner, namespace: app-platform-dev}
 spec:
   replicas: 1
   strategy: {type: Recreate}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: investment-runner}
+    matchLabels: {app.kubernetes.io/name: knowbench-runner}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: investment-runner
-        app.kubernetes.io/part-of: investment
+        app.kubernetes.io/name: knowbench-runner
+        app.kubernetes.io/part-of: knowbench
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 9507dbb52408a89b050b0b64f2197f2348060df5aac85d3ec1eafbf9cdf38aef
+        sunmoonai.com/config-sha256: 84364038d674df8619b025cf6384ea08f420b5c7b7219a0874c046c02166ff3f
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
-      serviceAccountName: investment-runtime
+      serviceAccountName: knowbench-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: runner
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:5a752f0f38f36c0f7345c08b1fb48a4e2b0c88d20e320105b46951e5f5b6b8ef
+          image: harbor.sunmoonai.com:30443/platform/knowbench-backend@sha256:f38d8ddcbb06de598af4ae358657e9c7211e519de9b24ab2b89ff727f1e9f37e
           imagePullPolicy: IfNotPresent
           # 0001-workbench：runner 是每个用户沙箱里 app-server 的唯一客户端；不开端口，靠进程存活
           command: [python]
           args: [-m, app.bootstrap.runner]
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
-            - {name: SERVICE_NAME, value: investment-runner}
+            - {name: SERVICE_NAME, value: knowbench-runner}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
             - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
             - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
-            - {configMapRef: {name: investment-runtime}}
-            - {configMapRef: {name: investment-browser-identity}}
-            - {secretRef: {name: investment-database-runtime}}
-            - {secretRef: {name: investment-rabbitmq-runtime}}
-            - {secretRef: {name: investment-redis-runtime}}
-            - {secretRef: {name: investment-domain-runtime}}
+            - {configMapRef: {name: knowbench-runtime}}
+            - {configMapRef: {name: knowbench-browser-identity}}
+            - {secretRef: {name: knowbench-database-runtime}}
+            - {secretRef: {name: knowbench-rabbitmq-runtime}}
+            - {secretRef: {name: knowbench-redis-runtime}}
+            - {secretRef: {name: knowbench-domain-runtime}}
           resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
@@ -285,36 +310,36 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
-        - {name: service-ca, configMap: {name: investment-service-ca}}
+        - {name: service-ca, configMap: {name: knowbench-service-ca}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
-        - {name: celery-config, configMap: {name: investment-celery-config}}
+        - {name: celery-config, configMap: {name: knowbench-celery-config}}
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: investment-api, namespace: app-platform-dev}
+metadata: {name: knowbench-api, namespace: app-platform-dev}
 spec:
-  selector: {app.kubernetes.io/name: investment-api}
+  selector: {app.kubernetes.io/name: knowbench-api}
   ports: [{name: http, port: 8000, targetPort: http}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: investment-api-ingress, namespace: app-platform-dev}
+metadata: {name: knowbench-api-ingress, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: investment-api}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowbench-api}}
   policyTypes: [Ingress]
   ingress:
     - from:
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
           podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
-        - podSelector: {matchLabels: {app.kubernetes.io/name: investment-web}}
-        - podSelector: {matchLabels: {app.kubernetes.io/name: investment-admin}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowbench-web}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowbench-admin}}
       ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: investment-api-casdoor-out, namespace: app-platform-dev}
+metadata: {name: knowbench-api-casdoor-out, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: investment-api}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowbench-api}}
   policyTypes: [Egress]
   egress:
     - to:
@@ -323,18 +348,18 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: investment-api-casdoor-in, namespace: app-platform-dev}
+metadata: {name: knowbench-api-casdoor-in, namespace: app-platform-dev}
 spec:
   podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: investment-api}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowbench-api}}
       ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: investment-service-ca, namespace: app-platform-dev}
+metadata: {name: knowbench-service-ca, namespace: app-platform-dev}
 data:
   ca.crt: |
     -----BEGIN CERTIFICATE-----
@@ -365,11 +390,11 @@ data:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: investment-service-https-out, namespace: app-platform-dev}
+metadata: {name: knowbench-service-https-out, namespace: app-platform-dev}
 spec:
   podSelector:
     matchExpressions:
-      - {key: app.kubernetes.io/name, operator: In, values: [investment-api, investment-worker]}
+      - {key: app.kubernetes.io/name, operator: In, values: [knowbench-api, knowbench-worker]}
   policyTypes: [Egress]
   egress:
     - to:
@@ -379,11 +404,11 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: investment-provisioner-out, namespace: app-platform-dev}
+metadata: {name: knowbench-provisioner-out, namespace: app-platform-dev}
 spec:
   podSelector:
     matchExpressions:
-      - {key: app.kubernetes.io/name, operator: In, values: [investment-api]}
+      - {key: app.kubernetes.io/name, operator: In, values: [knowbench-api]}
   policyTypes: [Egress]
   egress:
     - to:
@@ -393,11 +418,11 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: investment-relay-admin-out, namespace: app-platform-dev}
+metadata: {name: knowbench-relay-admin-out, namespace: app-platform-dev}
 spec:
   podSelector:
     matchExpressions:
-      - {key: app.kubernetes.io/name, operator: In, values: [investment-api, investment-runner]}
+      - {key: app.kubernetes.io/name, operator: In, values: [knowbench-api, knowbench-runner]}
   policyTypes: [Egress]
   egress:
     - to:
@@ -407,11 +432,11 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: investment-sandboxes-out, namespace: app-platform-dev}
+metadata: {name: knowbench-sandboxes-out, namespace: app-platform-dev}
 spec:
   podSelector:
     matchExpressions:
-      - {key: app.kubernetes.io/name, operator: In, values: [investment-runner]}
+      - {key: app.kubernetes.io/name, operator: In, values: [knowbench-runner]}
   policyTypes: [Egress]
   egress:
     - to:
@@ -421,9 +446,9 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: investment-sandboxes-in, namespace: app-platform-dev}
+metadata: {name: knowbench-sandboxes-in, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: investment-api}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowbench-api}}
   policyTypes: [Ingress]
   ingress:
     - from:

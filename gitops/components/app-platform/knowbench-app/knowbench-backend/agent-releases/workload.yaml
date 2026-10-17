@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: investment-agent-releases-policy-v1, namespace: data-platform-dev}
+metadata: {name: knowbench-agent-releases-policy-v1, namespace: data-platform-dev}
 data:
   reader.json: |
     {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::agent-releases/*"]}]}
@@ -9,13 +9,13 @@ data:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: investment-agent-releases-v1, namespace: data-platform-dev}
+metadata: {name: knowbench-agent-releases-v1, namespace: data-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 300
   template:
     metadata:
-      labels: {app.kubernetes.io/name: investment-agent-releases-provision, sunmoonai.com/object-storage-client: 'true'}
+      labels: {app.kubernetes.io/name: knowbench-agent-releases-provision, sunmoonai.com/object-storage-client: 'true'}
     spec:
       restartPolicy: Never
       serviceAccountName: platform-runtime
@@ -45,8 +45,8 @@ spec:
                 if ! mc admin user info owned "$user"; then
                   { cat /run/auth/$role-user; printf '\n'; cat /run/auth/$role-password; printf '\n'; } | mc admin user add owned
                 fi
-                mc admin policy create owned "investment-agent-releases-$role" "/run/policy/$role.json"
-                mc admin policy attach owned "investment-agent-releases-$role" --user "$user"
+                mc admin policy create owned "knowbench-agent-releases-$role" "/run/policy/$role.json"
+                mc admin policy attach owned "knowbench-agent-releases-$role" --user "$user"
               done
               printf '{"bucket":"agent-releases","private":true,"versioned":true,"identities_created":true,"runtime_permission_checks":"pending upload acceptance"}\n'
           env: [{name: HOME, value: /work}, {name: NO_PROXY, value: '*'}]
@@ -57,6 +57,6 @@ spec:
             - {name: policy, mountPath: /run/policy, readOnly: true}
             - {name: work, mountPath: /work}
       volumes:
-        - {name: auth, secret: {secretName: investment-agent-releases-provision, defaultMode: 0440}}
-        - {name: policy, configMap: {name: investment-agent-releases-policy-v1}}
+        - {name: auth, secret: {secretName: knowbench-agent-releases-provision, defaultMode: 0440}}
+        - {name: policy, configMap: {name: knowbench-agent-releases-policy-v1}}
         - {name: work, emptyDir: {sizeLimit: 16Mi}}

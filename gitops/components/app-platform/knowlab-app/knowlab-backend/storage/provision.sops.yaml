@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: knowlab-storage-provision
+    namespace: data-platform-dev
+stringData:
+    config.json: ENC[AES256_GCM,data:xi5qpmHOVStxZNEnitf1r2Sgh0OhHsoOK1ZDJauboaTaN+AxZDaePxcywHuErO14ovWdGzMA99ehZKo0wye0jdmHh1tDuON7SJjFJ6nRRuGksMeLSoa+NKJW9Y5QrGeewHbeR4R9icatCk301oqIHj9bUy28SyMban2qd+VIXF5BhoHmNRfZpYT5rj32P4qFXy2fxZhuLKZUJnaYk6rtjEuXSlDwHlW5+dgJb5YEBV0zDOMvRS6LUtugXAOBIYJEQzWo81tCdMNpxw6gl9VFyJV6y5t7xPzT2o//Ep0EoKZAgQOhx6zagpm5E9dFhCnDrUEKgw0oXlzgw2g94oM3RBO/WvV9RGODqNoe6nP1smubfdAwxbfp81ytT1ozZYfGpKE4uGeOfupbpJhtJFMJVGwxmRp1ClBRFIQA94d+fF/GuNpQwrAQS7eGdTLmfjvUMSJpw9CkV4+KI3hQxivjfZntkFNja4alhdk6EMdFvLDF0xPb9bSvavH2qLZSWF3XhHHW965Vkm5DquDg9BB6ddauilJiggA0IcdNUlMmgCPdyNLsZ+hZV+TTWADoypZA6zWo0RUjbptbigB2wJHU,iv:8Jjy1Vt0AYRawNDYXzZXCAeXO4ruWFiMAYCjLkCaoIA=,tag:f8LclF9rLf+aEOxysXhwRg==,type:str]
+    user: ENC[AES256_GCM,data:AhAt09fzLtZ6K34cUWvf,iv:J5pIqM4FAFYORs8WxmIvpa6B6XfeH1TtHvkJ5O0lny8=,tag:t+d5GUfnb5rlUZ4lMtTwFw==,type:str]
+    password: ENC[AES256_GCM,data:Yjc+N/IKRcIhkAgNAK+cqC1wSQObg/dZ9ThWvLsTd0qyKEQbFZ0ACQ==,iv:vZK+nskmC5ccD1X0ERykWDNsACafKDXjAx8NBsbe8qQ=,tag:+93knYD9zimt8K5a17uotg==,type:str]
+    ca.crt: ENC[AES256_GCM,data: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,iv:RvbcPxidAKOmO5XzIFkx//Qq90Fn2cvchjaOpSLjqyY=,tag:5TtVBsvtNuz88KGG4TAObA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAvT2g5cXN3QkR2QVlseS9H
+            U0RyYW9JdHVQWXd3QXYybFVKdTVBengxTFJjCkZqb1ZiTWc3a2MrTWVLMnJMNkRu
+            cFlUOGs4N01DMStONVNuL3lkTTZmYUUKLS0tIGtNT0wwandBRGFVdkhETCtwaGg1
+            THd4VVdpMlhINy93Q0RPRWx1Z2NpSmcKi69lT4/AWD2oYtQYFF+OajQ6odmYWskr
+            Ia1LXeBJo5/R10Uo5dTW72xIG1+nkex8LRQluPj5/teI7kBB717UhA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-17T08:36:38Z"
+    mac: ENC[AES256_GCM,data:2JFFHjRQXYZH0rWWo8waUQE1Tf+7z6RRyuOh6CyKL2TFU2fiCHKOqLAUSoBiwTxpqS5JHxuBpZ3MZf0cdFmbtO8F1PxWQhAgTsFELKWPG/KkqcoM7djNMtgQToBfIU8qYF53Bmn5MGVUoEAaTIrVoGjtl50pKLuJ/HUyOuraDHw=,iv:vSNtcT59EmZvp7ekWfm8fNtK71R41+AJNXxBiq+Cp9o=,tag:FQHzKuPAxll1lihHzwrkzw==,type:str]
+    version: 3.13.3

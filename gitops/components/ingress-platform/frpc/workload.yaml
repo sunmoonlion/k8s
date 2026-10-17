@@ -14,10 +14,10 @@ data:
     log.level = "info"
 
     [[proxies]]
-    name = "investment"
+    name = "knowbench"
     type = "http"
-    customDomains = ["investment.sunmoonai.com"]
-    loadBalancer.group = "investment"
+    customDomains = ["knowbench.sunmoonai.com"]
+    loadBalancer.group = "knowbench"
     loadBalancer.groupKey = "{{ .Envs.FRP_GROUP_KEY }}"
     [proxies.plugin]
     type = "http2https"
