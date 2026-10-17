@@ -146,11 +146,48 @@ for r in investment-app tpl-app knowfeed-app knowbase-app knowlab-app knowmart-a
 ```
 
 **停点**：Opus 写回执 `R1-opus`（含各仓推上去的提交号）并在本节写「通过」。
-**状态**：进行中。2026-10-17 草稿（`~/rename-lab`）上整套跑过：改内容 418 个文件、k8s 路径改名 64 个、旧 sops 15 个、残留 0 行；各仓测试进行中（远程机资源小，一个仓一个仓串行跑）。
+**状态**：**通过** · 2026-10-17 · Opus。回执 `rename-receipts/R1-opus.*.md`：草稿上整套验过（六个后端、十个前端、k8s、runtime，改名前后对照），真工位结果与草稿逐字相同，残留 0 行；26 个仓的改名提交已推到旧名字仓的 `qwen` 分支，k8s `806e66ec`。Qwen 可以做 R2.1；R2.2 等所有者回答。
 
 ## R2 远端仓改名 — Qwen
 
-待写（R1 通过后填命令）：GitHub 5 个、gitee 上存在的几个，名称与路径两个字段都改；核对新地址的分支等于 `R1-opus` 记下的提交号。
+只改名，不新建、不删。改前把 5 个仓各自 `master` 与 `qwen` 的提交号记进回执（应等于 `R1-opus` 记下的）。
+
+### R2.1 GitHub 5 个、gitee 父仓 1 个
+
+| 平台 | 旧 → 新 |
+| --- | --- |
+| GitHub `sunmoonlion/` | `investment-app` → `knowbench-app`；`investment-backend` → `knowbench-backend`；`investment-web-frontend` → `knowbench-web-frontend`；`investment-admin-frontend` → `knowbench-admin-frontend`；`runtime` → `sunmoon-link` |
+| gitee `sunmoonlion/` | `investment-app` → `knowbench-app`（**名称与路径两个字段都改**，地址看的是路径） |
+
+```bash
+cat > /tmp/r2.sh <<'EOS'
+set -e
+OWNER=sunmoonlion
+PAIRS="investment-app:knowbench-app investment-backend:knowbench-backend investment-web-frontend:knowbench-web-frontend investment-admin-frontend:knowbench-admin-frontend runtime:sunmoon-link"
+for pr in $PAIRS; do old=${pr%%:*}; new=${pr##*:}
+  gh repo rename -R "$OWNER/$old" "$new" --yes && echo "GitHub 改名  $old → $new"
+done
+read -rs GITEE_TOKEN                                                      # 粘贴令牌回车，屏幕不回显（或照 R0 的做法从 git credential 取）
+code=$(printf 'access_token=%s&name=%s&path=%s' "$GITEE_TOKEN" knowbench-app knowbench-app |
+       curl -sS -o /dev/null -w '%{http_code}' -X PATCH -d @- "https://gitee.com/api/v5/repos/$OWNER/investment-app")
+echo "gitee 改名  investment-app → knowbench-app  HTTP $code"              # 要 200；不是 200 就停
+unset GITEE_TOKEN
+for pr in $PAIRS; do new=${pr##*:}
+  printf '%-26s github qwen=%s master=%s\n' "$new" "$(git ls-remote "https://github.com/$OWNER/$new.git" refs/heads/qwen | cut -c1-8)" "$(git ls-remote "https://github.com/$OWNER/$new.git" refs/heads/master | cut -c1-8)"
+done
+printf '%-26s gitee  qwen=%s master=%s\n' knowbench-app "$(git ls-remote "https://gitee.com/$OWNER/knowbench-app.git" refs/heads/qwen | cut -c1-8)" "$(git ls-remote "https://gitee.com/$OWNER/knowbench-app.git" refs/heads/master | cut -c1-8)"
+EOS
+bash /tmp/r2.sh
+```
+
+要看到：5 行「GitHub 改名」；gitee `HTTP 200`；新地址都列得出分支：`qwen` 等于 `R1-opus` 的提交号（`knowbench-app 3fa5a549`、`knowbench-backend cc95605c`、`knowbench-web-frontend ceb30875`、`knowbench-admin-frontend 45fcf79a`、`sunmoon-link 130c966a`），`master` 与改名前相同。
+
+### R2.2 gitee 上的三个子仓与 sunmoon-link（**等所有者定**）
+
+R1 时核过：gitee 上 investment 的三个子仓是旧内容（日常只推 GitHub），`runtime` 是空仓。上次改名所有者定过「子仓也和父仓一样两边都有、两边一样」（2026-10-15），做法是先备份、改名、再从 GitHub 强推过去。这次照做要所有者点名同意强推（规矩 8）；`runtime` 那个空仓是改名后推上去，还是删掉不要，也请所有者定。定了再填命令。
+
+**停点**：Qwen 写 `R2-qwen`（改名前后的地址、提交号对照、gitee 返回码），Opus 审过写「通过」。
+**状态**：R2.1 可以做；R2.2 待所有者定。
 
 ## R3 检出换名 — 远程机 Opus，本地机 Qwen
 
