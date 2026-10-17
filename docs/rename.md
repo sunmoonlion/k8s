@@ -695,6 +695,29 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 >
 > 要看到：六个 `exit=0`、`status exit=0`；knowbench 那行报告 `install_command_issued` 是 false（下载还关着，正常）。有不是 0 的就停，原样贴（检查任务带 `no_log`，不要为了看细节手动去跑它）。都过了接着做第 4 步（Windows hosts）、第 5 步（浏览器）。回执写新的 `R5.2-qwen.<时间>.md`。
 
+> 2026-10-17 第六次（`R5.2-qwen.20261017-2041.md`）：**第 1–5 步全过**——六个检查全 0、hosts 加好、浏览器六项全过（knowbench 空库能进、下载暂未开放；两个管理端 admin 看得到业务页；knowlab「我的数据」打得开；单点退出生效）。第 6 步边缘 Opus 做了（`R5.2-opus.*.md`）：证书签好了，但 frpc 没重启、仍按 investment 注册（它的滚动标识没算域名），边缘对 knowbench 回 404。Opus 已修滚动标识。
+>
+> **第六次处理：重新暂存 frpc，让它滚动一次、按新域名注册**：
+>
+> ```bash
+> cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+> export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl)
+> make -C infrastructure platform-stage OBJECT=ingress-platform/frpc; echo "stage exit=$?"
+> git status --short gitops; git diff gitops/components/ingress-platform/frpc/workload.yaml | grep '^[-+] ' | grep -v sops
+> git add gitops && git -c core.editor=true commit -m "fix(frpc): 滚动标识算上域名，按 knowbench 重新注册（rename R5.2 第六次）"
+> make -C infrastructure flux-release; echo "release exit=$?"
+> sudo cat infrastructure/.build/flux/source-candidate.yaml | sudo tee infrastructure/environments/kind/flux-source.yaml >/dev/null
+> sudo chown "$(id -u):$(id -g)" infrastructure/environments/kind/flux-source.yaml 2>/dev/null
+> git add infrastructure/environments/kind/flux-source.yaml && git -c core.editor=true commit -m "release(kind): 晋级到 $(git rev-parse --short HEAD)（rename R5.2 第六次）"
+> make -C infrastructure flux-source-apply; echo "apply exit=$?"
+> $K -n ingress-platform-dev rollout status deploy/frpc --timeout=5m; echo "rollout exit=$?"
+> $K -n ingress-platform-dev get pods -l app.kubernetes.io/name=frpc
+> $K -n ingress-platform-dev logs deploy/frpc --tail=40 | grep -E 'knowbench|investment|start proxy|login' | head
+> git push origin qwen
+> ```
+>
+> 要看到：`stage`、`release`、`apply`、`rollout` 都是 0；`workload.yaml` 的 diff 只有 `input-sha256` 那一行（加密文件变了是正常的）；frpc 两个 Pod 是新起的；日志里有 knowbench 的代理启动、没有 investment。回执 `R5.2-qwen.<时间>.md`，推完停下，Opus 从远程机再 curl 核边缘。
+
 **停点**：Qwen 的 `R5.2-qwen` 与 Opus 的 `R5.2-opus` 都审过，在本节写「通过」。
 **状态**：**可执行（第 1–5 步）** · 2026-10-17 · Opus；第 6 步所有者 2026-10-17 已批准（「按你建议」），Qwen 的回执审过后 Opus 做。
 

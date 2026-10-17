@@ -52,7 +52,9 @@
           FRP_AUTH_TOKEN: '{{ frpc_credentials.token }}'
           FRP_GROUP_KEY: '{{ frpc_credentials.group_key }}'
   no_log: true
+# frpc 只在启动时读配置：配置文件里的每一项（域名、服务端地址与端口、本地转发地址）都要进滚动标识，
+# 否则改了域名、ConfigMap 变了、Pod 不重启，仍按旧域名注册（0028 R5.2：investment 改 knowbench 后边缘 404）
 - name: Derive the frpc rollout identity
   ansible.builtin.set_fact:
-    frpc_input_digest: '{{ [frpc_credentials.token, frpc_credentials.group_key, image_map.frpc.manifest_digest] | to_json | hash("sha256") }}'
+    frpc_input_digest: '{{ [frpc_credentials.token, frpc_credentials.group_key, image_map.frpc.manifest_digest, frpc_domains, frpc_server_addr, frpc_server_port, frpc_local_addr] | to_json | hash("sha256") }}'
   no_log: true
