@@ -39,8 +39,11 @@ data:
     # 第一次没有凭据：日志里显示连接码，所有者用测试账号在工作台「接入电脑」里确认；之后直接启动
     set -eu
     export HOME=/data/home SUNMOON_AGENT_HOME=/data/home/.sunmoon-link
+    # 按安装包的方式起代理（同包里 launch.mjs 的 nodeLaunch）：带 --use-system-ca；站点是 edge-public（系统信任），
+    # 不许另指证书，所以清掉 NODE_EXTRA_CA_CERTS 与 NODE_OPTIONS。不这样起，代理会以 SITE_LAUNCH 拒绝启动
+    unset NODE_EXTRA_CA_CERTS NODE_OPTIONS
     mkdir -p "$SUNMOON_AGENT_HOME" "/workspace/底稿"
-    agent() { node /data/agent/app/dist/cli.js "$@"; }
+    agent() { node --use-system-ca /data/agent/app/dist/cli.js "$@"; }
     if [ ! -f "$SUNMOON_AGENT_HOME/config.json" ]; then
       agent init --root "/workspace" --no-outer-sandbox --name knowbot-test
     fi
@@ -54,7 +57,7 @@ data:
         find "/workspace/底稿" -mindepth 1 -maxdepth 1 -type d -name '对话-*' -mtime +7 -exec rm -rf {} + || true
         sleep 3600
       done ) &
-    exec node /data/agent/app/dist/cli.js start
+    exec node --use-system-ca /data/agent/app/dist/cli.js start
 ---
 apiVersion: apps/v1
 kind: Deployment
