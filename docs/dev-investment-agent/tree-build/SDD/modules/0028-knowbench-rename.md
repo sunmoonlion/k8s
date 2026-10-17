@@ -90,4 +90,10 @@
 - GitHub 仓 `sunmoonlion/runtime` 改为 `sunmoonlion/sunmoon-link`（gitee 若有同名仓一并改）；`config.sh` 的仓名表；五个工位（cursor、fable、kimi、luna、qwen）的检出目录与 remote；本仓的 AGENTS.md 与 README；k8s 现行文档里把它当仓名写的地方（`components.md`、`engineering.md`、`0005-agent.md`、`0027`、`requirement.md`、`拓扑.md`、`agent-releases/README.md`、switch-test 说明等）。
 - **命令、安装包名、Windows 计划任务**按 2026-10-16 的决定在「下次发 Windows 代理新版本」时改为 sunmoon-link：这次 R5 因为域名换了本来就要重打 Windows 包，就是那一次。安装时清掉旧的 `SunMoonAgent-*` 任务；工作台「接入电脑」页的安装命令同步改；走发布卡真机验。
 
+**做法（2026-10-17 已写，R5 发版、在所有者的 Windows 上真机验）**：
+- 版本 0.4.1 → **0.5.0**。命令 `sunmoon-link`（npm bin、安装目录里的 `sunmoon-link.cmd`）；安装目录 `%LOCALAPPDATA%\Programs\sunmoon-link`；登录自启的计划任务 `SunMoonLink-<实例>`、托盘互斥量 `SunMoonLinkTray-<实例>`；日志与临时目录 `%LOCALAPPDATA%\sunmoon-link\…`；工作台「接入电脑」页的手动接入命令同步改。
+- **默认配置目录改为 `~/.sunmoon-link`**（Opus 定）：改名后的工作台是全新的、签名钥匙也换了，旧配置里的凭据用不了，反正要重新接入；沿用旧目录的话，旧凭据会让它「以为已接入」而卡住。旧的 `~/.sunmoon-agent` 原样留着不删。测试电脑的配置目录同步改。
+- **从旧名字迁移**：网页安装脚本发现旧的 `Programs\sunmoon-agent` 时，先用新包自带、已校验过的 `uninstall.mjs --legacy` 卸下它——按旧安装自己的清单校验后才删程序文件；先用旧程序关掉它的登录自启（`SunMoonAgent-*`）、停托盘与后台，停不掉的按进程身份收走；旧配置与旧日志不删；旧安装残缺时只停进程、把旧目录挪成 `.broken-…`。然后照常安装新版。
+- 本机接口与握手里的 `agent: "sunmoon-agent"` 是协议（网页按它认代理），环境变量名 `SUNMOON_AGENT_*`、命名管道名是内部命名，都不改。
+
 **不改的**：协议字段（握手 `role=agent`）与代码内部命名（2026-10-16 决定）；npm 包名 `@sunmoon/agent` 是内部命名，不改；中文「本地代理」照旧。「runtime」作普通词的地方（清单 `runtime` 字段、`*_runtime` 角色、gitops `runtime/` 秘密目录、`knowbot-runtime` 契约）不是仓名，不动。历史回执与卡片不改。

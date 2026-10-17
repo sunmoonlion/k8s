@@ -40,7 +40,7 @@ data:
   run.sh: |
     # 第一次没有凭据：日志里显示连接码，所有者用测试账号在工作台「接入电脑」里确认；之后直接启动
     set -eu
-    export HOME=/data/home SUNMOON_AGENT_HOME=/data/home/.sunmoon-agent
+    export HOME=/data/home SUNMOON_AGENT_HOME=/data/home/.sunmoon-link
     mkdir -p "$SUNMOON_AGENT_HOME" "{{ tc.workspace }}/底稿"
     agent() { node /data/agent/app/dist/cli.js "$@"; }
     if [ ! -f "$SUNMOON_AGENT_HOME/config.json" ]; then
