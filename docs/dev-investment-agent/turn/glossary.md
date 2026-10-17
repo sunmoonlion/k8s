@@ -146,6 +146,21 @@
 | 一步结束 | 收它交回的最后一句与改过的文件、用了多少 token；**验收**、重做、退回、交人；下一步给什么 | `turn/completed`、`item/completed`、`thread/tokenUsage/updated` | `advisor.py`、`acceptance.py`、`acceptance_numbers.py` |
 | 随时 | 电脑断线、重连，接回原来的线 | `thread/environment/*`、`thread/resume` | `runner.py` |
 
+**app-server 协议本身开放的全部影响点**（2026-10-17 Opus 用钉住的 Codex 0.155.1 `codex app-server generate-json-schema --experimental` 生成协议核对：客户端请求 102 种、服务端反过来请求 10 种、通知 82 种；标「实验」的升版要重跑探针，`C-A7`）：
+
+| 影响什么 | 协议里的口子 | 我们用了没有 |
+| --- | --- | --- |
+| **模型知道什么、被要求什么** | `thread/start` 的 `baseInstructions`（替换 Codex 的基础系统提示）、`developerInstructions`（整条线的开发者指令）；`turn/start` 的 `input`、`additionalContext`（实验）；`thread/inject_items`（往模型看得到的历史里追加内容）；`thread/rollback`（从历史里撤掉最近几轮）；`thread/fork`（从某一轮分叉）；`thread/compact/start`（压缩历史）；`turn/steer`（一轮中途插话） | 用了 `input`、`turn/steer`；平台规矩现在写在每一轮的输入里，没用 `developerInstructions`；其余没用 |
+| **交回什么** | `turn/start` 的 `outputSchema`：用 JSON Schema 约束这一轮最后一句的形状 | **没用**（现在靠事后的结构验收） |
+| **用哪个模型、想多深** | `model`、`modelProvider`、`effort`（思考力度）、`summary`、`serviceTier`、`personality`、`collaborationMode`（实验） | 只用了 `model` |
+| **能做什么** | `sandbox`/`sandboxPolicy`、`permissions`（命名的权限档）、`approvalPolicy`、`environments`（命令在哪台电脑跑，实验）、`config` 覆盖（功能开关、MCP 工具服务等）、`dynamicTools`（由我们定义、Codex 回调我们执行的工具，实验）、钩子（`hooks/list`，经配置） | 用了沙箱、审批、`environments`、`config`、MCP；没用 `permissions` 档、`dynamicTools`、钩子 |
+| **中途拦截** | 服务端反过来请求：命令、改文件、扩权限的批准（`item/*/requestApproval`）、`item/tool/requestUserInput`（模型问人）、`mcpServer/elicitation/request`、`item/tool/call`（动态工具）；`approvalsReviewer`（批准交给人还是交给自动审核的子代理）；`turn/interrupt` | 用了批准、问人、打断；批准一律交人，没用自动审核 |
+| **看得见什么**（验收与账本的依据） | 通知：每一项的开始与完成（命令、改文件、计划、推理摘要、MCP 调用）、`turn/diff/updated`（这一轮改了什么）、`turn/plan/updated`、`thread/tokenUsage/updated` 等 | 用了一部分 |
+| **目标与预算** | `thread/goal/set`：目标与 token 预算（实验） | 没用（`features.goals` 关着，预算由我们自己管） |
+| **不经模型、直接动执行端** | `fs/*`（读、写、复制、删、监视文件）、`command/exec`、`thread/shellCommand` | 只用了 `fs/getMetadata`（建项目前核目录） |
+
+直接用 Codex 的人（命令行、IDE 插件）手里只有「打字」和「点批准」两样；上表这些口子要由程序按步骤去拨——这就是我们和直接用 Codex 的本质区别（所有者 2026-10-17：「这才是我们真正不同于直接使用codex的本质原因」）。没用上的几项值得评估，见待办账 127。
+
 **控制不了的**：一轮之内模型想几次、调几次工具、按什么顺序（Codex 自己的代理循环）；Codex 内置的系统提示与内置工具（命令行、改文件）本身；模型照不照方法原文做——这部分只能靠验收抓出来、靠工具权限框住。所以验收写得多严，决定了「控制」有多实。
 
 ## 编号的归属
