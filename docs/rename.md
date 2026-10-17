@@ -292,6 +292,8 @@ cd ~/five-repos-sync && cp config.sh config.sh.bak-rename-0028 && \
 **停点**：Opus、Qwen 各写回执（Qwen 的含同步脚本最后一句），Opus 写「通过」。
 **状态**：远程机 `config.sh` 已改（2026-10-17，Opus；备份 `config.sh.bak-rename-0028`），`repos.conf` 已是新名，所有者让 Opus 代提交推送 `toolboxes` `a558370`（GitHub、gitee 两边一致，只改这两行）。本地机在 Qwen 的 R3 通过后做。
 
+**通过** · 2026-10-17 · Opus。本地机回执 `R4-qwen.20261017-1228.md`：`config.sh` 两个仓名已改（备份 `config.sh.bak-rename-0028`），`repos.conf` 是新名（所有者已拉 toolboxes `a558370`），`WS=qwen bash ~/switch-test/human-local.sh` exit=0、八仓两端都认。**改名窗口结束**，同步脚本照常使用。接着做「R4 之后」。
+
 ## R4 之后：并 master、两台机器对齐、解除冻结（所有者 2026-10-17 同意「R4 通过就做」）
 
 上次是 R6 之后才并（「冻结解除之后」第 1、2 条），这次 R5 要和 P6 一起部署、可能拖几天，所以提前：集群按 `sources.yaml` 钉的提交部署，不看 master；R5 里要修的照样在 qwen 上改、改完再快进一次 master。
