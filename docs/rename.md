@@ -726,7 +726,7 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 >
 > **第二次只续跑第 3–5 步**（第 1、2 步的产物都在本地机原处，不重打）。
 
-> 2026-10-17 第二次（第 5 步中）：测试电脑的 Pod 卡在 `Init:ImagePullBackOff`。原因：测试电脑的 Pod 用的是命名空间的默认服务账号，没带 Harbor 的拉取凭据（应用的 Pod 都用 `<应用>-runtime` 服务账号带 `registry-puller`，沙箱是显式带）。Opus 已在 `test-computer/workload.yaml.j2` 里给 Pod 显式加 `imagePullSecrets: [{name: registry-puller}]`（`app-platform-dev` 里有这个凭据）。
+> 2026-10-17 第二次（第 5 步中）：测试电脑的 Pod 卡在 `Init:ImagePullBackOff`。原因：测试电脑的 Pod 用的是命名空间的默认服务账号，没带 Harbor 的拉取凭据（应用的 Pod 都用 `<应用>-runtime` 服务账号带 `registry-puller`，沙箱是显式带）。Opus 已在 `test-computer/workload.yaml.j2` 里给 Pod 显式加 `imagePullSecrets: [{name: registry-puller}]`（`app-platform-dev` 里有这个凭据）。同时预先补了一处：测试电脑按公网名（`knowbench.sunmoonai.com`、`relay.sunmoonai.com`）经边缘连进来，而集群 DNS 最终经 WSL 走到 Windows，Windows hosts 把这两个名字指到 127.0.0.1，所以给这个 Pod 加了 `hostAliases`，把两个名字钉到边缘地址（出站策略放行的同一个地址），不改集群 DNS。
 >
 > **处理**：正在等的那段可以 Ctrl-C 停掉（集群里不会坏，旧的 Pod 只是拉不到镜像）。然后：
 >
@@ -734,7 +734,7 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 > cd ~/worktrees/qwen/k8s && git status --short | head; git log --oneline origin/qwen..HEAD   # 看你本地还有哪些没推的提交
 > git pull --rebase origin qwen     # Opus 这次只改了 test-computer 的模板与本文，不碰你的改动
 > make -C infrastructure platform-stage OBJECT=app-platform/knowbench-app; echo "stage exit=$?"
-> git diff --stat gitops | tail -3   # 只应是 test-computer/workload.yaml（多一行 imagePullSecrets）与加密文件
+> git diff gitops/components/app-platform/knowbench-app/knowbench-backend/test-computer/workload.yaml | grep '^[-+] '   # 只应多 imagePullSecrets 与 hostAliases 几行（加密文件变了正常）
 > git add gitops && git -c core.editor=true commit -m "fix(test-computer): Pod 带上 Harbor 拉取凭据（rename R5.3）"
 > make -C infrastructure flux-release; echo "release exit=$?"
 > sudo cat infrastructure/.build/flux/source-candidate.yaml | sudo tee infrastructure/environments/kind/flux-source.yaml >/dev/null
@@ -745,6 +745,7 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 > $K -n flux-system wait kustomization/knowbench-test-computer --for=condition=Ready --timeout=15m; echo "wait exit=$?"
 > $K -n app-platform-dev get pods | grep knowbench-test-computer
 > $K -n app-platform-dev logs deploy/knowbench-test-computer -c fetch --tail=20
+> $K -n app-platform-dev exec deploy/knowbench-test-computer -- getent hosts knowbench.sunmoonai.com relay.sunmoonai.com   # 要是 43.153.135.74
 > $K -n app-platform-dev logs deploy/knowbench-test-computer --tail=30 | sed -E 's/[A-Z0-9]{4}-?[A-Z0-9]{4}/<码>/g'
 > git push origin qwen
 > ```
