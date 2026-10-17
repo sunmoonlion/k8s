@@ -38,7 +38,7 @@
 | `knowlab-app` | 创建分身：受理、工程化、测试、交付（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)、[0027](../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
 | `knowmart-app` | 存放分身与「请」（先做私有模式，[0018](../dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md)、[0027](../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
 | [`k8s`](repos/k8s.md) | 部署与项目文档：宿主、仓库、入口、建群、Flux、全部平台组件与应用的部署声明；本目录也在此 | 无业务源码（自研的会合点、沙箱、供给器源码除外） |
-| [`runtime`](repos/runtime.md) | 本地代理（英文 sunmoon-link，命令现在还叫 `sunmoon-agent`，下次发 Windows 版时改），装在用户电脑上 | 不参与集群部署 |
+| [`sunmoon-link`](repos/sunmoon-link.md) | 本地代理（英文 sunmoon-link，命令现在还叫 `sunmoon-agent`，下次发 Windows 版时改），装在用户电脑上 | 不参与集群部署 |
 
 工位与同步：主目录 `~/master/<仓>`，工位 `~/worktrees/<工位>/<仓>`（`mb` 管理）；两台机器（远程机写、本地机跑）之间只经 Git origin 往来，所有者用 `~/switch-test/human-local.sh`、`human-remote.sh` 同步；派活卡与回执在 [`switch-test/`](../dev-investment-agent/switch-test/README.md)。
 

@@ -1,8 +1,8 @@
-# runtime：本地代理（sunmoon-link）
+# sunmoon-link：本地代理
 
 > 最后更新：2026-10-16 ｜ 新增 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
-用户电脑上唯一要装的东西。中文叫**本地代理**，英文 2026-10-16 定为 **sunmoon-link**（命令、安装包、Windows 计划任务现在还叫 `sunmoon-agent` / `SunMoonAgent-*`，下次发 Windows 版时顺带改；仓名、协议字段、代码内部命名不改，[决策](../../dev-investment-agent/tree-build/decisions.md)）。它**只做转发与本机把关**：包着钉版的 `codex exec-server`，出站连会合点，让云端沙箱里的 Codex 能在用户允许的范围内读写本机文件；不跑模型循环，不接触模型 key。不参与集群部署，不要求与平台仓并列。
+用户电脑上唯一要装的东西。中文叫**本地代理**，英文 2026-10-16 定为 **sunmoon-link**（命令、安装包、Windows 计划任务现在还叫 `sunmoon-agent` / `SunMoonAgent-*`，下次发 Windows 版时顺带改；协议字段、代码内部命名不改；仓名 2026-10-17 由 `runtime` 改为 `sunmoon-link`，[决策](../../dev-investment-agent/tree-build/decisions.md)、[0028](../../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)）。它**只做转发与本机把关**：包着钉版的 `codex exec-server`，出站连会合点，让云端沙箱里的 Codex 能在用户允许的范围内读写本机文件；不跑模型循环，不接触模型 key。不参与集群部署，不要求与平台仓并列。
 
 ## 结构
 
@@ -31,4 +31,4 @@ runtime/
 
 ## 发版
 
-走发布卡：在 runtime 里构建 Windows 安装包 → 改 `k8s/gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml`（版本、ZIP 与清单摘要、对象名，唯一输入）→ `make -C infrastructure agent-release-verify` / `agent-release-upload AGENT_ZIP=<绝对路径>` 校验并条件上传 → 按发布链部署 knowbench → 在所有者的 Windows 上真机验。说明见该目录 `README.md`。
+走发布卡：在 sunmoon-link 仓里构建 Windows 安装包 → 改 `k8s/gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml`（版本、ZIP 与清单摘要、对象名，唯一输入）→ `make -C infrastructure agent-release-verify` / `agent-release-upload AGENT_ZIP=<绝对路径>` 校验并条件上传 → 按发布链部署 knowbench → 在所有者的 Windows 上真机验。说明见该目录 `README.md`。
