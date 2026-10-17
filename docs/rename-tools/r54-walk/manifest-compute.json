@@ -1,0 +1,122 @@
+{
+  "schema": "knowbot-manifest/v1",
+  "name": "读表算同比",
+  "tagline": "走查用：按格子取营业收入、由平台算同比",
+  "version": "2",
+  "runtime": "knowbench",
+  "pack": {
+    "pack_id": "walk-revenue",
+    "version": "2",
+    "title": "读表算同比",
+    "workflow": [
+      {
+        "step_id": "answer",
+        "title": "读表算同比",
+        "summary": "从你的表里按格子取两年的营业收入，由平台算同比",
+        "why": "数只来自你上传的表",
+        "method_text": "List the user's data with list_my_data and read the table with read_my_table; a cell address is <dataset_id>:<sheet>!<row label>@<column label>, exactly as read_my_table shows them. Pass the task id given in the step instructions on every call. Take operating revenue (营业收入) for 2023-12-31 and 2024-12-31 as they are and put each into `raw` with its cell address. Compute the year-on-year growth with compute, input names cur (2024) and prev (2023), expression `(cur - prev) / prev`, round 4; put it into `growth` with the returned id as compute_id. Never type or compute a number yourself. In `answer` say the growth in plain words. Reply with ONE JSON object only, no markdown fences: {\"answer\": string, \"raw\": [{\"item\": string, \"period\": string, \"address\": string, \"value\": string}], \"growth\": [{\"period\": string, \"compute_id\": string, \"value\": string}], \"conclusion\": \"\"}. Leave conclusion empty. No buy or sell advice.",
+        "tools": [
+          "list_my_data",
+          "read_my_table",
+          "compute"
+        ],
+        "output_artifact": "answer",
+        "output_schema": {
+          "answer": "string",
+          "raw": [
+            {
+              "item": "string",
+              "period": "string",
+              "address": "string",
+              "value": "string"
+            }
+          ],
+          "growth": [
+            {
+              "period": "string",
+              "compute_id": "c…",
+              "value": "string"
+            }
+          ],
+          "conclusion": ""
+        },
+        "acceptance": [
+          {
+            "kind": "json_object",
+            "message": "交回物不是 JSON 对象",
+            "label": "交回的格式对"
+          },
+          {
+            "kind": "required_keys",
+            "keys": [
+              "answer",
+              "raw",
+              "growth"
+            ],
+            "message": "缺 answer、raw 或 growth",
+            "label": "有回答、取到的数和同比"
+          },
+          {
+            "kind": "list_min",
+            "path": "raw",
+            "min_items": 2,
+            "message": "两年的营业收入没取全",
+            "label": "取到了两年的数"
+          },
+          {
+            "kind": "list_min",
+            "path": "growth",
+            "min_items": 1,
+            "message": "没有算同比",
+            "label": "算了同比"
+          },
+          {
+            "kind": "sourced",
+            "path": "raw",
+            "message": "取出的数和表里那一格对不上",
+            "label": "取出的数与表里一致"
+          },
+          {
+            "kind": "computed",
+            "path": "growth",
+            "expression": "(cur - prev) / prev",
+            "message": "同比不是由平台按 (今年 − 去年) / 去年 算的",
+            "label": "同比由平台算"
+          },
+          {
+            "kind": "no_positioning_advice",
+            "path": "answer",
+            "message": "出现了买卖建议类措辞",
+            "label": "没有买卖建议"
+          },
+          {
+            "kind": "blank",
+            "path": "conclusion",
+            "message": "结论栏要留空",
+            "label": "结论留给你"
+          }
+        ]
+      }
+    ]
+  },
+  "data_bindings": [
+    "<把管理端请求详情里「数据」那一行的 JSON 原样贴在这里>"
+  ],
+  "rule_sources": [
+    {
+      "rule": "数只来自我上传的表，原样报出",
+      "source": "user_text",
+      "ref": "第 4 问：读我的表，找到问到的那一年那一行，原样报出数字，并写明出处。"
+    },
+    {
+      "rule": "表里没有就说没有",
+      "source": "user_text",
+      "ref": "第 6 问：报出的数和表里一模一样；表里没有的就说没有。"
+    },
+    {
+      "rule": "不做分析、预测与买卖建议",
+      "source": "user_text",
+      "ref": "第 2 问：不做任何分析、预测或买卖建议。"
+    }
+  ]
+}
