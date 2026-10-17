@@ -241,6 +241,8 @@ bash /tmp/r2-2.sh
 **停点**：Qwen 写 `R2-qwen`（改名前后的地址、提交号对照、gitee 返回码），Opus 审过写「通过」。
 **状态**：R2.1 **通过** · 2026-10-17 · Opus。回执 `R2-qwen.20261017-1200.md`：GitHub 5 仓与 gitee 父仓改名完成（gitee HTTP 200），新地址 `qwen` 均为 R1 提交、`master` 未变；Opus 在远程机独立复核相同，GitHub 旧地址已转发到新仓。**Qwen 可以做 R2.2**（所有者已同意强推三个子仓），回执写 `R2.2-qwen`。
 
+R2.2 **通过** · 2026-10-17 · Opus。回执 `R2.2-qwen.20261017-1209.md`：备份在本地机 `~/rename-backup/gitee-old-0028-20261017-1208/`（三个子仓 bundle 校验通过，runtime 是空仓）；改名 4 个 HTTP 200；强推后两边逐条一致。Opus 在远程机独立复核：四个仓 GitHub 与 gitee 的分支与标签逐条相同；父仓 `knowbench-app` 分支相同，gitee 多一个改名前就有的旧标签 `legacy-pre-architecture-v2-20260809`（父仓不在强推范围，不处理）。**R2 通过，R3 开始（远程机 Opus 先做）。**
+
 ## R3 检出换名 — 远程机 Opus，本地机 Qwen
 
 两台机器做同样的事，**远程机先做**（Opus），`R3-opus` 审过、本节写进远程机的实际情况后，Qwen 再做本地机。**旧目录挪到 `~/rename-backup/`，不删。** 在 R2 全部通过之后做。
