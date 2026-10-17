@@ -17,6 +17,7 @@
 - 用户分身的内容，比如「中国 A 股上市公司财务分析与预测」专家包里的投资用语。
 - 「工作台」这个词：页面上的「投资工作台」改成「工作台」，产品名显示为 knowbench。
 - 历史回执、冻结原件、Git 历史。
+- **中继 relay**（`relay-platform`、`relay.sunmoonai.com`、代码里的 `RELAY_*` 与 `relayClient`）：它是平台组件，和 casdoor、harbor 同类，不是应用，「relay」在代码里也是普通概念词。所有者 2026-10-17 问「relay是不是也跟着改为knowrelay？」，Opus 建议不改，所有者定「都按你的建议」。
 
 **单列：文档目录 `k8s/docs/dev-investment-agent/`**。所有仓的 AGENTS.md、Qwen 的记忆、卡片都指向这个路径。改不改见第三节最后一段。
 
@@ -90,4 +91,6 @@
 
 **不改的**：「runtime」作普通词的地方不动，比如分身清单的 `runtime` 字段、库角色 `*_runtime`、gitops 里的 `runtime/` 秘密目录、`knowbot-runtime` 接口。这些都不是仓名。历史回执与卡片不改。
 
-**没说到的，单列待定**：本地代理现在的包名是 `@sunmoon/agent`，命令叫 `sunmoon-agent`，安装程序和页面上叫「本地代理」。这些要不要也改叫 knowlink，所有者没说。这次先只改仓名；要改显示名或命令名，另外定，因为命令名一改，已装好的代理和安装器都得跟着改。
+**为什么改**：仓名 runtime 和「运行方 runtime」（工作台、清单的 `runtime` 字段、`knowbot-runtime` 契约）同词异指，容易混；它出的是用户安装的产品，属于一条产品线。改仓名不涉及数据、域名和重新出包。
+
+**包名、命令名、显示名这次不改**（所有者 2026-10-17「都按你的建议」）：`@sunmoon/agent`、`sunmoon-agent`、页面上的「本地代理」照旧。命令名牵连 Windows 安装器的安装路径、服务名与升级逻辑，要改另起一轮。
