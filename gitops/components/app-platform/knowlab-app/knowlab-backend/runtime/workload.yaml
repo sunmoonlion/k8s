@@ -4,7 +4,7 @@ metadata: {name: knowlab-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: knowlab
-  DEPLOYMENT_ID: "knowlab-backend-2845ca9fa055b682"
+  DEPLOYMENT_ID: "knowlab-backend-0854dd35afe4cb3c"
   ALLOWED_HOSTS: "localhost,127.0.0.1,knowlab-api,knowlab-api.app-platform-dev.svc.cluster.local,knowlab.sunmoonai.com,knowlab-admin.sunmoonai.com,knowlab-tls.app-platform-dev.svc.cluster.local"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -85,7 +85,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:2845ca9fa055b682d039117eea9cc20db106e2184820c3406d0672356af41d47
+          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:0854dd35afe4cb3c2c6f65bd5c94a767d0152f8ac33115e2b6b3840be3b8cea4
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -151,7 +151,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:2845ca9fa055b682d039117eea9cc20db106e2184820c3406d0672356af41d47
+          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:0854dd35afe4cb3c2c6f65bd5c94a767d0152f8ac33115e2b6b3840be3b8cea4
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -213,7 +213,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:2845ca9fa055b682d039117eea9cc20db106e2184820c3406d0672356af41d47
+          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:0854dd35afe4cb3c2c6f65bd5c94a767d0152f8ac33115e2b6b3840be3b8cea4
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
