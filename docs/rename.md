@@ -642,9 +642,68 @@ git push origin qwen
 **停点**：Opus 审回执，在本节写「通过」。
 **状态**：**已写好，待 R5.2 通过后可执行** · 2026-10-17 · Opus。
 
-### R5.4 测试账号、kimi key、测试电脑配对、浏览器走查
+### R5.4 测试账号、kimi key、测试电脑配对、走查（0027 P6 的浏览器部分）
 
-待写。
+> 前提：R5.3 通过（测试电脑在跑、等配对；所有者的电脑已是 0.5.0、接入了新工作台）。账号、密码、key、连接码都由所有者亲手输；**密码与 key 不进对话、回执、日志、git**，连接码只在对话里念给所有者、不进回执。Qwen 遇到登录就停，等所有者。
+
+**1. 建测试账号**（所有者）：在 `https://casdoor.sunmoonai.com:30443` 用 admin 登录 Casdoor 管理界面，在 **sunmoonai** 组织里新建用户 `knowbot-tester`（显示名「分身测试」），密码自己定、自己记进 `密码修改表.md`。建好后打开这个用户的详情页，把 **ID**（一串 UUID，这就是令牌里的 `sub`）告诉 Qwen——只要 ID，不要密码。
+
+**2. 测试账号登录工作台、填 key、拉沙箱**（所有者）：退出自己的账号，用 `knowbot-tester` 登录 `https://knowbench.sunmoonai.com:30443` → 设置 → 模型：厂商 `kimi`、接入地址 `https://api.moonshot.cn/v1`、模型 `kimi-k3`（本地集成脚本一直用的这一套），粘贴 kimi 的 key → 拉起沙箱，等它显示就绪。
+
+**3. 配对测试电脑**（Qwen 看日志、所有者确认）：
+
+```bash
+export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl)
+$K -n app-platform-dev logs deploy/knowbench-test-computer --tail=20
+```
+
+Qwen 把日志里最新的连接码**只在对话里**告诉所有者；所有者仍用 `knowbot-tester`，在工作台「接入电脑」里输入并确认（码过期了，容器会自己再要一个，再看一次日志）。要看到：日志里出现已连接；`knowbot-tester` 的「我的电脑」里有一台 `knowbot-test` 在线、版本 0.5.0。
+
+**4. 填测试账号、重新暂存 knowbench**：
+
+```bash
+cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+TESTER_ID=<第 1 步的 ID> python3 - <<'PY'
+import os, re, pathlib
+tid = os.environ['TESTER_ID'].strip(); assert re.fullmatch(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', tid), tid
+p = pathlib.Path('gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml'); s = p.read_text()
+old = '    # 测试账号 KNOWBOT_TEST_SUBJECT 在 P6 建好 knowbot-tester 后填；不填时推进器不启动、测试接口回 503\n'
+assert s.count(old) == 1
+p.write_text(s.replace(old, "    # 测试账号 knowbot-tester 的 Casdoor 用户 id（0028 R5.4 建）\n    KNOWBOT_TEST_SUBJECT: '" + tid + "'\n"))
+PY
+git diff gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml | grep '^[-+] '
+make -C infrastructure platform-stage OBJECT=app-platform/knowbench-app; echo "stage exit=$?"
+grep -rn "BEGIN PRIVATE KEY\|BEGIN PUBLIC KEY" gitops/ | head -3; echo key-check-done
+git add gitops && git -c core.editor=true commit -m "deploy(knowbench): 填测试账号，分身测试开始受理（rename R5.4）"
+make -C infrastructure flux-release; echo "release exit=$?"
+sudo cat infrastructure/.build/flux/source-candidate.yaml | sudo tee infrastructure/environments/kind/flux-source.yaml >/dev/null
+sudo chown "$(id -u):$(id -g)" infrastructure/environments/kind/flux-source.yaml 2>/dev/null
+git add infrastructure/environments/kind/flux-source.yaml && git -c core.editor=true commit -m "release(kind): 晋级到 $(git rev-parse --short HEAD)（rename R5.4）"
+make -C infrastructure flux-source-apply; echo "apply exit=$?"
+$K -n flux-system get kustomizations -o name | grep '/knowbench-' | xargs $K -n flux-system wait --for=condition=Ready --timeout=30m; echo "wait exit=$?"
+make -C infrastructure application-check APP=knowbench; echo "check exit=$?"
+$K -n app-platform-dev get configmap knowbench-runtime -o jsonpath='{.data.KNOWBOT_TEST_SUBJECT}'; echo
+git push origin qwen
+```
+
+要看到：diff 只有注释一行换成注释加 `KNOWBOT_TEST_SUBJECT` 一行；各步都是 0；最后一行打出的是那个 ID。
+
+**5. 走查：一个用假数据的分身从提交到在工作台里跑**（所有者以普通用户——自己的 sunmoonai 账号——操作，Qwen 核截图；截图不截 `code=`、`state=`）。材料在 `docs/rename-tools/r54-walk/`：`data.csv`（三行的小表）、`request.json`（要填的种子）、`manifest.json`（方法包；Opus 已用这次部署的代码核过——knowbench `cc95605` 收得下、knowlab `8731c9d` 受理与建草稿前的核对通过、knowmart `bfeb2ae` 外层校验通过；只用 `list_my_data`、`read_my_data`，计算工具随下一次小发布）。
+
+| 步 | 在哪 | 做什么 | 要看到 |
+| --- | --- | --- | --- |
+| a | knowlab web端「我的数据」 | 上传 `data.csv` | 列表里有它；页上有「数字类尽量传表格」的提示要等下一次发布，这次没有是对的 |
+| b | knowlab web端「我在做的分身」 | 新建一条，照 `request.json` 填：标题、六问、运行方 knowbench、一条用例（问题「2024 年的营业收入是多少？」，期望：交回物 `answer`、路径 `answer`、包含 `100`）、勾同意测试 | 「我在做的分身」里出现这条，状态已提交 |
+| c | knowlab 管理端（admin）「分身草稿」 | 打开这条请求，复制「数据」那一行的 JSON，替换 `manifest.json` 里 `data_bindings` 的占位，整份贴进「建草稿」→ 逐条核对出处后点「已逐条核对出处」（三条都是用户原文）→「发起测试」（预算用默认） | 草稿建成、状态测试中 |
+| d | 同上 | 隔一两分钟点「刷新结果」（自动轮询是待办 117） | 通过；用例「revenue-2024」期望满足 1/1；有问题转给用户时按提示答 |
+| e | knowmart web端 | 看「我的分身」 | 有「读表报营收」第 1 版 |
+| f | knowmart「我的分身」→「请这位」→ knowbench | 跳到工作台（单点登录不再要密码）；自己的账号在新工作台是空库，先在设置里填自己的 key、拉起沙箱；建一个项目，在里面问「2024 年的营业收入是多少？」 | 分身读了你的表，回答里有 100 和出处（数据 id、版本、sha256、页）；结论栏空 |
+| g | 工作台「接入电脑」（测试账号那边） | 看 `knowbot-test` 的委托记录 | 测试那次委托在测试电脑的 `/workspace` 里跑过 |
+
+**回执**：`docs/rename-receipts/R5.4-qwen.<时间>.md`（第 3 步日志里连接成功的那几行——**抹掉连接码**；第 4 步各 `exit` 与 diff；走查每一步的截图描述；测试报告的用例结果）。
+
+**停点**：Opus 审回执，在本节写「通过」；之后 R6。
+**状态**：**已写好，待 R5.3 通过后可执行** · 2026-10-17 · Opus。
 
 ## R6 下线旧对象 — Qwen
 

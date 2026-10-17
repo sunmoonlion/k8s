@@ -1,0 +1,86 @@
+{
+  "schema": "knowbot-manifest/v1",
+  "name": "读表报营收",
+  "tagline": "走查用：从我的表里报出营业收入",
+  "version": "1",
+  "runtime": "knowbench",
+  "pack": {
+    "pack_id": "walk-revenue",
+    "version": "1",
+    "title": "读表报营收",
+    "workflow": [
+      {
+        "step_id": "answer",
+        "title": "读表作答",
+        "summary": "从你的表里找到问的那一年的营业收入",
+        "why": "数只来自你上传的表",
+        "method_text": "List the user's data with list_my_data and read it with read_my_data. Find the row the question asks about and the column of the year it asks about, and report the number exactly as written. If the table does not have it, say so in answer and leave figures empty. Reply with ONE JSON object only, no markdown fences: {\"answer\": string, \"figures\": [{\"item\": string, \"period\": string, \"value\": string, \"citation\": {\"dataset_id\": string, \"version\": string, \"sha256\": string, \"page\": number}}], \"conclusion\": \"\"}. Leave conclusion empty. No buy or sell advice.",
+        "tools": [
+          "list_my_data",
+          "read_my_data"
+        ],
+        "output_artifact": "answer",
+        "output_schema": {
+          "answer": "string",
+          "figures": [
+            {
+              "item": "string",
+              "period": "string",
+              "value": "string",
+              "citation": {}
+            }
+          ],
+          "conclusion": ""
+        },
+        "acceptance": [
+          {
+            "kind": "json_object",
+            "message": "交回物不是 JSON 对象",
+            "label": "交回的格式对"
+          },
+          {
+            "kind": "required_keys",
+            "keys": [
+              "answer",
+              "figures"
+            ],
+            "message": "缺 answer 或 figures",
+            "label": "有回答和用到的数"
+          },
+          {
+            "kind": "no_positioning_advice",
+            "path": "answer",
+            "message": "出现了买卖建议类措辞",
+            "label": "没有买卖建议"
+          },
+          {
+            "kind": "blank",
+            "path": "conclusion",
+            "message": "结论栏要留空",
+            "label": "结论留给你"
+          }
+        ]
+      }
+    ]
+  },
+  "data_bindings": [
+    "<把管理端请求详情里「数据」那一行的 JSON 原样贴在这里>"
+  ],
+  "rule_sources": [
+    {
+      "rule": "数只来自我上传的表，原样报出",
+      "source": "user_text",
+      "ref": "第 4 问：读我的表，找到问到的那一年那一行，原样报出数字，并写明出处。"
+    },
+    {
+      "rule": "表里没有就说没有",
+      "source": "user_text",
+      "ref": "第 6 问：报出的数和表里一模一样；表里没有的就说没有。"
+    },
+    {
+      "rule": "不做分析、预测与买卖建议",
+      "source": "user_text",
+      "ref": "第 2 问：不做任何分析、预测或买卖建议。"
+    }
+  ]
+}

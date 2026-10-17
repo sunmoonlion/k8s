@@ -1,0 +1,33 @@
+{
+  "title": "走查用：读我的表回答营收",
+  "idea": {
+    "kind": "six_questions",
+    "answers": {
+      "solves": "从我上传的一张小表里，回答某一年的营业收入是多少。",
+      "not_solves": "不做任何分析、预测或买卖建议。",
+      "inputs": "我上传的 data.csv：第一行是报告期，第一列是科目。",
+      "steps": "读我的表，找到问到的那一年那一行，原样报出数字，并写明出处。",
+      "outputs": "一句回答，加上用到的数和它的出处。",
+      "correctness": "报出的数和表里一模一样；表里没有的就说没有。"
+    }
+  },
+  "runtime": "knowbench",
+  "cases": [
+    {
+      "case_id": "revenue-2024",
+      "input": {
+        "question": "2024 年的营业收入是多少？",
+        "answers": {}
+      },
+      "expectations": [
+        {
+          "artifact": "answer",
+          "path": "answer",
+          "kind": "contains",
+          "value": "100"
+        }
+      ]
+    }
+  ],
+  "consent_test_data": true
+}
