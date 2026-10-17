@@ -106,7 +106,47 @@ bash /tmp/r0-perm.sh
 
 ## R1 改内容 — Opus（远程机 qwen 工位）
 
-待写：R0「开工」后由 Opus 改全部内容，替换规则、改与留的界线、自测与渲染比对结果写进 `R1-opus`，并在这里写清此刻两台机器上的路径状态。
+在 qwen 分支上改，**先推到旧名字的仓**（R2 改名后 GitHub / gitee 会接着认这些提交）。子仓 `.gitmodules` 里的地址直接写新名字；R1 到 R2 之间没有人拉子仓，新地址暂时不存在不碍事。
+
+| 仓 | 改什么 |
+| --- | --- |
+| `investment-app` 父仓与三个子仓 | 子仓目录 `git mv` 成 `knowbench-*`，`.gitmodules`（路径、URL、name）；代码与配置里的应用名、域名、Casdoor 应用与客户端名、登录 cookie 名、作用域 `knowbench:*`、Redis 前缀、队列名、环境变量 `PLATFORM_KNOWBENCH_*` 等、清单 `runtime` 的值；说明与 `.cursor/rules` |
+| tpl、knowfeed、knowbase、knowlab、knowmart（父仓与子仓） | 跨应用键 `investment` → `knowbench`、跨应用测试、契约与服务身份里指工作台的名字（knowlab 调运行方的 `knowbench:testrun`、knowmart 接收的 `summon` 调用方） |
+| `runtime` | 站点文件的域名 `knowbench.sunmoonai.com`、说明里的仓名 `sunmoon-link`、脚本里的工位路径 |
+| `k8s` | gitops `investment-app/` → `knowbench-app/` 等目录、`infrastructure/applications/` 的应用名表与 `deploy.yaml` / `verify.yaml`、`sources.yaml`、存储名、Casdoor 声明、边缘与 frpc 的域名、traefik 内部入口、Makefile、`switch-test` 三个同步脚本的仓名、现行文档；`repos/investment-app.md` → `repos/knowbench-app.md` |
+
+**不改**：见「名字对照」下的「不改」；另外 `dev-investment-agent/` 目录、PRD 文件名 `apps/investment.md` / `investment-expert.md`（文件名当编号用）、引号里的原话、`decisions.md`、0025 / 0028 与本手册、历史记录（`done/`、`inbox/`、`results/`、`review-log.md`、`CHECKPOINT*.md`、`runtime/probe/`）、已有迁移文件。
+
+执行：工具在 `docs/rename-tools/`——`rename_rules.py`（替换规则与保留清单）、`r1_apply.py`（改名计划 → 父仓里 `git mv` 子仓目录 → 其余 `git mv` → 内容替换 → 手工补丁 → k8s 收尾）、`manual_patch.py`、`residual.py`（残留盘点，应为 0 行）。先在 `~/rename-lab` 里从 origin 复刻的八组仓（含子仓）上整套跑过、各仓测试全过，再在真工位上跑：
+
+```bash
+cp -r ~/worktrees/qwen/k8s/docs/rename-tools /tmp/rename-tools
+python3 /tmp/rename-tools/r1_apply.py ~/worktrees/qwen
+python3 /tmp/rename-tools/residual.py ~/worktrees/qwen
+```
+
+**改名后的 knowbench 组件目录里，旧的 `*.sops.yaml` 一律 `git rm`**（15 个）：存储从空的开始、秘密按新名全新生成，而 stage 看到已有 `database/bootstrap.sops.yaml` 就按「已有库不许换口令」拒绝生成。
+
+**k8s 里只改真源，不手改渲染产物**：`workload.yaml`、`kustomization.yaml`、`image.lock.yaml` 只随目录 `git mv`，内容在 R5 由 stage 与构建链按新名重新生成；R1 提交后、R5 发布前，它们里面还是旧名字，属正常，R1 的提交在 R5 发布前不会进现网。
+
+**R5 要记着的连带**（R1 改了名字，R5 才会生效）：工作台的签名钥匙按新名重新生成后，knowbase 与 relay 持有的公钥要换成新的（`infrastructure/components/tasks/workbench-signing.yaml`）；knowbase 接收工作台检索的身份、knowmart 接收「取清单」、knowlab 调「跑测试」与接收「读数据」都按新名重建；本地机 Windows hosts 加 `knowbench.`、`knowbench-admin.sunmoonai.com`。
+
+推送（Opus 在远程机，**先子仓后父仓**，只推 `qwen`）：
+
+```bash
+# R1 已在父仓里 git mv 了子仓目录，父仓目录本身要到 R3 才换名，所以此刻的路径是「旧父仓/新子仓」
+for d in investment-app/knowbench-backend investment-app/knowbench-web-frontend investment-app/knowbench-admin-frontend \
+         tpl-app/tpl-backend tpl-app/tpl-web-frontend knowfeed-app/knowfeed-backend knowfeed-app/knowfeed-web-frontend \
+         knowfeed-app/knowfeed-admin-frontend knowbase-app/knowbase-backend knowbase-app/knowbase-web-frontend \
+         knowbase-app/knowbase-admin-frontend knowlab-app/knowlab-backend knowlab-app/knowlab-web-frontend \
+         knowlab-app/knowlab-admin-frontend knowmart-app/knowmart-backend knowmart-app/knowmart-web-frontend; do
+  git -C ~/worktrees/qwen/$d push origin HEAD:refs/heads/qwen   # 只推有改名提交的（R1 回执列出）；investment 三个子仓的 remote 仍是旧仓名
+done
+for r in investment-app tpl-app knowfeed-app knowbase-app knowlab-app knowmart-app runtime k8s; do git -C ~/worktrees/qwen/$r push origin qwen; done
+```
+
+**停点**：Opus 写回执 `R1-opus`（含各仓推上去的提交号）并在本节写「通过」。
+**状态**：进行中。2026-10-17 草稿（`~/rename-lab`）上整套跑过：改内容 418 个文件、k8s 路径改名 64 个、旧 sops 15 个、残留 0 行；各仓测试进行中（远程机资源小，一个仓一个仓串行跑）。
 
 ## R2 远端仓改名 — Qwen
 
