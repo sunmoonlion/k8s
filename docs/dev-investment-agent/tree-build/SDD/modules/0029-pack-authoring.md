@@ -2,6 +2,8 @@
 
 > 状态：**设计初稿，待所有者定第四、第八节**。所有者 2026-10-17：「通过idea或skill写出pack是我们未来的核心价值，但现在这里其实是空白」「你先记账吧，这个非常关键」（待办账 119）「样本和设计文档都做」。Opus 起草；第一份样本见 [`0029-sample-fin-forecast/`](0029-sample-fin-forecast/README.md)（手工走了一遍第三节的五步，用真代码核过）。
 >
+> **逐条过的清单**：[`knowbot-todolist.md`](../../knowbot-todolist.md)（所有者 2026-10-17「我们一个个来解决」），本文第八节与样本的缺口都在那里按号排好。
+>
 > 先读：[0026](0026-knowlab.md)（定位与合规，`C-L1`–`C-L5`）、[0027](0027-knowbot-first-path.md)（受理、草稿、测试、交付的通路；有人值守 §3.4；读用户数据 §3.5）、`knowbench-backend` 的 `domain/workbench/packs.py`（专家包 ExpertPack 的形状）。
 
 ## 一、要解决什么
