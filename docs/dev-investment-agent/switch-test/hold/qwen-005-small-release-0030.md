@@ -15,13 +15,13 @@
 | 应用 | 提交 | 内容 |
 | --- | --- | --- |
 | knowlab 后端 | `c979112` | 契约 `knowbot-data/v1` 加 `table`、`cells`：CSV、Excel 按格子读，数一律十进制字符串（0030 C1） |
-| knowlab 网页 | `0da34a3` | 「我的数据」提示数字类尽量传表格（K17）；验收用例写明期望值只能由用户填（K18） |
+| knowlab 网页 | `0151475`（含 `0da34a3`） | 「我的数据」提示数字类尽量传表格（K17）；验收用例写明期望值只能由用户填（K18）；页头显示登录的是谁（同步自 tpl `aa93036`） |
 | knowbench 后端 | `ba92ce6`（含 `2e861ce`、`5f8e39e`、`b227b9c`、`b2b9dc9`） | 分身的 `compute`、`read_my_table`、计算记录、数值验收 `computed`/`identity`/`sourced`（0030 C1）；重做提示带上没过的各条；Windows 上写文件、跑脚本的说明（待办 121）；受理关口：问了不归这位专家的问题，停下问「照做 / 不做了」，不硬做、不报错（待办 130） |
 | knowbench 网页 | `13f15c3`（含 `4acd320`、`37ada6a`、`537743d`、`e90ad98`） | 成稿导出 Word、Excel、PDF（0031）；左右分栏可拖、左侧导航可折叠、输入框长高上限放宽（待办 124）；审查面的问题保留换行（待办 130）；侧栏底部显示登录的是谁 |
-| knowlab 父仓 | `117bea9` | 契约 schema 四份新增、子仓指针 |
+| knowlab 父仓 | `a16515c` | 契约 schema 四份新增、子仓指针 |
 | knowbench 父仓 | `970d056` | 契约锁、子仓指针 |
 
-Opus 在远程机核过：knowlab 后端全量 396 过；knowbench 后端全量（真库，含投递库与契约锁）1212 过、5 跳过（消息队列探针与跨仓向量，本来就不跑；含受理关口 8 条）；knowbench 网页 `pnpm check` 全过（296 条测试）；knowlab 网页类型、lint、92 条测试过。
+Opus 在远程机核过：knowlab 后端全量 396 过；knowbench 后端全量（真库，含投递库与契约锁）1212 过、5 跳过（消息队列探针与跨仓向量，本来就不跑；含受理关口 8 条）；knowbench 网页 `pnpm check` 全过（296 条测试）；knowlab 网页 `pnpm check` 全过（94 条测试）。
 
 ## 一、核对（只读）
 
@@ -33,7 +33,7 @@ git -C ~/worktrees/qwen/knowbench-app rev-parse HEAD; git -C ~/worktrees/qwen/kn
 make -C infrastructure platform-status; echo "status exit=$?"
 ```
 
-要看到：knowlab 父仓 `117bea97…`、后端 `c979112c…`、网页 `0da34a36…`、管理端 `371abcee…`；knowbench 父仓 `970d0562…`、后端 `ba92ce6f…`、网页 `13f15c3d…`、管理端 `45fcf79a…`（不是就停，请所有者同步 qwen）；`status exit=0`。
+要看到：knowlab 父仓 `a16515c0…`、后端 `c979112c…`、网页 `01514759…`、管理端 `371abcee…`；knowbench 父仓 `970d0562…`、后端 `ba92ce6f…`、网页 `13f15c3d…`、管理端 `45fcf79a…`（不是就停，请所有者同步 qwen）；`status exit=0`。
 
 ## 二、改钉（只动这两个应用的父仓、后端、网页，共十行）
 
@@ -42,9 +42,9 @@ python3 - <<'PY'
 import re, pathlib
 p = pathlib.Path('infrastructure/applications/sources.yaml'); s = p.read_text()
 want = {
-  'knowlab': {'parent_revision': '117bea97fffb975995604edb023f482288eb083b',
+  'knowlab': {'parent_revision': 'a16515c05c60844732c15d0a4bd961af6e4d1d03',
               'backend_parent_revision': 'c979112c67f8cfd9a3cfbeaed7d36740ee27fed4', 'backend_revision': 'c979112c67f8cfd9a3cfbeaed7d36740ee27fed4',
-              'web_parent_revision': '0da34a36a950df4e423432e6d05173d294c26882', 'web_revision': '0da34a36a950df4e423432e6d05173d294c26882'},
+              'web_parent_revision': '01514759355d2a6b7ae22ddcd910987753df9325', 'web_revision': '01514759355d2a6b7ae22ddcd910987753df9325'},
   'knowbench': {'parent_revision': '970d0562dd70dc07cd7c245bd4bf0a98726a3adc',
                 'backend_parent_revision': 'ba92ce6f6821d68287f32acd621a8c702aa8b29b', 'backend_revision': 'ba92ce6f6821d68287f32acd621a8c702aa8b29b',
                 'web_parent_revision': '13f15c3d01548ebb9a307a06807b3b9578cd1702', 'web_revision': '13f15c3d01548ebb9a307a06807b3b9578cd1702'},
@@ -102,6 +102,7 @@ git push origin qwen
 | --- | --- | --- |
 | knowlab web端「我的数据」 | 打开 | 多了一段「数字类尽量传表格」的提示 |
 | knowlab web端 新建分身 | 看验收用例那一栏 | 写着期望值只能由你自己填 |
+| knowlab web端 各页 | 看页头右边 | 「退出登录」左边写着「当前用户：你的显示名」，停上去看到邮箱；新建分身那页也有 |
 | knowbench 工作台 | 看侧栏底部；把侧栏折叠起来 | 「退出登录」上面写着「当前用户：你的显示名」，鼠标停上去看到邮箱；折叠后底下是一个头像字，停上去看到全名 |
 | knowbench 工作台 | 拖左侧导航与右栏的分割线；双击复原；点左侧导航的折叠钮再展开；刷新页面 | 宽度跟着变、刷新后还在；折叠状态记住 |
 | knowbench 工作台 | 在结果栏或底稿里打开一份 `.md` 成稿，点「下载 Word」「下载 Excel」「导出 PDF」 | Word 有标题与表格；Excel 每张表一张工作表、数是数字；PDF 打印框里只有成稿 |
