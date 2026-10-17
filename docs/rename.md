@@ -543,24 +543,25 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 
 > 前提：R5.2 **含第 6 步边缘**已通过（测试电脑像用户的电脑一样经公网边缘的 `knowbench.sunmoonai.com` 连进来，边缘还认旧域名时它连不上）。第 1–5 步 Qwen（本地机）；第 6 步所有者亲手装。一步不是 0 就停。
 >
-> 源码：sunmoon-link `ca9784c`（`ca9784ca40d79d7b602c8c8d39fc138dc12b8c2c`，0.5.0）。和 0.4.1（`76832a8`）比，进 Windows 包的文件只有 `sunmoon-agent.cmd` 改名 `sunmoon-link.cmd`，`pnpm-lock.yaml` 没变，所以**文件数仍是 109**、依赖用 0.4.1 那份冻结的 Windows `node_modules`。安装脚本 `install.ps1.tmpl` 两边摘要都是 `f6219d61392a259de44379627c2d9706d5243aa90ce69812c644991af06ca125`（R1 已同步）。
+> 源码：sunmoon-link `1d8e838`（`1d8e838cd46a262494387604f3d7f00cf3771b8e`，0.5.0）。比改名那版 `ca9784c` 多一处修复（2026-10-17 所有者的工作对话生成 pptx 时中文文件名变成问号）：代理给 PowerShell 也设了往外部程序管道的编码 `$OutputEncoding`（UTF-8、无 BOM），第 1 步在 Windows 上用探针核。和 0.4.1（`76832a8`）比，进 Windows 包的文件只有 `sunmoon-agent.cmd` 改名 `sunmoon-link.cmd`，`pnpm-lock.yaml` 没变，所以**文件数仍是 109**、依赖用 0.4.1 那份冻结的 Windows `node_modules`。安装脚本 `install.ps1.tmpl` 两边摘要都是 `f6219d61392a259de44379627c2d9706d5243aa90ce69812c644991af06ca125`（R1 已同步）。
 >
-> **Linux 包 Opus 已在远程机从同一提交打过一次**（同一提交打出同一个摘要），用上传工具同一套校验（`upload.py` 的 `verify_tarball`）核过：`tarballSha256 1aba8da141762c9fa662dd4556d4eb2feecce51b0636e1e8ba2fdeb06add1de3`、`manifestSha256 08002ab37e3e79cfbf5239c725a81b2ba347898ccd06e2bce893fb25d0b7a1ee`、`139169431` 字节、133 个文件。本地机打出来的必须逐字一样。
+> **Linux 包 Opus 已在远程机从同一提交打过一次**（同一提交打出同一个摘要），用上传工具同一套校验（`upload.py` 的 `verify_tarball`）核过：`tarballSha256 0ecde7eede64214c97d5a8cfb2c1005a158894346c35bc18f8552e9007b5c909`、`manifestSha256 4c059af55ff48ef4a2f2b20947659ce11d8691fa53b32018e8ba9c4a52eaca7f`、`139172356` 字节、133 个文件。本地机打出来的必须逐字一样。
 
 **1. Windows 包**（照卡 48 的 A，Windows 侧，官方 node.exe 24.19.0、0.4.1 同一份冻结依赖、dev-kind 站点与 CA）：
 
-- 新目录检出：`…\sunmoon-probe-runs\windows-agent-050-release\src-ca9784c`，`git rev-parse HEAD` = `ca9784ca40d79d7b602c8c8d39fc138dc12b8c2c`，`git status --porcelain` 空。
-- 组包：`node agent/distribution/build.mjs --node-exe <官方 node.exe> --dependencies <0.4.1 同一份 Windows agent 依赖目录> --site agent/distribution/sites/dev-kind.json --ca-pem agent/distribution/sites/dev-kind-ca.pem --output <新目录>\sunmoon-link-ca9784c`。
-- 要看到：`sourceRevision` = `ca9784ca…`、`files` = **109**（不是就停，把 `app/dist` 与根目录的文件名列进回执）；包内 Node 跑 `windows-candidate.mjs`：`result: pass`、agent `0.5.0`、codex `0.155.1`、node `24.19.0`、`launchedAgent=false`；根目录有 `sunmoon-link.cmd`、没有 `sunmoon-agent.cmd`。
-- 打 zip（Python `zipfile`、deflate、正斜杠，同 0.4.1）：`sunmoon-link-0.5.0-ca9784c-windows-x64.zip`，放 `~/sunmoon-probe-runs/windows-agent-050/`；记 ZIP SHA256、`size_bytes`、`manifestSha256`。
+- 新目录检出：`…\sunmoon-probe-runs\windows-agent-050-release\src-1d8e838`，`git rev-parse HEAD` = `1d8e838cd46a262494387604f3d7f00cf3771b8e`，`git status --porcelain` 空。
+- 组包：`node agent/distribution/build.mjs --node-exe <官方 node.exe> --dependencies <0.4.1 同一份 Windows agent 依赖目录> --site agent/distribution/sites/dev-kind.json --ca-pem agent/distribution/sites/dev-kind-ca.pem --output <新目录>\sunmoon-link-1d8e838`。
+- 要看到：`sourceRevision` = `1d8e838c…`、`files` = **109**（不是就停，把 `app/dist` 与根目录的文件名列进回执）；包内 Node 跑 `windows-candidate.mjs`：`result: pass`、agent `0.5.0`、codex `0.155.1`、node `24.19.0`、`launchedAgent=false`；根目录有 `sunmoon-link.cmd`、没有 `sunmoon-agent.cmd`。
+- **编码探针**（这次的修复只能在真 Windows 上核）：用包内 node 跑 `node <k8s>\docs\rename-tools\r53_encoding_probe.mjs <新目录>\sunmoon-link-1d8e838\app`。要看到最后一行 `probe ok`（PowerShell 把带中文的 Python 经管道交给 python，中文文件名建得出来）；`probe FAILED` 就停，整段输出贴进回执。要本机装着 python（所有者那台有）。
+- 打 zip（Python `zipfile`、deflate、正斜杠，同 0.4.1）：`sunmoon-link-0.5.0-1d8e838-windows-x64.zip`，放 `~/sunmoon-probe-runs/windows-agent-050/`；记 ZIP SHA256、`size_bytes`、`manifestSha256`。
 
 **2. Linux 包**（WSL）：
 
 ```bash
-cd ~/worktrees/qwen/sunmoon-link && git fetch -q origin && git checkout -q ca9784ca40d79d7b602c8c8d39fc138dc12b8c2c && git status --porcelain | head -3; echo "-----"
+cd ~/worktrees/qwen/sunmoon-link && git fetch -q origin && git checkout -q 1d8e838cd46a262494387604f3d7f00cf3771b8e && git status --porcelain | head -3; echo "-----"
 mkdir -p ~/sunmoon-probe-runs/linux-050
-node agent/distribution/build-linux.mjs --dependencies agent --site agent/distribution/sites/edge-public.json --output ~/sunmoon-probe-runs/linux-050/sunmoon-link-0.5.0-ca9784c-linux-x64; echo "build exit=$?"
-sha256sum ~/sunmoon-probe-runs/linux-050/sunmoon-link-0.5.0-ca9784c-linux-x64.tar.gz
+node agent/distribution/build-linux.mjs --dependencies agent --site agent/distribution/sites/edge-public.json --output ~/sunmoon-probe-runs/linux-050/sunmoon-link-0.5.0-1d8e838-linux-x64; echo "build exit=$?"
+sha256sum ~/sunmoon-probe-runs/linux-050/sunmoon-link-0.5.0-1d8e838-linux-x64.tar.gz
 git checkout -q qwen
 ```
 
@@ -570,21 +571,21 @@ git checkout -q qwen
 
 ```bash
 cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
-WZIP=~/sunmoon-probe-runs/windows-agent-050/sunmoon-link-0.5.0-ca9784c-windows-x64.zip
-LTGZ=~/sunmoon-probe-runs/linux-050/sunmoon-link-0.5.0-ca9784c-linux-x64.tar.gz
+WZIP=~/sunmoon-probe-runs/windows-agent-050/sunmoon-link-0.5.0-1d8e838-windows-x64.zip
+LTGZ=~/sunmoon-probe-runs/linux-050/sunmoon-link-0.5.0-1d8e838-linux-x64.tar.gz
 W_SHA=<第 1 步的 ZIP SHA256> W_SIZE=<第 1 步的 size_bytes> W_MAN=<第 1 步的 manifestSha256> python3 - <<'PY'
 import os, re, pathlib
 p = pathlib.Path('gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml'); s = p.read_text()
 win, linux = s.split('\n  linux:\n')
-rev = 'ca9784ca40d79d7b602c8c8d39fc138dc12b8c2c'
+rev = '1d8e838cd46a262494387604f3d7f00cf3771b8e'
 def put(block, key, value):
     new, n = re.subn(rf'(?m)^(\s+{key}: ).*$', lambda m: m.group(1) + value, block, count=1); assert n == 1, key; return new
-for k, v in [('version', '0.5.0'), ('source_revision', rev), ('object_key', 'windows-x64/0.5.0/sunmoon-link-0.5.0-ca9784c-windows-x64.zip'),
+for k, v in [('version', '0.5.0'), ('source_revision', rev), ('object_key', 'windows-x64/0.5.0/sunmoon-link-0.5.0-1d8e838-windows-x64.zip'),
              ('zip_sha256', os.environ['W_SHA']), ('manifest_sha256', os.environ['W_MAN']), ('size_bytes', os.environ['W_SIZE'])]:
     win = put(win, k, v)
-for k, v in [('version', '0.5.0'), ('source_revision', rev), ('object_key', 'linux-x64/0.5.0/sunmoon-link-0.5.0-ca9784c-linux-x64.tar.gz'),
-             ('tarball_sha256', '1aba8da141762c9fa662dd4556d4eb2feecce51b0636e1e8ba2fdeb06add1de3'),
-             ('manifest_sha256', '08002ab37e3e79cfbf5239c725a81b2ba347898ccd06e2bce893fb25d0b7a1ee'), ('size_bytes', '139169431')]:
+for k, v in [('version', '0.5.0'), ('source_revision', rev), ('object_key', 'linux-x64/0.5.0/sunmoon-link-0.5.0-1d8e838-linux-x64.tar.gz'),
+             ('tarball_sha256', '0ecde7eede64214c97d5a8cfb2c1005a158894346c35bc18f8552e9007b5c909'),
+             ('manifest_sha256', '4c059af55ff48ef4a2f2b20947659ce11d8691fa53b32018e8ba9c4a52eaca7f'), ('size_bytes', '139172356')]:
     linux = put(linux, k, v)
 p.write_text(win + '\n  linux:\n' + linux)
 PY
