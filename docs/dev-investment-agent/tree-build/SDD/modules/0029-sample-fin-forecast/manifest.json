@@ -149,9 +149,10 @@
         "input_refs": [
           "scope"
         ],
-        "method_text": "Profile the user's data for this company. Read data only with list_my_data and read_my_data, passing the task id given in the step instructions; there is no other data source. For each dataset in scope.datasets, read enough pages to list: the statements present (balance sheet, income statement, cash flow statement, annual report text), the report periods (Q1, H1, Q3, annual per year), whether values are cumulative per report period, the unit, and whether figures are consolidated or parent-only. If both consolidated and parent-only figures are present and the scope does not settle which to use, ask the user. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "method_text": "Profile the user's data for this company. Read CSV and Excel datasets with read_my_table (every sheet: its column labels and row labels) and PDFs with read_my_data; there is no other data source; pass the task id given in the step instructions on every call. List: the statements present (balance sheet, income statement, cash flow statement, annual report text), for each table its dataset_id, sheet and the column labels that are report periods, the report periods (Q1, H1, Q3, annual per year), whether values are cumulative per report period, the unit, and whether figures are consolidated or parent-only. If both consolidated and parent-only figures are present and the scope does not settle which to use, ask the user. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
         "tools": [
           "list_my_data",
+          "read_my_table",
           "read_my_data"
         ],
         "output_artifact": "profile",
@@ -174,6 +175,16 @@
           "data_until": "YYYY-MM-DD",
           "notes": [
             "string"
+          ],
+          "tables": [
+            {
+              "dataset_id": "string",
+              "sheet": "string",
+              "statement": "string",
+              "period_columns": [
+                "string"
+              ]
+            }
           ]
         },
         "acceptance": [
@@ -188,6 +199,7 @@
             "message": "缺必填项",
             "keys": [
               "files",
+              "tables",
               "periods",
               "unit",
               "consolidation"
@@ -214,9 +226,10 @@
         "input_refs": [
           "profile"
         ],
-        "method_text": "Check the statements against each other for every period in scope. Read data only with list_my_data and read_my_data, passing the task id given in the step instructions; there is no other data source. Checks: total assets = total liabilities + total equity; net profit attributable to owners of the parent + minority interests = net profit; ending cash = beginning cash + net increase in cash (cash flow statement); this period's opening balance = last period's closing balance for the main balance sheet items. A difference above 1 yuan is a failure. List every check per period with both sides and the difference; do not stop on failures, they go to limitations and those periods are kept out of the forecast window. Every number must come from the user's data read in this task (cite file, table, row and period) or from an upstream artifact; never recall or estimate a number. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "method_text": "Check the statements against each other for every period in scope. Read CSV and Excel data with read_my_table to see sheet names, row labels and column labels; a cell address is <dataset_id>:<sheet>!<row label>@<column label>, exactly as read_my_table shows them. A number taken from the data as is carries its cell address in `address`. Every derived number is computed with compute, never in your head, and carries the returned id in `compute_id`; never type a number yourself. If compute refuses because a denominator is zero, the figure is not applicable. Pass the task id given in the step instructions on every tool call. Checks: total assets = total liabilities + total equity; net profit attributable to owners of the parent + minority interests = net profit; ending cash = beginning cash + net increase in cash (cash flow statement); this period's opening balance = last period's closing balance for the main balance sheet items. For each check compute the left side and the right side with compute (a side that is one cell is computed with the expression `x`), then the difference with expression `left - right` on the two ids. A difference above 1 yuan in absolute value is a failure. List every check per period with both sides, both ids and the difference; put the ids of every check that holds into `balanced`. Do not stop on failures: they go to limitations and those periods are kept out of the forecast window. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
         "tools": [
-          "read_my_data"
+          "read_my_table",
+          "compute"
         ],
         "output_artifact": "reconcile",
         "output_schema": {
@@ -224,11 +237,21 @@
             {
               "name": "string",
               "period": "string",
+              "left_id": "c…",
+              "right_id": "c…",
               "left": "number",
               "right": "number",
+              "difference_id": "c…",
               "difference": "number",
-              "ok": "boolean",
-              "source": "string"
+              "ok": "boolean"
+            }
+          ],
+          "balanced": [
+            {
+              "name": "string",
+              "period": "string",
+              "left_id": "c…",
+              "right_id": "c…"
             }
           ],
           "failed_periods": [
@@ -247,6 +270,7 @@
             "message": "缺必填项",
             "keys": [
               "checks",
+              "balanced",
               "failed_periods"
             ]
           },
@@ -256,6 +280,13 @@
             "message": "一条勾稽都没有",
             "path": "checks",
             "min_items": 1
+          },
+          {
+            "kind": "identity",
+            "label": "说平的真的平",
+            "message": "标成平的勾稽，两边的计算结果并不相等",
+            "path": "balanced",
+            "tolerance": 1
           }
         ],
         "on_reject": "rework",
@@ -272,19 +303,27 @@
           "scope",
           "profile"
         ],
-        "method_text": "Extract every item in scope.items that is a line item, for every report period in scope.period. Read data only with list_my_data and read_my_data, passing the task id given in the step instructions; there is no other data source. Keep the cumulative value as reported and add the single-quarter value for income and cash flow items: Q1 = Q1 report; Q2 = half-year minus Q1; Q3 = Q3 report minus half-year; Q4 = annual minus Q3 report. Balance sheet items are point-in-time and are not converted. For each value give its source (dataset, statement, row label, period). An item the data does not have goes to `missing` with the reason; never substitute another item. Every number must come from the user's data read in this task (cite file, table, row and period) or from an upstream artifact; never recall or estimate a number. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "method_text": "Extract every item in scope.items that is a line item, for every report period in scope.period. Read CSV and Excel data with read_my_table to see sheet names, row labels and column labels; a cell address is <dataset_id>:<sheet>!<row label>@<column label>, exactly as read_my_table shows them. A number taken from the data as is carries its cell address in `address`. Every derived number is computed with compute, never in your head, and carries the returned id in `compute_id`; never type a number yourself. If compute refuses because a denominator is zero, the figure is not applicable. Pass the task id given in the step instructions on every tool call. Put every value as reported (cumulative for income and cash flow items, point-in-time for balance sheet items) into `raw` with its address. For income and cash flow items add the single-quarter value: Q1 is the Q1 report value itself (no computation); Q2, Q3 and Q4 are computed with expression `cur - prev`, where cur is the cell of this report (half-year, Q3 report, annual) and prev the cell of the report before it (Q1, half-year, Q3 report); put those into `single_quarter` with their ids. Balance sheet items are not converted. An item the data does not have goes to `missing` with the reason; never substitute another item. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
         "tools": [
-          "read_my_data"
+          "read_my_table",
+          "compute"
         ],
         "output_artifact": "series",
         "output_schema": {
-          "rows": [
+          "raw": [
+            {
+              "item": "string",
+              "period": "YYYY-Qn|YYYY-H1|YYYY-annual",
+              "address": "string",
+              "value": "number"
+            }
+          ],
+          "single_quarter": [
             {
               "item": "string",
               "period": "YYYY-Qn",
-              "cumulative": "number|null",
-              "single_quarter": "number|null",
-              "source": "string"
+              "compute_id": "c…",
+              "value": "number"
             }
           ],
           "missing": [
@@ -306,7 +345,8 @@
             "label": "必填项都有",
             "message": "缺必填项",
             "keys": [
-              "rows",
+              "raw",
+              "single_quarter",
               "missing",
               "unit"
             ]
@@ -315,8 +355,21 @@
             "kind": "list_min",
             "label": "取到了数",
             "message": "一个数都没取到",
-            "path": "rows",
+            "path": "raw",
             "min_items": 1
+          },
+          {
+            "kind": "sourced",
+            "label": "取出的数与表里一致",
+            "message": "取出的数和数据里那一格对不上",
+            "path": "raw"
+          },
+          {
+            "kind": "computed",
+            "label": "单季由平台算",
+            "message": "单季数不是按「本期累计 − 上期累计」算出来的",
+            "path": "single_quarter",
+            "expression": "cur - prev"
           }
         ],
         "on_reject": "rework",
@@ -334,22 +387,50 @@
           "series",
           "reconcile"
         ],
-        "method_text": "Compute the core metrics per period from the series only. Definitions: gross margin = (operating revenue - operating cost) / operating revenue; net margin = net profit attributable to owners of the parent / operating revenue; return on equity = net profit attributable to owners of the parent / average equity attributable to owners of the parent (average of opening and closing; quarters not annualised); operating cash flow to net profit = net cash from operating activities / net profit attributable to owners of the parent; growth = year on year against the same period a year earlier. When a denominator is zero, negative or missing, mark the metric not applicable with the reason; never force a number. For each value give the numerator, the denominator and the formula. Then write at least two findings about trend and structure; describe only, do not say whether something is good or bad. Every number must come from the user's data read in this task (cite file, table, row and period) or from an upstream artifact; never recall or estimate a number. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "method_text": "Compute the core metrics per period from the series only, each with compute on the ids and addresses in the series (use the single-quarter ids for income and cash flow items, the raw addresses for balance sheet items); never compute in your head and never type a number. Use exactly these input names and expressions: gross margin `(rev - cost) / rev`; net margin `np / rev` (np = net profit attributable to owners of the parent); return on equity `np / ((eq_open + eq_close) / 2)` (equity attributable to owners of the parent, opening and closing of the period; quarters not annualised); operating cash flow to net profit `ocf / np`; year-on-year growth `(cur - prev) / prev` against the same period a year earlier. When a denominator is zero (compute refuses), negative or missing, put the metric into `not_applicable` with the reason; never force a number. Then write at least two findings about trend and structure that quote metric ids; describe only, do not say whether something is good or bad. Pass the task id given in the step instructions on every call. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
         "tools": [
-          "read_my_data"
+          "compute"
         ],
         "output_artifact": "analysis",
         "output_schema": {
-          "metrics": [
-            {
-              "name": "string",
-              "period": "YYYY-Qn",
-              "value": "number",
-              "numerator": "number",
-              "denominator": "number",
-              "formula": "string"
-            }
-          ],
+          "metrics": {
+            "gross_margin": [
+              {
+                "period": "YYYY-Qn",
+                "compute_id": "c…",
+                "value": "number"
+              }
+            ],
+            "net_margin": [
+              {
+                "period": "YYYY-Qn",
+                "compute_id": "c…",
+                "value": "number"
+              }
+            ],
+            "roe": [
+              {
+                "period": "YYYY-Qn",
+                "compute_id": "c…",
+                "value": "number"
+              }
+            ],
+            "ocf_to_np": [
+              {
+                "period": "YYYY-Qn",
+                "compute_id": "c…",
+                "value": "number"
+              }
+            ],
+            "growth": [
+              {
+                "item": "string",
+                "period": "YYYY-Qn",
+                "compute_id": "c…",
+                "value": "number"
+              }
+            ]
+          },
           "not_applicable": [
             {
               "name": "string",
@@ -360,8 +441,8 @@
           "findings": [
             {
               "text": "string",
-              "numbers": [
-                "string"
+              "compute_ids": [
+                "c…"
               ]
             }
           ]
@@ -388,6 +469,41 @@
             "message": "发现不足两条",
             "path": "findings",
             "min_items": 2
+          },
+          {
+            "kind": "computed",
+            "label": "毛利率按登记的口径算",
+            "message": "毛利率不是按 (营收 − 营业成本) / 营收 算的",
+            "path": "metrics.gross_margin",
+            "expression": "(rev - cost) / rev"
+          },
+          {
+            "kind": "computed",
+            "label": "净利率按登记的口径算",
+            "message": "净利率不是按 归母净利润 / 营收 算的",
+            "path": "metrics.net_margin",
+            "expression": "np / rev"
+          },
+          {
+            "kind": "computed",
+            "label": "ROE 按登记的口径算",
+            "message": "ROE 不是按 归母净利润 / 平均归母净资产 算的",
+            "path": "metrics.roe",
+            "expression": "np / ((eq_open + eq_close) / 2)"
+          },
+          {
+            "kind": "computed",
+            "label": "现金流比按登记的口径算",
+            "message": "现金流比不是按 经营现金流 / 归母净利润 算的",
+            "path": "metrics.ocf_to_np",
+            "expression": "ocf / np"
+          },
+          {
+            "kind": "computed",
+            "label": "增速按同比算",
+            "message": "增速不是按 (本期 − 上年同期) / 上年同期 算的",
+            "path": "metrics.growth",
+            "expression": "(cur - prev) / prev"
           }
         ],
         "on_reject": "back",
@@ -405,9 +521,10 @@
           "series",
           "analysis"
         ],
-        "method_text": "For each fiscal year in scope, read the annual report text in the user's data and find the table of key accounting data and financial indicators. Read data only with list_my_data and read_my_data, passing the task id given in the step instructions; there is no other data source. Compare operating revenue, net profit attributable to owners of the parent, net profit after non-recurring items, net cash from operating activities and weighted average return on equity with the values from the series and the analysis. A relative difference above 0.1% is a mismatch. List both values and the difference for every item; when they differ, the deliverable uses the annual report value and says so. If no annual report is in the data, say so and list nothing as matched. Every number must come from the user's data read in this task (cite file, table, row and period) or from an upstream artifact; never recall or estimate a number. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "method_text": "For each fiscal year in scope, read the annual report text in the user's data with read_my_data and find the table of key accounting data and financial indicators; pass the task id given in the step instructions on every call; there is no other data source. Compare operating revenue, net profit attributable to owners of the parent, net profit after non-recurring items, net cash from operating activities and weighted average return on equity with the values from the series and the analysis. For each item, compute the relative difference with compute: input `ours` is the id or address of our value, and the reported value R is written into the expression as the number printed in the report, `abs(ours - R) / abs(R)`; give the report page in `reported_source`. A relative difference above 0.001 (0.1%) is a mismatch; when they differ, the deliverable uses the annual report value and says so. If no annual report is in the data, say so and list nothing as matched. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
         "tools": [
-          "read_my_data"
+          "read_my_data",
+          "compute"
         ],
         "output_artifact": "crosscheck",
         "output_schema": {
@@ -417,9 +534,10 @@
               "year": "YYYY",
               "ours": "number",
               "reported": "number|null",
-              "relative_difference": "number|null",
-              "match": "boolean|null",
-              "source": "string"
+              "reported_source": "string",
+              "compute_id": "c…",
+              "value": "number",
+              "match": "boolean|null"
             }
           ],
           "no_report_years": [
@@ -440,6 +558,12 @@
               "items",
               "no_report_years"
             ]
+          },
+          {
+            "kind": "computed",
+            "label": "差异由平台算",
+            "message": "相对差异不是平台算出来的",
+            "path": "items"
           }
         ],
         "on_reject": "rework",
@@ -458,37 +582,54 @@
           "reconcile",
           "analysis"
         ],
-        "method_text": "Forecast with the fixed method below only; do not choose another method. Items: operating revenue and net profit attributable to owners of the parent, plus any other flow item the question names. Use single-quarter values; leave out periods listed in reconcile.failed_periods. Method (seasonal year-on-year): next quarter = the same quarter a year earlier x (1 + the median year-on-year growth of the latest 4 quarters); the range uses the minimum and the maximum year-on-year growth of the latest 8 quarters instead of the median. Forecast at most 4 quarters, chaining forward. Backtest first: for each of the latest 4 actual quarters, forecast it from the data before it with the same rule and report the relative error, the mean error and how many actual values fall inside the range; with fewer than 12 quarters, do not backtest and say why. Derive margins for the forecast quarters from the forecast revenue and profit; do not extrapolate ratios on their own. Give at least two assumptions. Never call a forecast certain, a promise or a target. Show every computation with its inputs. Every number must come from the user's data read in this task (cite file, table, row and period) or from an upstream artifact; never recall or estimate a number. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
-        "tools": [],
+        "method_text": "Forecast with the fixed method below only; do not choose another method. Items: operating revenue and net profit attributable to owners of the parent, plus any other flow item the question names. Use the single-quarter ids from the series; leave out periods listed in reconcile.failed_periods. Every number is computed with compute on ids from the series, the analysis or earlier computations of this step, with exactly these names and expressions: point `base * (1 + median(g))`, low `base * (1 + min(g))`, high `base * (1 + max(g))`, where base is the same quarter a year earlier (a forecast id when chaining) and g the list of year-on-year growth ids (the latest 4 quarters for the point, the latest 8 for the range); backtest error `abs(f - a) / a` with f the backtest forecast and a the actual; derived margin `np / rev` on the forecast ids. Forecast at most 4 quarters, chaining forward. Backtest first: for each of the latest 4 actual quarters, forecast it from the data before it with the same rule and report the error, the mean error (`avg(e)`) and how many actual values fall inside the range; with fewer than 12 quarters, do not backtest and say why. Give at least two assumptions. Never call a forecast certain, a promise or a target. Pass the task id given in the step instructions on every call. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "tools": [
+          "compute"
+        ],
         "output_artifact": "forecast",
         "output_schema": {
           "method": "string",
-          "backtest": {
-            "quarters": [
-              {
-                "period": "YYYY-Qn",
-                "actual": "number",
-                "forecast": "number",
-                "relative_error": "number",
-                "inside": "boolean"
-              }
-            ],
-            "mean_error": "number"
-          },
-          "rows": [
+          "points": [
             {
               "item": "string",
               "period": "YYYY-Qn",
-              "point": "number",
-              "low": "number",
-              "high": "number",
-              "inputs": "string"
+              "compute_id": "c…",
+              "value": "number"
             }
           ],
+          "lows": [
+            {
+              "item": "string",
+              "period": "YYYY-Qn",
+              "compute_id": "c…",
+              "value": "number"
+            }
+          ],
+          "highs": [
+            {
+              "item": "string",
+              "period": "YYYY-Qn",
+              "compute_id": "c…",
+              "value": "number"
+            }
+          ],
+          "backtest": {
+            "errors": [
+              {
+                "period": "YYYY-Qn",
+                "compute_id": "c…",
+                "value": "number"
+              }
+            ],
+            "mean_error_id": "c…",
+            "inside": "integer",
+            "skipped_reason": "string|null"
+          },
           "derived": [
             {
-              "name": "string",
+              "item": "string",
               "period": "YYYY-Qn",
+              "compute_id": "c…",
               "value": "number"
             }
           ],
@@ -508,8 +649,10 @@
             "message": "缺必填项",
             "keys": [
               "method",
+              "points",
+              "lows",
+              "highs",
               "backtest",
-              "rows",
               "assumptions"
             ]
           },
@@ -519,6 +662,41 @@
             "message": "假设不足两条",
             "path": "assumptions",
             "min_items": 2
+          },
+          {
+            "kind": "computed",
+            "label": "点估计按写死的方法算",
+            "message": "点估计不是按 上年同季 × (1 + 同比中位数) 算的",
+            "path": "points",
+            "expression": "base * (1 + median(g))"
+          },
+          {
+            "kind": "computed",
+            "label": "区间下沿按写死的方法算",
+            "message": "区间下沿不是按 上年同季 × (1 + 同比最小值) 算的",
+            "path": "lows",
+            "expression": "base * (1 + min(g))"
+          },
+          {
+            "kind": "computed",
+            "label": "区间上沿按写死的方法算",
+            "message": "区间上沿不是按 上年同季 × (1 + 同比最大值) 算的",
+            "path": "highs",
+            "expression": "base * (1 + max(g))"
+          },
+          {
+            "kind": "computed",
+            "label": "回测误差由平台算",
+            "message": "回测误差不是按 |预测 − 实际| / 实际 算的",
+            "path": "backtest.errors",
+            "expression": "abs(f - a) / a"
+          },
+          {
+            "kind": "computed",
+            "label": "推算的比率由平台算",
+            "message": "推算的比率不是按 预测利润 / 预测收入 算的",
+            "path": "derived",
+            "expression": "np / rev"
           }
         ],
         "on_reject": "human",
@@ -540,7 +718,7 @@
           "crosscheck",
           "forecast"
         ],
-        "method_text": "Write the deliverable in Chinese from the input artifacts only; do not read data again (writing the file is the only tool use). Order: answer in plain words first; the data with sources (dataset, statement, row, period); reconciliation and cross-check results; metrics and findings (describe only); the forecast table with method, backtest, ranges and assumptions; limitations; sources. `limitations` must include every missing item, every not-applicable metric, every failed reconciliation and every cross-check mismatch with reasons, and the forecast assumptions. Leave the conclusion section empty. No valuation, rating, target price, or advice to buy, sell or hold. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
+        "method_text": "Write the deliverable in Chinese from the input artifacts only; do not read data again (writing the file is the only tool use). Every number in the deliverable is one of the numbers in the input artifacts, written next to its compute id or cell address (the reader can check each one); never compute or round a number yourself. Order: answer in plain words first; the data with sources (dataset, statement, row, period); reconciliation and cross-check results; metrics and findings (describe only); the forecast table with method, backtest, ranges and assumptions; limitations; sources. `limitations` must include every missing item, every not-applicable metric, every failed reconciliation and every cross-check mismatch with reasons, and the forecast assumptions. Leave the conclusion section empty. No valuation, rating, target price, or advice to buy, sell or hold. Reply with ONE JSON object only, no markdown fences, no commentary before or after it. Do not modify any files unless this step says so.",
         "tools": [],
         "output_artifact": "note",
         "output_file": "成稿.md",

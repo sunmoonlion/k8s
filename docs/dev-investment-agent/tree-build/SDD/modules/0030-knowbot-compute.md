@@ -110,3 +110,23 @@
 | `sourced` 没配 knowlab | — | 判不过，不放行 | 宁严 |
 
 测试：knowlab 后端全量 396 过；knowbench 后端全量（真库 PostgreSQL 16，临时容器用完即停）1120 过，含一条真库端到端：测试中的草稿调 `compute` 记进计算记录，交回的数错了被 `computed` 退回重做、对了才过。契约锁的请求合 schema 用 `jsonschema` 核过（本地环境没装 `jsonschema` 时这几条跳过，同 P5）。
+
+## 九、C2 记录（2026-10-17，Opus）
+
+样本 [`0029-sample-fin-forecast/manifest.json`](0029-sample-fin-forecast/manifest.json) 的工程部分改用本文的做法（规则出处仍是 `pending_user`，等所有者答 K3–K14，K20）：
+
+| 步 | 工具 | 数值验收 |
+| --- | --- | --- |
+| 数据摸底 | 加 `read_my_table`，交回每张表的数据 id、表名、报告期列 | — |
+| 勾稽 | `read_my_table`、`compute`：两边各算一次、差额再算一次 | `identity`：标成平的两边真的相等（容差 1 元）；不平的照实列出，不因此退回 |
+| 取数 | `read_my_table`、`compute` | `sourced`：原样取的数与那一格一致；`computed`：单季必须是 `cur - prev` |
+| 算指标 | `compute` | 五个 `computed`，各指定算式：毛利率 `(rev - cost) / rev`、净利率 `np / rev`、ROE `np / ((eq_open + eq_close) / 2)`、现金流比 `ocf / np`、同比 `(cur - prev) / prev` |
+| 对照官方披露 | `read_my_data`、`compute`：年报上的数写进算式当常数 | `computed`：相对差异由平台算 |
+| 预测 | `compute` | 五个 `computed`：点估计 `base * (1 + median(g))`、上下沿 `min(g)`/`max(g)`、回测误差 `abs(f - a) / a`、推算比率 `np / rev` |
+| 成稿 | — | 方法原文要求每个数写编号或地址，不自己算、不自己四舍五入 |
+
+用真代码核过：knowbench 按分身规则完整校验通过（8 步、13 条数值验收、每个指定的算式都能解析求值）；knowlab 建草稿前的核对仍只拒那 11 条 `pending_user`（预期）。
+
+**演练**（[`c2-drill.py`](0029-sample-fin-forecast/c2-drill.py)，合成的利润表，不是真实财报）：用样本自己的验收规则跑「取数」「算指标」——对的两份通过；原样数抄错 1 元、单季数改 1 元、毛利率换了写法（结果相同）、毛利率手写 0.92，四种都被退回，退回理由写明哪一格、哪个编号、差多少或用了什么算式。
+
+还差：用真实的茅台数据把八步跑一遍（要所有者以用户身份上传，K19；数据格式按 K4）。C3 随 R5 之后的小发布上线。
