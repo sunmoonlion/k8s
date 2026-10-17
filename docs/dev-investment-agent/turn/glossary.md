@@ -134,6 +134,20 @@
 - 施工队还是同一个（Codex），每道工序里怎么砌砖由它自己干（`C-C7`）。一句话：**Codex 是施工队，我们是把业主的想法画成图纸、再按图监理的那一方；图纸画得好不好，就是孵化的手艺。**
 - 不要说成「上报集团、拿到指示再干」：指示（方法）来自用户本人，不是我们给的；控制在每一步都有，不只在开头。
 
+**附：经 Codex app-server 真正能控制的地方**（2026-10-17 Opus 按 knowbench 代码核过；只经公开协议，不碰内部，`C-C7`）
+
+| 时机 | 能控制什么 | 协议上怎么做 | 代码位置 |
+| --- | --- | --- | --- |
+| 开线（一段对话一次） | 用哪个模型；在哪台电脑、哪个目录干（执行端）；沙箱只读还是能写、能不能联网；命令要不要人批；关掉多代理、开「一轮中间能问人」 | `thread/start`：`model`、`environments[].cwd`、`sandbox`、`approvalPolicy`、`config`（`features.*`） | `domain/workbench/projects.py` 的 `thread_settings`、`THREAD_CONFIG`；`application/workbench/runner.py` |
+| 拉起沙箱（每个用户一次） | 模型 key 与接入地址；能连哪些工具服务（MCP：工作台的记录与数据工具、知识库） | 沙箱的 Codex 配置，由供给器写入 | `application/workbench/provisioning.py` |
+| 每一步开始 | **这一步的全部输入**：方法原文、上游交回物、工具说明、交回格式（施工比方里的「交底」）；这一轮的沙箱与审批设置 | `turn/start`：`input` 与这一轮的设置 | `application/workbench/advisor.py` 的 `compose`；`runner.py` 的 `run_turn` |
+| 一步进行中 | 模型要跑命令、改文件、扩权限时**由我们答**（批准、拒绝、交给用户）；模型反过来问用户时转成提问卡；中途插话；用户点停下或超时就打断 | 服务端请求 `item/commandExecution`、`item/fileChange`、`item/permissions` 的批准，`item/tool/requestUserInput`，`turn/steer`，`turn/interrupt` | `runner.py` |
+| 一步进行中（工具） | 模型能调的我们自己的工具：读项目记录、读用户数据、按格子读、**计算**——每次调用由我们按委托核权限、记账 | MCP 工具服务 | `interfaces/mcp/workbench_mcp.py` |
+| 一步结束 | 收它交回的最后一句与改过的文件、用了多少 token；**验收**、重做、退回、交人；下一步给什么 | `turn/completed`、`item/completed`、`thread/tokenUsage/updated` | `advisor.py`、`acceptance.py`、`acceptance_numbers.py` |
+| 随时 | 电脑断线、重连，接回原来的线 | `thread/environment/*`、`thread/resume` | `runner.py` |
+
+**控制不了的**：一轮之内模型想几次、调几次工具、按什么顺序（Codex 自己的代理循环）；Codex 内置的系统提示与内置工具（命令行、改文件）本身；模型照不照方法原文做——这部分只能靠验收抓出来、靠工具权限框住。所以验收写得多严，决定了「控制」有多实。
+
 ## 编号的归属
 
 引用时写编号本身即可，不带章节号——章节会移动，编号不会。
