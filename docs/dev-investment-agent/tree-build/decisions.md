@@ -69,6 +69,8 @@
 
 - **knowlab 是新应用 `knowlab-app`**（2026-10-16 所有者定，原话「是新应用」）：由 `tpl-app` 实例化（后端、用户网页、管理后台），自己的库、迁移链与对象存储；investment 工作台作为测试与运行平台，只存分身的标识与版本，经版本化接口取。见 `SDD/modules/0026-knowlab.md`「一之二」。
 
+- **分身的生长阶段与孵化方式**（2026-10-17。所有者：「我认为，A/B/C可能都要，但我们讨论我认为最佳的形式：在knowlab管理端的前台设计三种方案分别是A,B，c,由运营根据情况选择」「草稿的创建都由后端完成，但结果放哪里」「我觉得既然是bot，就从seed incubator infant到成品类似来定义」「整个流程和命名你提建议，我核」，Opus 拟、所有者核「行」）：阶段 **种子 → 孵化 → 雏形 → 成品**（代码 `seed`、`incubation`、`infant`、`knowbot`）；孵化由后端完成，三种方式 **手工孵化 / 辅助孵化 / 自动孵化** 都做，运营在 knowlab 管理端按情况选；孵化结果存在 knowlab 后端的孵化记录里（出处表、缺口与答复、清单候选各版、工程记录、模型调用记录），管理端孵化页看与改，缺口与「我们对你方法的理解」发到用户的 web端；方法包（pack，原「专家包」）。见 `turn/glossary.md`「分身的生长阶段」、`SDD/modules/0029-pack-authoring.md`、`knowbot-todolist.md` K1。
+
 - **一个应用三块的叫法**（2026-10-17 所有者定，原话「我们为了以后讨论方便，先规定：用户端成为web端，运营管理后台称管理端，backend成为后端」）：给用户的网页叫 **web端**（`<名>-web-frontend`），给运营的管理后台叫 **管理端**（`<名>-admin-frontend`），服务端程序叫 **后端**（`<名>-backend`）。见 `turn/glossary.md`。
 
 - **工作台改名 knowbench、runtime 仓改名 sunmoon-link**（2026-10-17 所有者定）：investment「实际上是测试平台和用户的bot的使用平台，不一定就是investment」，先选 incubator，后定「就用knowbench」；深度乙、现有数据不要从空的开始、文档目录 `dev-investment-agent/` 不改、relay 不改、P5 做完再改名（都「按你的建议」）。runtime 仓：所有者先提改 knowlink，Opus 查出与下条 2026-10-16 的决定冲突后给 A/B/C，所有者选 B——**仓名改为 sunmoon-link**，与本地代理英文名一致；命令、安装包、计划任务照下条在 R5 发新 Windows 包时改。所有者曾问能否保留 investment 另起 knowbench，听完两种做法后定「那算了，还正常改名吧」。见 `SDD/modules/0028-knowbench-rename.md`、`docs/rename.md`。
