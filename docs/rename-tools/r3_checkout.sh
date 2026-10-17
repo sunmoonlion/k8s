@@ -11,6 +11,8 @@
 # 子仓拨回同名分支。不用 mb worktree remove：git 不许摘下带子仓的工位。
 #
 # 可覆盖（演练用）：WS（工位列表）、MB（model-branch.sh 路径）。
+# 0028 新增：旧主目录没有 gitee remote 时（runtime）用 GITEE_PREFIX（如 https://gitee.com/sunmoonlion/）新建；
+# ORIGIN_PUSH_GITEE=1 时 origin 的推送地址里没有 gitee 就补一条（照这台机器上 knowbench-app 的布局：本地机有、远程机没有）。
 set -euo pipefail
 
 OLD=${1:?用法：bash r3_checkout.sh <旧名> <新名>}
@@ -41,10 +43,12 @@ say "备份目录 $B"
 
 # 地址一律从旧主目录取、只换仓名，不写死协议（远程机 GitHub 走 ssh，本地机走 https）
 GH=$(git -C "$HOME/master/$OLD" remote get-url origin); GH=${GH%"$OLD.git"}
-GE=$(git -C "$HOME/master/$OLD" remote get-url gitee);  GE=${GE%"$OLD.git"}
+GE=$(git -C "$HOME/master/$OLD" remote get-url gitee 2>/dev/null || true); GE=${GE%"$OLD.git"}
+[ -n "$GE" ] || GE=${GITEE_PREFIX:?停：$OLD 没有 gitee remote，要给 GITEE_PREFIX}
 S1=$(git -C "$HOME/master/$OLD" submodule foreach --quiet 'echo $sm_path' | sed -n 1p)
-SUB=$(git -C "$HOME/master/$OLD/$S1" remote get-url origin); SUB=${SUB%/*}/
+SUB=$GH; [ -z "$S1" ] || { SUB=$(git -C "$HOME/master/$OLD/$S1" remote get-url origin); SUB=${SUB%/*}/; }
 mapfile -t PUSH < <(git -C "$HOME/master/$OLD" remote get-url --push --all origin)
+if [ "${ORIGIN_PUSH_GITEE:-0}" = 1 ] && ! printf '%s\n' "${PUSH[@]}" | grep -qF "$GE"; then PUSH+=("${GE}$OLD.git"); fi
 CFG=(); case "$SUB" in git@*) CFG=(-c "url.${SUB}.insteadOf=https://github.com/sunmoonlion/");; esac
 say "GH=$GH GE=$GE SUB=$SUB"
 say "旧 origin 推送地址：${PUSH[*]}"
