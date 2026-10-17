@@ -100,7 +100,7 @@ bash /tmp/r0-perm.sh
    要看到 GitHub 5 个 `admin=true`；gitee 上哪几个仓存在照实写。gitee 改名用网页（sunmoonlion 登录）还是 API 令牌，写明用哪种；上次用的是 API 令牌，令牌只放 Qwen 本机，不进回执。遇到登录就停，请所有者自己输入。
 
 **停点**：Opus 收到 `R0-qwen` 并核完远程机，在本节「状态」写「开工」。
-**状态**：待做。远程机 2026-10-17 预核：cursor、fable、kimi、luna 四个工位的 `investment-app`、`runtime` 都 `ahead=0 dirty=0`；qwen 工位干净，有未推的本地提交（等第 2 条推）。
+**状态**：**开工** · 2026-10-17 · Opus。所有者确认其他工位不提交、Qwen 空着；Opus 推了 qwen 工位的本地提交（k8s `76685f52`、investment `287da3b`、knowlab `779058a` 及子仓），所有者跑了最后一次同步。Qwen `R0-qwen.20261017-1055.md`：本地机五工位两组仓与三个子仓全部 `ahead=0 dirty=0`、子仓在 origin 上；qwen 工位其余六仓干净；GitHub 5 仓 `admin=true`；gitee 5 仓都存在（含 runtime），改名用 API 令牌。远程机同一核对：五工位两组仓 `ahead=0 dirty=0`。记下待 R2 处理：gitee 上有 `runtime`，但两台机器的 runtime 都没配 gitee remote（gitee 那份可能是旧的）。改名窗口自此开始：不跑同步脚本，其他工位冻结，往来照「回执往来」。
 
 ---
 
