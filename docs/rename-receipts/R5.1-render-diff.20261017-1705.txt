@@ -1,0 +1,612 @@
+== 1. 不可变 Job：原样同名、内容变了（有一条就停）
+  共 0 条
+
+== 2. 对象统计：相同 388，有差异 41，只在旧 12，只在新 41
+
+== 3. 只在旧（换名后在新渲染里找不到）
+  - ConfigMap app-platform-dev/knowbase-identity-provision-v3   （gitops/components/app-platform/knowbase-app/knowbase-backend/identity/workload.yaml）
+  - ConfigMap app-platform-dev/knowbench-identity-provision-v3   （gitops/components/app-platform/investment-app/investment-backend/identity/workload.yaml）
+  - ConfigMap app-platform-dev/knowfeed-identity-provision-v3   （gitops/components/app-platform/knowfeed-app/knowfeed-backend/identity/workload.yaml）
+  - ConfigMap app-platform-dev/knowlab-identity-provision-v3   （gitops/components/app-platform/knowlab-app/knowlab-backend/identity/workload.yaml）
+  - ConfigMap app-platform-dev/knowmart-identity-provision-v3   （gitops/components/app-platform/knowmart-app/knowmart-backend/identity/workload.yaml）
+  - ConfigMap app-platform-dev/tpl-identity-provision-v3   （gitops/components/app-platform/tpl-app/tpl-backend/identity/workload.yaml）
+  - Job app-platform-dev/knowbase-identity-<d>-v3   （gitops/components/app-platform/knowbase-app/knowbase-backend/identity/workload.yaml）
+  - Job app-platform-dev/knowbench-identity-<d>-v3   （gitops/components/app-platform/investment-app/investment-backend/identity/workload.yaml）
+  - Job app-platform-dev/knowfeed-identity-<d>-v3   （gitops/components/app-platform/knowfeed-app/knowfeed-backend/identity/workload.yaml）
+  - Job app-platform-dev/knowlab-identity-<d>-v3   （gitops/components/app-platform/knowlab-app/knowlab-backend/identity/workload.yaml）
+  - Job app-platform-dev/knowmart-identity-<d>-v3   （gitops/components/app-platform/knowmart-app/knowmart-backend/identity/workload.yaml）
+  - Job app-platform-dev/tpl-identity-<d>-v3   （gitops/components/app-platform/tpl-app/tpl-backend/identity/workload.yaml）
+
+== 4. 只在新
+  + ConfigMap app-platform-dev/knowbase-identity-provision-v4   （gitops/components/app-platform/knowbase-app/knowbase-backend/identity/workload.yaml）
+  + ConfigMap app-platform-dev/knowbench-identity-provision-v4   （gitops/components/app-platform/knowbench-app/knowbench-backend/identity/workload.yaml）
+  + ConfigMap app-platform-dev/knowbench-knowlab-read-provision-v1   （gitops/components/app-platform/knowbench-app/knowbench-backend/knowlab-read-identity/workload.yaml）
+  + ConfigMap app-platform-dev/knowbench-knowmart-summon-provision-v1   （gitops/components/app-platform/knowbench-app/knowbench-backend/knowmart-summon-identity/workload.yaml）
+  + ConfigMap app-platform-dev/knowfeed-identity-provision-v4   （gitops/components/app-platform/knowfeed-app/knowfeed-backend/identity/workload.yaml）
+  + ConfigMap app-platform-dev/knowlab-identity-provision-v4   （gitops/components/app-platform/knowlab-app/knowlab-backend/identity/workload.yaml）
+  + ConfigMap app-platform-dev/knowlab-knowbench-testrun-provision-v1   （gitops/components/app-platform/knowlab-app/knowlab-backend/knowbench-testrun-identity/workload.yaml）
+  + ConfigMap app-platform-dev/knowlab-knowmart-deliver-provision-v1   （gitops/components/app-platform/knowlab-app/knowlab-backend/knowmart-deliver-identity/workload.yaml）
+  + ConfigMap app-platform-dev/knowlab-service-ca   （gitops/components/app-platform/knowlab-app/knowlab-backend/runtime/workload.yaml）
+  + ConfigMap app-platform-dev/knowmart-identity-provision-v4   （gitops/components/app-platform/knowmart-app/knowmart-backend/identity/workload.yaml）
+  + ConfigMap app-platform-dev/knowmart-service-ca   （gitops/components/app-platform/knowmart-app/knowmart-backend/runtime/workload.yaml）
+  + ConfigMap app-platform-dev/tpl-identity-provision-v4   （gitops/components/app-platform/tpl-app/tpl-backend/identity/workload.yaml）
+  + ConfigMap data-platform-dev/knowlab-storage-policy-v1   （gitops/components/app-platform/knowlab-app/knowlab-backend/storage/workload.yaml）
+  + Ingress app-platform-dev/knowbench-service-access   （gitops/components/ingress-platform/traefik/service-access/workload.yaml）
+  + Ingress app-platform-dev/knowlab-service-access   （gitops/components/ingress-platform/traefik/service-access/workload.yaml）
+  + Ingress app-platform-dev/knowmart-service-access   （gitops/components/ingress-platform/traefik/service-access/workload.yaml）
+  + Job app-platform-dev/knowbase-identity-<d>-v4   （gitops/components/app-platform/knowbase-app/knowbase-backend/identity/workload.yaml）
+  + Job app-platform-dev/knowbench-identity-<d>-v4   （gitops/components/app-platform/knowbench-app/knowbench-backend/identity/workload.yaml）
+  + Job app-platform-dev/knowbench-knowlab-read-identity-<d>-v1   （gitops/components/app-platform/knowbench-app/knowbench-backend/knowlab-read-identity/workload.yaml）
+  + Job app-platform-dev/knowbench-knowmart-summon-identity-<d>-v1   （gitops/components/app-platform/knowbench-app/knowbench-backend/knowmart-summon-identity/workload.yaml）
+  + Job app-platform-dev/knowfeed-identity-<d>-v4   （gitops/components/app-platform/knowfeed-app/knowfeed-backend/identity/workload.yaml）
+  + Job app-platform-dev/knowlab-identity-<d>-v4   （gitops/components/app-platform/knowlab-app/knowlab-backend/identity/workload.yaml）
+  + Job app-platform-dev/knowlab-knowbench-testrun-identity-<d>-v1   （gitops/components/app-platform/knowlab-app/knowlab-backend/knowbench-testrun-identity/workload.yaml）
+  + Job app-platform-dev/knowlab-knowmart-deliver-identity-<d>-v1   （gitops/components/app-platform/knowlab-app/knowlab-backend/knowmart-deliver-identity/workload.yaml）
+  + Job app-platform-dev/knowmart-identity-<d>-v4   （gitops/components/app-platform/knowmart-app/knowmart-backend/identity/workload.yaml）
+  + Job app-platform-dev/tpl-identity-<d>-v4   （gitops/components/app-platform/tpl-app/tpl-backend/identity/workload.yaml）
+  + Job data-platform-dev/knowlab-storage-v1   （gitops/components/app-platform/knowlab-app/knowlab-backend/storage/workload.yaml）
+  + Kustomization flux-system/knowbench-knowlab-read-identity   （gitops/clusters/kind/stages.yaml）
+  + Kustomization flux-system/knowbench-knowmart-summon-identity   （gitops/clusters/kind/stages.yaml）
+  + Kustomization flux-system/knowlab-knowbench-testrun-identity   （gitops/clusters/kind/stages.yaml）
+  + Kustomization flux-system/knowlab-knowmart-deliver-identity   （gitops/clusters/kind/stages.yaml）
+  + Kustomization flux-system/knowlab-storage   （gitops/clusters/kind/stages.yaml）
+  + NetworkPolicy app-platform-dev/knowbench-knowlab-read-provision-out   （gitops/components/app-platform/knowbench-app/knowbench-backend/knowlab-read-identity/workload.yaml）
+  + NetworkPolicy app-platform-dev/knowbench-knowmart-summon-provision-out   （gitops/components/app-platform/knowbench-app/knowbench-backend/knowmart-summon-identity/workload.yaml）
+  + NetworkPolicy app-platform-dev/knowlab-knowbench-testrun-provision-out   （gitops/components/app-platform/knowlab-app/knowlab-backend/knowbench-testrun-identity/workload.yaml）
+  + NetworkPolicy app-platform-dev/knowlab-knowmart-deliver-provision-out   （gitops/components/app-platform/knowlab-app/knowlab-backend/knowmart-deliver-identity/workload.yaml）
+  + NetworkPolicy app-platform-dev/knowlab-service-https-out   （gitops/components/app-platform/knowlab-app/knowlab-backend/runtime/workload.yaml）
+  + NetworkPolicy app-platform-dev/knowmart-service-https-out   （gitops/components/app-platform/knowmart-app/knowmart-backend/runtime/workload.yaml）
+  + Service app-platform-dev/knowbench-tls   （gitops/components/ingress-platform/traefik/service-access/workload.yaml）
+  + Service app-platform-dev/knowlab-tls   （gitops/components/ingress-platform/traefik/service-access/workload.yaml）
+  + Service app-platform-dev/knowmart-tls   （gitops/components/ingress-platform/traefik/service-access/workload.yaml）
+
+== 5. 有差异（旧的已换名；摘要与 config-sha256 已抹平）
+
+--- ConfigMap app-platform-dev/knowbase-browser-identity   （gitops/components/app-platform/knowbase-app/knowbase-backend/identity/workload.yaml）
+  @@ -2,2 +2,3 @@
+   data:
+  +  ADMIN_AUTH_ROLE_ALLOWLIST: admin,operator
+     ADMIN_CASDOOR_APPLICATION: sunmoonai-knowbase-admin
+
+--- ConfigMap app-platform-dev/knowbase-runtime   （gitops/components/app-platform/knowbase-app/knowbase-backend/runtime/workload.yaml）
+  @@ -13,3 +13,3 @@
+     CROSS_APP_TARGETS_JSON: '{"knowfeed": {"web_base_url": "https://knowfeed.sunmoonai.com:30443"}}'
+  -  DEPLOYMENT_ID: knowbase-backend-2047b5ba3716b656
+  +  DEPLOYMENT_ID: knowbase-backend-620796b591e4b7a6
+     ENV: production
+
+--- ConfigMap app-platform-dev/knowbench-browser-identity   （gitops/components/app-platform/knowbench-app/knowbench-backend/identity/workload.yaml）
+  @@ -2,2 +2,3 @@
+   data:
+  +  ADMIN_AUTH_ROLE_ALLOWLIST: admin,operator
+     ADMIN_CASDOOR_APPLICATION: sunmoonai-knowbench-admin
+
+--- ConfigMap app-platform-dev/knowbench-runtime   （gitops/components/app-platform/knowbench-app/knowbench-backend/runtime/workload.yaml）
+  @@ -2,3 +2,3 @@
+   data:
+  -  ALLOWED_HOSTS: localhost,127.0.0.1,knowbench-api,knowbench-api.app-platform-dev.svc.cluster.local,knowbench.sunmoonai.com,knowbench-admin.sunmoonai.com
+  +  ALLOWED_HOSTS: localhost,127.0.0.1,knowbench-api,knowbench-api.app-platform-dev.svc.cluster.local,knowbench.sunmoonai.com,knowbench-admin.sunmoonai.com,knowbench-tls.app-platform-dev.svc.cluster.local
+     APP_SLUG: knowbench
+  @@ -10,4 +10,5 @@
+     CROSS_APP_TARGETS_JSON: '{"knowfeed": {"web_base_url": "https://knowfeed.sunmoonai.com:30443"},
+  -    "knowbase": {"web_base_url": "https://knowbase.sunmoonai.com:30443"}}'
+  -  DEPLOYMENT_ID: knowbench-backend-5a752f0f38f36c0f
+  +    "knowbase": {"web_base_url": "https://knowbase.sunmoonai.com:30443"}, "knowmart":
+  +    {"web_base_url": "https://knowmart.sunmoonai.com:30443"}}'
+  +  DEPLOYMENT_ID: knowbench-backend-f38d8ddcbb06de59
+     ENV: production
+  @@ -19,2 +20,16 @@
+     KNOWBASE_RETRIEVAL_URL: https://knowbase-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowledge/retrievals
+  +  KNOWBOT_TEST_MONTHLY_LIMIT: '1000'
+  +  KNOWBOT_TEST_WORKSPACE: /workspace
+  +  KNOWLAB_INTERNAL_URL: https://knowlab-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowlab
+  +  KNOWLAB_READ_SERVICE_APPLICATION: sunmoonai-knowbench-knowlab-read
+  +  KNOWLAB_READ_SERVICE_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  +  KNOWLAB_READ_SERVICE_CLIENT_ID: sunmoon-knowbench-knowlab-read
+  +  KNOWLAB_READ_SERVICE_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  +  KNOWLAB_READ_SERVICE_SCOPE: knowlab:read
+  +  KNOWMART_INTERNAL_URL: https://knowmart-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowmart
+  +  KNOWMART_SUMMON_SERVICE_APPLICATION: sunmoonai-knowbench-knowmart-summon
+  +  KNOWMART_SUMMON_SERVICE_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  +  KNOWMART_SUMMON_SERVICE_CLIENT_ID: sunmoon-knowbench-knowmart-summon
+  +  KNOWMART_SUMMON_SERVICE_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  +  KNOWMART_SUMMON_SERVICE_SCOPE: knowmart:summon
+     REDIS_DB: '0'
+  @@ -23,2 +38,9 @@
+     REFERENCE_INTERACTION_ENABLED: 'false'
+  +  SERVICE_AUTH_TESTRUN_CALLERS: knowlab
+  +  SERVICE_AUTH_TESTRUN_KNOWLAB_AUDIENCE: sunmoon-knowlab-knowbench-testrun
+  +  SERVICE_AUTH_TESTRUN_KNOWLAB_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  +  SERVICE_AUTH_TESTRUN_KNOWLAB_CASDOOR_APPLICATION: sunmoonai-knowlab-knowbench-testrun
+  +  SERVICE_AUTH_TESTRUN_KNOWLAB_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  +  SERVICE_AUTH_TESTRUN_KNOWLAB_REQUIRED_SCOPE: knowbench:testrun
+  +  SERVICE_AUTH_TESTRUN_KNOWLAB_SUBJECT_ALLOWLIST: admin/sunmoonai-knowlab-knowbench-testrun
+     SESSION_COOKIE_SECURE: 'true'
+
+--- ConfigMap app-platform-dev/knowfeed-browser-identity   （gitops/components/app-platform/knowfeed-app/knowfeed-backend/identity/workload.yaml）
+  @@ -2,2 +2,3 @@
+   data:
+  +  ADMIN_AUTH_ROLE_ALLOWLIST: admin,operator
+     ADMIN_CASDOOR_APPLICATION: sunmoonai-knowfeed-admin
+
+--- ConfigMap app-platform-dev/knowfeed-runtime   （gitops/components/app-platform/knowfeed-app/knowfeed-backend/runtime/workload.yaml）
+  @@ -12,3 +12,3 @@
+     CROSS_APP_TARGETS_JSON: '{"knowbase": {"web_base_url": "https://knowbase.sunmoonai.com:30443"}}'
+  -  DEPLOYMENT_ID: knowfeed-backend-1d02d7ec153a0223
+  +  DEPLOYMENT_ID: knowfeed-backend-b9c9628ec5b949f9
+     ENV: production
+
+--- ConfigMap app-platform-dev/knowlab-browser-identity   （gitops/components/app-platform/knowlab-app/knowlab-backend/identity/workload.yaml）
+  @@ -2,2 +2,3 @@
+   data:
+  +  ADMIN_AUTH_ROLE_ALLOWLIST: admin,operator
+     ADMIN_CASDOOR_APPLICATION: sunmoonai-knowlab-admin
+
+--- ConfigMap app-platform-dev/knowlab-runtime   （gitops/components/app-platform/knowlab-app/knowlab-backend/runtime/workload.yaml）
+  @@ -2,4 +2,5 @@
+   data:
+  -  ALLOWED_HOSTS: localhost,127.0.0.1,knowlab-api,knowlab-api.app-platform-dev.svc.cluster.local,knowlab.sunmoonai.com,knowlab-admin.sunmoonai.com
+  +  ALLOWED_HOSTS: localhost,127.0.0.1,knowlab-api,knowlab-api.app-platform-dev.svc.cluster.local,knowlab.sunmoonai.com,knowlab-admin.sunmoonai.com,knowlab-tls.app-platform-dev.svc.cluster.local
+     APP_SLUG: knowlab
+  +  AWS_CA_BUNDLE: /etc/sunmoon/object-storage/ca.crt
+     CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor.app-platform-dev.svc.cluster.local:8000
+  @@ -8,4 +9,16 @@
+     CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
+  -  DEPLOYMENT_ID: knowlab-backend-e4987b12b5cb18b9
+  +  DEPLOYMENT_ID: knowlab-backend-2845ca9fa055b682
+     ENV: production
+  +  KNOWBENCH_INTERNAL_URL: https://knowbench-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowbot-runtime
+  +  KNOWBENCH_TESTRUN_SERVICE_APPLICATION: sunmoonai-knowlab-knowbench-testrun
+  +  KNOWBENCH_TESTRUN_SERVICE_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  +  KNOWBENCH_TESTRUN_SERVICE_CLIENT_ID: sunmoon-knowlab-knowbench-testrun
+  +  KNOWBENCH_TESTRUN_SERVICE_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  +  KNOWBENCH_TESTRUN_SERVICE_SCOPE: knowbench:testrun
+  +  KNOWMART_DELIVER_SERVICE_APPLICATION: sunmoonai-knowlab-knowmart-deliver
+  +  KNOWMART_DELIVER_SERVICE_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  +  KNOWMART_DELIVER_SERVICE_CLIENT_ID: sunmoon-knowlab-knowmart-deliver
+  +  KNOWMART_DELIVER_SERVICE_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  +  KNOWMART_DELIVER_SERVICE_SCOPE: knowmart:deliver
+  +  KNOWMART_INTERNAL_URL: https://knowmart-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowmart
+     REDIS_DB: '0'
+  @@ -14,3 +27,18 @@
+     REFERENCE_INTERACTION_ENABLED: 'false'
+  +  S3_BUCKET: knowlab-originals
+  +  S3_ENDPOINT: https://object-storage.data-platform-dev.svc.cluster.local:9000
+  +  S3_FORCE_PATH_STYLE: 'true'
+  +  S3_REGION: us-east-1
+  +  S3_USE_TLS: 'true'
+  +  SERVICE_AUTH_READ_CALLERS: knowbench
+  +  SERVICE_AUTH_READ_KNOWBENCH_AUDIENCE: sunmoon-knowbench-knowlab-read
+  +  SERVICE_AUTH_READ_KNOWBENCH_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  +  SERVICE_AUTH_READ_KNOWBENCH_CASDOOR_APPLICATION: sunmoonai-knowbench-knowlab-read
+  +  SERVICE_AUTH_READ_KNOWBENCH_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  +  SERVICE_AUTH_READ_KNOWBENCH_REQUIRED_SCOPE: knowlab:read
+  +  SERVICE_AUTH_READ_KNOWBENCH_SUBJECT_ALLOWLIST: admin/sunmoonai-knowbench-knowlab-read
+     SESSION_COOKIE_SECURE: 'true'
+  +  SSL_CERT_FILE: /etc/sunmoon/service/ca.crt
+  +  STORAGE_BACKEND: s3
+  +  WEB_AUTH_ALLOWED_RETURN_PATHS: /zh-CN/dashboard,/en/dashboard,/zh-CN/login,/en/login,/zh-CN/knowbots,/en/knowbots
+   kind: ConfigMap
+
+--- ConfigMap app-platform-dev/knowmart-browser-identity   （gitops/components/app-platform/knowmart-app/knowmart-backend/identity/workload.yaml）
+  @@ -2,2 +2,3 @@
+   data:
+  +  ADMIN_AUTH_ROLE_ALLOWLIST: admin,operator
+     ADMIN_CASDOOR_APPLICATION: sunmoonai-knowmart-admin
+
+--- ConfigMap app-platform-dev/knowmart-runtime   （gitops/components/app-platform/knowmart-app/knowmart-backend/runtime/workload.yaml）
+  @@ -2,3 +2,3 @@
+   data:
+  -  ALLOWED_HOSTS: localhost,127.0.0.1,knowmart-api,knowmart-api.app-platform-dev.svc.cluster.local,knowmart.sunmoonai.com,knowmart-admin.sunmoonai.com
+  +  ALLOWED_HOSTS: localhost,127.0.0.1,knowmart-api,knowmart-api.app-platform-dev.svc.cluster.local,knowmart.sunmoonai.com,knowmart-admin.sunmoonai.com,knowmart-tls.app-platform-dev.svc.cluster.local
+     APP_SLUG: knowmart
+  @@ -8,3 +8,6 @@
+     CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
+  -  DEPLOYMENT_ID: knowmart-backend-a477d934e3380d74
+  +  CROSS_APP_SOURCES_JSON: '{"knowbench": {"return_url": "https://knowbench.sunmoonai.com:30443/zh-CN/workbench?ref={ref}"},
+  +    "knowbase": {}, "knowfeed": {}}'
+  +  CROSS_APP_TARGETS_JSON: '{}'
+  +  DEPLOYMENT_ID: knowmart-backend-700050c0f49d5ec7
+     ENV: production
+  @@ -14,3 +17,19 @@
+     REFERENCE_INTERACTION_ENABLED: 'false'
+  +  SERVICE_AUTH_DELIVER_CALLERS: knowlab
+  +  SERVICE_AUTH_DELIVER_KNOWLAB_AUDIENCE: sunmoon-knowlab-knowmart-deliver
+  +  SERVICE_AUTH_DELIVER_KNOWLAB_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  +  SERVICE_AUTH_DELIVER_KNOWLAB_CASDOOR_APPLICATION: sunmoonai-knowlab-knowmart-deliver
+  +  SERVICE_AUTH_DELIVER_KNOWLAB_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  +  SERVICE_AUTH_DELIVER_KNOWLAB_REQUIRED_SCOPE: knowmart:deliver
+  +  SERVICE_AUTH_DELIVER_KNOWLAB_SUBJECT_ALLOWLIST: admin/sunmoonai-knowlab-knowmart-deliver
+  +  SERVICE_AUTH_SUMMON_CALLERS: knowbench
+  +  SERVICE_AUTH_SUMMON_KNOWBENCH_AUDIENCE: sunmoon-knowbench-knowmart-summon
+  +  SERVICE_AUTH_SUMMON_KNOWBENCH_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  +  SERVICE_AUTH_SUMMON_KNOWBENCH_CASDOOR_APPLICATION: sunmoonai-knowbench-knowmart-summon
+  +  SERVICE_AUTH_SUMMON_KNOWBENCH_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  +  SERVICE_AUTH_SUMMON_KNOWBENCH_REQUIRED_SCOPE: knowmart:summon
+  +  SERVICE_AUTH_SUMMON_KNOWBENCH_SUBJECT_ALLOWLIST: admin/sunmoonai-knowbench-knowmart-summon
+     SESSION_COOKIE_SECURE: 'true'
+  +  SSL_CERT_FILE: /etc/sunmoon/service/ca.crt
+  +  WEB_AUTH_ALLOWED_RETURN_PATHS: /zh-CN/dashboard,/en/dashboard,/zh-CN/login,/en/login,/zh-CN/knowbots,/en/knowbots
+   kind: ConfigMap
+
+--- ConfigMap app-platform-dev/tpl-browser-identity   （gitops/components/app-platform/tpl-app/tpl-backend/identity/workload.yaml）
+  @@ -2,2 +2,3 @@
+   data:
+  +  ADMIN_AUTH_ROLE_ALLOWLIST: admin,operator
+     ADMIN_CASDOOR_APPLICATION: sunmoonai-tpl-admin
+
+--- ConfigMap app-platform-dev/tpl-runtime   （gitops/components/app-platform/tpl-app/tpl-backend/runtime/workload.yaml）
+  @@ -8,3 +8,3 @@
+     CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
+  -  DEPLOYMENT_ID: tpl-backend-9fbd424ed4d53599
+  +  DEPLOYMENT_ID: tpl-backend-395b14bed28e4f72
+     ENV: production
+
+--- Deployment app-platform-dev/casdoor   （gitops/components/app-platform/auth-app/casdoor/workload.yaml）
+  @@ -14,2 +14,3 @@
+       metadata:
+  +      annotations: {}
+         labels:
+  @@ -67,2 +68,6 @@
+             name: tmp
+  +      dnsConfig:
+  +        options:
+  +        - name: ndots
+  +          value: '2'
+         nodeSelector:
+
+--- Deployment app-platform-dev/knowbase-admin   （gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: knowbase-admin-frontend-c82cc80054d66327
+  +          value: knowbase-admin-frontend-7cf919aee4e9e495
+           - name: HOSTNAME
+
+--- Deployment app-platform-dev/knowbase-web   （gitops/components/app-platform/knowbase-app/knowbase-web-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: knowbase-web-frontend-1a8a50c7d54a2a1f
+  +          value: knowbase-web-frontend-90b111bfc0ed19c9
+           - name: HOSTNAME
+
+--- Deployment app-platform-dev/knowbench-admin   （gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: knowbench-admin-frontend-1bed23812e863fad
+  +          value: knowbench-admin-frontend-73cb55e1ad574042
+           - name: HOSTNAME
+
+--- Deployment app-platform-dev/knowbench-api   （gitops/components/app-platform/knowbench-app/knowbench-backend/runtime/workload.yaml）
+  @@ -72,2 +72,6 @@
+               name: knowbench-knowbase-service
+  +        - secretRef:
+  +            name: knowbench-knowmart-summon-service
+  +        - secretRef:
+  +            name: knowbench-knowlab-read-service
+           - secretRef:
+
+--- Deployment app-platform-dev/knowbench-web   （gitops/components/app-platform/knowbench-app/knowbench-web-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: knowbench-web-frontend-e37a5ae09e9e45b0
+  +          value: knowbench-web-frontend-68b05ec0aed436c3
+           - name: HOSTNAME
+
+--- Deployment app-platform-dev/knowbench-worker   （gitops/components/app-platform/knowbench-app/knowbench-backend/runtime/workload.yaml）
+  @@ -61,2 +61,6 @@
+               name: knowbench-knowbase-service
+  +        - secretRef:
+  +            name: knowbench-knowmart-summon-service
+  +        - secretRef:
+  +            name: knowbench-knowlab-read-service
+           image: harbor.sunmoonai.com:30443/platform/knowbench-backend@sha256:<d>
+
+--- Deployment app-platform-dev/knowfeed-admin   （gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: knowfeed-admin-frontend-24b08655b67f71eb
+  +          value: knowfeed-admin-frontend-a49ea3ac18d051f1
+           - name: HOSTNAME
+
+--- Deployment app-platform-dev/knowfeed-web   （gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: knowfeed-web-frontend-389767a7ac6b6e81
+  +          value: knowfeed-web-frontend-ab0bd3a9a08eef27
+           - name: HOSTNAME
+
+--- Deployment app-platform-dev/knowlab-admin   （gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: knowlab-admin-frontend-d52d03481dbaa768
+  +          value: knowlab-admin-frontend-69cadfe6e9876106
+           - name: HOSTNAME
+
+--- Deployment app-platform-dev/knowlab-api   （gitops/components/app-platform/knowlab-app/knowlab-backend/runtime/workload.yaml）
+  @@ -23,2 +23,3 @@
+           app.kubernetes.io/part-of: knowlab
+  +        sunmoonai.com/object-storage-client: 'true'
+           sunmoonai.com/postgresql-client: 'true'
+  @@ -67,2 +68,8 @@
+               name: knowlab-browser-secrets
+  +        - secretRef:
+  +            name: knowlab-storage-runtime
+  +        - secretRef:
+  +            name: knowlab-knowmart-deliver-service
+  +        - secretRef:
+  +            name: knowlab-knowbench-testrun-service
+           image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:<d>
+  @@ -94,6 +101,6 @@
+               cpu: '2'
+  -            memory: 768Mi
+  +            memory: 1536Mi
+             requests:
+               cpu: 100m
+  -            memory: 192Mi
+  +            memory: 256Mi
+           securityContext:
+  @@ -114,2 +121,8 @@
+           volumeMounts:
+  +        - mountPath: /etc/sunmoon/service
+  +          name: service-ca
+  +          readOnly: true
+  +        - mountPath: /etc/sunmoon/object-storage
+  +          name: storage-ca
+  +          readOnly: true
+           - mountPath: /tmp
+  @@ -133,4 +146,13 @@
+         volumes:
+  +      - configMap:
+  +          name: knowlab-service-ca
+  +        name: service-ca
+  +      - name: storage-ca
+  +        secret:
+  +          items:
+  +          - key: ca.crt
+  +            path: ca.crt
+  +          secretName: knowlab-storage-runtime
+         - emptyDir:
+  -          sizeLimit: 64Mi
+  +          sizeLimit: 256Mi
+           name: tmp
+
+--- Deployment app-platform-dev/knowlab-scheduler   （gitops/components/app-platform/knowlab-app/knowlab-backend/runtime/workload.yaml）
+  @@ -20,2 +20,3 @@
+           app.kubernetes.io/part-of: knowlab
+  +        sunmoonai.com/object-storage-client: 'true'
+           sunmoonai.com/postgresql-client: 'true'
+  @@ -57,2 +58,4 @@
+               name: knowlab-rabbitmq-runtime
+  +        - secretRef:
+  +            name: knowlab-storage-runtime
+           image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:<d>
+  @@ -99,2 +102,8 @@
+           volumeMounts:
+  +        - mountPath: /etc/sunmoon/service
+  +          name: service-ca
+  +          readOnly: true
+  +        - mountPath: /etc/sunmoon/object-storage
+  +          name: storage-ca
+  +          readOnly: true
+           - mountPath: /tmp
+  @@ -118,4 +127,13 @@
+         volumes:
+  +      - configMap:
+  +          name: knowlab-service-ca
+  +        name: service-ca
+  +      - name: storage-ca
+  +        secret:
+  +          items:
+  +          - key: ca.crt
+  +            path: ca.crt
+  +          secretName: knowlab-storage-runtime
+         - emptyDir:
+  -          sizeLimit: 64Mi
+  +          sizeLimit: 256Mi
+           name: tmp
+
+--- Deployment app-platform-dev/knowlab-web   （gitops/components/app-platform/knowlab-app/knowlab-web-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: knowlab-web-frontend-d1cc538ae30a760b
+  +          value: knowlab-web-frontend-2f26deb10a9ada14
+           - name: HOSTNAME
+
+--- Deployment app-platform-dev/knowlab-worker   （gitops/components/app-platform/knowlab-app/knowlab-backend/runtime/workload.yaml）
+  @@ -23,2 +23,3 @@
+           app.kubernetes.io/part-of: knowlab
+  +        sunmoonai.com/object-storage-client: 'true'
+           sunmoonai.com/postgresql-client: 'true'
+  @@ -59,2 +60,8 @@
+               name: knowlab-rabbitmq-runtime
+  +        - secretRef:
+  +            name: knowlab-storage-runtime
+  +        - secretRef:
+  +            name: knowlab-knowmart-deliver-service
+  +        - secretRef:
+  +            name: knowlab-knowbench-testrun-service
+           image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:<d>
+  @@ -93,2 +100,8 @@
+           volumeMounts:
+  +        - mountPath: /etc/sunmoon/service
+  +          name: service-ca
+  +          readOnly: true
+  +        - mountPath: /etc/sunmoon/object-storage
+  +          name: storage-ca
+  +          readOnly: true
+           - mountPath: /tmp
+  @@ -112,4 +125,13 @@
+         volumes:
+  +      - configMap:
+  +          name: knowlab-service-ca
+  +        name: service-ca
+  +      - name: storage-ca
+  +        secret:
+  +          items:
+  +          - key: ca.crt
+  +            path: ca.crt
+  +          secretName: knowlab-storage-runtime
+         - emptyDir:
+  -          sizeLimit: 64Mi
+  +          sizeLimit: 256Mi
+           name: tmp
+
+--- Deployment app-platform-dev/knowmart-admin   （gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: knowmart-admin-frontend-2163bd33bbca0299
+  +          value: knowmart-admin-frontend-b54f30e01ee1465f
+           - name: HOSTNAME
+
+--- Deployment app-platform-dev/knowmart-api   （gitops/components/app-platform/knowmart-app/knowmart-backend/runtime/workload.yaml）
+  @@ -114,2 +114,5 @@
+           volumeMounts:
+  +        - mountPath: /etc/sunmoon/service
+  +          name: service-ca
+  +          readOnly: true
+           - mountPath: /tmp
+  @@ -133,2 +136,5 @@
+         volumes:
+  +      - configMap:
+  +          name: knowmart-service-ca
+  +        name: service-ca
+         - emptyDir:
+
+--- Deployment app-platform-dev/knowmart-scheduler   （gitops/components/app-platform/knowmart-app/knowmart-backend/runtime/workload.yaml）
+  @@ -99,2 +99,5 @@
+           volumeMounts:
+  +        - mountPath: /etc/sunmoon/service
+  +          name: service-ca
+  +          readOnly: true
+           - mountPath: /tmp
+  @@ -118,2 +121,5 @@
+         volumes:
+  +      - configMap:
+  +          name: knowmart-service-ca
+  +        name: service-ca
+         - emptyDir:
+
+--- Deployment app-platform-dev/knowmart-web   （gitops/components/app-platform/knowmart-app/knowmart-web-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: knowmart-web-frontend-fe6a9685534bbfe7
+  +          value: knowmart-web-frontend-0d9ba7d40fb68d26
+           - name: HOSTNAME
+
+--- Deployment app-platform-dev/knowmart-worker   （gitops/components/app-platform/knowmart-app/knowmart-backend/runtime/workload.yaml）
+  @@ -93,2 +93,5 @@
+           volumeMounts:
+  +        - mountPath: /etc/sunmoon/service
+  +          name: service-ca
+  +          readOnly: true
+           - mountPath: /tmp
+  @@ -112,2 +115,5 @@
+         volumes:
+  +      - configMap:
+  +          name: knowmart-service-ca
+  +        name: service-ca
+         - emptyDir:
+
+--- Deployment app-platform-dev/tpl-admin   （gitops/components/app-platform/tpl-app/tpl-admin-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: tpl-admin-frontend-267660e9150b04fe
+  +          value: tpl-admin-frontend-f2e8ca667609c0a9
+           - name: HOSTNAME
+
+--- Deployment app-platform-dev/tpl-web   （gitops/components/app-platform/tpl-app/tpl-web-frontend/workload.yaml）
+  @@ -37,3 +37,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: tpl-web-frontend-aeeb2074cfea6058
+  +          value: tpl-web-frontend-a7cf0f3844d1dfc7
+           - name: HOSTNAME
+
+--- Job app-platform-dev/knowbase-migrate-<d>-v2   （gitops/components/app-platform/knowbase-app/knowbase-backend/migration/workload.yaml）
+  @@ -26,3 +26,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: 1d8fa105cf4469df507c50664ba4c2ead37cac1a
+  +          value: 6d71e108d7c814d0f5d6db777bdc4d3d6752b426
+           - name: ADMIN_FRONTEND_BASE_URL
+
+--- Job app-platform-dev/knowbench-migrate-<d>-v7   （gitops/components/app-platform/knowbench-app/knowbench-backend/migration/workload.yaml）
+  @@ -26,3 +26,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: a6e6ceb2c0c70204ec11295fa9088e5eb53701ac
+  +          value: cc95605c6f789aba1560a0f0f2abf9fca45577ed
+           - name: ADMIN_FRONTEND_BASE_URL
+  @@ -32,3 +32,3 @@
+           - name: EXPECTED_SCHEMA_REVISION
+  -          value: '20261012_0018'
+  +          value: '20261017_0020'
+           envFrom:
+
+--- Job app-platform-dev/knowfeed-migrate-<d>-v3   （gitops/components/app-platform/knowfeed-app/knowfeed-backend/migration/workload.yaml）
+  @@ -26,3 +26,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: ecce5c797d69565c1d24b903d4d4d61615e99a63
+  +          value: 5a287ac838ced8798f8f6179c59a506facf9a4d8
+           - name: ADMIN_FRONTEND_BASE_URL
+
+--- Job app-platform-dev/knowlab-migrate-<d>-v1   （gitops/components/app-platform/knowlab-app/knowlab-backend/migration/workload.yaml）
+  @@ -26,3 +26,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: a984354c1163e26a34ddd5601c2c428fa36c1f74
+  +          value: 8731c9d6178731b5eb66f383d6d6bfb23b132bac
+           - name: ADMIN_FRONTEND_BASE_URL
+  @@ -32,3 +32,3 @@
+           - name: EXPECTED_SCHEMA_REVISION
+  -          value: '20260911_0003'
+  +          value: '20261016_0006'
+           envFrom:
+
+--- Job app-platform-dev/knowmart-migrate-<d>-v1   （gitops/components/app-platform/knowmart-app/knowmart-backend/migration/workload.yaml）
+  @@ -26,3 +26,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: 22fa40077424c5da0c56993ca3915ccae918960f
+  +          value: bfeb2aee7af1c8d3bcdba2973d632198101b8f69
+           - name: ADMIN_FRONTEND_BASE_URL
+  @@ -32,3 +32,3 @@
+           - name: EXPECTED_SCHEMA_REVISION
+  -          value: '20260911_0003'
+  +          value: '20261016_0004'
+           envFrom:
+
+--- Job app-platform-dev/tpl-migrate-<d>-v1   （gitops/components/app-platform/tpl-app/tpl-backend/migration/workload.yaml）
+  @@ -26,3 +26,3 @@
+           - name: DEPLOYMENT_ID
+  -          value: 3c3d252be417a52b2e2bfb0a3cb09e68c6d1cb0f
+  +          value: ab7139389cbc40a04459a3403ffc5ee4c8e26d89
+           - name: ADMIN_FRONTEND_BASE_URL
+
+--- Kustomization flux-system/knowbench-runtime   （gitops/clusters/kind/stages.yaml）
+  @@ -15,2 +15,4 @@
+     - name: knowbench-service-identity
+  +  - name: knowbench-knowmart-summon-identity
+  +  - name: knowbench-knowlab-read-identity
+     interval: 5m
+
+--- Kustomization flux-system/knowlab-runtime   （gitops/clusters/kind/stages.yaml）
+  @@ -13,2 +13,5 @@
+     - name: knowlab-identity
+  +  - name: knowlab-storage
+  +  - name: knowlab-knowmart-deliver-identity
+  +  - name: knowlab-knowbench-testrun-identity
+     interval: 5m
+
+== 6. 加密秘密与镜像锁（只比在不在；内容每次都不同）
+  + gitops/components/app-platform/knowbench-app/knowbench-backend/knowlab-read-identity/provision.sops.yaml
+  + gitops/components/app-platform/knowbench-app/knowbench-backend/knowmart-summon-identity/provision.sops.yaml
+  + gitops/components/app-platform/knowbench-app/knowbench-backend/runtime/knowlab-read-service.sops.yaml
+  + gitops/components/app-platform/knowbench-app/knowbench-backend/runtime/knowmart-summon-service.sops.yaml
+  + gitops/components/app-platform/knowlab-app/knowlab-backend/knowbench-testrun-identity/provision.sops.yaml
+  + gitops/components/app-platform/knowlab-app/knowlab-backend/knowmart-deliver-identity/provision.sops.yaml
+  + gitops/components/app-platform/knowlab-app/knowlab-backend/runtime/knowbench-testrun-service.sops.yaml
+  + gitops/components/app-platform/knowlab-app/knowlab-backend/runtime/knowmart-deliver-service.sops.yaml
+  + gitops/components/app-platform/knowlab-app/knowlab-backend/runtime/storage.sops.yaml
+  + gitops/components/app-platform/knowlab-app/knowlab-backend/storage/provision.sops.yaml
+  + gitops/components/ingress-platform/traefik/service-access/tls-knowbench.sops.yaml
+  + gitops/components/ingress-platform/traefik/service-access/tls-knowlab.sops.yaml
+  + gitops/components/ingress-platform/traefik/service-access/tls-knowmart.sops.yaml
+  两边都有 144 个
+
+exit=0
