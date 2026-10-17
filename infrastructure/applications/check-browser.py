@@ -10,6 +10,15 @@ import sys
 from urllib.parse import parse_qs, urlencode, urlsplit
 
 
+# 管理员读得出的一张管理端列表（只读）。后端认管理角色（账 134）部署之后才加进来：
+# knowlab、knowbench 随 qwen-005；knowfeed（/api/admin/security-requests）、
+# knowbase（/api/admin/v1/knowledge/datasets）等各自下次部署时加
+ADMIN_LISTS = {
+    'knowlab': '/api/admin/v1/knowbot-drafts',
+    'knowbench': '/api/admin/v1/workbench/missing-data',
+}
+
+
 def require(value, label):
     if not value:
         raise RuntimeError(label)
@@ -159,8 +168,17 @@ def _check_surfaces(settings, Browser, member, outcomes):
         status, _, _ = browser.request(origin + '/api/auth/' + opposite + '/me')
         require(status == 401, surface + ': cross-surface session accepted')
         headers = {'Origin': origin, 'X-CSRF-Token': session['csrf_token']}
-        permission_denied = None
-        if surface == 'admin' and settings['application'] + ':admin' not in session['user']['scopes']:
+        permission_denied = admin_list_read = None
+        # 管理员 = 白名单里的管理角色（admin、operator，待办 98）或带「应用名:admin」权限（账 134）。
+        # 管理员读一张管理端列表（只读、不派任务），读得出才算管理端能用；不是管理员的，诊断接口必须 403
+        privileged = surface == 'admin' and (
+            settings['application'] + ':admin' in session['user']['scopes'] or
+            bool(set(session['user'].get('roles') or []) & {'admin', 'operator'}))
+        if privileged and settings['application'] in ADMIN_LISTS:
+            status, _, _ = browser.request(origin + ADMIN_LISTS[settings['application']])
+            require(status == 200, 'Administrator could not read the admin console list')
+            admin_list_read = True
+        if surface == 'admin' and not privileged:
             status, _, _ = browser.request(origin + '/api/admin/v1/diagnostics/tasks/ping',
                                           method='POST', headers=headers)
             require(status == 403, 'Unprivileged browser could invoke administrator diagnostic')
@@ -203,6 +221,7 @@ def _check_surfaces(settings, Browser, member, outcomes):
         outcomes[surface] = {'pkce_callback': True, 'authenticated_ssr': True,
             'secure_cookie': True, 'cross_surface_denied': True, 'csrf_required': True,
             'logout_revoked': True, 'unprivileged_admin_diagnostic_denied': permission_denied,
+            'admin_list_read': admin_list_read,
             'user_organization_denied': True if surface == 'admin' and member is not None else None}
     return install_issued
 
