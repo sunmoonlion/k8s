@@ -575,6 +575,41 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 >
 > 要看到：四个 Job 重建后 `succeeded` 都是 1；`wait exit=0`；`get kustomizations | grep -v True` 只剩表头与 `investment-*`；那几个 Deployment 都满。`apply` 若又是等根 Kustomization 超时、但随后 `wait` 全 Ready，算过（它只是等根的那 600 秒），照实写进回执。重建的 Job 又失败就停（贴它的日志与事件）。之后接着做第 1 步块末尾的 identity 两个字段核对与 `git push`（没有新提交时 push 什么也不做），再做第 2–5 步。回执写新的 `R5.2-qwen.<时间>.md`，取证那段整段贴上。
 
+> 2026-10-17 第二次（`R5.2-qwen.20261017-1830.md`）：取证推翻了「一时连不上」——**五个**服务身份注册 Job 都失败（`knowlab-knowmart-deliver` 也是，Opus 先前看漏）；在 knowmart-api 里连 `casdoor-tls` 报 `CERTIFICATE_VERIFY_FAILED: self-signed certificate`。内部入口的证书都由平台 CA 签（`infrastructure/components/tasks/tls-identity.yaml`），客户端带的也是平台 CA，所以出示「自签」证书说明 **traefik 对这个域名没用上我们的证书、出示的是它自带的默认证书**。另一件：knowlab-api 一直 `SchemaNotReady`，库的版本不等于这一版要的 `20261016_0006`，即 knowlab 的迁移没在现网库上跑到头。**都要看集群里的实情，Opus 远程看不到。没删任何东西是对的。**
+>
+> **第二次取证（只读，什么都不改；证书只看公开的那一半，不碰 `tls.key`）**：
+>
+> ```bash
+> cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+> export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl); NS=app-platform-dev
+> echo "===== A1 traefik 日志里的证书与入口错误"
+> $K -n ingress-platform-dev logs deploy/traefik --since=3h | grep -iE 'error|tls|certificate|secret' | tail -40
+> echo "===== A2 内部入口的密文与 Ingress"
+> $K -n $NS get secret | grep service-access
+> $K -n $NS get ingress | grep service-access
+> echo "===== A3 每张内部入口证书是谁签的、给哪些域名"
+> for s in service-access-tls service-access-knowbench-tls service-access-knowlab-tls service-access-knowmart-tls; do
+>   echo "== $s"; $K -n $NS get secret $s -o jsonpath='{.data.tls\.crt}' | base64 -d | openssl x509 -noout -subject -issuer -enddate -ext subjectAltName 2>&1
+> done
+> echo "===== A4 traefik 实际出示的证书（不校验，只看是谁）"
+> for h in casdoor-tls knowbase-tls knowmart-tls knowlab-tls; do
+>   echo "== $h"
+>   $K -n $NS exec deploy/knowmart-api -- python -c "import ssl, socket; h = '$h.app-platform-dev.svc.cluster.local'; c = ssl.create_default_context(); c.check_hostname = False; c.verify_mode = ssl.CERT_NONE; s = c.wrap_socket(socket.create_connection((h, 443), timeout=10), server_hostname=h); print(ssl.DER_cert_to_PEM_cert(s.getpeercert(True)))" | openssl x509 -noout -subject -issuer 2>&1
+> done
+> echo "===== A5 客户端带的 CA"
+> $K -n $NS get configmap knowmart-service-ca -o jsonpath='{.data.ca\.crt}' | openssl x509 -noout -subject -issuer
+> echo "===== A6 traefik 的入口类与它认的 Ingress 类"
+> $K get ingressclass
+> $K -n ingress-platform-dev get deploy traefik -o jsonpath='{.spec.template.spec.containers[0].args}' | tr ',' '\n' | grep -iE 'ingress|kubernetes|provider' 
+> echo "===== B1 knowlab 的迁移"
+> $K -n $NS get jobs | grep -E 'knowlab-(migrate|storage)'
+> $K -n flux-system get kustomizations | grep -E 'NAME|knowlab'
+> for j in $($K -n $NS get jobs -o name | grep knowlab-migrate); do echo "== $j"; $K -n $NS get $j -o jsonpath='{.metadata.creationTimestamp} {.status.completionTime} {.spec.template.spec.containers[0].image}{"\n"}'; $K -n $NS logs $j --tail=8 2>&1 | grep -viE 'password|secret|token'; done
+> $K -n $NS get deploy knowlab-api -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+> ```
+>
+> 全部原样贴进回执 `R5.2-qwen.<时间>.md` 推上来，然后停。Opus 看了再定怎么修。
+
 **停点**：Qwen 的 `R5.2-qwen` 与 Opus 的 `R5.2-opus` 都审过，在本节写「通过」。
 **状态**：**可执行（第 1–5 步）** · 2026-10-17 · Opus；第 6 步所有者 2026-10-17 已批准（「按你建议」），Qwen 的回执审过后 Opus 做。
 
