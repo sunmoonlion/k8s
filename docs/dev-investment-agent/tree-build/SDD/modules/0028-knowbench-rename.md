@@ -1,6 +1,6 @@
 # 工作台应用改名：investment → knowbench（0028）
 
-> 状态：**已定，待实施**。所有者 2026-10-17 提出改名（「investment其实不合适了，它实际上是测试平台和用户的bot的使用平台，不一定就是investment」），先考虑 incubator（「我选了incubator，你看如何」），最终定名（「就用knowbench」）。深度、数据去留、文档目录三条所有者同日定「按你的建议」：**乙、从空的开始、`dev-investment-agent/` 这次不改**。同时定客户端仓 `runtime` 一并改名为 **knowlink**（「'/home/zym/worktrees/qwen/runtime'顺便也改名吧，改为knowlink」），见第六节。时机改为 P5 做完再改名（所有者问「现在p5做了一半，是不是把p5做完再改名更好？」，Opus 同意，见第五节「时机」）。Opus 起草。做法照 0025：远程写代码、配置与逐条步骤，本地集群上的部分由 Qwen 跑。
+> 状态：**已定，实施中**（2026-10-17 所有者：「那就先改名吧」）。所有者 2026-10-17 提出改名（「investment其实不合适了，它实际上是测试平台和用户的bot的使用平台，不一定就是investment」），先考虑 incubator（「我选了incubator，你看如何」），最终定名（「就用knowbench」）。深度、数据去留、文档目录三条所有者同日定「按你的建议」：**乙、从空的开始、`dev-investment-agent/` 这次不改**。同时定客户端仓 `runtime` 一并改名为 **knowlink**（「'/home/zym/worktrees/qwen/runtime'顺便也改名吧，改为knowlink」），见第六节。时机改为 P5 做完再改名（所有者问「现在p5做了一半，是不是把p5做完再改名更好？」，Opus 同意，见第五节「时机」）。Opus 起草。做法照 0025：远程写代码、配置与逐条步骤，本地集群上的部分由 Qwen 跑。
 
 ## 一、为什么改、改成什么
 
@@ -61,27 +61,26 @@
 
 建议不要，理由和 0025 一样：还在开发阶段，库里没有不能丢的东西。
 
-## 五、怎么做（乙 + 从空的开始；动手前细化成逐条手册）
+## 五、怎么做（乙 + 从空的开始；照 0025 的 R0–R7 走）
 
-分工同 0025。代码、配置、gitops、核对由远程（Opus）亲手写。gitee 改仓名、同步配置、DNS 记录、批准边缘部署由所有者做。本地集群上的部分由 Qwen 照远程写的步骤跑，远程逐段审回执。不经 Cursor。
+**分工照 0025（所有者 2026-10-14 定「改名确实只有你和qwen两个人干，我都不干」）**：Opus 在远程机 qwen 工位改全部内容、写全部命令、审每段回执；Qwen 在本地机做本地的一切（GitHub / gitee 改仓名、本地检出、同步配置、集群切换、浏览器核对）；所有者只在两边之间传话，外加只有所有者能做的几件：DNS 记录、批准边缘部署、登录与粘贴 key。执行手册写在 `k8s/docs/rename.md`（照 0025 那份的规矩：只执行写下的命令、一段一停、秘密不进回执、窗口内不跑同步脚本）。
 
-| 步 | 谁 | 做什么 | 停点 |
+**要改名的远端仓（9 个）**：GitHub `investment-app`、`investment-backend`、`investment-web-frontend`、`investment-admin-frontend` → `knowbench-*`；`runtime` → `knowlink`；gitee 上 investment 父仓与 3 个子仓同样改（名称与路径两个字段都改）。
+
+| 段 | 谁 | 做什么 | 停点 |
 | --- | --- | --- | --- |
-| 0 | 所有者 | 通知各工位暂停碰 investment；Qwen 空闲 | — |
-| 1 | 所有者 | gitee 把仓改名为 `knowbench-app`、GitHub 把 `runtime` 改名为 `knowlink`；`config.sh` 换两个仓名；两台机器上各工位的检出目录换名、改 remote | 远程核对各工位的 remote 与目录 |
-| 2 | 远程 | knowbench 仓内：目录、构建、说明、代码里的应用键与环境变量、页面上的名字、契约锁文件；单测、构建全过 | 远程自测通过 |
-| 3 | 远程 | 其它应用仓：跨应用键、knowlab 配置的 `runtime` 期望值、契约说明与测试；tpl 的同步清单；各仓自测通过 | 远程自测通过 |
-| 4 | 远程 | knowlink（原 runtime）：两个站点文件换域名、仓内说明换仓名（第六节）；Windows 与 Linux 包的配置留到第 7 步按新摘要钉 | 测试通过 |
-| 5 | 远程 | k8s：gitops 目录、应用名表、存储名、Casdoor 声明、域名、服务身份与作用域、边缘 `edge_domains` 与路径放行；渲染比对（别的应用的渲染对象逐字不变，knowbench 除了名字逐项相同） | 渲染比对通过 |
-| 6 | 所有者 | 加 DNS 记录 `knowbench.sunmoonai.com` → 边缘机；批准 `make edge-deploy`（只多一个域名，旧域名在第 9 步前保留） | 远程用 `--resolve` 核对证书与放行 |
-| 7 | Qwen（本地） | 并进 P6：打新的 Windows 与 Linux 包、核摘要、上传到新桶；按新名字构建、发布、部署（新库、新 Casdoor 应用与服务身份、新私有目录）；其余照 0027 P6 | 远程审回执 |
-| 8 | 所有者 + Qwen | 所有者用新安装包重装 Windows 代理、在 `knowbench.sunmoonai.com` 登录并配对；P6 的浏览器走查改用新域名 | 截图与回执 |
-| 9 | Qwen（本地） | 下线旧的：旧 Deployment / Job / Secret、旧 Casdoor 应用与服务身份、旧库与角色、旧 Redis 与 vhost、旧桶、旧私有目录、边缘上的旧域名（要所有者批准）、Harbor 旧镜像仓库 | 远程审回执 |
-| 10 | 远程 | 文档：总览、PRD、SDD、各仓 AGENTS、`repos/investment-app.md` 改为 `repos/knowbench-app.md` | — |
+| R0 | 所有者传话；Opus、Qwen 核 | 冻结：其他工位不碰 investment、runtime 与 k8s 的 gitops；两台机器各工位这两组仓干净且已推；Qwen 核 GitHub、gitee 的管理权限 | Opus 写「开工」 |
+| R1 | Opus | 改全部内容：knowbench 三个子仓与父仓（目录、构建、说明、应用键、环境变量、页面上的名字、契约锁）、其他应用的跨应用键与清单 `runtime` 值、knowlink 的站点文件与说明、k8s 的 gitops 与存储名与 Casdoor 声明与域名与服务身份、边缘 `edge_domains`；渲染比对；写好 R5、R6 的逐条命令 | 自测与渲染比对通过 |
+| R2 | Qwen | GitHub、gitee 上改 9 个仓的名字，核对新地址的分支 | Opus 审回执 |
+| R3 | Opus（远程机）、Qwen（本地机） | 两台机器各工位的检出换名、改 remote | 审回执 |
+| R4 | 同上 | 同步配置 `config.sh` 换仓名；Qwen 跑一次同步验证 | 审回执 |
+| R5 | 所有者 + Qwen | 并进 P6：所有者加 DNS 记录 `knowbench.sunmoonai.com`、批准边缘部署；Qwen 打新的 Windows 与 Linux 包、按新名字构建发布部署、做 P6 其余各步；所有者重装 Windows 代理、在新域名登录并配对；浏览器走查 | 截图与回执 |
+| R6 | Qwen | 下线旧的（Deployment、Job、Secret、Casdoor 应用与服务身份、库与角色、Redis、vhost、桶、私有目录、边缘旧域名、Harbor 旧镜像仓库） | 审回执 |
+| R7 | Opus | 文档：总览、PRD、SDD、各仓 AGENTS、`repos/investment-app.md` 改为 `repos/knowbench-app.md` | — |
 
-**时机：P5 做完再改名**（所有者 2026-10-17 提，Opus 同意）。改名的成本在已部署的东西上（库、身份、域名、安装包）；P5 的代码和 P1b–P4 一样攒到 P6 才部署，先按旧名写、改名时一起换，只多几个文件的文本替换。反过来先改名，第 1 步要所有者改仓名、各工位暂停，P5 就得等着。所以顺序是：P5 做完 → 本方案第 0–5 步 → 第 6–9 步并进 P6。
+**时机**：P5 已做完（2026-10-17）。所有者 2026-10-17 曾想先跑「财务分析与预测」再改名，听完代价后定「那就先改名吧」：改名 R0–R4 先做，R5 与 P6 一起部署，第一条实测在 R5 之后用新名字跑。
 
-**回退**：第 6 步之前现网什么都没碰。第 7、8 步失败：新名字停到 0 副本；旧 investment 还在原样运行，旧域名没下线，旧代理照常能用。第 9 步做完才不可逆，所以第 9 步只在第 8 步走查通过以后做。
+**回退**：R5 之前现网什么都没碰。R5 失败：新名字停到 0 副本；旧 investment 还在原样运行，旧域名没下线，旧代理照常能用。R6 做完才不可逆，所以 R6 只在 R5 走查通过以后做。
 
 ## 六、客户端仓 runtime → knowlink（所有者 2026-10-17 定）
 
