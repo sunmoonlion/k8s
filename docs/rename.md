@@ -308,6 +308,10 @@ cd ~/five-repos-sync && cp config.sh config.sh.bak-rename-0028 && \
 
 **状态**：第 1–3 步 **已做** · 2026-10-17 · Opus（回执 `align-opus.*.md`）：26 个仓 master 快进到 qwen，GitHub 与 gitee 逐个核对；104 个工位分支快进到 master；远程机 `align --apply` 40 个快进、15 个旧名子仓目录挪进 `~/rename-backup/20261017-125143-old-subrepos/`，0 HOLD，`list` 156 项全 ok。**Qwen 做第 4 步（本地机对齐）**。
 
+第 4 步 **已做** · 2026-10-17 · Qwen（回执 `align-qwen.20261017-1321.md`）：预演与执行都是 40 个快进、0 HOLD、0 FAIL，15 个旧名子仓目录挪进备份；`list` 155 项 ok、`qwen/k8s` 1 项 ahead-pushed（比 master 多出回执提交，预期）。Opus 审过。
+
+**冻结解除** · 2026-10-17 · Opus：两台机器 × `~/master` 与五个工位 × 八组仓都在 master 上（新名字）。各工位照常工作，Cursor 恢复接卡，一律用新名字（`knowbench-app`、`knowbench-*`、`sunmoon-link`）。两台机器 `~/rename-backup/` 保留，删除另行决定。R5 等 Opus 把命令写好、状态写「可执行」后才开始。
+
 ## R5 集群（并进 0027 P6）— 所有者 + Qwen
 
 待写：DNS、边缘、新安装包、按新名字部署、P6 其余各步、浏览器走查。
