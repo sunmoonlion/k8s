@@ -654,6 +654,31 @@ curl -sS -o /dev/null -w '%{http_code} verify=%{ssl_verify_result}\n' https://kn
 >
 > 要看到：五个 Job 重建后 `succeeded` 都是 1；`wait exit=0`；`get kustomizations | grep -v True` 只剩表头与 `investment-*`；Deployment 都满；knowlab-api 的镜像是 `…@sha256:2845ca9f…`。`apply` 若又只是等根超时、而随后 `wait` 全 Ready，算过（照实写）。然后做第 1 步块末尾的 identity 两个字段核对，再做第 2–5 步。回执写新的 `R5.2-qwen.<时间>.md`。
 
+> 2026-10-17 第四次（`R5.2-qwen.20261017-1956.md`）：第三次处理全对——共用证书修好（SAN 有 `casdoor-tls`、`knowbase-tls`，traefik 出示的是平台 CA 签的证书，`casdoor-tls 200`），五个注册 Job 重建后都 `Complete`，knowbench-api、knowbench-worker 起来了，knowlab-api 换上新镜像就绪。还卡着的是 **`knowfeed-service-identity-b9c9628ec5b9-v1`**：同一次晋级、同一个原因（当时证书错）失败的第六个注册 Job，**Opus 列清单时漏了**（第一次回执只贴了 knowbench、knowlab 的，knowfeed 那条只以「依赖没就绪」出现）；knowfeed 与 knowbase 的运行时都在等它。Qwen 没扩大删除范围是对的。
+>
+> **第四次处理：先列出三个命名空间里所有没成功的 Job，只有恰好是这一个时才删它**：
+>
+> ```bash
+> cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen
+> export KUBECONFIG=~/.kube/sunmoon-kind.config; K=$(command -v kubectl || echo infrastructure/.tools/bin/kubectl); NS=app-platform-dev
+> for n in app-platform-dev data-platform-dev messaging-platform-dev; do $K -n $n get jobs -o json | python3 -c "import json, sys; [print(sys.argv[1] + '/' + j['metadata']['name'], 'failed=' + str(j['status'].get('failed', 0))) for j in json.load(sys.stdin)['items'] if not j['status'].get('succeeded')]" $n; done
+> ```
+>
+> 要看到：**只有一行** `app-platform-dev/knowfeed-service-identity-b9c9628ec5b9-v1 failed=1`（`investment-*` 旧阶段留下的旧 Job 若也在列，原样贴出、不删，R6 处理；除此之外还有别的就停）。是这样才接着：
+>
+> ```bash
+> J=knowfeed-service-identity-b9c9628ec5b9-v1
+> $K -n $NS logs job/$J --tail=3 2>&1 | grep -viE 'secret|password|token'
+> $K -n $NS delete job $J
+> make -C infrastructure flux-source-apply; echo "apply exit=$?"
+> $K -n flux-system get kustomizations -o name | grep -v '/investment-' | xargs $K -n flux-system wait --for=condition=Ready --timeout=40m; echo "wait exit=$?"
+> $K -n flux-system get kustomizations | grep -v True
+> echo "$J $($K -n $NS get job $J -o jsonpath='{.status.succeeded}')"
+> $K -n $NS get deploy knowfeed-api knowbase-api casdoor knowbench-api knowlab-api knowmart-api
+> ```
+>
+> 要看到：日志末行是 `Service registration failed: ConnectError`（同一原因）；重建后 `succeeded` 是 1；`wait exit=0`；`get kustomizations | grep -v True` 只剩表头与 `investment-*`（`platform` 也要 True）；Deployment 都满。然后接着做第 1 步块末尾的 identity 两个字段核对（那段 `for j in …identity-…-v4` 与 `get deploy`），再做第 2–5 步。回执写新的 `R5.2-qwen.<时间>.md`。
+
 **停点**：Qwen 的 `R5.2-qwen` 与 Opus 的 `R5.2-opus` 都审过，在本节写「通过」。
 **状态**：**可执行（第 1–5 步）** · 2026-10-17 · Opus；第 6 步所有者 2026-10-17 已批准（「按你建议」），Qwen 的回执审过后 Opus 做。
 
