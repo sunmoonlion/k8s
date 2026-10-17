@@ -1,6 +1,6 @@
 # 三节点应用日志采集
 
-独立elk-collector阶段依赖elk-runtime，每节点DaemonSet从只读/var/log匹配四应用各角色与Casdoor stdout/stderr，保留CRI时间/stream/Pod/container/node/cluster。无Kubernetes API查询、SA token或Docker socket。
+独立elk-collector阶段依赖elk-runtime，每节点DaemonSet从只读/var/log匹配六应用（tpl、knowfeed、knowbase、knowbench、knowlab、knowmart）各角色与Casdoor stdout/stderr，保留CRI时间/stream/Pod/container/node/cluster。无Kubernetes API查询、SA token或Docker socket。
 
 ## 有限宿主访问与凭据
 
