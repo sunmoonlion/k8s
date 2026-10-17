@@ -1,7 +1,7 @@
 # Qwen 发布卡 qwen-005：0030 计算工具与数值验收 + 成稿导出 + 分栏可拖 + 受理关口 + 提示语（小发布）
 
-> 状态：**写好，暂缓**（放在 `hold/`）。**0028 R5、R6 都写了「通过」之后**移进 `inbox/qwen/` 才做。Opus 2026-10-17 写。
-> 依据：0030（C3：随 R5 之后的下一次发布上线）、0031（成稿导出）、待办账 121（Windows 工作说明）、124（分栏）、130（受理关口）、K17、K18；所有者 2026-10-17「把能做的先做」，受理关口「这个很重要。演示时已经出过这个洋相了」。
+> 状态：**可执行**。所有者 2026-10-18 定提前到 0028 R5.4 第 5 步 c 之前做（「就这样」）：R5.4 走查 c 卡在 knowlab 管理端读不出列表（账 134），修复在本卡的 knowlab 后端里；本卡做完回到 R5.4 第 5 步从 c 接着走，R6 在那之后。Opus 2026-10-17 写，10-18 改钉。
+> 依据：0030（C3：随 R5 之后的下一次发布上线）、0031（成稿导出）、待办账 121（Windows 工作说明）、124（分栏）、130（受理关口）、134（管理端认管理角色）、K17、K18；所有者 2026-10-17「把能做的先做」，受理关口「这个很重要。演示时已经出过这个洋相了」。
 
 ```text
 被测仓：k8s，qwen 工作树 ~/worktrees/qwen/k8s，分支 qwen
@@ -14,14 +14,15 @@
 
 | 应用 | 提交 | 内容 |
 | --- | --- | --- |
-| knowlab 后端 | `c979112` | 契约 `knowbot-data/v1` 加 `table`、`cells`：CSV、Excel 按格子读，数一律十进制字符串（0030 C1） |
+| knowlab 后端 | `4e39358`（含 `c979112`） | 契约 `knowbot-data/v1` 加 `table`、`cells`：CSV、Excel 按格子读，数一律十进制字符串（0030 C1）；管理端业务接口认管理角色 admin、operator（账 134，同步自 tpl `45f4da9`） |
 | knowlab 网页 | `0151475`（含 `0da34a3`） | 「我的数据」提示数字类尽量传表格（K17）；验收用例写明期望值只能由用户填（K18）；页头显示登录的是谁（同步自 tpl `aa93036`） |
-| knowbench 后端 | `ba92ce6`（含 `2e861ce`、`5f8e39e`、`b227b9c`、`b2b9dc9`） | 分身的 `compute`、`read_my_table`、计算记录、数值验收 `computed`/`identity`/`sourced`（0030 C1）；重做提示带上没过的各条；Windows 上写文件、跑脚本的说明（待办 121）；受理关口：问了不归这位专家的问题，停下问「照做 / 不做了」，不硬做、不报错（待办 130） |
+| knowbench 后端 | `7f5aa4e`（含 `2e861ce`、`5f8e39e`、`b227b9c`、`b2b9dc9`、`ba92ce6`） | 分身的 `compute`、`read_my_table`、计算记录、数值验收 `computed`/`identity`/`sourced`（0030 C1）；重做提示带上没过的各条；Windows 上写文件、跑脚本的说明（待办 121）；受理关口：问了不归这位专家的问题，停下问「照做 / 不做了」，不硬做、不报错（待办 130）；管理端认管理角色（账 134） |
 | knowbench 网页 | `13f15c3`（含 `4acd320`、`37ada6a`、`537743d`、`e90ad98`） | 成稿导出 Word、Excel、PDF（0031）；左右分栏可拖、左侧导航可折叠、输入框长高上限放宽（待办 124）；审查面的问题保留换行（待办 130）；侧栏底部显示登录的是谁 |
-| knowlab 父仓 | `a16515c` | 契约 schema 四份新增、子仓指针 |
-| knowbench 父仓 | `970d056` | 契约锁、子仓指针 |
+| knowlab 父仓 | `65860ae` | 契约 schema 四份新增、子仓指针 |
+| knowbench 父仓 | `f661434` | 契约锁、子仓指针 |
+| k8s | `check-browser.py` | application-check 用 admin 读一张管理端列表（knowlab 分身草稿、knowbench 缺数据），读得出才算过（账 134） |
 
-Opus 在远程机核过：knowlab 后端全量 396 过；knowbench 后端全量（真库，含投递库与契约锁）1212 过、5 跳过（消息队列探针与跨仓向量，本来就不跑；含受理关口 8 条）；knowbench 网页 `pnpm check` 全过（296 条测试）；knowlab 网页 `pnpm check` 全过（94 条测试）。
+Opus 在远程机核过：knowlab 后端全量 401 过；knowbench 后端全量（真库，含投递库与契约锁）1212 过、5 跳过（消息队列探针与跨仓向量，本来就不跑；含受理关口 8 条），加管理角色后不连库的全量 918 过；knowbench 网页 `pnpm check` 全过（296 条测试）；knowlab 网页 `pnpm check` 全过（94 条测试）。
 
 ## 一、核对（只读）
 
@@ -33,7 +34,7 @@ git -C ~/worktrees/qwen/knowbench-app rev-parse HEAD; git -C ~/worktrees/qwen/kn
 make -C infrastructure platform-status; echo "status exit=$?"
 ```
 
-要看到：knowlab 父仓 `a16515c0…`、后端 `c979112c…`、网页 `01514759…`、管理端 `371abcee…`；knowbench 父仓 `970d0562…`、后端 `ba92ce6f…`、网页 `13f15c3d…`、管理端 `45fcf79a…`（不是就停，请所有者同步 qwen）；`status exit=0`。
+要看到：knowlab 父仓 `65860ae8…`、后端 `4e39358a…`、网页 `01514759…`、管理端 `371abcee…`；knowbench 父仓 `f6614342…`、后端 `7f5aa4e4…`、网页 `13f15c3d…`、管理端 `45fcf79a…`（不是就停，请所有者同步 qwen）；`status exit=0`。
 
 ## 二、改钉（只动这两个应用的父仓、后端、网页，共十行）
 
@@ -42,11 +43,11 @@ python3 - <<'PY'
 import re, pathlib
 p = pathlib.Path('infrastructure/applications/sources.yaml'); s = p.read_text()
 want = {
-  'knowlab': {'parent_revision': 'a16515c05c60844732c15d0a4bd961af6e4d1d03',
-              'backend_parent_revision': 'c979112c67f8cfd9a3cfbeaed7d36740ee27fed4', 'backend_revision': 'c979112c67f8cfd9a3cfbeaed7d36740ee27fed4',
+  'knowlab': {'parent_revision': '65860ae8d84af36f638aa548a568796b90f6c0ae',
+              'backend_parent_revision': '4e39358a0e5f8fb346cb3370c6e409f6f5e7b2f4', 'backend_revision': '4e39358a0e5f8fb346cb3370c6e409f6f5e7b2f4',
               'web_parent_revision': '01514759355d2a6b7ae22ddcd910987753df9325', 'web_revision': '01514759355d2a6b7ae22ddcd910987753df9325'},
-  'knowbench': {'parent_revision': '970d0562dd70dc07cd7c245bd4bf0a98726a3adc',
-                'backend_parent_revision': 'ba92ce6f6821d68287f32acd621a8c702aa8b29b', 'backend_revision': 'ba92ce6f6821d68287f32acd621a8c702aa8b29b',
+  'knowbench': {'parent_revision': 'f6614342b1250347d2549a3f311963da8a516cab',
+                'backend_parent_revision': '7f5aa4e4e653848d396d4a2779384f87dc2eee93', 'backend_revision': '7f5aa4e4e653848d396d4a2779384f87dc2eee93',
                 'web_parent_revision': '13f15c3d01548ebb9a307a06807b3b9578cd1702', 'web_revision': '13f15c3d01548ebb9a307a06807b3b9578cd1702'},
 }
 for app, keys in want.items():
@@ -94,12 +95,13 @@ for a in knowlab knowbench; do make -C infrastructure application-check APP=$a; 
 git push origin qwen
 ```
 
-要看到：各步都是 0。
+要看到：各步都是 0；两个 `application-check` 的输出里，admin 那一面 `admin_list_read: True`（admin 读得出管理端列表）。
 
 ## 五、浏览器走查（所有者操作，Qwen 核截图；截图不截 `code=`、`state=`）
 
 | 地址 | 做什么 | 要看到 |
 | --- | --- | --- |
+| knowlab 管理端「分身草稿」（admin） | 打开 | 两个列表读得出来（R5.4 时是「读取失败」）；R5.4 走查 b 提交的「走查用：读我的表回答营收」在「用户的提交」里 |
 | knowlab web端「我的数据」 | 打开 | 多了一段「数字类尽量传表格」的提示 |
 | knowlab web端 新建分身 | 看验收用例那一栏 | 写着期望值只能由你自己填 |
 | knowlab web端 各页 | 看页头右边 | 「退出登录」左边写着「当前用户：你的显示名」，停上去看到邮箱；新建分身那页也有 |
