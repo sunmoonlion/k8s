@@ -197,7 +197,7 @@ spec:
 {% if service_enabled and role in ['api','worker'] %}
             - {secretRef: {name: {{ application_name }}-knowbase-service}}
 {% endif %}
-{% for client in generic_service_clients | default([]) if role in ['api','worker'] %}
+{% for client in generic_service_clients | default([]) if role in client.roles | default(['api','worker']) %}
             - {secretRef: {name: {{ application_name }}-{{ client.target }}-{{ client.relation }}-service}}
 {% endfor %}
 {% if agent_releases_enabled | default(false) and role == 'api' %}
@@ -311,7 +311,7 @@ metadata: {name: {{ application_name }}-service-https-out, namespace: {{ app_nam
 spec:
   podSelector:
     matchExpressions:
-      - {key: app.kubernetes.io/name, operator: In, values: [{{ application_name }}-api{% if service_enabled or generic_service_clients | default([]) | length > 0 %}, {{ application_name }}-worker{% endif %}]}
+      - {key: app.kubernetes.io/name, operator: In, values: [{{ application_name }}-api{% if service_enabled or generic_service_clients | default([]) | length > 0 %}, {{ application_name }}-worker{% endif %}{% for extra in generic_service_clients | default([]) | map(attribute='roles', default=[]) | flatten | unique | reject('in', ['api','worker']) %}, {{ application_name }}-{{ extra }}{% endfor %}]}
   policyTypes: [Egress]
   egress:
     - to:

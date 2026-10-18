@@ -22,11 +22,11 @@
 
 ## 秘密
 
-私有输入 `private_dir/service-client-<目标>-<关系>.yaml`，root 0600，backup_dir 逐字节、非覆盖；已发布（运行时密文已在 Git）而输入丢了就停，先恢复备份，绝不重新生成。密钥不得与浏览器、数据库、Redis、RabbitMQ 凭据或本应用其他服务身份重复。Git 只有 SOPS：初始化用 `<应用>-<目标>-<关系>-provision`（client_secret、ca.crt），运行时用 `<应用>-<目标>-<关系>-service`（只给 api、worker）。
+私有输入 `private_dir/service-client-<目标>-<关系>.yaml`，root 0600，backup_dir 逐字节、非覆盖；已发布（运行时密文已在 Git）而输入丢了就停，先恢复备份，绝不重新生成。密钥不得与浏览器、数据库、Redis、RabbitMQ 凭据或本应用其他服务身份重复。Git 只有 SOPS：初始化用 `<应用>-<目标>-<关系>-provision`（client_secret、ca.crt），运行时用 `<应用>-<目标>-<关系>-service`（默认给 api、worker；某个关系别的进程也要用时在这一项写 `roles`，必须含 api，网络策略跟着放行，例如 knowbench 读 knowlab 加了 runner，因为顾问在 runner 里做数值验收）。
 
 ## 运行时环境变量（应用代码按这些名字读）
 
-调用方（api、worker）：
+调用方（api、worker，及 `roles` 里写的进程）：
 
 | 变量 | 值 |
 |---|---|

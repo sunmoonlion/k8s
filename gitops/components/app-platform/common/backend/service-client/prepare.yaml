@@ -15,6 +15,9 @@
       - client.scope == client.target + ':' + client.relation
       - client.token_seconds | int == 900
       - client.job_revision is match('^[a-z0-9-]{1,16}$')
+      # 哪些进程拿这份身份：不写是 api、worker；写了必须含 api，只能是后端的四种进程
+      - client.roles | default(['api','worker']) is subset(['api','worker','scheduler','runner'])
+      - "'api' in client.roles | default(['api','worker'])"
 - name: Bind this client's names
   ansible.builtin.set_fact:
     client_name: '{{ application_name }}-{{ client.target }}-{{ client.relation }}'

@@ -131,9 +131,11 @@ knowbench_backend_deployment:
       job_revision: v1
       token_seconds: 900
     # 分身运行时读用户自己绑定的数据：工作台按委托核过，再向 knowlab 读（SDD 0027 §3.5，契约 knowbot-data/v1）
+    # runner 也要：顾问在 runner 里做数值验收 sourced，要按地址回 knowlab 重取那一格（0030 §3.3；qwen-005 走查第 10 行）
     - target: knowlab
       relation: read
       enabled: true
+      roles: [api, worker, runner]
       application: sunmoonai-knowbench-knowlab-read
       client_id: sunmoon-knowbench-knowlab-read
       organization: sunmoon-workload-knowbench-knowlab-read
