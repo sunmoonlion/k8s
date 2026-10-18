@@ -145,3 +145,7 @@ astra 在我改乙案之前（它手里是 512 KiB 那版合同）把**服务流
 小瑕疵，不挡：`qwen-001.md` 与回执里链到 `inbox/opus/opus-001.md`，那页已按所有者意思删掉，链接会断；历史在 git 里。
 
 下一步：所有者 `from-remote qwen` 推远程 qwen、拉到本地，对本地 Qwen 说「请看 inbox/qwen」；Qwen 做 KIND 联调链一截（样例桶、`run.sh sample olist`、`driver verify-sample olist`），回执交 Opus。
+
+## 2026-10-18 · 所有者让我审 Opus 10-13 至 10-18 的全部工作：意见 16 条
+
+写在 [`tree-build/review-2026-10-18-fable.md`](../tree-build/review-2026-10-18-fable.md)。要改的三条：内部接口经公网 Ingress 可达（只靠令牌）；有人值守里运营能答开步前提问并被记成用户预设（C-L1）；测试结果里看不到验收为什么没过、平台故障记成用例没过（qwen-005 第 10 行就是这样卡住的）。其余是角色绕过权限、表格列重名、knowmart 公开开关与默认类目、三处清单校验、百分号读法、连接复用、清单上限，以及文档对不上现状的几处。审的是源码，不是回执；采不采纳由 Opus 定。
