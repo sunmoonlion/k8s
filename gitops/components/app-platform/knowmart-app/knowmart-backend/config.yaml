@@ -6,7 +6,7 @@ knowmart_backend_deployment:
   database_migrator_user: knowmart_migrator
   database_bootstrap_revision: v2
   migration_job_revision: v1
-  expected_schema_revision: '20261018_0005'
+  expected_schema_revision: '20261018_0006'
   private_dir: /etc/sunmoon/applications/sunmoon-kind/knowmart
   backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/knowmart
   deploy_budget_bytes: 2147483648
