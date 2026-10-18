@@ -68,8 +68,9 @@ knowbase_backend_deployment:
   domain_secrets:
     KNOWBASE_MCP_JWT_PUBLIC_KEY: {source: workbench-signing, key: public_key_pem}
   domain_secrets_roles: [api]
-  domain_ingress:
-    - {name: sandboxes, namespace_var: sandbox_namespace, pod_labels: {sunmoonai.com/sandbox: 'true'}}
+  # 用户的沙箱不再能连 knowbase（2026-10-18 数据拓扑：平台的数到不了用户的沙箱，待办账 111）。
+  # 工作台也不再发 knowbase 的 MCP 令牌；集群是 prune: false，旧的 knowbase-sandboxes-in 要精确删除
+  domain_ingress: []
   knowledge_provider:
     enabled: true
     dataset_key: default
