@@ -20,7 +20,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/knowmart-web-frontend@sha256:e53994ba6c78f0efe90cadc7f35b36f551fd678340f6e612fa803cacdeb98a2a
+          image: harbor.sunmoonai.com:30443/platform/knowmart-web-frontend@sha256:e6d93db70b2141387afe65fdb347e05f057b0873857df13a4d05410f09447a11
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
@@ -29,7 +29,7 @@ spec:
             - {name: AUTH_APP, value: knowmart}
             - {name: APP_ORIGIN, value: "https://knowmart.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://knowmart-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "knowmart-web-frontend-e53994ba6c78f0ef"}
+            - {name: DEPLOYMENT_ID, value: "knowmart-web-frontend-e6d93db70b214138"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
@@ -79,6 +79,10 @@ spec:
     - host: knowmart.sunmoonai.com
       http:
         paths:
+          # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
+          - path: /api/internal
+            pathType: Prefix
+            backend: {service: {name: knowmart-web, port: {number: 3000}}}
           - path: /api
             pathType: Prefix
             backend: {service: {name: knowmart-api, port: {number: 8000}}}

@@ -20,7 +20,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/knowlab-admin-frontend@sha256:5de99fd4bb284fb2e2b7c749cc9617d617398eaf1de7c0ac67dbc522553f2008
+          image: harbor.sunmoonai.com:30443/platform/knowlab-admin-frontend@sha256:e7a9967ca13dd7448db5f06a8ef53c691e8fdf481c87717677276f4034ec1e4a
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
@@ -29,7 +29,7 @@ spec:
             - {name: AUTH_APP, value: knowlab}
             - {name: APP_ORIGIN, value: "https://knowlab-admin.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://knowlab-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "knowlab-admin-frontend-5de99fd4bb284fb2"}
+            - {name: DEPLOYMENT_ID, value: "knowlab-admin-frontend-e7a9967ca13dd744"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
@@ -79,6 +79,10 @@ spec:
     - host: knowlab-admin.sunmoonai.com
       http:
         paths:
+          # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
+          - path: /api/internal
+            pathType: Prefix
+            backend: {service: {name: knowlab-admin, port: {number: 3000}}}
           - path: /api
             pathType: Prefix
             backend: {service: {name: knowlab-api, port: {number: 8000}}}
