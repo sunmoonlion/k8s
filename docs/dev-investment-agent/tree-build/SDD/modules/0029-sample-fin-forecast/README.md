@@ -27,6 +27,6 @@
 
 1. ~~所有者答 [`02-gaps.md`](02-gaps.md)；答复写进 `rule_sources`（`user_confirmed` + 原话），改过的提议照改 `method_text` 与用例。~~：已答（决定单 `docs/财务分析与预测-待你定.md`），第 1 版清单 [`manifest-v1.json`](manifest-v1.json)（`manifest_v1.py` 生成）。
 2. ~~G10 的期望值由所有者从年报填（例如 2024 年营业收入），我们不代填~~：所有者 2026-10-18 核过 2024 年报第 5 页，170,899,152,276.34 元；sig-am 已提交想法与用例（[`04-submission.md`](04-submission.md)）。
-3. ~~按 G1 准备并上传数据（knowlab「我的数据」），把数据 id、版本、sha256 写进 `data_bindings`~~：2026-10-18 sig-am 传了 6 个文件（Excel 一个、年报 PDF 五份），管理端抄回的 sha256 与远程机原件逐个一致；`manifest-v1.json` 的 `data_bindings` 填好 6 条，knowbench `pack_from_manifest`、knowlab `draft_manifest_problems`、knowmart `parse_manifest` 都过。
+3. ~~按 G1 准备并上传数据（knowlab「我的数据」），把数据 id、版本、sha256 写进 `data_bindings`~~：2026-10-18 sig-am 传了 6 个文件（Excel 一个、年报 PDF 五份），管理端抄回的 sha256 与远程机原件逐个一致；`manifest-v1.json` 的 `data_bindings` 填好 6 条，knowbench `pack_from_manifest`、knowlab `draft_manifest_problems`、knowmart `parse_manifest` 都过。 **2026-10-19 夜**：重测前预演（照方法造出各步交回物、走工作台真实的计算与判分）查出 Excel 里 2025 年报一个科目名折成两行，修好的文件见 [`data-prep/README.md`](data-prep/README.md)「2026-10-19 修订」，由 qwen-011 第五节重新上传、换绑定；清单说明文字补两句（写法不同的同一科目照用、不是第二个口径；成稿不写「目标价」「评级」，连否定句也不写），方法、规则出处、验收不变。
 4. ~~平台空白 1、2（计算工具、数值验收）~~：已由 [0030](../0030-knowbot-compute.md) 补上，本样本的方法与验收已改用（2026-10-17，0030 第九节；演练脚本 `c2-drill.py`）；随 R5 之后的小发布上线。
 5. 之后照 0027 走：knowlab 建草稿（贴 `manifest.json`）→ 核出处 → 发起测试 → 有人值守 → 通过即交付 → 工作台「请」。

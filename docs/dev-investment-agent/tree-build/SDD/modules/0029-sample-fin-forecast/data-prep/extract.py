@@ -30,6 +30,12 @@ def clean(label: str) -> str:
     return PREFIX.sub("", re.sub(r"\s+", "", label or "")).strip()
 
 
+def continued(label: str) -> bool:
+    """这一行只是上一行科目名折下来的尾巴：「（或…」开头、正好是「合计」「总计」，或只有一个字
+    （「动」）。两个字的不一律当尾巴：「商誉」就是一个科目。"""
+    return label.startswith("（或") or label in ("合计", "总计") or len(label) == 1
+
+
 def number(cell: str | None) -> str | None:
     text = re.sub(r"\s+", "", cell or "")
     if not text or not NUM.match(text):
@@ -98,7 +104,14 @@ def statements(pdf, start: int) -> tuple[dict[str, list[tuple[str, str, str | No
                 label = clean(cells[0])
                 if not label:
                     continue
-                out[current].append((label, re.sub(r"\s+", "", cells[0]), number(cells[col])))
+                value = number(cells[col])
+                if value is None and out[current] and continued(label):
+                    # 科目名太长、在表格里折成两行：第二行接回上一行（2025 年报「归属于母公司所有者权益
+                    # /（或股东权益）合计」、2025 三季报「负债和所有者权益（或股东权益）/ 总计」）
+                    prev_label, prev_orig, prev_value = out[current][-1]
+                    out[current][-1] = (prev_label + label, prev_orig + re.sub(r"\s+", "", cells[0]), prev_value)
+                    continue
+                out[current].append((label, re.sub(r"\s+", "", cells[0]), value))
         if done:
             break
     return out, pages

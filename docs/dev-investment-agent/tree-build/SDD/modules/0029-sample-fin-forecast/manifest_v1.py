@@ -25,7 +25,12 @@ COMMON = (
     "compute id (ids are not consecutive; that is normal). If the scope artifact says "
     "in_data is false, do no work in this step: return the structure with empty lists and "
     "note 'no data for this company'. Describe, do not judge: no rating, target price, or "
-    "advice to buy, sell or hold. "
+    "advice to buy, sell or hold. The steps name line items in standard wording; the "
+    "user's workbook may word the same item differently (for example 归属于母公司股东的净利润 "
+    "for 归属于母公司所有者的净利润, 所有者权益（或股东权益）合计 for 所有者权益合计, "
+    "归属于母公司所有者权益（或股东权益）合计 for 归属于母公司所有者权益合计). Use the row that is "
+    "the same item and copy its label exactly as read_my_table shows it; a different "
+    "wording of the same item is not a second basis. "
 )
 JSON_ONLY = (
     "Reply with ONE JSON object only, no markdown fences, no commentary before or after "
@@ -382,7 +387,9 @@ STEPS = [
         "official.mismatches, indicators.not_applicable and not_available, and any reason "
         "there was no backtest or forecast); 出处 (one line per file: title, dataset id, "
         "version; when scope.in_data is false, the files you looked at); 结论 (left blank for "
-        "the user). Do not paste raw JSON into the file. The "
+        "the user). Do not paste raw JSON into the file. Never write 目标价, 评级 or phrases "
+        "like 建议买入 anywhere, not even in a negative sentence such as 不提供目标价: the "
+        "platform's check rejects the file wherever they appear. The "
         "JSON reply carries answer, limitations, citations, data_version and an empty "
         "conclusion. ",
         "output_artifact": "note",

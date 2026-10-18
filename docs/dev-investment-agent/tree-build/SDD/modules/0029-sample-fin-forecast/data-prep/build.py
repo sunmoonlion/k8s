@@ -21,6 +21,17 @@ KEY_ROWS = [
     "加权平均净资产收益率",
 ]
 KOUFEI = "扣除非经常性损益后的归属于母公司股东的净利润"
+# 专家方法用到的科目（数据准备说明「至少要有的科目」那张表）
+NEEDED = {
+    "资产负债表": ["资产总计", "负债合计", "所有者权益（或股东权益）合计", "归属于母公司所有者权益（或股东权益）合计"],
+    "利润表": ["营业收入", "营业成本", "净利润", "归属于母公司股东的净利润", "少数股东损益"],
+    "现金流量表": [
+        "经营活动产生的现金流量净额",
+        "现金及现金等价物净增加额",
+        "期初现金及现金等价物余额",
+        "期末现金及现金等价物余额",
+    ],
+}
 
 
 def dec(text: str | None) -> Decimal | None:
@@ -113,6 +124,18 @@ def main() -> None:
         o, c = g(cf, "期初现金及现金等价物余额", cur), g(cf, "期末现金及现金等价物余额", prev)
         if None in (o, c) or abs(o - c) > 1:
             problems.append(("opening", cur, o, c))
+    # 方法要用的科目每一期都得有数（扣非只有年报有）：2025 年报一个科目名折成两行，主行那一期空了，
+    # 前四条勾稽都过，只有这一条查得出来
+    for sheet, rows, cols in (
+        ("资产负债表", NEEDED["资产负债表"], periods),
+        ("利润表", NEEDED["利润表"], periods),
+        ("利润表", [KOUFEI], years),
+        ("现金流量表", NEEDED["现金流量表"], periods),
+    ):
+        for name in rows:
+            empty = [p for p in cols if g(sheets[sheet], name, p) is None]
+            if empty:
+                problems.append(("needed", sheet, name, empty))
     for y in years:
         for ours, kname in (("营业收入", KEY_ROWS[0]), ("归属于母公司股东的净利润", KEY_ROWS[1])):
             if g(inc, ours, y) != dec(key[y].get(kname)):
