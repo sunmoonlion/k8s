@@ -100,7 +100,11 @@
     ]
   },
   "data_bindings": [
-    "<把管理端请求详情里「数据」那一行的 JSON 原样贴在这里>"
+    {
+      "dataset_id": "ca0749ac-a810-4e06-ab7e-952b9cefe7e3",
+      "version": "1",
+      "sha256": "c31ef87a6b10d3f73f871b7127f8e03316c585f5e4978ac4e8e1d0533b3ac06f"
+    }
   ],
   "rule_sources": [
     {
