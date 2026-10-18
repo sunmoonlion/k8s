@@ -40,9 +40,11 @@
       echo '{"event":"pairing","hint":"用测试账号 knowbot-tester 在工作台「接入电脑」里输入下面的连接码"}'
       agent pair || sleep 10
     done
-    # 测试产出保留 7 天：每小时删一次 7 天前的底稿目录（只动 底稿/对话-*）
+    # 测试产出保留 7 天：每小时删一次 7 天前的底稿目录（只动 底稿/对话-*）。每次测试自己的目录 runs/*
+    # 由工作台测完就删（账 129），这里只兜底删 7 天没动的
     ( while true; do
         find "{{ tc.workspace }}/底稿" -mindepth 1 -maxdepth 1 -type d -name '对话-*' -mtime +7 -exec rm -rf {} + || true
+        find "{{ tc.workspace }}/runs" -mindepth 1 -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null || true
         sleep 3600
       done ) &
     exec node --use-system-ca /data/agent/app/dist/cli.js start
