@@ -25,8 +25,8 @@
 
 ## 还差什么才能真测
 
-1. 所有者答 [`02-gaps.md`](02-gaps.md)；答复写进 `rule_sources`（`user_confirmed` + 原话），改过的提议照改 `method_text` 与用例。
-2. G10 的期望值由所有者从年报填（例如 2024 年营业收入），我们不代填；`request.json` 里现在的期望只是「有季度」「写明算不出来」「写明没有数据」这类形状检查。
-3. 按 G1 准备并上传数据（knowlab「我的数据」），把数据 id、版本、sha256 写进 `data_bindings`。
+1. ~~所有者答 [`02-gaps.md`](02-gaps.md)；答复写进 `rule_sources`（`user_confirmed` + 原话），改过的提议照改 `method_text` 与用例。~~：已答（决定单 `docs/财务分析与预测-待你定.md`），第 1 版清单 [`manifest-v1.json`](manifest-v1.json)（`manifest_v1.py` 生成）。
+2. ~~G10 的期望值由所有者从年报填（例如 2024 年营业收入），我们不代填~~：所有者 2026-10-18 核过 2024 年报第 5 页，170,899,152,276.34 元；sig-am 已提交想法与用例（[`04-submission.md`](04-submission.md)）。
+3. ~~按 G1 准备并上传数据（knowlab「我的数据」），把数据 id、版本、sha256 写进 `data_bindings`~~：2026-10-18 sig-am 传了 6 个文件（Excel 一个、年报 PDF 五份），管理端抄回的 sha256 与远程机原件逐个一致；`manifest-v1.json` 的 `data_bindings` 填好 6 条，knowbench `pack_from_manifest`、knowlab `draft_manifest_problems`、knowmart `parse_manifest` 都过。
 4. ~~平台空白 1、2（计算工具、数值验收）~~：已由 [0030](../0030-knowbot-compute.md) 补上，本样本的方法与验收已改用（2026-10-17，0030 第九节；演练脚本 `c2-drill.py`）；随 R5 之后的小发布上线。
 5. 之后照 0027 走：knowlab 建草稿（贴 `manifest.json`）→ 核出处 → 发起测试 → 有人值守 → 通过即交付 → 工作台「请」。

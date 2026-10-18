@@ -800,9 +800,34 @@
   },
   "data_bindings": [
     {
-      "dataset_id": "workbook-placeholder",
+      "dataset_id": "5181e17c-1689-4db9-b111-218648e06f44",
       "version": "1",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      "sha256": "9d11a6e9fdd324b88069c7c8c49d575a15fe8a1a38c6188fbe63302f1e762751"
+    },
+    {
+      "dataset_id": "35da3157-7472-4404-b7f7-fd4eb8128839",
+      "version": "1",
+      "sha256": "f65effdde58bcea99fd6bdb53f61b31d5c432e6dfb2661e5caf05156a433ea5a"
+    },
+    {
+      "dataset_id": "538285ed-c604-4110-9160-bfdd0ed4d262",
+      "version": "1",
+      "sha256": "de394171306b9f2c7d79f54990de2a9e9c99feb54413150180179e24f0d83358"
+    },
+    {
+      "dataset_id": "f4703e18-4db5-4bb6-870f-efec5dd0ddac",
+      "version": "1",
+      "sha256": "2125ff97a452ea79b0d784e2432f7d224b6aecc330b644b593477d69e22f4ed1"
+    },
+    {
+      "dataset_id": "3103d049-ec3f-452b-9a2b-56748cd6efe0",
+      "version": "1",
+      "sha256": "5299f4940e2ce4e91084b73dc457d558b9d335fa76fbfee6227e4254eb7f4a30"
+    },
+    {
+      "dataset_id": "d1bfb7a8-6a24-47da-a2d1-7cc3e7859e4a",
+      "version": "1",
+      "sha256": "474905deeaf0f875fc0a1b097a626c0c7852c427faadc5d7fc7816cbf45ea288"
     }
   ],
   "rule_sources": [
