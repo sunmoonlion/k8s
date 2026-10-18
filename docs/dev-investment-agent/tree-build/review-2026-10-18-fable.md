@@ -93,3 +93,26 @@
 - 单元测试只看了数量与覆盖的文件名，没有逐个读断言。
 
 审读人：远程 Fable，2026-10-18。
+
+## 六、Opus 的处理（2026-10-18，所有者「按你建议，两件都同意，开始改吧」）
+
+都随 qwen-007 上线；提交说明里写了「审读第 N 条」。决定记录见 `decisions.md`「采纳远程 Fable 10-18 审读」。
+
+| # | 处理 | 在哪 |
+| --- | --- | --- |
+| 1 | 改：后端内部接口只认集群内与回环地址（模板守卫，挂在各应用内部接口的路由器上），公网 Ingress 把 `/api/internal` 转给前端回 404；边缘 Traefik 不动 | tpl `bcd530c` 起同步五个应用；k8s `common/web`、`common/admin` 模板 |
+| 2 | 改：判断与开步前的提问建出来就归用户；运营写一句理由才能改派给自己答，可转回；只有用户答的写回用例、进出处；迁移把已有的行转过去 | knowlab 后端 `1a39bac`（迁移 `20261018_0007`）、管理端 `25a0df7` |
+| 3 | 改：`StepResult.details`（可选）；平台取不到数记 error 不记 failed；INFO 记 run、case、step、detail；两个网页显示原因 | knowlab 后端 `836587c`、knowbench 后端 `640627c`、两端网页、knowbench 锁 |
+| 4 | 改：管理角色换算成权限，operator 只有基本权限；knowlab 建草稿、核出处、交付、退回要 `knowlab:release`（只有 admin） | tpl `bcd530c`、knowlab `1a39bac` |
+| 5 | 改：重名列加 `#2`；xls 日期格转日期；`read_my_table` 说明写「照这里返回的标签抄」 | knowlab `1a39bac`、knowbench `640627c` |
+| 6 | ①已有：公开要开关加发布主体在该类目有审核通过、未过期的资质（`360effd`，有测试）。②改：没选类目记「未分类」，未分类不能公开（库约束） | knowmart `c00eebf`（迁移 `20261018_0006`） |
+| 7 | 以后做 | — |
+| 8 | 改：工作台测试期望里带 `%` 的不当数，与 knowlab 一致；网页导出保留 0.12 | knowbench `640627c`；0030 补一句 |
+| 9 | 以后做（上量前） | — |
+| 10 | 改：knowlab 草稿清单 1 MB、出处 ≤500、数据绑定 ≤64、同一数据只绑一次 | knowlab `1a39bac` |
+| 11 | 已有：`docx.ts` 早就只放行 http、https、mailto，测试钉了 `javascript:` | knowbench 网页 `4acd320` |
+| 12 | 改：布尔期望按小写字符串比 | knowbench `640627c` |
+| 13 | 改：`compute` 说明加「编号不连续是正常的」 | knowbench `640627c` |
+| 14 | 已有：勾选框默认不勾，文案写明交给电脑上的 git 凭据管理器 | knowbench 网页 `new-project-dialog.tsx` |
+| 15 | 改：代理拒删、拒建立刻报错并写明目录；离线照旧下一轮再试 | knowbench `640627c` |
+| 16 | 改：AGENTS.md 仓清单、switch-test 分工、C-L5 写清「专家」可用；活文档「分身」统一为「专家」。「改名工具挪出 docs」随 R6 | k8s 本批 |

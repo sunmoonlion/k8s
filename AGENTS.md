@@ -1,6 +1,6 @@
 # 项目入口指针
 
-本仓是 SunMoonAI 平台的部署与项目文档仓，与 `tpl-app`、`knowfeed-app`、`knowbase-app`、`knowbench-app` **并列放置**（`sunmoon-link` 是客户端仓，不要求并列）。
+本仓是 SunMoonAI 平台的部署与项目文档仓，与 `tpl-app`、`knowfeed-app`、`knowbase-app`、`knowbench-app`、`knowlab-app`、`knowmart-app` **并列放置**（`sunmoon-link` 是客户端仓，不要求并列）。
 
 **先读这一份**——项目现在是什么样（产品定位、仓、拓扑、部署、红线、去哪查）：
 
@@ -36,7 +36,7 @@
 
 | 规矩 | 原文 |
 | --- | --- |
-| **分身线的合规边界**：投资逻辑与数据只来自用户，我们只做工程化与测试，分身只归用户自己（所有者 2026-10-16 定） | `constraints.md`「合规」、`tree-build/SDD/modules/0026-knowlab.md` |
+| **专家线的合规边界**：投资逻辑与数据只来自用户，我们只做工程化与测试，专家只归用户自己（所有者 2026-10-16 定） | `constraints.md`「合规」、`tree-build/SDD/modules/0026-knowlab.md` |
 | 配置、实现与说明同职责目录放；版本与共享环境单一来源；秘密只在私有目录与 SOPS；实施入口只用原生 Make / Ansible / Flux，不加重复 CLI 或转接层 | `constraints.md`「发布」`C-R13`、`C-R14` |
 | 部署声明保留平台 → 应用 → 组件三层；应用统一 `app_namespace`；应用共用机制只在 `app-platform/common`，改了要证明既有应用渲染对象不变、不碰已完成的不可变 Job | `constraints.md`「发布」`C-R11`、`C-R15`、`gitops/components/README.md`、`gitops/components/app-platform/common/README.md` |
 | 应用构建国内源优先，失败按规则切一次官方源 + 代理；只在 `infrastructure/applications/config.yaml` 选 `domestic` 或 `official-proxy`；证书、签名、哈希校验不得关闭 | `infrastructure/applications/README.md` |

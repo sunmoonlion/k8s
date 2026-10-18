@@ -2,7 +2,7 @@
 
 > 最后更新：2026-10-16 ｜ 按代码现状重写 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
-把 knowfeed 登记来的数据集与文档加工成可查询的形态：数据集目录、口径、语义层，文档入库与检索。属于**数据线**：是我们自己的内部工具，**不作为用户分身的数据源**（`C-L2`）——现在沙箱仍经 MCP 接它，工作台对用户开放前改为默认不接（[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「四」）。2026-10-15 由 `knowledge-app` 改名而来，数据从空库开始。路由与表名里的 `knowledge` 是「知识」这个领域词，不是旧应用名，保留。
+把 knowfeed 登记来的数据集与文档加工成可查询的形态：数据集目录、口径、语义层，文档入库与检索。属于**数据线**：是我们自己的内部工具，**不作为用户专家的数据源**（`C-L2`）——现在沙箱仍经 MCP 接它，工作台对用户开放前改为默认不接（[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「四」）。2026-10-15 由 `knowledge-app` 改名而来，数据从空库开始。路由与表名里的 `knowledge` 是「知识」这个领域词，不是旧应用名，保留。
 
 ## 领域
 
