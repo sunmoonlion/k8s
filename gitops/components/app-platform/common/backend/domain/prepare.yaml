@@ -76,8 +76,8 @@
       knowbench: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml") | from_yaml).knowbench_web_deployment.origin }}'
       knowmart: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml") | from_yaml).knowmart_web_deployment.origin }}'
     # 谁带人去哪（PRD/apps/README.md 4.1）：knowbench 去 knowfeed、knowbase，以及 knowmart「我的分身」（请分身，SDD 0027 P4）；
-    # knowbase 去 knowfeed；knowfeed 去 knowbase
-    target_names: "{{ {'knowbench': ['knowfeed','knowbase','knowmart'], 'knowbase': ['knowfeed'], 'knowfeed': ['knowbase'], 'tpl': [], 'knowlab': [], 'knowmart': []}[application_name] }}"
+    # knowbase 去 knowfeed；knowfeed 去 knowbase；knowmart 去 knowbench（专家目录「去工作台请」，SDD 0032）
+    target_names: "{{ {'knowbench': ['knowfeed','knowbase','knowmart'], 'knowbase': ['knowfeed'], 'knowfeed': ['knowbase'], 'tpl': [], 'knowlab': [], 'knowmart': ['knowbench']}[application_name] }}"
     cross_app_targets: >-
       {% set out = {} %}{% for n in target_names %}{% set _ = out.update({n: {'web_base_url': web_origins[n]}}) %}{% endfor %}{{ out | to_json }}
     # 谁会把人带到这里、各自的回跳地址：knowbench 的工作台回跳；别的应用不回跳；自己不在名单里
