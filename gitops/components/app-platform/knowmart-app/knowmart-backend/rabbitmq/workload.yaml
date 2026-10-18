@@ -158,7 +158,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'knowmart-rabbitmq-700050c0f49d-v2', namespace: messaging-platform-dev}
+metadata: {name: 'knowmart-rabbitmq-728c451ce8a4-v2', namespace: messaging-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -172,7 +172,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:700050c0f49d5ec7f43070ae6fe87fbfb0cfeddb3ab186c2c6a8e60c51697ea5
+          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:728c451ce8a4a79f55b69453beba0e795dfc3189ee29ec089c1f5bd5fc28bc6b
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:

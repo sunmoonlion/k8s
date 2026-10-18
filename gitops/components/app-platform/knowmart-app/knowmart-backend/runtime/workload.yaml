@@ -4,7 +4,7 @@ metadata: {name: knowmart-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: knowmart
-  DEPLOYMENT_ID: "knowmart-backend-700050c0f49d5ec7"
+  DEPLOYMENT_ID: "knowmart-backend-728c451ce8a4a79f"
   ALLOWED_HOSTS: "localhost,127.0.0.1,knowmart-api,knowmart-api.app-platform-dev.svc.cluster.local,knowmart.sunmoonai.com,knowmart-admin.sunmoonai.com,knowmart-tls.app-platform-dev.svc.cluster.local"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -30,7 +30,7 @@ data:
   SERVICE_AUTH_SUMMON_KNOWBENCH_SUBJECT_ALLOWLIST: "admin/sunmoonai-knowbench-knowmart-summon"
   SERVICE_AUTH_SUMMON_KNOWBENCH_REQUIRED_SCOPE: "knowmart:summon"
   SSL_CERT_FILE: /etc/sunmoon/service/ca.crt
-  CROSS_APP_TARGETS_JSON: "{}"
+  CROSS_APP_TARGETS_JSON: "{\"knowbench\": {\"web_base_url\": \"https://knowbench.sunmoonai.com:30443\"}}"
   CROSS_APP_SOURCES_JSON: "{\"knowbench\": {\"return_url\": \"https://knowbench.sunmoonai.com:30443/zh-CN/workbench?ref={ref}\"}, \"knowbase\": {}, \"knowfeed\": {}}"
   WEB_AUTH_ALLOWED_RETURN_PATHS: "/zh-CN/dashboard,/en/dashboard,/zh-CN/login,/en/login,/zh-CN/knowbots,/en/knowbots"
 ---
@@ -64,7 +64,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 0c7dd5ae92b7ae7f2e54fb40672db575f782ea4230ecd82d2eb9023a28562234
+        sunmoonai.com/config-sha256: eab9058a9d604a77e922b1cd09bf8ef3fce6465853fb569e2cc21bf3f2ea4422
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -74,7 +74,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:700050c0f49d5ec7f43070ae6fe87fbfb0cfeddb3ab186c2c6a8e60c51697ea5
+          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:728c451ce8a4a79f55b69453beba0e795dfc3189ee29ec089c1f5bd5fc28bc6b
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -124,7 +124,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 0c7dd5ae92b7ae7f2e54fb40672db575f782ea4230ecd82d2eb9023a28562234
+        sunmoonai.com/config-sha256: eab9058a9d604a77e922b1cd09bf8ef3fce6465853fb569e2cc21bf3f2ea4422
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -134,7 +134,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:700050c0f49d5ec7f43070ae6fe87fbfb0cfeddb3ab186c2c6a8e60c51697ea5
+          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:728c451ce8a4a79f55b69453beba0e795dfc3189ee29ec089c1f5bd5fc28bc6b
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -180,7 +180,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 0c7dd5ae92b7ae7f2e54fb40672db575f782ea4230ecd82d2eb9023a28562234
+        sunmoonai.com/config-sha256: eab9058a9d604a77e922b1cd09bf8ef3fce6465853fb569e2cc21bf3f2ea4422
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -190,7 +190,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:700050c0f49d5ec7f43070ae6fe87fbfb0cfeddb3ab186c2c6a8e60c51697ea5
+          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:728c451ce8a4a79f55b69453beba0e795dfc3189ee29ec089c1f5bd5fc28bc6b
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]

@@ -58,7 +58,7 @@ data:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'knowmart-migrate-700050c0f49d-v1', namespace: app-platform-dev}
+metadata: {name: 'knowmart-migrate-728c451ce8a4-v1', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 420
@@ -72,17 +72,17 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: migrate
-          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:700050c0f49d5ec7f43070ae6fe87fbfb0cfeddb3ab186c2c6a8e60c51697ea5
+          image: harbor.sunmoonai.com:30443/platform/knowmart-backend@sha256:728c451ce8a4a79f55b69453beba0e795dfc3189ee29ec089c1f5bd5fc28bc6b
           imagePullPolicy: IfNotPresent
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
           envFrom: [{secretRef: {name: knowmart-migration-auth}}]
           env:
             - {name: ENV, value: production}
-            - {name: DEPLOYMENT_ID, value: 'bfeb2aee7af1c8d3bcdba2973d632198101b8f69'}
+            - {name: DEPLOYMENT_ID, value: '360effd1110241a1f020d968f1096b3815307f76'}
             - {name: ADMIN_FRONTEND_BASE_URL, value: 'https://knowmart-admin.sunmoonai.com:30443'}
             - {name: WEB_FRONTEND_BASE_URL, value: 'https://knowmart.sunmoonai.com:30443'}
-            - {name: EXPECTED_SCHEMA_REVISION, value: '20261016_0004'}
+            - {name: EXPECTED_SCHEMA_REVISION, value: '20261018_0005'}
           command: [/bin/sh, -ec]
           args: ['python -m app.bootstrap.migration upgrade && python /verify/verify.py']
           volumeMounts:
