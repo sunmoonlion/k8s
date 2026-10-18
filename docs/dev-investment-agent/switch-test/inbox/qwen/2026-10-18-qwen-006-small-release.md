@@ -147,3 +147,31 @@ knowmart 与工作台这几行用 **zymun**（「读表报营收」在它名下�
 ## 回执
 
 `scripts/results/qwen-006.<时间>.md`：各步 `exit`、镜像锁八行、三处暂存改动的原样摘录（runner、测试电脑、knowmart 跨应用目标）、三个计划的迁移头、`application-check` 的 `admin_list_read`、测试电脑日志（码抹掉）、走查每行的截图描述与第 9 行的输出。提交推送后停下等 Opus 审。
+
+## 补：第三节续跑（Opus 2026-10-18，回执 `qwen-006.20261018-1459.md` 停在暂存 knowmart）
+
+**原因**：卡漏了一步。knowmart 后端钉到 `360effd`，它带新迁移 `20261018_0005`，`knowmart-backend/config.yaml` 的 `expected_schema_revision` 却还是 `20261016_0004`，暂存前的断言拦下了。本提交把它改成 `20261018_0005`。迁移 Job 名带后端镜像摘要（`bind.yaml`），换镜像就换名，`migration_job_revision` 不用动。
+
+**现场照留**：你没提交的 `sources.yaml`（19 行）与 knowbench、knowlab 的暂存产物、三个应用的镜像锁都留着，不退回、不重建。下面只补 knowmart 的暂存与计划，接着做第四、五节。
+
+```bash
+cd ~/worktrees/qwen/k8s && git pull --ff-only origin qwen && git log --oneline -1
+grep -n expected_schema_revision gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml
+bash <<'SH'
+make -C infrastructure platform-stage OBJECT=app-platform/knowmart-app; echo "stage knowmart exit=$?"
+git diff gitops/components/app-platform/knowmart-app/knowmart-backend/runtime/workload.yaml | grep 'CROSS_APP_TARGETS'
+make -C infrastructure application-deployment-plan APP=knowmart > /tmp/q006-plan-knowmart.log 2>&1; echo "plan knowmart exit=$?"; grep -E "schema|revision|ok=|failed=" /tmp/q006-plan-knowmart.log | tail -4
+git diff gitops/components/app-platform/knowlab-app/knowlab-backend/runtime/workload.yaml | grep '^[-+] ' | grep -v 'sha256\|digest\|image:'
+git status --short gitops | awk '{print $2}' | sed -E 's#^gitops/(components/[^/]+/[^/]+(/[^/]+)?|clusters/kind)/.*#\1#' | sort | uniq -c
+SH
+```
+
+要看到：
+
+- 拉下来的提交是本卡这次补的那个；`config.yaml` 第 9 行是 `'20261018_0005'`。
+- `stage knowmart exit=0`；`CROSS_APP_TARGETS_JSON` 从 `{}` 变成带 `knowbench` 的地址。
+- `plan knowmart exit=0`，迁移头 `20261018_0005`。
+- knowlab 运行时除镜像与摘要外只有 `DEPLOYMENT_ID` 一行变（配置摘要把出站客户的配置也算进去了，这次给它们加了 `roles` 字段，默认值不变）；knowlab 的 `knowbench-testrun-identity`、`knowmart-deliver-identity` 两处变化是共用的服务身份注册脚本加了连 Casdoor 失败自动重试，Job 跟着换名——都是预期的，你上一份回执的观察就是这个。别的行有变就停。
+- knowmart 那几处也一样：运行时、迁移、出站身份（若有）跟着变。
+
+然后照原卡第四节、第五节往下做。第四节的 `git add infrastructure/applications/sources.yaml gitops` 不用管 `config.yaml`，它已在本次提交里。zsh 没有 `PIPESTATUS`，第四节带管道的命令同样包进 `bash <<'SH' … SH` 里跑。
