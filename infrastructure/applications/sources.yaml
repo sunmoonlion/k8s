@@ -30,28 +30,28 @@ applications:
     admin_parent_revision: f097495080ef6ef7296beb0fcc9430b4079d8011
     admin_revision: f097495080ef6ef7296beb0fcc9430b4079d8011
   knowbench:
-    parent_revision: 4bee41aa7ef35c699838940a82e6a6c8602b6aca
+    parent_revision: 57a67beaa7f0bc5e7c6cbf5befafbaea255bf324
     backend_parent_revision: 68b592491d8aa723f3c96ff0b61e8d9fe26cc824
     backend_revision: 68b592491d8aa723f3c96ff0b61e8d9fe26cc824
-    web_parent_revision: 963237216bc781051ff768407ff4abc1eb4a02e9
-    web_revision: 963237216bc781051ff768407ff4abc1eb4a02e9
+    web_parent_revision: 4b177c13adca69546969cfac8768b8d501277652
+    web_revision: 4b177c13adca69546969cfac8768b8d501277652
     admin_parent_revision: 26964553ed9d581ac855c38edeaee8e65add792f
     admin_revision: 26964553ed9d581ac855c38edeaee8e65add792f
   # 2026-10-16 由 tpl-app 4b19daf 实例化的空应用（qwen-003）
   knowlab:
-    parent_revision: 06e78408f6769a4f31cae50582f7f3b92e8bdf58
+    parent_revision: 81a589a108998a92f121f459c0dd845eb08cffa8
     backend_parent_revision: 836587c84af6084d91a7c0ec40e5a31597d18ec4
     backend_revision: 836587c84af6084d91a7c0ec40e5a31597d18ec4
-    web_parent_revision: e9bb849c1efd456b924e9214edfc9968ef13f6af
-    web_revision: e9bb849c1efd456b924e9214edfc9968ef13f6af
-    admin_parent_revision: fc4453541e3de9f9c29e5f73f50b5b7dbb578635
-    admin_revision: fc4453541e3de9f9c29e5f73f50b5b7dbb578635
+    web_parent_revision: a41861d7b9ccfba3b97164f195da7d6dc55f19a1
+    web_revision: a41861d7b9ccfba3b97164f195da7d6dc55f19a1
+    admin_parent_revision: 9865e3bb23a275ca4e3234a7c68f4c9d084ee6e2
+    admin_revision: 9865e3bb23a275ca4e3234a7c68f4c9d084ee6e2
   # 2026-10-16 由 tpl-app 4b19daf 实例化的空应用（qwen-003）
   knowmart:
-    parent_revision: 463384baca0cd12725088f672f821bdcc9c78348
+    parent_revision: a7f68471d5013ee972d4aeafdc6efb19a34ec228
     backend_parent_revision: c00eebf376e804984f3eabd070daaed50573cc13
     backend_revision: c00eebf376e804984f3eabd070daaed50573cc13
-    web_parent_revision: 5ef6a0800a7fd0d4dd8fcbf509522b61327348ed
-    web_revision: 5ef6a0800a7fd0d4dd8fcbf509522b61327348ed
+    web_parent_revision: 50e280ea37609f0ca198a5d1308aa02bc4074dc8
+    web_revision: 50e280ea37609f0ca198a5d1308aa02bc4074dc8
     admin_parent_revision: 107fda29642e9bf7259af274fa6d6c991302bfeb
     admin_revision: 107fda29642e9bf7259af274fa6d6c991302bfeb
