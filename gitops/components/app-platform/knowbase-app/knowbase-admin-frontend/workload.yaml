@@ -20,7 +20,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/knowbase-admin-frontend@sha256:7cf919aee4e9e4957f4f2a7b471519d6724a896e9d0fb75ffe0e8b52b3070479
+          image: harbor.sunmoonai.com:30443/platform/knowbase-admin-frontend@sha256:75bd503601b746e8421ff48b46d044b05e631f8e68a0edba3e67b58cd5854f17
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
@@ -29,7 +29,7 @@ spec:
             - {name: AUTH_APP, value: knowbase}
             - {name: APP_ORIGIN, value: "https://knowbase-admin.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://knowbase-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "knowbase-admin-frontend-7cf919aee4e9e495"}
+            - {name: DEPLOYMENT_ID, value: "knowbase-admin-frontend-75bd503601b746e8"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
@@ -79,6 +79,10 @@ spec:
     - host: knowbase-admin.sunmoonai.com
       http:
         paths:
+          # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
+          - path: /api/internal
+            pathType: Prefix
+            backend: {service: {name: knowbase-admin, port: {number: 3000}}}
           - path: /api
             pathType: Prefix
             backend: {service: {name: knowbase-api, port: {number: 8000}}}

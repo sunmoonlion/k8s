@@ -4,7 +4,7 @@ metadata: {name: knowbase-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: knowbase
-  DEPLOYMENT_ID: "knowbase-backend-620796b591e4b7a6"
+  DEPLOYMENT_ID: "knowbase-backend-824476357d670cd1"
   ALLOWED_HOSTS: "localhost,127.0.0.1,knowbase-api,knowbase-api.app-platform-dev.svc.cluster.local,knowbase.sunmoonai.com,knowbase-admin.sunmoonai.com,knowbase-tls.app-platform-dev.svc.cluster.local"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -81,7 +81,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 72018b48d3dbe40aac9926f6fbe9a8083a6e69509063187a0eac7619d30fc0c2
+        sunmoonai.com/config-sha256: 45ff5508afbb70a66541a9919de5a9977f7e845acedbcd50bfb7f78ee581754d
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -91,7 +91,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:620796b591e4b7a619b257f071855124d61a6755b2692c341a9c2d531dde3b77
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:824476357d670cd108cfa70928956d37e4c31e60f77dfbaf4211d4f38046afdf
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -145,7 +145,7 @@ spec:
         sunmoonai.com/ragflow-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 72018b48d3dbe40aac9926f6fbe9a8083a6e69509063187a0eac7619d30fc0c2
+        sunmoonai.com/config-sha256: 45ff5508afbb70a66541a9919de5a9977f7e845acedbcd50bfb7f78ee581754d
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -155,7 +155,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:620796b591e4b7a619b257f071855124d61a6755b2692c341a9c2d531dde3b77
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:824476357d670cd108cfa70928956d37e4c31e60f77dfbaf4211d4f38046afdf
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -202,7 +202,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 72018b48d3dbe40aac9926f6fbe9a8083a6e69509063187a0eac7619d30fc0c2
+        sunmoonai.com/config-sha256: 45ff5508afbb70a66541a9919de5a9977f7e845acedbcd50bfb7f78ee581754d
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -212,7 +212,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:620796b591e4b7a619b257f071855124d61a6755b2692c341a9c2d531dde3b77
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:824476357d670cd108cfa70928956d37e4c31e60f77dfbaf4211d4f38046afdf
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
@@ -309,15 +309,3 @@ spec:
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
           podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
       ports: [{protocol: TCP, port: 8443}]
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata: {name: knowbase-sandboxes-in, namespace: app-platform-dev}
-spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: knowbase-api}}
-  policyTypes: [Ingress]
-  ingress:
-    - from:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: sandbox-platform-dev}}
-          podSelector: {matchLabels: {"sunmoonai.com/sandbox": "true"}}
-      ports: [{protocol: TCP, port: 8000}]

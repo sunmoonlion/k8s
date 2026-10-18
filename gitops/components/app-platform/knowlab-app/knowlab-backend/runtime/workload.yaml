@@ -4,7 +4,7 @@ metadata: {name: knowlab-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: knowlab
-  DEPLOYMENT_ID: "knowlab-backend-0854dd35afe4cb3c"
+  DEPLOYMENT_ID: "knowlab-backend-18f461d9e0ab3e8c"
   ALLOWED_HOSTS: "localhost,127.0.0.1,knowlab-api,knowlab-api.app-platform-dev.svc.cluster.local,knowlab.sunmoonai.com,knowlab-admin.sunmoonai.com,knowlab-tls.app-platform-dev.svc.cluster.local"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -75,7 +75,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: abd2ca24bcfd5bf386d81506264f86a9b6bdec972af2cd9640c34284cf3146b7
+        sunmoonai.com/config-sha256: f45a51c384c1bdc73d91eda58531a86b3a76bf1840590ce8577fccd1c182220b
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -85,7 +85,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:0854dd35afe4cb3c2c6f65bd5c94a767d0152f8ac33115e2b6b3840be3b8cea4
+          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:18f461d9e0ab3e8c309d9195a0cea9a2e3ac96644981ed75089955f05be11b6f
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -141,7 +141,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: abd2ca24bcfd5bf386d81506264f86a9b6bdec972af2cd9640c34284cf3146b7
+        sunmoonai.com/config-sha256: f45a51c384c1bdc73d91eda58531a86b3a76bf1840590ce8577fccd1c182220b
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -151,7 +151,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:0854dd35afe4cb3c2c6f65bd5c94a767d0152f8ac33115e2b6b3840be3b8cea4
+          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:18f461d9e0ab3e8c309d9195a0cea9a2e3ac96644981ed75089955f05be11b6f
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -203,7 +203,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: abd2ca24bcfd5bf386d81506264f86a9b6bdec972af2cd9640c34284cf3146b7
+        sunmoonai.com/config-sha256: f45a51c384c1bdc73d91eda58531a86b3a76bf1840590ce8577fccd1c182220b
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -213,7 +213,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:0854dd35afe4cb3c2c6f65bd5c94a767d0152f8ac33115e2b6b3840be3b8cea4
+          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:18f461d9e0ab3e8c309d9195a0cea9a2e3ac96644981ed75089955f05be11b6f
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]

@@ -20,7 +20,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/knowbench-web-frontend@sha256:4885b92e8da679c835d4dec78371d4db7e2aa160e04e22456823d0321a5ecd75
+          image: harbor.sunmoonai.com:30443/platform/knowbench-web-frontend@sha256:bb3dbd13de1a13a65035312c3b7945d6be56470e40f57967ee486ec5f98e66be
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
@@ -29,7 +29,7 @@ spec:
             - {name: AUTH_APP, value: knowbench}
             - {name: APP_ORIGIN, value: "https://knowbench.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://knowbench-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "knowbench-web-frontend-4885b92e8da679c8"}
+            - {name: DEPLOYMENT_ID, value: "knowbench-web-frontend-bb3dbd13de1a13a6"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
@@ -79,6 +79,10 @@ spec:
     - host: knowbench.sunmoonai.com
       http:
         paths:
+          # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
+          - path: /api/internal
+            pathType: Prefix
+            backend: {service: {name: knowbench-web, port: {number: 3000}}}
           - path: /api
             pathType: Prefix
             backend: {service: {name: knowbench-api, port: {number: 8000}}}
