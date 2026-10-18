@@ -52,9 +52,11 @@ data:
       echo '{"event":"pairing","hint":"用测试账号 knowbot-tester 在工作台「接入电脑」里输入下面的连接码"}'
       agent pair || sleep 10
     done
-    # 测试产出保留 7 天：每小时删一次 7 天前的底稿目录（只动 底稿/对话-*）
+    # 测试产出保留 7 天：每小时删一次 7 天前的底稿目录（只动 底稿/对话-*）。每次测试自己的目录 runs/*
+    # 由工作台测完就删（账 129），这里只兜底删 7 天没动的
     ( while true; do
         find "/workspace/底稿" -mindepth 1 -maxdepth 1 -type d -name '对话-*' -mtime +7 -exec rm -rf {} + || true
+        find "/workspace/runs" -mindepth 1 -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null || true
         sleep 3600
       done ) &
     exec node --use-system-ca /data/agent/app/dist/cli.js start
@@ -76,7 +78,7 @@ spec:
       annotations:
         sunmoonai.com/agent-package: 'cd93d5a1d2ebb3fb1506c7cda3dc177997b7f3349361dc8a011a795e1dec1766'
         # 脚本改了 Pod 就换：ConfigMap 卷不会让在跑的进程重读（R5.3 改 run.sh 后旧 Pod 崩到第 11 次才用上新脚本）
-        sunmoonai.com/scripts: '1eac2401f78e7fac73c6ccc9c2555b87602df4a76b0a615c2f7653a828cd7ae4'
+        sunmoonai.com/scripts: 'd7750b72234e908b172817da396bffe74605001a0ea7f0379fad76144a22d4f9'
     spec:
       automountServiceAccountToken: false
       # 镜像在 Harbor 的 platform 项目：和沙箱一样显式带拉取凭据（不用运行时的服务账号，测试电脑不需要别的身份）

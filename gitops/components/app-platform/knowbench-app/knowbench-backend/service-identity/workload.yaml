@@ -10,6 +10,7 @@ data:
     import os
     from pathlib import Path
     from urllib.parse import urlsplit
+    import time
     import httpx
     from joserfc import jwt
     from joserfc.jwk import KeySet
@@ -19,6 +20,29 @@ data:
     def require(condition, message):
         if not condition:
             raise RuntimeError(message)
+
+
+    # Casdoor 经 traefik 内部入口一时连不上（晋级时几个应用同时起，0028 R5.2 四个一起 ConnectError）：
+    # 连接失败与网关 502/503/504 按退避重试，总共不超过 RETRY_SECONDS，留够 Job 的 180 秒期限（账 123）
+    RETRY_SECONDS = 120
+    TRANSIENT = frozenset({502, 503, 504})
+
+
+    def request_with_retry(client, method, path, **kwargs):
+        deadline, pause = time.monotonic() + RETRY_SECONDS, 1.0
+        while True:
+            try:
+                response = client.request(method, path, **kwargs)
+                if response.status_code not in TRANSIENT:
+                    return response
+            except httpx.TransportError:
+                if time.monotonic() + pause > deadline:
+                    raise
+            else:
+                if time.monotonic() + pause > deadline:
+                    return response
+            time.sleep(pause)
+            pause = min(pause * 2, 15.0)
 
 
     def run():
@@ -32,7 +56,7 @@ data:
         created = []
         with httpx.Client(base_url=os.environ['CASDOOR_INTERNAL_ENDPOINT'], verify='/run/app/ca.crt', headers={'Origin':origin, 'Host':urlsplit(origin).netloc}, trust_env=False, timeout=20, follow_redirects=False) as client:
             def api(method, path, payload=None, params=None):
-                response = client.request(method, path, json=payload, params=params)
+                response = request_with_retry(client, method, path, json=payload, params=params)
                 require(response.status_code == 200, 'Casdoor API HTTP failure')
                 data = response.json()
                 require(data.get('status') == 'ok', 'Casdoor API rejected operation')
@@ -58,23 +82,23 @@ data:
                 created.append('application')
                 existing = api('GET','/api/get-application',params={'id':'admin/'+definition['application']})
             require(existing and all(existing.get(k)==v for k,v in desired.items() if k != 'scopes') and [v.get('name') for v in existing.get('scopes',[])] == [definition['scope']], 'Existing service application differs; explicit migration required')
-            token_response = client.post('/api/login/oauth/access_token', data={'grant_type':'client_credentials','client_id':definition['client_id'],'client_secret':secret,'scope':definition['scope']})
+            token_response = request_with_retry(client, 'POST', '/api/login/oauth/access_token', data={'grant_type':'client_credentials','client_id':definition['client_id'],'client_secret':secret,'scope':definition['scope']})
             require(token_response.status_code==200, 'Service token exchange HTTP failure')
             token_data = token_response.json()
             require(token_data.get('access_token') and token_data.get('expires_in')==definition['token_seconds'], 'Missing or unexpectedly long-lived service token')
-            discovery = client.get('/.well-known/openid-configuration').json()
+            discovery = request_with_retry(client, 'GET', '/.well-known/openid-configuration').json()
             require(discovery['issuer']==origin, 'Incorrect canonical issuer')
             jwks_url = urlsplit(discovery['jwks_uri'])
             require(jwks_url.scheme+'://'+jwks_url.netloc==origin, 'Foreign verification key endpoint')
-            keys = KeySet.import_key_set(client.get(jwks_url.path).json())
+            keys = KeySet.import_key_set(request_with_retry(client, 'GET', jwks_url.path).json())
             decoded = jwt.decode(token_data['access_token'], keys, algorithms=['RS256'])
             JWTClaimsRegistry(iss={'essential':True,'value':origin},aud={'essential':True,'value':definition['client_id']},sub={'essential':True,'value':'admin/'+definition['application']},exp={'essential':True},iat={'essential':True}).validate(decoded.claims)
             require(decoded.claims.get('scope')==definition['scope'], 'Wrong service relation scope')
             client.cookies.clear()
             # A service client must not read the built-in organization using its credentials.
-            denied = client.get('/api/get-users',params={'owner':'built-in','clientId':definition['client_id'],'clientSecret':secret})
+            denied = request_with_retry(client, 'GET', '/api/get-users',params={'owner':'built-in','clientId':definition['client_id'],'clientSecret':secret})
             require(denied.status_code in (401,403) or (denied.status_code==200 and denied.json().get('status')=='error'), 'Service client can administer built-in users')
-            bad = client.post('/api/login/oauth/access_token',data={'grant_type':'client_credentials','client_id':definition['client_id'],'client_secret':'invalid-credential','scope':definition['scope']})
+            bad = request_with_retry(client, 'POST', '/api/login/oauth/access_token',data={'grant_type':'client_credentials','client_id':definition['client_id'],'client_secret':'invalid-credential','scope':definition['scope']})
             require(not bad.json().get('access_token'), 'Invalid client secret accepted')
         print(json.dumps({'created':created,'isolated_organization':True,'no_human_accounts':True,'client_credentials_only':True,'distinct_credential':True,'token_signature_issuer_audience_subject_scope':True,'token_seconds':definition['token_seconds'],'built_in_users_denied':True,'invalid_secret_denied':True}))
 
@@ -101,7 +125,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'knowbench-service-identity-b98dc78340d8-v1', namespace: app-platform-dev}
+metadata: {name: 'knowbench-service-identity-502de707c13e-v1', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -115,7 +139,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/knowbench-backend@sha256:b98dc78340d87e4af301a2df5e927e5b9cff50d2e156da375d064b32d75e8a0a
+          image: harbor.sunmoonai.com:30443/platform/knowbench-backend@sha256:502de707c13ef7cc0aeb9c21339bbdba77acd3372c0864d125e94509759c36ca
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:
