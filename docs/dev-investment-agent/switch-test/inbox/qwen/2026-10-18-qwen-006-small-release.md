@@ -16,17 +16,17 @@
 | 应用 | 提交 | 内容 |
 | --- | --- | --- |
 | knowbench 后端 | `f9129c8`（含 `e18a8a3`、`edb5669`、`43db3a6`、`8526613`） | 分身测试同时只跑一个、按时间隔离（每次测试独立目录 `runs/…`，开跑前清掉别的、测完即删）、测试电脑不在线不开跑；测试报告写明「专家认为问题不归它」；「专家交回」事件带 `writes_files` |
-| knowbench 网页 | `0e7cb97`（含 `be9fd8d`、`332b5cf`、`73487f6`、`ca7c043` 与北京时间） | 配对确认页写明连到哪个账号；右栏收起后能点开（面板图标）；交回行对不写文件的专家不提底稿；主页「请哪一位」旁边加「请我的分身」；北京时间 |
+| knowbench 网页 | `59e1956`（含 `0e7cb97`、`be9fd8d`、`332b5cf`、`73487f6`、`ca7c043` 与北京时间） | 配对确认页写明连到哪个账号；右栏收起后能点开（面板图标）；交回行对不写文件的专家不提底稿；主页「请哪一位」旁边加「请我的分身」；侧栏电脑名后写「在线 / 离线」，电脑配在别的账号上时不再说「就是这台」；北京时间 |
 | knowbench 管理端 | `2696455` | 北京时间 |
 | knowlab 网页 | `699ddb7` | 北京时间 |
 | knowlab 管理端 | `ef4fe7f` | 分身草稿没权限时说清楚；北京时间 |
 | knowmart 后端 | `360effd`（含管理端认角色 `c4750ee`） | 专家目录：类目、可见范围、发布主体与资质骨架（迁移 `20261018_0005`）、目录 / 类目 / 详情三个接口；公开开关默认关 |
 | knowmart 网页 | `85e7877`（含当前用户 `0239b6e` 与北京时间） | 专家目录首页（一级类目、二级类目、筛选条、已选条件、分页）与详情页；撤「我的分身」页（地址仍是 `/knowbots`） |
 | knowmart 管理端 | `107fda2` | 北京时间 |
-| 三个父仓 | knowbench `47185b8`、knowlab `72c6247`、knowmart `b1cbe7d` | 子仓指针 |
+| 三个父仓 | knowbench `e154758`、knowlab `72c6247`、knowmart `b1cbe7d` | 子仓指针 |
 | k8s（本卡拉到的提交里） | `f858689e` 等 | knowbench runner 拿到读 knowlab 的身份与出站放行；服务身份注册脚本连 Casdoor 失败自动重试；测试电脑兜底清理 `runs/`；knowmart 跨应用目标加 knowbench |
 
-Opus 在远程机核过：knowbench 后端全量（真库）1226 过、网页 `pnpm check` 301 过；knowlab 管理端与网页 `pnpm check` 全过；knowmart 后端全量（真库）426 过、分层与类型检查干净，网页 `pnpm check` 95 过；改钉脚本在 `sources.yaml` 副本上实跑：正好 19 行，knowlab 后端不动。
+Opus 在远程机核过：knowbench 后端全量（真库）1226 过、网页 `pnpm check` 303 过；knowlab 管理端与网页 `pnpm check` 全过；knowmart 后端全量（真库）426 过、分层与类型检查干净，网页 `pnpm check` 95 过；改钉脚本在 `sources.yaml` 副本上实跑：正好 19 行，knowlab 后端不动。
 
 **不在本卡里**：ELK 采集加 knowlab、knowmart（`a1ed64ad`，平台对象另卡）；knowfeed、knowbase 的同类修复（各自下次发布）。
 
@@ -43,7 +43,7 @@ make -C infrastructure platform-status; echo "status exit=$?"
 
 | 父仓 | 后端 | 网页 | 管理端 |
 | --- | --- | --- | --- |
-| knowbench `47185b80…` | `f9129c84…` | `0e7cb979…` | `26964553…` |
+| knowbench `e1547582…` | `f9129c84…` | `59e1956d…` | `26964553…` |
 | knowlab `72c62475…` | `4e39358a…` | `699ddb71…` | `ef4fe7f3…` |
 | knowmart `b1cbe7d3…` | `360effd1…` | `85e7877e…` | `107fda29…` |
 
@@ -56,9 +56,9 @@ python3 - <<'PY'
 import re, pathlib
 p = pathlib.Path('infrastructure/applications/sources.yaml'); s = p.read_text()
 want = {
-  'knowbench': {'parent_revision': '47185b800c328f414f6ca9e24587cb72bb0e491e',
+  'knowbench': {'parent_revision': 'e15475827519130dd3eaa9343b6ee38011aa9f83',
                 'backend_parent_revision': 'f9129c84aba21fd5666379bed2342f33d9553021', 'backend_revision': 'f9129c84aba21fd5666379bed2342f33d9553021',
-                'web_parent_revision': '0e7cb979460aebc377064da645ea18311799ed74', 'web_revision': '0e7cb979460aebc377064da645ea18311799ed74',
+                'web_parent_revision': '59e1956db154b8ac29c8b95ac3d23bf2832a870e', 'web_revision': '59e1956db154b8ac29c8b95ac3d23bf2832a870e',
                 'admin_parent_revision': '26964553ed9d581ac855c38edeaee8e65add792f', 'admin_revision': '26964553ed9d581ac855c38edeaee8e65add792f'},
   'knowlab': {'parent_revision': '72c6247530c40d9caf148d677e27af21d5490db3',
               'web_parent_revision': '699ddb71cfde571308e5ebde2e8e4fea886695f9', 'web_revision': '699ddb71cfde571308e5ebde2e8e4fea886695f9',
@@ -142,6 +142,7 @@ knowmart 与工作台这几行用 **zymun**（「读表报营收」在它名下�
 | 7 | 工作台「设置 → 我的电脑」（zymun） | 看「最近一次联系」 | 是北京时间（和手机上的时间对得上，不再慢 8 小时） |
 | 8 | knowlab 管理端「分身草稿」（admin） | 打开 qwen-005 时没过的第 2 版草稿（`35f953ca…`），重新「发起测试」，隔一两分钟「刷新结果」 | **通过**：用例 c1 满足 1/1（「取出的数与表里一致」这次能过）；同比约 0.1111 |
 | 9 | Qwen 在集群侧（第 8 行跑测试时与跑完后） | `$K -n app-platform-dev exec deploy/knowbench-test-computer -c agent -- ls /workspace/runs` | 跑测试时有一个 `2026…-<测试号>` 目录（时间在前）；跑完后为空（测完即删） |
+| 10 | 工作台侧栏（先 sig-am，再 zymun；本地代理现在配在 zymun 下） | 看「我的电脑与项目」 | sig-am：电脑名后写「离线」，没有「就是这台」，下面一句「你现在用的这台电脑（zymun）连在别的账号上……」；zymun：写「在线」和「就是这台」，没有那一句 |
 
 ## 回执
 
