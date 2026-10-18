@@ -100,10 +100,10 @@
 
 | # | 处理 | 在哪 |
 | --- | --- | --- |
-| 1 | 改：后端内部接口只认集群内与回环地址（模板守卫，挂在各应用内部接口的路由器上），公网 Ingress 把 `/api/internal` 转给前端回 404；边缘 Traefik 不动 | tpl `bcd530c` 起同步五个应用；k8s `common/web`、`common/admin` 模板 |
+| 1 | 改：后端内部接口只认集群内与回环地址（模板守卫，挂在各应用内部接口的路由器上），公网 Ingress 把 `/api/internal` 转给前端回 404；边缘 Traefik 不动 | tpl `497b422` 起同步五个应用；k8s `common/web`、`common/admin` 模板 |
 | 2 | 改：判断与开步前的提问建出来就归用户；运营写一句理由才能改派给自己答，可转回；只有用户答的写回用例、进出处；迁移把已有的行转过去 | knowlab 后端 `1a39bac`（迁移 `20261018_0007`）、管理端 `25a0df7` |
 | 3 | 改：`StepResult.details`（可选）；平台取不到数记 error 不记 failed；INFO 记 run、case、step、detail；两个网页显示原因 | knowlab 后端 `836587c`、knowbench 后端 `640627c`、两端网页、knowbench 锁 |
-| 4 | 改：管理角色换算成权限，operator 只有基本权限；knowlab 建草稿、核出处、交付、退回要 `knowlab:release`（只有 admin） | tpl `bcd530c`、knowlab `1a39bac` |
+| 4 | 改：管理角色换算成权限，operator 只有基本权限；knowlab 建草稿、核出处、交付、退回要 `knowlab:release`（只有 admin） | tpl `497b422`、knowlab `1a39bac` |
 | 5 | 改：重名列加 `#2`；xls 日期格转日期；`read_my_table` 说明写「照这里返回的标签抄」 | knowlab `1a39bac`、knowbench `640627c` |
 | 6 | ①已有：公开要开关加发布主体在该类目有审核通过、未过期的资质（`360effd`，有测试）。②改：没选类目记「未分类」，未分类不能公开（库约束） | knowmart `c00eebf`（迁移 `20261018_0006`） |
 | 7 | 以后做 | — |
