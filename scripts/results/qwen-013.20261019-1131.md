@@ -120,8 +120,12 @@ where t.state in ('VALIDATING', 'QUEUED', 'RUNNING')
 - c1 当前状态复核：`select id,state,state_version,current_step,active_interaction_id,updated_at … where id like '00815b28-%'` → `FAILED / 35 / 5 / active_interaction_id=NULL / 03:53:55`。失效交互已被清除、与 `advisor stopped` 时间吻合。
 - c2 正在真跑：runner 日志出现 `mcp elicitation sandbox=5df3a519… tool "list_my_data" … "task": "3e294d61-…"`。
 
-### 第 3 行（5 分钟内，所有者动作）——待所有者
-请所有者在管理端「财务分析与预测」点「刷新结果」，看卡片是否出现一行进度（「正在跑 c2（第 2/3 条）· 第 x/8 步 …」或「已受理，还没开跑」「在排队」之一），不再只是「测试中」。待回报。
+### 第 3 行（5 分钟内，所有者动作）——已满足（所有者截图回报）
+所有者在管理端「专家草稿 → 财务分析与预测」点「刷新结果」（上次刷新 12:03:15），卡片出现一行进度，**不再只是「测试中」**：
+> 开跑于 2026/10/19 08:49，已跑 194 分钟 · 已发起 1 次
+> **正在跑 c2（第 2/3 条）· 第 3/8 步 勾稽 · 这一步第 1 次 · 到现在花了 22.84 元**
+
+截图描述：页面 `knowlab-admin.sunmoonai.com:30443/zh-CN/knowbots`，草稿卡「财务分析与预测 · 测试中」（用户 `721f2c10-…-093bb4420ea7`、运行方 knowbench、第 1 版 · 第 2 稿）；步骤条 ✓建草稿 → ✓核对出处 → **测试**（当前）→ 交付；测试面板含「刷新结果 / 超时退回」按钮与上述进度行，下方提示「刷新后上面会写跑到第几条、第几步；一条用例跑完，下面的结果里才出现一行」。即待办账 135/136② 的进度行生效。
 
 ### 第 4-6 行——待续（按节奏观察）
 - 第 4 行：c2/c3 跑到第 6 步「对照官方披露」时 grep `workbench_mcp_result_too_large|knowbot test could not answer`，应无 too_large、专家读得到年报表。
