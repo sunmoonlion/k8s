@@ -98,4 +98,12 @@ dcaa3cbb 0037 代码已写：qwen-016 发布卡（先 knowbench 迁移头 202610
 
 - `logs deploy/knowbench-runner --since=10m | grep -E "advance failed|Traceback|outputs failed"`：**无命中**（grep exit=1）。
 - `logs deploy/knowlab-api --since=10m | grep -E "Traceback|outputs not fetched"`：**无命中**（grep exit=1）。
-- `logs deploy/knowlab-scheduler --since=10m | grep -c knowbot_outputs`：暂 **0**——beat 于 13:59:11 UTC 随新 Pod 起步，每小时任务尚未到点（14:03 复测仍 0）；已起后台轮询（每分钟一次、至多 75 分钟）等第一条 `knowbot-outputs-expire`/`knowbot_outputs` 日志，命中后补记本节。
+- `logs deploy/knowlab-scheduler --since=10m | grep -c knowbot_outputs`：暂 **0**（beat 于 13:59:11 UTC 随新 Pod 起步，每小时任务尚未到点）。按所有者改用的判据，以 beat 登记证明（输出原样）：
+
+```text
+$ $K -n app-platform-dev exec deploy/knowlab-scheduler -- python -c "from app.worker import celery_app; print(sorted(celery_app.conf.beat_schedule))"
+['durable-delivery', 'knowbot-outputs-expire']
+exec exit=0
+```
+
+输出含 `knowbot-outputs-expire` → **第三条过**。后台轮询仍挂着：14:59 UTC 前后若看到第一条 `Sending due task knowbot-outputs-expire` 就补记本节，没等到不影响本回执。
