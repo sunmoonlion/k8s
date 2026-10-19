@@ -66,6 +66,36 @@ dcaa3cbb 0037 代码已写：qwen-016 发布卡（先 knowbench 迁移头 202610
 - 真上线对齐：`knowbench-api / runner / scheduler / worker` 四 deploy 镜像摘要均 `sha256:c507cdfa9ff24ae1f3e7037997c812b2e5498066ac24a4801f797028ffe6373f` == `image.lock` 的 `digest` 同一值。
 - Pod：`knowbench-runner-67b965bd9-8txg2 1/1 Running 68s`（新）、`knowbench-test-computer-58bdd469cf-ckl47 1/1 Running 12h`。
 
-## 三、二段：knowlab —— 待跑
+## 三、二段：knowlab
 
-## 四、上线后核 —— 待跑
+### 3.1 改钉（7 行）
+
+`pin exit=0`；`git diff --stat` 仅 `infrastructure/applications/sources.yaml | 14 +++++++-------`（7 插入 7 删除）；`+` 计数 = **7**。
+
+### 3.2 构建、暂存、计划
+
+- `build knowlab exit=0`；变了的镜像锁 **3 个**：后端 `7c9731cdbe79f8be7f00bf6c73ebcf7a70dffd8e`、网页 `6da5cef54da34d616146530a09cbf8ae73c21acd`、管理端 `d46b6bd5ad03c3675f165f573713c82e4cafb5bf`。
+- `stage knowlab exit=0`；`key-check-done` 前无文件名。
+- 暂存改动落点：`knowlab-admin-frontend 2 + knowlab-backend 8 + knowlab-web-frontend 2 = 12` 文件，只有 knowlab。
+- 后端运行时 diff 除镜像/摘要外两行：`DEPLOYMENT_ID: knowlab-backend-b6d4ff2ab13195c2` → `knowlab-backend-afca9881f01d4a94`；`WEB_AUTH_ALLOWED_RETURN_PATHS` 由 6 条变 **16 条**（原 dashboard/login/knowbots 中英各一，新增 questions、ideas、avatars、experts、data 中英各一；暂存重渲染出来，非手改）。
+- 网页、管理端运行时 diff（`workload.yaml`）除镜像/摘要外仅 `DEPLOYMENT_ID`：web `dfd59622…`→`a89b38ec…`、admin `b3e728ea…`→`8f830323…`。
+- 迁移 workload diff：`DEPLOYMENT_ID` `7e1a3cfb…`→`7c9731cd…`；`EXPECTED_SCHEMA_REVISION` `20261019_0008` → **`20261019_0010`**；Job 名 `knowlab-migrate-afca9881f01d-v1`（workload 第 61 行）。
+- `plan knowlab exit=0`；计划核到 `"schema": "20261019_0010"`；`ok=16 changed=0 failed=0`。
+
+### 3.3 提交、发布、晋级、等待、检查
+
+- commit1 `ed8e8314`「deploy(knowlab): 创意、分身、专家三栏，成稿与各步交回物（qwen-016 二段）」（13 files, 42+/42-）；`commit1 exit=0`。
+- `release exit=0`（`ok=30 changed=8 failed=0`）；候选：`digest: sha256:b986f3976dd5f2687671167c4f51d12da1d3356e51e0e6b91a16901061b4d908`、`revision: ed8e83144fbbe02cabd64d8f8ae287245339e822`（= commit1 全号）。
+- 候选照抄进 `flux-source.yaml`（`cp exit=0`，1 file 2+/2-）；commit2 `aa703181`「release(kind): 晋级到 ed8e8314（qwen-016 二段）」。
+- `apply exit=0`（`ok=38 changed=3 failed=0`）；`wait exit=0`：**12** 个 knowlab kustomization 全 `condition met`。
+- `check exit=0`：`"admin_list_read": true`、`ok=50 changed=0 failed=0`。
+- 迁移 Job 按名直查：`knowlab-migrate-afca9881f01d-v1 complete=Complete succeeded=1`。
+- 真上线对齐：`knowlab-api / worker / scheduler` 三 deploy 镜像摘要均 `sha256:afca9881f01d4a94…` == 后端 `image.lock` digest；`knowlab-web` = `sha256:a89b38ec…` == 网页 lock；`knowlab-admin` = `sha256:8f830323…` == 管理端 lock。
+
+## 四、上线后核
+
+### 第 1 行（Qwen）
+
+- `logs deploy/knowbench-runner --since=10m | grep -E "advance failed|Traceback|outputs failed"`：**无命中**（grep exit=1）。
+- `logs deploy/knowlab-api --since=10m | grep -E "Traceback|outputs not fetched"`：**无命中**（grep exit=1）。
+- `logs deploy/knowlab-scheduler --since=10m | grep -c knowbot_outputs`：暂 **0**——beat 于 13:59:11 UTC 随新 Pod 起步，每小时任务尚未到点（14:03 复测仍 0）；已起后台轮询（每分钟一次、至多 75 分钟）等第一条 `knowbot-outputs-expire`/`knowbot_outputs` 日志，命中后补记本节。
