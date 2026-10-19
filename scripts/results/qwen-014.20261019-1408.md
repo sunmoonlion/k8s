@@ -59,10 +59,53 @@
 ### 一段推送
 - 见本节末尾补记（推送结果）。
 
-## 三、二段 knowbench（3 行钉、一个镜像）——待续
+## 三、二段 knowbench（3 行钉、一个镜像）
 
-（含 3.1 部署前只读查询结果原文：应 **0 行**。）
+### 3.1 部署前只读查询——**0 行**、放行
+跑 qwen-013 的 3.1 查询（workbench_tasks ⨝ workbench_interactions 非终态/挂问题委托）：
+```text
+ id | state | updated_at | kind | request_id
+----+-------+------------+------+------------
+(0 rows)
+```
+count = **0**。第 2 稿已结束、没有要人推的委托 → 放行部署。
 
-## 四、上线后核——待续
+### 3.2 改钉 3 行
+- `pin exit=0`；仅 `infrastructure/applications/sources.yaml`；`+` 计数 = **3**。
+- knowbench 三字段：parent_revision→`8b4d8e4c317083691b0e156250e941f430d46b65`、backend_parent_revision/backend_revision→`29d69eb671a9e45a9b47543569b570c60bdff9ef`；web（`4748b94e…`）、admin（`26964553…`）未动。
 
-## 测试最终结论——待续
+### 3.3 构建 / 暂存 / 计划
+- `build knowbench exit=0`；`stage knowbench exit=0`；`plan knowbench exit=0`（PLAY RECAP ok=16 failed=0，`"schema": "20261017_0020"`）。
+- **镜像锁变了 1 个**：`knowbench-backend/image.lock.yaml`：source_revision `29d69eb6…`、digest `sha256:58a09f4ae62400a61ff2e12c2b53d05e809a81c1d97682237d2c1295c8a6d940`。
+- `key-check-done` 前无密钥命中；gitops 改动仅落 knowbench-backend：**9 文件**。
+- 运行时 workload diff 除镜像/摘要外只 `DEPLOYMENT_ID` 一行：`knowbench-backend-71126f5ab9316ae2` → `knowbench-backend-58a09f4ae62400a6`。
+- 迁移头 `20261017_0020`（不变）。
+
+### 3.4 提交 / 发布 / 晋级 / 等待 / 检查（push 前闸门全绿）
+- `commit1 exit=0`：deploy 提交 `b84eeaf1`「deploy(knowbench): 验收核引文、平台收尾的用例记出错（qwen-014 二段）」。
+- `release exit=0`：发布工件 `sha256:d21d5fa3c9ad8c444ba5a3de1c5778a3a9aeb2275def12d0e4dae52ce9779907` from `b84eeaf10dee96f89566ce60ca7c1d8b71022d78`。
+- `promote-cat exit=0`、`chown exit=0`。
+- `commit2 exit=0`：晋级提交 `d1b9061b`「release(kind): 晋级到 b84eeaf1（qwen-014 二段）」。
+- `apply exit=0`。
+- `wait exit=0`：13 个 knowbench kustomization 全 `condition met`。
+- `check knowbench exit=0`：application-check PLAY RECAP ok=50 changed=0 failed=0；**admin 面 `admin_list_read: true`**（web 面 null 属正常）。
+- 测试电脑 `knowbench-test-computer-58bdd469cf-ckl47` **1/1 Running**；新 runner Pod `knowbench-runner-b76d49467-gwn7m` **1/1 Running**。
+- 线上镜像确认（真上线判据）：`knowbench-api`/`runner`/`scheduler`/`worker` 四 deploy 镜像均 = `harbor.sunmoonai.com:30443/platform/knowbench-backend@sha256:58a09f4ae62400a61ff2e12c2b53d05e809a81c1d97682237d2c1295c8a6d940`，与 image.lock digest 逐字一致。
+
+### 二段推送
+- `git push origin qwen` exit=0：双远程 `72b851bd..d1b9061b`；HEAD == origin/qwen == `d1b9061b42c564c4bb36b9db610ca432124d8a7d`。
+
+## 四、上线后核
+
+### 第 1 行（Qwen，runner 就绪后 2 分钟内）——负判据全满足；`took over` 因无可接管而未出现（照实）
+`$K -n app-platform-dev logs deploy/knowbench-runner --since=5m | grep -E "took over|advisor stopped|reconcile|advance failed|Traceback"` → **无任何命中**。
+runner 原始日志（06:18:58Z 启动）仅干净启动行：`service_starting service=knowbench-runner role=runner`、`workbench runner starting id=sunmoon-kind-r1`、`machine sync starting interval=10.0s`、`knowbot test conductor starting interval=5.0s`。
+- **没有 `advisor stopped`**（没有要收尾的委托）、**没有 `advance failed`、没有 `reconcile keeps failing`、没有 `Traceback`** —— 满足。
+- 卡面正判据「有 `took over sandbox=…`」**未出现**：因 3.1 查询 0 行、集群里没有非终态委托/挂着问题的沙箱任务，新 runner 无可接管对象，属正确空态而非缺陷（对照 qwen-013 当时有卡死的 c1 才有 took over）。照实贴出。
+
+### 第 2-4 行——待所有者 / 待截图
+- 第 2 行（所有者）：用 sig-am 登录 web端，「我在做的专家」→「财务分析与预测」下点「写一条补充」，写自己的补充方法并提交；列表应出现该条、状态「待处理」。Qwen 不代填。
+- 第 3 行（所有者）：管理端「专家草稿」→「财务分析与预测」→ 页签「补充方法」；应看到第 2 行那条、「待处理」、下面「出处写：amendment:…」与「不照做」输入框（**不要点不照做**）。
+- 第 4 行（Qwen）：把第 2、3 行截图描述写进回执（补充原文只写前 20 字；截图不带地址栏 code=/token=/state=）。
+
+## 测试最终结论——待续（第 3 稿由 Opus 照补充建，不在本卡）
