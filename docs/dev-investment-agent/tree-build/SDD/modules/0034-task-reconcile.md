@@ -1,7 +1,7 @@
 # 委托没人推时不卡死：runner 每轮对账（0034）
 
 > 状态：**草案，待所有者与评审看过再写代码**（Opus 2026-10-19 起草）。排在 K19 之后、K21 之前。
-> 起因：K19 第 2 稿受理后一直不开跑（qwen-011 第五节）。所有者：「好像不稳健啊，就断了一次，出这么多问题」；评审（所有者转来）：「别再打补丁，而是换掉一个前提……按状态对账，不靠信号」。本页照评审的方向写，Opus 补了代码核对与取舍；评审第二轮意见（四处必改、五条建议）已并入。
+> 起因：K19 第 2 稿受理后一直不开跑（qwen-011 第五节）。所有者：「好像不稳健啊，就断了一次，出这么多问题」；评审（所有者转来）：「别再打补丁，而是换掉一个前提……按状态对账，不靠信号」。本页照评审的方向写，Opus 补了代码核对与取舍；评审第二、三轮意见已并入，第三轮评审认为可以定稿。
 
 ## 一、出了什么事
 
@@ -29,8 +29,8 @@
 
 ### 1. 取消、超时直接收尾，不等推它的人
 
-- `request_cancel` 对 RUNNING 的委托：同一事务里带版本号（CAS）写成 CANCELLED，关掉打开的那一轮尝试（记 CANCELLED、`failure_code=cancelled`），照常记事件、放行排队的下一位；`turn.interrupt` 照发，只算尽力而为。
-- 推它的程序如果还活着，怎么判、怎么停（点名）：它这一轮跑完要写尝试与委托（`advisor.py` 345 的 `attempt_transition(…, RUNNING, turn_id)` 等），会撞上两种错——`StaleStateVersion`（`repository.py` 537、917）和从终态出发时状态机校验抛的错。`_drive` 接住这两种，重读一次委托：已是终态就**只补记一条费用事件**（这一轮的花费、token、turn 编号，记到委托上，账不丢），记一行 info 返回；不是终态照旧往上抛。尝试已由取消方关掉，驾驶者不再改它。
+- `request_cancel` 对 RUNNING 的委托：同一事务里带版本号（CAS）写成 CANCELLED，关掉打开的那一轮尝试（记 CANCELLED、`failure_code=cancelled`；这时不知道这一轮花了多少，`consumed` 填 0，这一轮的预留全部退掉），照常记事件、放行排队的下一位；`turn.interrupt` 照发，只算尽力而为。
+- 推它的程序如果还活着，怎么判、怎么停（点名）：它这一轮跑完要写尝试与委托（`advisor.py` 345 的 `attempt_transition(…, RUNNING, turn_id)` 等），会撞上两种错——`StaleStateVersion`（`repository.py` 537、917）和从终态出发时状态机校验抛的错。`_drive` 接住这两种，重读一次委托：已是终态就**补记这一轮的费用**：同一事务里带版本号改委托的 `budget.used`（加上这一轮花费），并追加一条费用事件（花费、token、turn 编号）——今天的费用不只靠事件，`attempt_transition` 带 `consumed` 时会同时改 `budget.used`、退预留（`ledger.py` `attempt_transition`），只追加事件会让页面上的实时成本和事后对账偏低；预留已在取消方关尝试时退了，补记不再碰预留。记一行 info 返回；不是终态照旧往上抛。尝试已由取消方关掉，驾驶者不再改它。
 - `fail_after_crash` 看到 `cancel_requested_at` 有值时写 CANCELLED，不写 FAILED。
 - 测试超时（`test_runs.py` `_time_out`）走同一条路，不另写。
 
@@ -39,7 +39,7 @@
 `run_once` 每轮在拿租约之后、领命令之前：
 
 - **拿租约**：沙箱上有待办命令、**或者有委托在 QUEUED / RUNNING / WAITING**，都去拿（没有租约、租约过期、或本来就是这个名字的）。WAITING 要算上，不然下一条作废审批没机会跑。
-- **作废上一任留下的工具审批**：进程第一轮、或某个沙箱的连接在本进程里第一次建立时，作废它上面 pending 的 `tool_approval`（`expire_pending_tool_approvals` 现成的，发 `interaction/expired`）。app-server 那边的请求随旧连接消失，Codex 会重问；不作废的话，等审批的委托重启后会永远等。这是今天 `_take_over` 做的另一件事，同名重启后同样从没跑过。
+- **作废随旧连接消失的工具审批**：进程第一轮，以及**每次实际重建某个沙箱的 app-server 连接时**（`ensure_connected` 重连那一刻，它本来就会清 `live_threads`；同一进程里断了再连也算），作废它上面 pending 的 `tool_approval`（`expire_pending_tool_approvals` 现成的，发 `interaction/expired`）。app-server 那边的请求随旧连接消失，Codex 会重问；不作废的话，等审批的委托重启后会永远等。这是今天 `_take_over` 做的另一件事，同名重启后同样从没跑过。
 - **QUEUED 且本进程没在推**（`driving` 里没有，或协程已结束），**且这件委托没有 pending 或 claimed 的 `task.drive`**：排一条 `task.drive`。还没开工，推它不会双跑；后一个条件免得命令没被领走时每 5 秒排一条。
 - **RUNNING 且本进程没在推**：**不重开**。先对那条线发一次中断（尽力而为，把可能还在跑的那一轮停下），再把委托收成 FAILED，原因「推它的程序重启了，这一步没做完」，reason 里带打开的尝试编号与 turn 编号（演练和管理端才分得清这是「重启没做完」还是真的平台错），`failure_code=platform`（同 qwen-009 的平台失败），关掉打开的尝试。测试里这一条用例记平台错误，不算专家数不对。
 - **项目排队**：项目里没有活跃委托却有排队的，放行最早的一件（`_start_next_queued` 已有，改成每轮也调，不只在终态那一刻）。
@@ -69,6 +69,7 @@
 | 5 | 正跑着时超时 | 委托直接 CANCELLED，不等推它的人 |
 | 6 | 排在一个卡住的委托后面 | 管理端写「排在…后面」；排队时间不算进测试超时；排队超过测试时限按超时收、原因写明 |
 | 7 | runner 同名重启时一件委托正等工具审批 | 旧审批作废、发 `interaction/expired`；Codex 重问，新审批能答 |
+| 7b | 不重启 runner，只断它到沙箱 app-server 的连接（一件委托正等工具审批） | 同 7：重连时旧审批作废，Codex 重问 |
 
 ## 五、这一版不做
 
@@ -83,7 +84,8 @@
 - 同名重启：委托 WAITING 等工具审批 → 一轮后旧审批 expired、有 `interaction/expired` 事件。
 - 协程崩了进程活着 → 同上。
 - 委托 QUEUED、没人推 → 一轮后有一条 `task.drive`；连跑三轮仍只有一条（命令没被领走时不重复排）。
-- 取消时推它的程序还活着 → 只有取消方写成终态；推的那方撞 `StaleStateVersion` 后安静停下，补记一条费用事件，不记平台失败。
+- 取消时推它的程序还活着 → 只有取消方写成终态；推的那方撞 `StaleStateVersion` 后安静停下、补记费用，不记平台失败；补记后委托的 `budget.used` 比取消前多出这一轮的钱，`budget.reserved` 不变。
+- 同一进程里沙箱连接断了再连、委托正等工具审批 → 旧审批 expired。
 - 崩溃时委托记着取消 → `fail_after_crash` 写 CANCELLED。
 - 项目里前一位已终态、排队的没放行 → 一轮后放行。
 - 测试：排队时间不算进超时；排队超过时限按超时收、原因带挡路的委托编号；`progress.queued_behind` 过 knowlab 的 schema。
