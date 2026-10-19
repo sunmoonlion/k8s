@@ -1,6 +1,7 @@
-"""生成「财务分析与预测」第 1 版的专家清单（knowbot-manifest/v1）。
+"""生成「财务分析与预测」第 1 版的专家清单（knowbot-manifest/v1），现为第 3 稿。
 
-方法只来自所有者 2026-10-18 的答复（决定单 docs/财务分析与预测-待你定.md、0029 第 4 步六问）；
+方法只来自所有者 2026-10-18 的答复（决定单 docs/财务分析与预测-待你定.md、0029 第 4 步六问）
+与 sig-am 2026-10-19 写的补充方法（第 6 步，SDD 0035）；
 这里只做工程化：8 步一一对应、每步的交回物、验收、工具。用法：
     python3 fin_manifest.py <输出路径> [<workbook 数据集id> <版本> <sha256> [<年份>=<id>:<版本>:<sha256> ...]]
 不给数据绑定时写占位（只用来核结构）。
@@ -14,6 +15,8 @@ import sys
 VERSION = "1"
 SHEETS = "资产负债表、利润表、现金流量表、主要会计数据"
 REF = "2026-10-18 所有者答 {g}：「{words}」"
+# 2026-10-19 sig-am 在 web端写的补充方法（SDD 0035）：第 6 步改成对照管理层讨论
+AMENDMENT = "amendment:e6df96db-a92c-43ce-8039-84d7ebcd65b6"
 
 COMMON = (
     "Pass the task id given in the step instructions on every tool call. Use only the "
@@ -263,45 +266,63 @@ STEPS = [
     },
     {
         "step_id": "official",
+        "step_version": "2",
         "title": "对照官方披露",
-        "summary": "先核你抄的「主要会计数据」和年报原文一致，再拿三张表和它比：相对差超过 0.1% 算对不上；净资产收益率口径不同，只并列",
-        "why": "对不上的两个数都列出，以年报为准（你答的第 7 条）",
-        "input_refs": ["scope", "inventory", "indicators"],
-        "tools": ["read_my_data", "read_my_table", "compute"],
+        "summary": "拿第 5 步的分析结论对照年报的管理层讨论：每条判支持或不支持，没提到算不支持，判支持的引原文；找不到这一节照实说",
+        "why": "我们算出来的和管理层在年报里自己说的对一对，引文平台回原件核（你写的补充）",
+        "input_refs": ["scope", "indicators"],
+        "tools": ["read_my_data", "read_my_table"],
         "method_text": COMMON
-        + "The user copied each annual report's 主要会计数据和财务指标 into the sheet "
-        "主要会计数据. First check that copy: for every year read that year's annual report PDF "
-        "with read_my_data, find the section 主要会计数据和财务指标, and for each of its five "
-        "rows note the page and whether the sheet's number is the one printed there; put "
-        "{year, item, page, matches} into copy_checks (compare the digits as printed; do not "
-        "compute). Then for every year, compare the workbook with the sheet for four items: "
-        "营业收入 and 归属于母公司所有者的净利润 (利润表), 扣除非经常性损益后的归属于母公司股东的净利润 "
-        "(the extra row of 利润表), 经营活动产生的现金流量净额 (现金流量表), each against its "
-        "row of 主要会计数据: compute with names ours and official, expression `(ours - "
-        "official) / official`, round 6; put {item, year, compute_id, value, matches} into "
-        "diffs, matches being true when the absolute value is at most 0.001. List every sheet "
-        "cell you used in official_values as {item, year, address, value}. For "
-        "加权平均净资产收益率 put {year, official_address, official_value, ours_compute_id, "
-        "ours_value} into roe_pairs, ours from indicators.roe, with note '口径不同（年报加权平均"
-        " vs 本方法期初期末平均）': list both, never judge whether they match. mismatches "
-        "repeats every diff that does not match with both numbers; the write-up follows the "
-        "annual report. official_by_year restates, per year, the sheet's 营业收入 as "
-        "{\"<year>\": {\"revenue\": \"<the cell value>\"}}. ",
+        + "The conclusions to check are the sentences in indicators.findings. Check each "
+        "against what the company's management wrote in the annual reports, reading only "
+        "the management discussion section. For every annual report PDF in scope.reports: "
+        "read it with read_my_data from its first page, find in the table of contents the "
+        "section titled 管理层讨论与分析 (older reports may call it 经营情况讨论与分析 or "
+        "董事会报告: find it by its title, never by its section number), read on through "
+        "that section and stop once it ends; do not read the rest of the report. A page "
+        "number here is always the N of the '## Page N' line in the text (the PDF page), "
+        "not the number printed on the page. Put {year, dataset_id, title, first_page, "
+        "last_page} into sections. If a report has no section under any of these titles, "
+        "put {year, dataset_id, why} into sections_missing, the why saying plainly "
+        "没找到管理层讨论这一节; never treat a missing section as one that mentions nothing. "
+        "Then put one entry per finding into checks: {finding, verdict, quotes, why}. "
+        "finding is the sentence copied exactly. verdict is exactly 支持 or exactly 不支持, "
+        "nothing else: 支持 when the management discussion says the same thing; 不支持 when "
+        "it says otherwise or does not mention it (not mentioned counts as 不支持). quotes is "
+        "a list of {dataset_id, page, text}: text copied word for word from that page of "
+        "that PDF, 10 to 1000 characters, from a narrative paragraph rather than a table; a "
+        "支持 needs at least one quote. why says in one sentence how the quote bears on the "
+        "finding, or that the discussion says otherwise or does not mention it. The "
+        "platform looks up every quote on its page of its PDF; a quote that is not there "
+        "fails the step. A 不支持 is a result for the user, not a failure: do not stretch a "
+        "passage to reach 支持. Finally, for the test, restate the annual reports' revenue "
+        "as the user copied it: for every year read the 营业收入 row of the sheet 主要会计数据 "
+        "with read_my_table, list each cell in official_values as {item, year, address, "
+        "value}, and put {\"<year>\": {\"revenue\": \"<the cell value>\"}} into "
+        "official_by_year. ",
         "output_artifact": "official",
         "output_schema": {
-            "copy_checks": [{"year": "string", "item": "string", "page": 0, "matches": True}],
+            "sections": [{"year": "string", "dataset_id": "string", "title": "string",
+                          "first_page": 0, "last_page": 0}],
+            "sections_missing": [{"year": "string", "dataset_id": "string", "why": "string"}],
+            "checks": [{"finding": "string", "verdict": "支持 or 不支持",
+                        "quotes": [{"dataset_id": "string", "page": 0, "text": "string"}],
+                        "why": "string"}],
             "official_values": [{"item": "string", "year": "string", "address": "string", "value": "string"}],
-            "diffs": [{"item": "string", "year": "string", "compute_id": "c…", "value": "string", "matches": True}],
-            "roe_pairs": [{"year": "string", "official_address": "string", "official_value": "string",
-                           "ours_compute_id": "c…", "ours_value": "string", "note": "string"}],
-            "mismatches": [{"item": "string", "year": "string", "ours": "string", "official": "string"}],
             "official_by_year": {"2024": {"revenue": "string"}},
             "note": "string",
         },
-        "acceptance": fmt(["copy_checks", "official_values", "diffs", "roe_pairs", "mismatches", "official_by_year"])
+        "acceptance": fmt(["sections", "sections_missing", "checks", "official_values", "official_by_year"])
         + [
+            rule(
+                "quoted",
+                "判支持的引了原文，引文在年报那一页",
+                "有结论判了支持却没引原文，或引的原文在年报那一页找不到",
+                path="checks",
+                field="verdict",
+                equals="支持",
+            ),
             sourced("official_values", "抄的主要会计数据与表里一致"),
-            computed("diffs", "(ours - official) / official", "相对差由平台算"),
         ],
         "input_max_chars": 20000,
     },
@@ -363,6 +384,7 @@ STEPS = [
     },
     {
         "step_id": "writeup",
+        "step_version": "2",
         "title": "成稿",
         "summary": "写成一篇能逐条核对的稿子：回答、带出处的数据、勾稽与对照、指标与发现、预测表、局限、出处；结论留给你",
         "why": "每个数都有出处，对不上、算不出来的照实写（你答的第 10 条）",
@@ -378,13 +400,14 @@ STEPS = [
         "order: 回答 (the answer in plain words: the trends and, when a forecast was asked, the "
         "point and the range of each forecast quarter with the method in one sentence); 数据 "
         "(every number as a table with its source: file, sheet, row, period); 勾稽与对照 "
-        "(the four checks and the comparison with the annual reports, mismatches listed with "
-        "both numbers, the annual report prevailing; 加权平均净资产收益率 listed beside our "
-        "净资产收益率 with the note that the bases differ); 指标与发现 (describe only); 预测 "
+        "(the four checks; then every finding with its verdict 支持 or 不支持, its quotes with "
+        "the report year and PDF page, and its why, under the line 引文平台核过在原件里；判断是模型做的; "
+        "a report whose management discussion section was not found is said so plainly); "
+        "指标与发现 (describe only); 预测 "
         "(method, window, backtest with errors and how many actuals fell in the range, the "
         "ranges, the assumptions; a forecast is an extrapolation, never a promise or a "
         "target); 局限 (everything in inventory.missing, reconcile.unbalanced and skipped, "
-        "official.mismatches, indicators.not_applicable and not_available, and any reason "
+        "official.sections_missing, indicators.not_applicable and not_available, and any reason "
         "there was no backtest or forecast); 出处 (one line per file: title, dataset id, "
         "version; when scope.in_data is false, the files you looked at); 结论 (left blank for "
         "the user). Do not paste raw JSON into the file. Never write 目标价, 评级 or phrases "
@@ -423,7 +446,7 @@ SOURCES = [
     ("累计数换单季：Q2 = 半年 − Q1，Q3 = 三季 − 半年，Q4 = 年报 − 三季；资产负债表不换", "user_confirmed", REF.format(g="G3", words="全按提议")),
     ("核心指标口径：毛利率、净利率（归母）、净资产收益率（平均归母净资产，季度不年化）、经营现金流与净利润之比、同比增速", "user_confirmed", REF.format(g="G4", words="还是全做吧……要保证：规范地做")),
     ("分母为 0、为负或缺数，标不适用并写原因，不算", "user_confirmed", REF.format(g="G5", words="全按提议")),
-    ("对照年报主要会计数据：四项相对差超过 0.1% 算对不上、两个数都列、以年报为准；加权平均净资产收益率口径不同，只并列不判", "user_confirmed", REF.format(g="G6", words="按建议")),
+    ("对照官方披露（第 6 步）：拿分析结论对照年报的管理层讨论，只读这一节、按标题在目录里找；每条判支持或不支持，没提到算不支持，判支持的引原文；找不到这一节照实说", "user_text", AMENDMENT),
     ("预测：季节性同比，下一季 = 上年同季 ×（1 + 近 4 季同比中位数），区间用近 8 季同比最小、最大，至少两条假设", "user_confirmed", REF.format(g="G7", words="全按提议")),
     ("回测最近 4 季，报误差与落进区间的个数；不足 12 季不回测；最多预测 4 季", "user_confirmed", REF.format(g="G8", words="还是全做吧……要保证：规范地做")),
     ("成稿：回答、数据（带出处）、勾稽与对照、指标与发现（只描述）、预测表、局限、出处；结论栏留空", "user_confirmed", REF.format(g="G9", words="全按提议")),

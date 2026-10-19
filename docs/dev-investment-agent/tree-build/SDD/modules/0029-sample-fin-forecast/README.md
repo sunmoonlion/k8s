@@ -11,6 +11,8 @@
 | [`03-engineering.md`](03-engineering.md) | 我们定的：八步怎么切、交回物、验收、工具、额度；写的过程中发现的四个平台空白 | 第 3 步 工程化 |
 | [`request.json`](request.json) | 交给 knowlab 网页端的提交（`KnowbotRequestIn`）：标题、六问、运行方、3 条验收用例、同意测试 | 用户提交 |
 | [`manifest.json`](manifest.json) | 清单草稿 v0（`knowbot-manifest/v1`）：八步专家包、17 条规则出处（6 条有用户出处，11 条 `pending_user` 等用户答） | 第 4 步 出处把关 |
+| [`manifest-v1.json`](manifest-v1.json) | 第 1 版第 2 稿的清单（K19 第 2 稿测的就是它），留作对照 | — |
+| [`manifest-v1-draft3.json`](manifest-v1-draft3.json) | 第 1 版**第 3 稿**的清单（`manifest_v1.py` 现在生成的就是它）：第 6 步照 sig-am 的补充方法改成对照管理层讨论 | 用户补充方法（[0035](../0035-method-amendment.md)） |
 
 ## 用真代码核过（2026-10-17）
 
@@ -29,4 +31,10 @@
 2. ~~G10 的期望值由所有者从年报填（例如 2024 年营业收入），我们不代填~~：所有者 2026-10-18 核过 2024 年报第 5 页，170,899,152,276.34 元；sig-am 已提交想法与用例（[`04-submission.md`](04-submission.md)）。
 3. ~~按 G1 准备并上传数据（knowlab「我的数据」），把数据 id、版本、sha256 写进 `data_bindings`~~：2026-10-18 sig-am 传了 6 个文件（Excel 一个、年报 PDF 五份），管理端抄回的 sha256 与远程机原件逐个一致；`manifest-v1.json` 的 `data_bindings` 填好 6 条，knowbench `pack_from_manifest`、knowlab `draft_manifest_problems`、knowmart `parse_manifest` 都过。 **2026-10-19 夜**：重测前预演（照方法造出各步交回物、走工作台真实的计算与判分）查出 Excel 里 2025 年报一个科目名折成两行，修好的文件见 [`data-prep/README.md`](data-prep/README.md)「2026-10-19 修订」，由 qwen-011 第五节重新上传、换绑定；清单说明文字补两句（写法不同的同一科目照用、不是第二个口径；成稿不写「目标价」「评级」，连否定句也不写），方法、规则出处、验收不变。
 4. ~~平台空白 1、2（计算工具、数值验收）~~：已由 [0030](../0030-knowbot-compute.md) 补上，本样本的方法与验收已改用（2026-10-17，0030 第九节；演练脚本 `c2-drill.py`）；随 R5 之后的小发布上线。
-5. 之后照 0027 走：knowlab 建草稿（贴 `manifest.json`）→ 核出处 → 发起测试 → 有人值守 → 通过即交付 → 工作台「请」。
+5. **第 3 稿（2026-10-19）**：sig-am 在 web端写了一条补充方法（`amendment:e6df96db-a92c-43ce-8039-84d7ebcd65b6`）：「第 6 步改成拿分析结论对照管理层讨论：只读管理层讨论那一节，按标题在目录里找；每条结论判支持或不支持，没提到算不支持，判支持的要引原文；找不到这一节就照实说。」第 3 稿只改两步：
+   - 第 6 步「对照官方披露」：结论 = 第 5 步的 `indicators.findings`；每份年报从头读到目录、按标题（管理层讨论与分析 / 经营情况讨论与分析 / 董事会报告）找到那一节，只读这一节；每条结论 `{finding, verdict, quotes, why}`，判支持的至少一条引文 `{dataset_id, page, text}`，页码是 PDF 第几页；找不到这一节进 `sections_missing`，照实写。验收用平台核引文（`quoted`，`field: verdict`、`equals: 支持`，[0036](../0036-quote-check.md)）。原来的「核抄的主要会计数据」「四项相对差」「加权平均净资产收益率并列」去掉（抄得准不准改归入库时核，[`数据拓扑.md`](../../../../../数据拓扑.md) §十之一），规则出处里 G6 那条换成这条补充（来源 `user_text`，出处 `amendment:…`），仍是 14 条。
+   - 第 8 步「成稿」：「勾稽与对照」一节改写每条结论的判断与引文（写明「引文平台核过在原件里；判断是模型做的」），局限里列没找到管理层讨论的年报。
+   - 为了不动 sig-am 填的用例 1（期望 `official` 的 `official_by_year.2024.revenue`），第 6 步仍按年把「主要会计数据」那张表的营业收入抄进 `official_values`（平台回表核）与 `official_by_year`。这只是给用例对数用的，不是方法，「主要会计数据」这张表本来就在第 1 条的数据里。
+   - 其余六步、数据绑定、用例一字没动。三个应用的清单检查都过（knowbench `pack_from_manifest`、knowlab `draft_manifest_problems` 与 `amendment_ref_problems`、knowmart `parse_manifest`）。预演见 [`rehearsal/README.md`](rehearsal/README.md)「第 3 稿」。
+   - 核不了的：判得对不对、判不支持的是不是真没提（0036 §二.5）；判断写成「部分支持」之类的，平台不要求引文（规则只认「支持」），方法里写明只许这两种。
+6. 之后照 0027 走：knowlab 建草稿（贴 `manifest.json`）→ 核出处 → 发起测试 → 有人值守 → 通过即交付 → 工作台「请」。

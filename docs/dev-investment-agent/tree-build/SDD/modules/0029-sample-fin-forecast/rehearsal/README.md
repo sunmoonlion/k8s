@@ -5,13 +5,17 @@ Opus 2026-10-19 夜里写（所有者「不仅做1，把能做的都做了」）
 | 文件 | 做什么 |
 | --- | --- |
 | `cells.py` | 用 knowlab 的读表代码把 Excel 读成平台眼里的格子（行名、列名、原文、数），写成 JSON |
-| `rehearse.py` | 照 8 步里 5 个算数步骤（勾稽、取数、指标、对照年报、预测与回测）的说明调计算工具、拼交回物，逐步判分，再核用例 1 的两个期望 |
+| `rehearse.py` | 照 8 步里 5 个要判分的步骤（勾稽、取数、指标、对照官方披露、预测与回测）的说明调计算工具、拼交回物，逐步判分，再核用例 1 的两个期望；第 3 稿起第 6 步还试几种做错的引文 |
+| `quotes.py` | 第 3 稿用：在 knowlab 那边用真实的抽取与找原话代码，把年报抽成 PDF 页、按标题找管理层讨论；预演核引文时由 `rehearse.py` 调它回答 |
 
 ```bash
 # knowlab-backend/app 下：
 .venv/bin/python <k8s>/…/rehearsal/cells.py 贵州茅台-三张表与主要会计数据.xlsx /tmp/cells.json
 # knowbench-backend/app 下（借用测试里的读数替身与内存账本）：
 PYTHONPATH=.:tests .venv/bin/python <k8s>/…/rehearsal/rehearse.py /tmp/cells.json <k8s>/…/0029-sample-fin-forecast/manifest-v1.json
+# 第 3 稿：先在 knowlab-backend/app 下抽年报（map.json 是 {数据 id: PDF 路径}），再带上两个文件跑
+PYTHONPATH=. .venv/bin/python <k8s>/…/rehearsal/quotes.py pages map.json pages.json
+KNOWLAB_APP=<knowlab-backend/app> PYTHONPATH=.:tests .venv/bin/python <k8s>/…/rehearsal/rehearse.py cells.json <k8s>/…/manifest-v1-draft3.json pages.json map.json
 ```
 
 ## 结果
@@ -20,6 +24,13 @@ PYTHONPATH=.:tests .venv/bin/python <k8s>/…/rehearsal/rehearse.py /tmp/cells.j
 - 修好的 Excel：5 步全过、两个期望满足、261 次计算、0 个问题。
 - 2024 年「对照年报」四个相对差算出来全是 0，正是第 1 稿崩掉的那种情况；qwen-009 的修复兜住了。
 - 顺带查出的两件平台的事（qwen-011 修）：工作台读用户数据的超时 20 秒，knowlab 第一次抽一份年报的文字就要 15–20 秒；抽到一半被取消时结果不进缓存。
+
+## 第 3 稿（2026-10-19，第 6 步对照管理层讨论）
+
+- 五份年报都按标题找到「第三节 管理层讨论与分析」：PDF 第 7–17（2021）、7–19（2022）、7–20（2023）、7–21（2024）、8–22（2025）页，每份 3.8–4 万字节。专家从第 1 个阅读页读到这一节结束，每份 2 个阅读页、约 6.2 万字节，五份约 31 万字节，读 10 次；第 2 稿第 6 步读同样五份年报的前部，c2 一次过，这次大约多一倍。
+- 结论照年报写了三条：2024 年归母净利润同比增长（支持，引 2024 年报第 8 页「归属于上市公司股东的净利润862.28亿元，同比增长15.38%」，原文在两行之间断开）；2025 年营业收入比上年下降（支持，引 2025 年报第 9 页变动分析表那一行，−1.21%）；2023 年毛利率与上年基本持平（不支持，没提到，不引）。旧预演那句占位的「营业收入 2021–2025 逐年上升」不对，2025 是降的。
+- 判分：6 步全过，用例 1 两个期望满足，241 次计算，0 个问题。第 6 步做错的几种都不过、该过的都过：判支持没引原文、页码错一页、改了一个数字、引了没绑的数据、引文太短（不足 10 字）、判不支持却引了假话，都**不过**，明细写到哪一条、第几页、为什么；字间插空格加断行、全判不支持不引、五份都没找到这一节，都**过**。
+- 引文是 knowlab 真代码在真年报上找的（`quotes.py find`），判分是 knowbench 真代码；只有中间那一跳（knowbench 经服务身份调 knowlab 的接口）没走，那一跳和取格子是同一条路，第 2 稿已经走通。
 
 方法是定的，专家照方法算应当得出同样的数：这次的关键结果抄在 qwen-012（K21）卡的「参照值」里，请来真问一次时逐项对。
 

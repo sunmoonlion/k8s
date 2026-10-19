@@ -2,13 +2,17 @@
 走工作台真实的计算工具与判分代码（judge + judge_numbers + expectation_met）。
 
 用法（在 knowbench-backend/app 下）：
-  PYTHONPATH=.:tests .venv/bin/python <本文件> <cells.json> <manifest.json>
+  PYTHONPATH=.:tests .venv/bin/python <本文件> <cells.json> <manifest.json> [<pages.json> <map.json>]
+第 3 稿的第 6 步（对照管理层讨论）要后两个：pages.json、map.json 见同目录 quotes.py；核引文时
+调 knowlab 真实的找原话代码（quotes.py find，环境变量 KNOWLAB_APP 指 knowlab-backend/app）。
 """
 
 from __future__ import annotations
 
 import asyncio
 import json
+import os
+import subprocess
 import sys
 from decimal import Decimal
 from typing import Any
@@ -26,6 +30,8 @@ from app.domain.workbench.test_runs import Expectation, expectation_met
 
 CELLS = json.load(open(sys.argv[1]))
 MANIFEST = json.load(open(sys.argv[2]))
+PAGES = json.load(open(sys.argv[3])) if len(sys.argv) > 4 else {}
+PDF_MAP = sys.argv[4] if len(sys.argv) > 4 else ""
 WB = MANIFEST["data_bindings"][0]["dataset_id"]
 SHA = MANIFEST["data_bindings"][0]["sha256"]
 BS, IS, CF, KEY = "资产负债表", "利润表", "现金流量表", "主要会计数据"
@@ -52,6 +58,16 @@ class Source:
             )
         return out
 
+    async def quotes(self, purpose, quotes):  # type: ignore[no-untyped-def]
+        here = os.path.dirname(os.path.abspath(__file__))
+        app = os.environ["KNOWLAB_APP"]
+        done = subprocess.run(
+            [f"{app}/.venv/bin/python", f"{here}/quotes.py", "find", PDF_MAP],
+            input=json.dumps(quotes), capture_output=True, text=True, check=True,
+            cwd=app, env={**os.environ, "PYTHONPATH": "."},
+        )
+        return json.loads(done.stdout)
+
 
 def addr(sheet: str, row: str, col: str) -> str:
     return calc.address(WB, sheet, row, col)
@@ -70,7 +86,7 @@ problems: list[str] = []
 async def main() -> None:
     task = _task(session_id="s1")
     pin = _pin()
-    pin["manifest"]["data_bindings"] = [{"dataset_id": WB, "version": "1", "sha256": SHA}]
+    pin["manifest"]["data_bindings"] = MANIFEST["data_bindings"]
     records = Records(task, pin)
     records.repo = EventRepo(records.repo)
     tool = KnowbotCompute(records, Source())  # type: ignore[arg-type]
@@ -161,23 +177,28 @@ async def main() -> None:
     out["indicators"] = {**ind, "values": values, "not_applicable": na, "not_available": [],
                          "findings": ["营业收入从 2021 年到 2025 年逐年上升。"], "note": ""}
 
-    # ---- official ----
-    pairs = ((REV, IS, REV, "营业收入"), ("归母净利润", IS, NP, "归属于上市公司股东的净利润"),
-             ("扣非净利润", IS, "扣除非经常性损益后的归属于母公司股东的净利润", "归属于上市公司股东的扣除非经常性损益的净利润"),
-             ("经营现金流", CF, OCF, "经营活动产生的现金流量净额"))
-    diffs, official_values, mismatches = [], [], []
-    for y in YEARS:
-        for item, sheet, ours, official in pairs:
-            r = await c(f"diff {item} {y}", "(ours - official) / official", {"ours": addr(sheet, ours, y), "official": addr(KEY, official, y)}, 6)
-            if r:
-                ok = abs(Decimal(r["value"])) <= Decimal("0.001")
-                diffs.append({"item": item, "year": y[:4], **r, "matches": ok})
-                if not ok:
-                    mismatches.append({"item": item, "year": y[:4], "ours": raw(sheet, ours, y), "official": raw(KEY, official, y)})
-            official_values.append({"item": item, "year": y[:4], "address": addr(KEY, official, y), "value": raw(KEY, official, y)})
-    out["official"] = {"copy_checks": [], "official_values": official_values, "diffs": diffs, "roe_pairs": [],
-                       "mismatches": mismatches,
+    # ---- official（第 3 稿：分析结论对照管理层讨论，SDD 0036） ----
+    years = {"35da3157-7472-4404-b7f7-fd4eb8128839": "2021", "538285ed-c604-4110-9160-bfdd0ed4d262": "2022",
+             "f4703e18-4db5-4bb6-870f-efec5dd0ddac": "2023", "3103d049-ec3f-452b-9a2b-56748cd6efe0": "2024",
+             "d1bfb7a8-6a24-47da-a2d1-7cc3e7859e4a": "2025"}
+    r2024, r2025 = "3103d049-ec3f-452b-9a2b-56748cd6efe0", "d1bfb7a8-6a24-47da-a2d1-7cc3e7859e4a"
+    sections = [{"year": y, "dataset_id": d, **PAGES[d]["section"]} for d, y in years.items()]
+    # 结论照年报写（2025 年营业收入是降的，旧预演那句「逐年上升」不对）；引文从管理层讨论原文里截
+    support_np = {"dataset_id": r2024, "page": 8, "text": "归属于上市公司股东的净利润862.28亿元，同比增长15.38%"}
+    support_rev = {"dataset_id": r2025, "page": 9, "text": "营业收入 168,838,102,514.79 170,899,152,276.34 -1.21"}
+    checks = [
+        {"finding": "2024 年归属于母公司所有者的净利润同比增长。", "verdict": "支持", "quotes": [support_np],
+         "why": "2024 年报管理层讨论写归母净利润同比增长 15.38%。"},
+        {"finding": "2025 年营业收入比 2024 年下降。", "verdict": "支持", "quotes": [support_rev],
+         "why": "2025 年报管理层讨论的变动分析表写营业收入变动 -1.21%。"},
+        {"finding": "2023 年毛利率与上年基本持平。", "verdict": "不支持", "quotes": [],
+         "why": "管理层讨论没有提到毛利率与上年比。"},
+    ]
+    official_values = [{"item": "营业收入", "year": y[:4], "address": addr(KEY, "营业收入", y), "value": raw(KEY, "营业收入", y)} for y in YEARS]
+    out["official"] = {"sections": sections, "sections_missing": [], "checks": checks,
+                       "official_values": official_values,
                        "official_by_year": {y[:4]: {"revenue": raw(KEY, "营业收入", y)} for y in YEARS}, "note": ""}
+    out["indicators"]["findings"] = [c["finding"] for c in checks]
 
     # ---- forecast (horizon 2) ----
     yoy_ids: dict[str, list[tuple[str, str]]] = {REV: [], NP: []}
@@ -231,19 +252,51 @@ async def main() -> None:
 
     # ---- judge every step ----
     owner_task = {**records.task, "owner_actor_id": records.owner}
-    for sid, artifact in out.items():
+
+    async def run(sid: str, artifact: dict[str, Any]) -> Any:
         rules = tuple(AcceptanceRule.model_validate(a) for a in steps[sid]["acceptance"])
         text = json.dumps(artifact, ensure_ascii=False)
-        v = await judge_numbers(judge(text, rules), rules, repo=records.repo, task=owner_task, source=Source())  # type: ignore[arg-type]
+        return await judge_numbers(judge(text, rules), rules, repo=records.repo, task=owner_task, source=Source())  # type: ignore[arg-type]
+
+    for sid, artifact in out.items():
+        v = await run(sid, artifact)
         bad = [ch for ch in v.checks if ch.get("pass") is False]
         print(f"{sid:11s} {'PASS' if v.ok else 'FAIL'}  checks={len(v.checks)}", "" if v.ok else bad)
+    # ---- 第 6 步做错了的几种，都应当不过；该过的几种应当过 ----
+    def variant(**change: Any) -> dict[str, Any]:
+        bad = json.loads(json.dumps(out["official"]))
+        for key, value in change.items():
+            bad["checks"][0][key] = value
+        return bad
+
+    wrong_char = dict(support_np, text=support_np["text"].replace("15.38", "15.39"))
+    unbound = dict(support_np, dataset_id="00000000-0000-0000-0000-000000000000")
+    cases = [
+        ("判支持没引原文", variant(quotes=[]), False),
+        ("页码错一页", variant(quotes=[dict(support_np, page=9)]), False),
+        ("改了一个数字", variant(quotes=[wrong_char]), False),
+        ("引了没绑的数据", variant(quotes=[unbound]), False),
+        ("引文太短", variant(quotes=[dict(support_np, text="净利润")]), False),
+        ("字间插空格、断行", variant(quotes=[dict(support_np, text=" ".join(support_np["text"][:20]) + "\n" + support_np["text"][20:])]), True),
+        ("全判不支持、不引", {**out["official"], "checks": [dict(c, verdict="不支持", quotes=[]) for c in checks]}, True),
+        ("一节都没找到", {**out["official"], "sections": [], "checks": [dict(c, verdict="不支持", quotes=[]) for c in checks],
+                     "sections_missing": [{"year": "2024", "dataset_id": r2024, "why": "没找到管理层讨论这一节"}]}, True),
+        ("判不支持却引了假话", variant(verdict="不支持", quotes=[wrong_char]), False),
+    ]
+    for name, artifact, should in cases:
+        v = await run("official", artifact)
+        detail = [ch["detail"] for ch in v.checks if ch.get("pass") is False]
+        mark = "ok " if v.ok == should else "WRONG"
+        print(f"  {mark} {name}: {'过' if v.ok else '不过'}", detail if detail else "")
+        if v.ok != should:
+            problems.append(f"official variant {name}")
     # ---- expectations of case c1 ----
     for e in ({"artifact": "official", "path": "official_by_year.2024.revenue", "kind": "approx", "value": 170899152276.34, "tolerance": 0.001},
               {"artifact": "forecast", "path": "horizon", "kind": "equals", "value": "2"}):
         print("expect", e["path"], expectation_met(Expectation.model_validate(e), out))
     print("computations", len(records.repo.events), "| problems:", problems or "none")
     print("unbalanced", out["reconcile"]["unbalanced"], "| roe n/a", [n for n in na if n["indicator"] == "roe"])
-    print("mismatches", out["official"]["mismatches"])
+    print("sections", [(x["year"], x["first_page"], x["last_page"]) for x in out["official"]["sections"]])
     print("forecast REV", [(f["period"], f["kind"], f["value"]) for f in fc["forecasts"] if f["item"] == REV])
     print("mean errors", [(m["item"], m["value"]) for m in fc["mean_errors"]])
     import os
