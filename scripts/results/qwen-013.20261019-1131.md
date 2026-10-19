@@ -127,7 +127,8 @@ where t.state in ('VALIDATING', 'QUEUED', 'RUNNING')
 
 截图描述：页面 `knowlab-admin.sunmoonai.com:30443/zh-CN/knowbots`，草稿卡「财务分析与预测 · 测试中」（用户 `721f2c10-…-093bb4420ea7`、运行方 knowbench、第 1 版 · 第 2 稿）；步骤条 ✓建草稿 → ✓核对出处 → **测试**（当前）→ 交付；测试面板含「刷新结果 / 超时退回」按钮与上述进度行，下方提示「刷新后上面会写跑到第几条、第几步；一条用例跑完，下面的结果里才出现一行」。即待办账 135/136② 的进度行生效。
 
-### 第 4-6 行——待续（按节奏观察）
+### 第 4-6 行——按节奏观察中
+- **基线（c2 在第 3/8 步「勾稽」时，`--since=30m`）**：无 `workbench_mcp_result_too_large`；无 `advance failed`/`reconcile keeps failing`/`advisor crashed`/Traceback/InteractionRejected 循环。仅一条 `knowbot test could not answer … case=c1 interaction=912af0a3 … task moved on since this interaction was opened`（03:53:54 WARNING、**只一次**）——即 SDD 0034 §三.5「推进器答不进去的问题记一次原因」的新行为（记 c1 失效交互的拒答原因一次），非旧版每 5 秒死循环，属预期。
 - 第 4 行：c2/c3 跑到第 6 步「对照官方披露」时 grep `workbench_mcp_result_too_large|knowbot test could not answer`，应无 too_large、专家读得到年报表。
 - 第 5 行：之后每 20 分钟看日志无 `advisor crashed`/`advance failed`、有进度。
 - 第 6 行：测试结束所有者截图三用例结论（c1 应是平台错误、原因写「推它的程序重启了」）。
