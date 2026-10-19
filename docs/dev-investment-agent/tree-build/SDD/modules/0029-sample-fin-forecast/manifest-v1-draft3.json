@@ -567,6 +567,67 @@
             "label": "抄的主要会计数据与表里一致",
             "message": "official_values 里有数和你表里那一格对不上",
             "path": "official_values"
+          },
+          {
+            "kind": "each_has",
+            "label": "每条结论都有原话、判断、引文、理由，判断只许支持或不支持",
+            "message": "有结论缺项，或判断不是「支持」「不支持」",
+            "path": "checks",
+            "keys": [
+              "finding",
+              "verdict",
+              "quotes",
+              "why"
+            ],
+            "field": "verdict",
+            "values": [
+              "支持",
+              "不支持"
+            ]
+          },
+          {
+            "kind": "covers",
+            "label": "第 5 步的每条结论都对照了，一条不多一条不少",
+            "message": "有第 5 步的结论没对照，或多出、重复了",
+            "path": "checks",
+            "field": "finding",
+            "source": "indicators.findings"
+          },
+          {
+            "kind": "each_has",
+            "label": "找到的管理层讨论写明了哪份年报、第几页到第几页",
+            "message": "找到的管理层讨论缺年份、数据编号或页码",
+            "path": "sections",
+            "keys": [
+              "year",
+              "dataset_id",
+              "title",
+              "first_page",
+              "last_page"
+            ]
+          },
+          {
+            "kind": "each_has",
+            "label": "没找到的写明了哪份年报、为什么",
+            "message": "没找到的缺年份、数据编号或原因",
+            "path": "sections_missing",
+            "keys": [
+              "year",
+              "dataset_id",
+              "why"
+            ]
+          },
+          {
+            "kind": "covers",
+            "label": "每份年报都交代了：找到了哪一节，或照实写没找到",
+            "message": "有年报既没找到也没写明没找到，或交代了两次",
+            "path": "sections",
+            "also": [
+              "sections_missing"
+            ],
+            "field": "dataset_id",
+            "source": "scope.reports",
+            "source_field": "dataset_id"
           }
         ],
         "input_max_chars": 20000

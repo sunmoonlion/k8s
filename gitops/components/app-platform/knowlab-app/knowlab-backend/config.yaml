@@ -6,7 +6,7 @@ knowlab_backend_deployment:
   database_migrator_user: knowlab_migrator
   database_bootstrap_revision: v2
   migration_job_revision: v1
-  expected_schema_revision: '20261019_0009'
+  expected_schema_revision: '20261019_0010'
   private_dir: /etc/sunmoon/applications/sunmoon-kind/knowlab
   backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/knowlab
   deploy_budget_bytes: 2147483648

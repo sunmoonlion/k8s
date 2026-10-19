@@ -185,12 +185,13 @@ async def main() -> None:
     sections = [{"year": y, "dataset_id": d, **PAGES[d]["section"]} for d, y in years.items()]
     # 结论照年报写（2025 年营业收入是降的，旧预演那句「逐年上升」不对）；引文从管理层讨论原文里截
     support_np = {"dataset_id": r2024, "page": 8, "text": "归属于上市公司股东的净利润862.28亿元，同比增长15.38%"}
-    support_rev = {"dataset_id": r2025, "page": 9, "text": "营业收入 168,838,102,514.79 170,899,152,276.34 -1.21"}
+    # 表格那一行（纯数字多）按 0036 的新规则不认，引叙述（审读 10-19）
+    support_rev = {"dataset_id": r2025, "page": 9, "text": "营业收入变动原因说明：主要是酱香系列酒产品结构调整影响。"}
     checks = [
         {"finding": "2024 年归属于母公司所有者的净利润同比增长。", "verdict": "支持", "quotes": [support_np],
          "why": "2024 年报管理层讨论写归母净利润同比增长 15.38%。"},
-        {"finding": "2025 年营业收入比 2024 年下降。", "verdict": "支持", "quotes": [support_rev],
-         "why": "2025 年报管理层讨论的变动分析表写营业收入变动 -1.21%。"},
+        {"finding": "2025 年营业收入的变动主要来自酱香系列酒的产品结构调整。", "verdict": "支持", "quotes": [support_rev],
+         "why": "2025 年报管理层讨论写营业收入变动主要是酱香系列酒产品结构调整影响。"},
         {"finding": "2023 年毛利率与上年基本持平。", "verdict": "不支持", "quotes": [],
          "why": "管理层讨论没有提到毛利率与上年比。"},
     ]
@@ -199,6 +200,12 @@ async def main() -> None:
                        "official_values": official_values,
                        "official_by_year": {y[:4]: {"revenue": raw(KEY, "营业收入", y)} for y in YEARS}, "note": ""}
     out["indicators"]["findings"] = [c["finding"] for c in checks]
+    # covers 要对上游：第 1 步的年报清单、第 5 步的结论（工作台从这件委托的交回物里取）
+    upstream = {
+        "scope": {"reports": [{"year": y, "dataset_id": d} for d, y in years.items()]},
+        "indicators": out["indicators"],
+    }
+    records.repo.artifacts = [{"name": n, "kind": "step", "content": c} for n, c in upstream.items()]
 
     # ---- forecast (horizon 2) ----
     yoy_ids: dict[str, list[tuple[str, str]]] = {REV: [], NP: []}
@@ -277,11 +284,20 @@ async def main() -> None:
         ("改了一个数字", variant(quotes=[wrong_char]), False),
         ("引了没绑的数据", variant(quotes=[unbound]), False),
         ("引文太短", variant(quotes=[dict(support_np, text="净利润")]), False),
-        ("字间插空格、断行", variant(quotes=[dict(support_np, text=" ".join(support_np["text"][:20]) + "\n" + support_np["text"][20:])]), True),
+        # 汉字之间的空格、断行去掉；数字之间的空格按 0036 算分词、不去（「862」≠「8 6 2」）
+        ("字间插空格、断行", variant(quotes=[dict(support_np, text=" ".join(support_np["text"][:13]) + "\n" + support_np["text"][13:])]), True),
+        ("数字间插空格", variant(quotes=[dict(support_np, text=support_np["text"].replace("862.28", "8 6 2.28"))]), False),
         ("全判不支持、不引", {**out["official"], "checks": [dict(c, verdict="不支持", quotes=[]) for c in checks]}, True),
         ("一节都没找到", {**out["official"], "sections": [], "checks": [dict(c, verdict="不支持", quotes=[]) for c in checks],
-                     "sections_missing": [{"year": "2024", "dataset_id": r2024, "why": "没找到管理层讨论这一节"}]}, True),
+                     "sections_missing": [{"year": y, "dataset_id": d, "why": "目录里没找到管理层讨论这一节"} for d, y in years.items()]}, True),
+        ("只写了一份没找到", {**out["official"], "sections": [], "checks": [dict(c, verdict="不支持", quotes=[]) for c in checks],
+                     "sections_missing": [{"year": "2024", "dataset_id": r2024, "why": "没找到管理层讨论这一节"}]}, False),
         ("判不支持却引了假话", variant(verdict="不支持", quotes=[wrong_char]), False),
+        ("纯数字的引文", variant(quotes=[dict(support_np, text="862.28亿元，同比增长15.38%")]), False),
+        ("判成「部分支持」", variant(verdict="部分支持", quotes=[]), False),
+        ("一条结论都不对照", {**out["official"], "checks": []}, False),
+        ("漏了一份年报", {**out["official"], "sections": sections[1:]}, False),
+        ("结论缺判断", {**out["official"], "checks": [{k: v for k, v in checks[0].items() if k != "verdict"}, *checks[1:]]}, False),
     ]
     for name, artifact, should in cases:
         v = await run("official", artifact)
