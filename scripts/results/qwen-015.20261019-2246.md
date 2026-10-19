@@ -26,9 +26,37 @@ c37afb6c (HEAD -> qwen, origin/qwen) qwen-015 改写：0037 上线后按创意/�
 
 ## 二、孵化与测试
 
-### 第 1–6 行（所有者操作）——已操作，截图描述待补
+### 第 1–6 行（所有者操作）——已完成；截图免（所有者令），三样要项改用只读库真源原文
 
-所有者 2026-10-19 本地约 22:53 完成第 1–6 行（孵出分身、核出处、发起测试）；集群侧佐证：run `knowlab-1d4122f0-6e13-4ac4-9473-5f79f079e992-1` 于 14:53:02Z 受理，`budget_limit=300.00`、`timeout_seconds=28800` 与卡面第 6 行一致。第 3 行分身号、第 4 行那条出处原文、第 5 行状态的截图描述待所有者截图后补。
+所有者 2026-10-19 本地 22:51–22:53 完成第 1–6 行，并令「截图免」。第 3 行分身号、第 4 行出处原文、第 5 行状态均从 knowlab 库只读取证（data-platform-dev/postgresql-0，库 knowlab，表 knowbot_draft / knowbot_amendment）：
+
+```text
+-- 该补充所属请求下的分身（草稿）序列：
+                  id                  | revision | version | status  |                     run_id                     | run_attempts |       rules_reviewed_at       |          created_at
+ 433a5349-5301-41da-ad59-3c5db794c4c2 |        1 | 1       | failed  | knowlab-433a5349-5301-41da-ad59-3c5db794c4c2-1 |            1 | 2026-10-18 14:53:19.312359+00 | 2026-10-18 14:53:11.105089+00
+ 94b2d093-8098-4f0a-b3af-0ee6c827cae5 |        2 | 1       | failed  | knowlab-94b2d093-8098-4f0a-b3af-0ee6c827cae5-1 |            1 | 2026-10-19 00:29:55.966158+00 | 2026-10-19 00:29:44.227647+00
+ 1d4122f0-6e13-4ac4-9473-5f79f079e992 |        3 | 1       | testing | knowlab-1d4122f0-6e13-4ac4-9473-5f79f079e992-1 |            1 | 2026-10-19 14:52:31.472546+00 | 2026-10-19 14:51:41.76412+00
+
+-- 补充方法本体（第 1/5 行）：
+                  id                  |                                                       text_head                                                       | declined_at | declined_by
+ e6df96db-a92c-43ce-8039-84d7ebcd65b6 | 第 6 步改成拿分析结论对照管理层讨论：只读管理层讨论那一节，按标题在目录里找；每条结论判支持或不支持，没提到算不支持， |             |
+
+-- 分身 1.3 清单里那条 amendment 出处（第 4 行，jsonb 整条）：
+{"ref": "amendment:e6df96db-a92c-43ce-8039-84d7ebcd65b6", "rule": "对照官方披露（第 6 步）：拿分析结论对照年报的管理层讨论，只读这一节、按标题在目录里找；每条判支持或不支持，没提到算不支持，判支持的引原文；找不到这一节照实说", "source": "user_text"}
+
+-- 分身 1.3 清单结构：
+ rule_count |                                            steps                                             | amendment_count
+         14 | scope@1, inventory@1, reconcile@1, series@1, indicators@1, official@2, forecast@1, writeup@2 |               1
+```
+
+逐行对卡：
+- 第 1 行：`e6df96db…` 存在且 `declined_at/declined_by` 皆空（未被拒）；出处写 `amendment:e6df96db-a92c-43ce-8039-84d7ebcd65b6`——与卡一致。
+- 第 2–3 行：分身 1.3 = `knowbot_draft` revision **3**、id `1d4122f0-6e13-4ac4-9473-5f79f079e992`，创建 14:51:41Z，无报错；`status=testing`、`run_id` 已绑 `knowlab-1d4122f0-…-1`、`run_attempts=1`。
+- 第 4 行：出处原文逐字如上（`rule` 字段），与卡面「对照官方披露（第 6 步）：拿分析结论对照年报的管理层讨论……找不到这一节照实说」相符；清单共 **14** 条、恰 **1** 条 amendment。
+- 第 5 行：「已用进第 3 个分身」成立——该补充未 declined，且 revision=3 草稿的 `manifest.rule_sources` 恰含该 `amendment:e6df96db…` 引用。
+- 第 6 行：`rules_reviewed_at=2026-10-19 14:52:31Z`（「已逐条核对出处」的库内凭据），随后 14:53:02Z 受理 run，`budget_limit=300.00`、`timeout_seconds=28800` 与卡一致；未出现「先处理这几条补充……」阻断（否则不会有 run_id）。
+
+截图免后口径：第 9–11 行要入回执的用例结论、原因原文、花费与用时、成稿与各步交回物，同样改由只读库（knowbench 测试状态表族、knowlab `knowbot_test_output`、`knowbot_draft.report/delivery`）取原文入库；库取不到的项再请所有者口述。
 
 ### 加步（所有者同意）：测试停「已受理」→ 取证 → 换测试电脑 Pod
 
