@@ -1,7 +1,7 @@
 # Qwen 发布卡 qwen-016：创意、分身、专家三栏；测试结果带回成稿与各步交回物（先 knowbench 后 knowlab）
 
-> 状态：**可执行**（Opus 2026-10-19 写；所有者「都按你的建议，交回物也带上，先写设计」「创意、新手、专家，按这个写设计」「就叫分身」「好，按这个改设计」「好，开始写代码」；Astra、远程 Fable 评审后「按建议，然后完成代码完善。最后删除三份文档然后发版」）。
-> 设计 [0037](../../../tree-build/SDD/modules/0037-idea-avatar-expert.md)。qwen-015（第 3 稿测试）暂停着，本卡上线后改写再发。
+> 状态：**已完成**（回执 `scripts/results/qwen-016.20261019-2149.md`：一段 knowbench、二段 knowlab 各步 exit=0，钉、镜像锁、迁移头 `20261019_0021` / `20261019_0010`、迁移 Job、线上摘要都对，Opus 审过；第四节第 2–10 行所有者看过（2026-10-19「我都查过了，都符合要求，不要截图了吧」），第 11 行截图描述免了；第 1 行第三条原判据写错了（每小时的任务启动满一小时才第一次发，10 分钟内必为 0），改用 `beat_schedule` 登记证明，已改在表里）。原状态：可执行（Opus 2026-10-19 写；所有者「都按你的建议，交回物也带上，先写设计」「创意、新手、专家，按这个写设计」「就叫分身」「好，按这个改设计」「好，开始写代码」；Astra、远程 Fable 评审后「按建议，然后完成代码完善。最后删除三份文档然后发版」）。
+> 设计 [0037](../../tree-build/SDD/modules/0037-idea-avatar-expert.md)。qwen-015（第 3 稿测试）暂停着，本卡上线后改写再发。
 
 ```text
 被测仓：k8s，qwen 工作树 ~/worktrees/qwen/k8s，分支 qwen
@@ -137,7 +137,7 @@ echo "pin exit=$?"; git diff --stat; git diff infrastructure/applications/source
 
 | # | 谁 | 做什么 | 要看到 |
 | --- | --- | --- | --- |
-| 1 | Qwen | `$K -n app-platform-dev logs deploy/knowbench-runner --since=10m \| grep -E "advance failed\|Traceback\|outputs failed"`；`$K -n app-platform-dev logs deploy/knowlab-api --since=10m \| grep -E "Traceback\|outputs not fetched"`；`$K -n app-platform-dev logs deploy/knowlab-scheduler --since=10m \| grep -c knowbot_outputs`（beat 登记了新任务） | 前两条没有命中；第三条不是 0（或日志里看得到 `knowbot-outputs-expire`） |
+| 1 | Qwen | `$K -n app-platform-dev logs deploy/knowbench-runner --since=10m \| grep -E "advance failed\|Traceback\|outputs failed"`；`$K -n app-platform-dev logs deploy/knowlab-api --since=10m \| grep -E "Traceback\|outputs not fetched"`；`$K -n app-platform-dev logs deploy/knowlab-scheduler --since=10m \| grep -c knowbot_outputs`（beat 登记了新任务） | 前两条没有命中；第三条：每小时的任务从 beat 启动满一小时才第一次发，刚上线必为 0，改用 `$K -n app-platform-dev exec deploy/knowlab-scheduler -- python -c "from app.worker import celery_app; print(sorted(celery_app.conf.beat_schedule))"`，输出里有 `knowbot-outputs-expire` 就过 |
 | 2 | 所有者 | 管理端硬刷新 | 左边一级导航「治理控制台 / 创意 / 分身 / 专家 / CRUD 参考 / 富能力参考 / 设置」；治理控制台多一块「要我们动手」 |
 | 3 | 所有者 | 管理端「创意」→「财务分析与预测」 | 状态标签；主栏「照这个创意孵化一个分身」、补充方法、「它的分身」列出分身 1.1、1.2；右边可折叠栏有「用户的方法 / 验收用例 / 用户的数据 / 答过的问题」，能收起、展开 |
 | 4 | 所有者 | 点「分身 1.2」 | 进分身页那一个；四段进度「✓ 孵化 → 核对出处 → 测试 → 交付」；测试报告在；「成稿与各步交回物」一块写「这个创意是在旧的测试数据说明下提交的……」（sig-am 的创意是旧说明下提交的，正常）；右边栏有「规则出处 / 清单原文 / … / 历次分身」 |
