@@ -6,7 +6,7 @@ knowlab_backend_deployment:
   database_migrator_user: knowlab_migrator
   database_bootstrap_revision: v2
   migration_job_revision: v1
-  expected_schema_revision: '20261019_0008'
+  expected_schema_revision: '20261019_0009'
   private_dir: /etc/sunmoon/applications/sunmoon-kind/knowlab
   backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/knowlab
   deploy_budget_bytes: 2147483648
@@ -33,7 +33,8 @@ knowlab_backend_deployment:
   tmp_size_limit: 256Mi
   domain_env:
     # 登录完能回到「我在做的分身」与「提交一个想法」（SDD 0027 P3，前缀匹配）；其余同模板默认
-    WEB_AUTH_ALLOWED_RETURN_PATHS: '/zh-CN/dashboard,/en/dashboard,/zh-CN/login,/en/login,/zh-CN/knowbots,/en/knowbots'
+    # web端各页（SDD 0037：待我回答、创意、分身、专家、我的数据；旧的 /knowbots 转到创意）
+    WEB_AUTH_ALLOWED_RETURN_PATHS: '/zh-CN/dashboard,/en/dashboard,/zh-CN/login,/en/login,/zh-CN/knowbots,/en/knowbots,/zh-CN/questions,/en/questions,/zh-CN/ideas,/en/ideas,/zh-CN/avatars,/en/avatars,/zh-CN/experts,/en/experts,/zh-CN/data,/en/data'
   # 通用出站服务身份（SDD 0027 P1，机制在 common/backend/service-client）：测试通过后，把分身版本交付给 knowmart 登记。
   service_clients:
     - target: knowmart
