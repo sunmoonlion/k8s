@@ -138,7 +138,16 @@ where t.state in ('VALIDATING', 'QUEUED', 'RUNNING')
   ```
   两 deploy `workbench_mcp_result_too_large` 计数均 **0**；`advance failed|advisor crashed|Traceback` 均无命中；`SH exit=0`。即待办账 137 真模型核对生效：c2 过第 6 步「对照官方披露」无 too_large、专家读得到年报表（不再「被省略」）。
 - 第 4 行原判据：c2/c3 跑到第 6 步「对照官方披露」时 grep `workbench_mcp_result_too_large|knowbot test could not answer`，应无 too_large、专家读得到年报表。
-- 第 5 行：之后每 20 分钟看日志无 `advisor crashed`/`advance failed`、有进度。
-- 第 6 行：测试结束所有者截图三用例结论（c1 应是平台错误、原因写「推它的程序重启了」）。
+- 第 5 行：之后每 20 分钟看日志无 `advisor crashed`/`advance failed`、有进度（第 4 行 60 分钟窗口已覆盖最近几个间隔，均干净）。
+- 第 6 行（测试结束，所有者截给 Opus 的第 2 稿结论原文）——**已补**：
+  ```text
+  测试报告 · 第 1 版 · 第 2 稿  花费 52 元 · 结束于 2026/10/19 12:44
+  c1 · 未通过 · 期望满足 0/2 · 第 official 步没过：在时限内交回 · the run ended as failed
+  c2 · 通过 · 期望满足 1/1
+  c3 · 通过 · 期望满足 2/2
+  （三条都附「本次测试没有隔离：测试电脑的本地代理还不支持建、删目录，在共用的工作区里跑」）
+  ```
+  注：**c1 记成「未通过」而不是平台错误，由待办账 138 修，随 qwen-014 发**（c1 实为推它的程序重启/对账收尾所致，属平台事，不应记作用例未通过）。
 
-## 测试最终结论——待续
+## 测试最终结论
+第 2 稿结束于 2026/10/19 12:44、花费 52 元：**c1 未通过（期望 0/2，official 步「在时限内交回 · the run ended as failed」）、c2 通过（1/1）、c3 通过（2/2）**；三条均附「本次测试没有隔离」提示。c1 的「未通过」记账不准（实为平台重启/对账收尾），由待办账 138 修、随 qwen-014 发。新对账代码（qwen-013 上线）已验证：自动收尾 c1、接推 c2/c3、管理端进度行、c2 过第 6 步零 too_large。
