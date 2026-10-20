@@ -154,7 +154,7 @@ body.main(params, repos, approver)      // 在 node 外面
 2. **人批路径**（第七节第 2 条的能验的一半）：`APPROVAL_TIMEOUT_MINUTES=2`，`APPS=tpl PIN=keep`，没人点；要看到：到第 8 阶段停、2 分钟后 ABORTED，`flux-source.yaml` 没变、现网没动、代理克隆里有 `abandoned/release-<n>` 指着第 6 阶段的提交，候选在 Harbor。「非所有者账号点不了」只有一个账号时验不了，记为按配置保证（`submitter`），等 D 段接 Casdoor 有第二个账号再验。
 3. **真发布**（第七节第 6 条）：借今天已知的一处真实差异——tpl 两个 ingress 的 `/api/internal` 收敛规则（模板比 tpl 已提交的声明新，别的五个应用都已有）。`APPS=tpl PIN=keep NOTE="tpl ingress 补 /api/internal（release）"`，所有者在页面上点批。要看到：`deploy(tpl)` 与 `release(kind): 晋级到 …` 两个提交加 tag 推上 `fable`，`flux-source.yaml` 指到新候选，apply 过、`tpl-*` kustomization Ready、`application-check APP=tpl` 过、`scripts/results/release-<n>.*.md` 随推送带上；浏览器走查：`https://tpl.sunmoonai.com:30443/api/internal/x` 回 404。不碰产品线的代码，风险最小，又把一处已知漂移收掉。
 
-### 10.6 要所有者定的
+### 10.6 要所有者定的（2026-10-20 夜所有者：「按推荐」——五项都按推荐定）
 
 1. 真发布用 tpl 的 `/api/internal` 这处（推荐），还是等产品线恢复借一张真卡。
 2. 审批超时默认 24 小时；批准人就是 `admin`（第一版唯一账号）。
