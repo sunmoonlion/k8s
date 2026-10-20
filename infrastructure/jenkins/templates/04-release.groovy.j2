@@ -1,0 +1,35 @@
+// release 流水线的任务（0033 第四节；B 段第 3 步先到第 5 阶段）。只建一次，不覆盖人改过的；
+// 任务体在仓里 ci/release.groovy，这里只放一段引导：在代理上把 k8s 仓更新到分支头，再 load 仓里的脚本。
+// 不设定时器：发布只由人点（页面「Build with Parameters」或 make jenkins-release-run）。
+import jenkins.model.Jenkins
+import hudson.model.ParametersDefinitionProperty
+import hudson.model.StringParameterDefinition
+import hudson.model.ChoiceParameterDefinition
+import org.jenkinsci.plugins.workflow.job.WorkflowJob
+import org.jenkinsci.plugins.workflow.job.properties.DisableConcurrentBuildsJobProperty
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
+
+def jenkins = Jenkins.get()
+if (jenkins.getItem('release') == null) {
+    def job = jenkins.createProject(WorkflowJob, 'release')
+    job.setDescription('发布卡：核对 → 改钉 → 构建 → 暂存 → 计划（B3 到此为止，不提交、不发布；后面的阶段第 4 步加）。任务体在 k8s 仓 ci/release.groovy。')
+    job.addProperty(new ParametersDefinitionProperty(
+        new StringParameterDefinition('BRANCH', '{{ jenkins_render_check_branch }}', 'k8s 与各应用仓都用这个分支'),
+        new StringParameterDefinition('APPS', 'tpl', '要发的应用，空格分隔；空 = 全部六个'),
+        new ChoiceParameterDefinition('PIN', ['keep', 'heads'] as String[], 'keep = 按已提交的 sources.yaml 钉；heads = 钉到各应用父仓在 BRANCH 的头（子仓取父仓记录的 gitlink）'),
+        new StringParameterDefinition('NOTE', '', '一句话，进构建说明（将来进提交说明和回执）；不含引号')
+    ))
+    // 和 render-check 共用宿主代理唯一的执行器，两个任务天然串行；这条再保证 release 自己不并发
+    job.addProperty(new DisableConcurrentBuildsJobProperty())
+    def bootstrap = '''
+node('{{ jenkins_agent_name }}') {
+  dir('{{ jenkins_repos_dir }}/k8s') {
+    sh 'git fetch -q origin "+refs/heads/*:refs/remotes/origin/*" && git checkout -q --detach "origin/' + params.BRANCH + '"'
+    def body = load 'ci/release.groovy'
+    body.run(params, '{{ jenkins_repos_dir }}')
+  }
+}
+'''
+    job.setDefinition(new CpsFlowDefinition(bootstrap, true))
+    job.save()
+}

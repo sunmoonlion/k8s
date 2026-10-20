@@ -6,6 +6,8 @@
 
 **render-check（第 2 步，只读）**：控制器里的任务 `render-check`（首次启动由 `init.groovy.d/03-render-check.groovy` 建，之后不覆盖），定时 `jenkins_render_check_cron` 在代理上跑仓里的 [`ci/render-check.groovy`](../../ci/render-check.groovy)：把 k8s 与各应用仓更新到 `BRANCH` 头；分支头没变就 `NOT_BUILT` 不跑；变了就对 `APPS` 逐个 `application-deployment-plan`（迁移头核对）和 `application-render`（只写 `.build/`），把候选与 `gitops/` 已提交的差异（剔掉摘要行）存成产物。不暂存、不提交、不发布、不碰 Harbor。手动跑一次并等结果：`make -C infrastructure jenkins-agent-check`。
 
+**release（第 3 步起）**：任务 `release`（首启脚本 `04-release.groovy` 建，不覆盖人改过的，无定时器，不并发），参数 `BRANCH` / `APPS`（空格分隔，空 = 六个）/ `PIN`（`keep` 按已提交的 `sources.yaml`；`heads` 用 [`ci/pin-sources.py`](../../ci/pin-sources.py) 钉到各应用父仓在 `BRANCH` 的头和父仓记录的子仓 gitlink）/ `NOTE`。任务体 [`ci/release.groovy`](../../ci/release.groovy)，阶段对应发布卡的小节：1 核对（工作区干净、应用仓到分支头、`platform-status`）→ 2 改钉（改 `sources.yaml`，再逐应用 `application-deployment-plan` 核迁移头，不对就停在这里不进构建）→ 3 构建（`platform-build OBJECT=app-platform/<app>-app`，产物 `3-image-locks.txt`）→ 4 暂存（`platform-stage`，`gitops/` 里不得出现密钥字样，产物 `4-gitops-touched.txt`、`4-gitops.stat`、剔掉镜像与摘要行的 `4-workload.diff`）→ 5 计划（再跑一次 `application-deployment-plan`）。**第 3 步到此为止**：不提交、不发布；结束时（成功或失败都）把每段日志和产物按已知秘密样子（age 私钥、PEM 私钥、JWT、Harbor 机器人口令）查一遍，命中就标红并打码，然后 `git checkout -- gitops infrastructure/applications/sources.yaml` 回到干净。产物在构建页，原件在 `jenkins_repos_dir/k8s/infrastructure/.build/release/<构建号>/`。命令行：`make -C infrastructure jenkins-release-run APPS="tpl" PIN=keep NOTE="一句话"`（`RELEASE_BRANCH` 默认 fable；参数经 urlencode，中文可以，不要引号），等结束，控制台存 `infrastructure/.build/jenkins/release-<n>.log`。构建会把镜像推进 Harbor（候选，无害；保留与 GC 是账 106）。
+
 ## 安装、启停和前提
 
 需要 registry 已部署（本地 CA 在 `registry_config_dir/tls/`，控制器证书由它签）、入口模块、Docker、systemd、非交互 sudo、可见的数据盘；物料与工具按 [artifacts](../artifacts/README.md)、[tools](../tools/README.md)。首次使用：
@@ -77,5 +79,6 @@ make -C infrastructure jenkins-status
 - 代理：`jenkins-agent-status` 退出 0（节点在线）；`systemctl show sunmoon-jenkins-agent.service` 里 `User=` 是宿主用户、`UnitFileState=enabled`；Jenkins 页面「节点」里 `host` 在线、执行器 1。
 - render-check：`jenkins-agent-check` 退出 0，结果 `SUCCESS`（或 `NOT_BUILT` 表示分支头没变），控制台日志在 `infrastructure/.build/jenkins/render-check-<n>.log`；产物 `diff.txt` 在任务页。
 - 边缘：不关证书校验地验「边缘没有这个域名」：`openssl s_client -servername jenkins.sunmoonai.com -connect <边缘IP>:30443` 回的是 Traefik 的默认自签证书（主题不是 jenkins.sunmoonai.com），`curl`（不加 `-k`）退出 60。有合法证书且回 200 才算泄露。
-- 已知小毛病：`jenkins-stop` 后 systemd 把控制器单元标 `failed`（Compose 收到 SIGTERM 退 143，单元只认 130）；不影响再启动，B 段第 3 步改单元时把 143 加进 `SuccessExitStatus`（代理单元一开始就有）。
+- release：`jenkins-release-run APPS=tpl PIN=keep` 退出 0，结果 `SUCCESS`，构建页有 `infrastructure/.build/release/<n>/` 下的产物；跑完代理仓 `git status --short --untracked-files=no` 为空。
+- 控制器单元 `SuccessExitStatus=130 143`：`jenkins-stop` 后单元是 `inactive`，不再 `failed`（第 3 步改的）。
 - 开机：`wsl --shutdown` 后随 `sunmoon-platform.target` 自己起来（0033 第七节第 4 条，账 104 的一部分）。

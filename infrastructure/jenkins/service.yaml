@@ -22,6 +22,7 @@
       - {src: 01-platform.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/01-platform.groovy', mode: '0644', owner: root, group: root}
       - {src: 02-agent-node.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/02-agent-node.groovy', mode: '0644', owner: root, group: root}
       - {src: 03-render-check.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/03-render-check.groovy', mode: '0644', owner: root, group: root}
+      - {src: 04-release.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/04-release.groovy', mode: '0644', owner: root, group: root}
       - {src: sunmoon-jenkins.service.j2, dest: /etc/systemd/system/sunmoon-jenkins.service, mode: '0644', owner: root, group: root}
   tasks:
     - name: Validate site and operation

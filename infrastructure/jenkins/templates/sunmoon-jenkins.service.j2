@@ -15,8 +15,9 @@ ExecStartPre=/usr/bin/python3 {{ jenkins_runtime_dir }}/check-storage.py {{ jenk
 ExecStart={{ jenkins_runtime_dir }}/docker-compose --project-name {{ jenkins_project }} -f compose.yaml up --no-build --pull never --abort-on-container-exit --exit-code-from jenkins --no-color --no-attach jenkins --no-attach tls
 ExecStop={{ jenkins_runtime_dir }}/docker-compose --project-name {{ jenkins_project }} -f compose.yaml stop --timeout 60
 ExecStopPost=-{{ jenkins_runtime_dir }}/docker-compose --project-name {{ jenkins_project }} -f compose.yaml stop --timeout 60
-# Compose 5.5.1 returns 130 when interrupted by the explicit stop operation.
-SuccessExitStatus=130
+# Compose 5.5.1 returns 130 when interrupted by the explicit stop operation; 143 when systemd's SIGTERM reaches it first
+# (jenkins-stop 后单元被标 failed，2026-10-20 回执 fable-b2)。
+SuccessExitStatus=130 143
 Restart=always
 RestartSec=10
 TimeoutStartSec=300

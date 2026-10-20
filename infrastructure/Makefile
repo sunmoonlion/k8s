@@ -193,6 +193,15 @@ jenkins-materials:
 .PHONY: jenkins-agent-plan jenkins-agent-deploy jenkins-agent-start jenkins-agent-stop jenkins-agent-status jenkins-agent-check
 jenkins-agent-plan jenkins-agent-deploy jenkins-agent-start jenkins-agent-stop jenkins-agent-status jenkins-agent-check:
 	$(ANSIBLE) -i host/inventory.yaml jenkins/agent.yaml $(CONFIG_ARGS) --extra-vars 'jenkins_agent_action=$(patsubst jenkins-agent-%,%,$@)'
+# release 流水线跑一次并等结果（0033 第四节；第 3 步只到第 5 阶段「计划」，不提交）。
+# RELEASE_BRANCH、APPS（空格分隔）、PIN=keep|heads、NOTE（一行，不含引号）；参数经 urlencode 进请求，中文可以。
+RELEASE_BRANCH ?= fable
+APPS ?= tpl
+PIN ?= keep
+NOTE ?=
+.PHONY: jenkins-release-run
+jenkins-release-run:
+	$(ANSIBLE) -i host/inventory.yaml jenkins/agent.yaml $(CONFIG_ARGS) --extra-vars 'jenkins_agent_action=check jenkins_run_job=release jenkins_run_timeout_seconds=5400' --extra-vars '{"jenkins_run_ok_results":["SUCCESS"],"jenkins_run_params":{"BRANCH":"$(RELEASE_BRANCH)","APPS":"$(APPS)","PIN":"$(PIN)","NOTE":"$(NOTE)"}}'
 
 .PHONY: prepare-host-materials check-host-materials
 prepare-host-materials:
