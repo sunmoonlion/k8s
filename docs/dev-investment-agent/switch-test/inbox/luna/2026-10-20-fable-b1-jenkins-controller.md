@@ -74,3 +74,11 @@ make -C infrastructure platform-status; echo "status exit=$?"
 ## 六、回执
 
 `scripts/results/fable-b1.<时间>.md`：每节命令与 exit、第三节四行 curl 与 systemctl 输出、第四节两行 curl、停在哪（若有）。不拍、不抄任何口令。
+
+## 七、推回（新规矩，不再经所有者的脚本）
+
+```bash
+cd ~/worktrees/fable/k8s && git pull --ff-only origin fable && git add scripts/results/fable-b1.*.md && git mv docs/dev-investment-agent/switch-test/inbox/luna/2026-10-20-fable-b1-jenkins-controller.md docs/dev-investment-agent/switch-test/done/ && git commit -m "fable-b1 回执：宿主 Jenkins 控制器（luna）" && git push origin fable; echo "push exit=$?"
+```
+
+拉不下来（非快进）或推不上去就停下，把输出告诉所有者，不强推。
