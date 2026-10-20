@@ -12,6 +12,6 @@ private_dir/rabbitmq.yaml与backup_dir保存相同原口令，root0600且非覆�
 
 预建持久direct交换机、classic任务队列及同名路由，运行CELERY_TASK_TOPOLOGY_PREDECLARED=true；单节点持久不代表HA。Celery临时控制/事件队列采用exclusive兼容RabbitMQ4.3，详见[运行角色](../runtime/README.md)，不启用废弃特性。
 
-application-stage→发布/显式晋级→bootstrap协调rabbitmq阶段，依赖Redis，不重启RabbitMQ。实际应用账号在独立临时排他队列发布/消费/确认，再仅删除该队列；核默认vhost及管理API拒绝，不读正式消息。
+platform-stage→发布/显式晋级→bootstrap协调rabbitmq阶段，依赖Redis，不重启RabbitMQ。实际应用账号在独立临时排他队列发布/消费/确认，再仅删除该队列；核默认vhost及管理API拒绝，不读正式消息。
 
 成功Job留为期望对象，不TTL；停用先暂停应用与相关阶段，Git回退不删账号/消息。内部HTTP/AMQP当前无mTLS，依赖NetworkPolicy。源模板见[共用初始化](../../../common/backend/rabbitmq/workload.yaml.j2)，完整操作见[应用维护](../../../../../../infrastructure/applications/README.md)。

@@ -30,7 +30,7 @@ OBJECT ?= all
 SELECTION_ACTION ?= select
 export OBJECT SITE
 COMPONENT ?= backend
-ifneq ($(filter application-build-% application-publish-% application-source-plan application-deployment-plan application-render application-stage application-validate-release application-check application-check-public application-bootstrap,$(MAKECMDGOALS)),)
+ifneq ($(filter application-build-% application-publish-% application-source-plan application-deployment-plan application-check application-check-public application-bootstrap,$(MAKECMDGOALS)),)
 ifneq ($(words $(APP)),1)
 $(error APP must be tpl, knowfeed, knowbase, knowbench, knowlab or knowmart)
 endif
@@ -113,7 +113,21 @@ CONFIG_ARGS = $(foreach file,$(CONFIG_FILES),--extra-vars '@$(file)') --extra-va
 
 .PHONY: help tools images preflight check-images
 help:
-	@printf '%s\n' 'platform-plan/config/status OBJECT=<平台/应用/组件> 查看依赖、配置和运行状态' 'platform-stage OBJECT=... 生成选中对象的声明候选；不发布' 'platform-build OBJECT=<业务应用或前后端组件> 在线构建并发布固定摘要' 'platform-deploy/check OBJECT=all|... 原生整套或选中对象部署/真实检查' 'platform-start/stop 统一启停已安装的本机平台' 'platform-account-plan/view OBJECT=... 查看维护账号能力与私有位置' 'platform-account-import 导入已批准的管理员表预设；不改已有账号' 'platform-account-check/stage/rotate/recover 按组件维护已支持的账号；参见host/accounts.md' 'platform-install-lifecycle/enable-boot 宿主安装与开机管理，需明确维护批准' 'material-inventory 显示组件物料与Harbor关系，MATERIAL_OWNER可过滤' 'agent-release-verify/upload AGENT_ZIP=/绝对路径.zip 校验/条件上传固定Windows安装包' 'agent-release-linux-verify/upload AGENT_LINUX_TGZ=/绝对路径.tar.gz 校验/条件上传分身测试电脑用的Linux包' 'config 查看全部配置来源；各模块底层入口见对应README'
+	@printf '%s\n' \
+	  '== 公开入口（按总纲的层；各模块底层入口见对应 README）==' \
+	  '[物料]   material-inventory / plan-artifacts fetch-artifacts check-artifacts / prepare-host-materials check-host-materials / tools install-binaries' \
+	  '[站点]   edge-plan/deploy/start/stop/status/firewall/smoke（公网边缘）；config 查看全部配置来源与站点文件' \
+	  '[宿主]   registry-* entry-* jenkins-* jenkins-agent-*（各 plan/deploy/start/stop/status）；platform-install-lifecycle/enable-boot/start/stop' \
+	  '         platform-account-plan/view/import/check/stage/rotate/recover OBJECT=...（账号，见 host/accounts.md）' \
+	  '[集群]   cluster-plan/deploy/status/dns-check/pull-check' \
+	  '[交付链] platform-plan/config/status OBJECT=<平台/应用/组件> 查看依赖、配置和运行状态' \
+	  '         platform-build OBJECT=app-platform/<app>-app 在线构建并发布固定摘要' \
+	  '         platform-stage OBJECT=... 生成选中对象的声明候选进 gitops/（内部 components-stage + topology-stage）；components-render 只渲染到 .build/' \
+	  '         application-deployment-plan APP=... 核迁移头；application-check(-public) APP=... 真实检查' \
+	  '         flux-release 发布已提交的声明为候选；flux-source-apply 协调已晋级的指针；flux-source-status' \
+	  '         jenkins-release-run APPS= PIN= NOTE= 由 Jenkins 跑整张发布卡（含人批）；jenkins-agent-check 跑一次只读 render-check' \
+	  '         platform-deploy/check OBJECT=all|... 原生整套或选中对象部署/真实检查' \
+	  '[其它]   agent-release-verify/upload AGENT_ZIP=... 校验/条件上传 Windows 安装包；agent-release-linux-verify/upload AGENT_LINUX_TGZ=...'
 
 tools:
 	$(UV) venv --python '$(HOST_PYTHON)' --relocatable --allow-existing .venv
@@ -313,12 +327,13 @@ services-verify-materials:
 services-publish:
 	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=publish --extra-vars 'service_material_ids=$(SERVICE_IMAGES)' --extra-vars '{"publication_image_ids":"{{ selected_service_image_ids }}","publication_download_timeout_seconds":"{{ service_material_timeout_seconds }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
 
-.PHONY: services-tools services-chart services-render services-bootstrap
+.PHONY: services-tools services-chart components-render services-bootstrap
 services-tools:
 	$(ANSIBLE) -i host/inventory.yaml services/tools.yaml $(CONFIG_ARGS)
 services-chart:
 	$(ANSIBLE) -i host/inventory.yaml services/chart.yaml $(CONFIG_ARGS)
-services-render:
+# 通用渲染器（components/render.yaml）：平台组件和应用都走它，OBJECT 选对象；platform-stage 内部调 components-stage
+components-render:
 	$(ANSIBLE) -i host/inventory.yaml components/render.yaml $(CONFIG_ARGS)
 # Deploy the promoted, committed release. Rendering a changed release is a separate review step.
 services-bootstrap:
@@ -330,8 +345,8 @@ services-bootstrap:
 	$(if $(filter all ingress-platform ingress-platform/traefik,$(OBJECT)),$(MAKE) services-tools)
 	$(if $(filter all data-platform data-platform/object-storage data-platform/ragflow,$(OBJECT)),$(MAKE) install-binaries BINARIES=mc)
 	$(if $(filter all ingress-platform ingress-platform/traefik,$(OBJECT)),$(MAKE) services-chart)
-	$(MAKE) services-render
-	$(MAKE) services-validate-release
+	$(MAKE) components-render
+	$(MAKE) components-validate-release
 	$(MAKE) flux-source-apply
 	$(MAKE) services-check
 
@@ -346,8 +361,8 @@ services-check:
 services-check-public:
 	$(ANSIBLE) -i host/inventory.yaml services/verify.yaml $(CONFIG_ARGS) --extra-vars '{"services_ui_verify_port":"{{ entry_port }}"}'
 
-.PHONY: services-validate-release
-services-validate-release:
+.PHONY: components-validate-release
+components-validate-release:
 	$(ANSIBLE) -i host/inventory.yaml components/validate-release.yaml $(CONFIG_ARGS)
 
 .PHONY: config
@@ -389,15 +404,9 @@ application-lock-backend application-lock-web application-lock-admin:
 application-rehearse-downloads:
 	.venv/bin/python applications/tests/rehearse-downloads.py $(CONFIG_ARGS)
 
-.PHONY: application-deployment-plan application-render application-stage application-validate-release application-check application-check-public application-bootstrap
+.PHONY: application-deployment-plan application-check application-check-public application-bootstrap
 application-deployment-plan:
 	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=plan'
-application-render:
-	$(MAKE) services-render OBJECT=app-platform/$(APP)-app
-application-stage:
-	$(MAKE) services-stage OBJECT=app-platform/$(APP)-app
-application-validate-release:
-	$(MAKE) services-validate-release OBJECT=app-platform/$(APP)-app
 application-check-public:
 	$(MAKE) install-binaries BINARIES=mc
 	$(ANSIBLE) -i host/inventory.yaml applications/verify.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=check application_check_public=true'
@@ -408,13 +417,13 @@ application-check:
 	$(ANSIBLE) -i host/inventory.yaml applications/verify.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=check'
 # Executes only the explicitly promoted Git release. Source publication precedes deployment.
 application-bootstrap:
-	$(MAKE) application-render APP=$(APP)
-	$(MAKE) application-validate-release APP=$(APP)
+	$(MAKE) components-render OBJECT=app-platform/$(APP)-app
+	$(MAKE) components-validate-release OBJECT=app-platform/$(APP)-app
 	$(MAKE) flux-source-apply
 	$(MAKE) application-check APP=$(APP)
 
-.PHONY: services-stage
-services-stage:
+.PHONY: components-stage
+components-stage:
 	$(ANSIBLE) -i host/inventory.yaml components/render.yaml $(CONFIG_ARGS) --extra-vars components_action=stage
 	$(MAKE) topology-stage
 
@@ -456,7 +465,7 @@ platform-deploy-selected:
 	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) services-verify-materials services-publish SERVICE_IMAGES=$(PLATFORM_SERVICE_IMAGES))
 	$(if $(filter true,$(PLATFORM_FLUX)),$(MAKE) flux-bootstrap)
 	$(if $(filter true,$(PLATFORM_FLUX)),$(MAKE) foundations-check)
-	$(if $(and $(filter true,$(PLATFORM_FOUNDATIONS)),$(filter false,$(PLATFORM_SERVICES))),$(MAKE) services-render services-validate-release foundations-bootstrap foundations-check)
+	$(if $(and $(filter true,$(PLATFORM_FOUNDATIONS)),$(filter false,$(PLATFORM_SERVICES))),$(MAKE) components-render components-validate-release foundations-bootstrap foundations-check)
 	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) services-bootstrap SERVICE_IMAGES=$(PLATFORM_SERVICE_IMAGES))
 	$(if $(filter true,$(PLATFORM_TPL)),$(MAKE) application-bootstrap APP=tpl)
 	$(if $(filter true,$(PLATFORM_KNOWFEED)),$(MAKE) application-bootstrap APP=knowfeed)
@@ -511,7 +520,7 @@ platform-stage: platform-selection
 	$(MAKE) platform-stage-selected
 platform-stage-selected:
 	@.venv/bin/python -c 'import json,os; d=json.load(open("$(SELECTION_PREFIX).json")); assert d["object"]==os.environ["OBJECT"] and d["action"]=="stage", "Run the public platform-stage entry to validate this object afresh"'
-	$(if $(filter true,$(PLATFORM_FOUNDATIONS) $(PLATFORM_SERVICES) $(PLATFORM_TPL) $(PLATFORM_KNOWFEED) $(PLATFORM_KNOWBASE) $(PLATFORM_KNOWBENCH) $(PLATFORM_KNOWLAB) $(PLATFORM_KNOWMART)),$(MAKE) services-stage)
+	$(if $(filter true,$(PLATFORM_FOUNDATIONS) $(PLATFORM_SERVICES) $(PLATFORM_TPL) $(PLATFORM_KNOWFEED) $(PLATFORM_KNOWBASE) $(PLATFORM_KNOWBENCH) $(PLATFORM_KNOWLAB) $(PLATFORM_KNOWMART)),$(MAKE) components-stage)
 platform-build: SELECTION_ACTION=build
 platform-build: platform-selection
 	$(MAKE) platform-build-selected

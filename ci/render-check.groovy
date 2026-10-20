@@ -37,9 +37,9 @@ def run(params, reposDir) {
     }
 
     stage('渲染候选') {
-        // application-render = 通用渲染器 OBJECT=app-platform/<app>-app；只写 .build/，不写 gitops/
+        // components-render = 通用渲染器，OBJECT 选对象；只写 .build/，不写 gitops/
         for (app in apps) {
-            sh "make -C infrastructure application-render APP=${app}"
+            sh "make -C infrastructure components-render OBJECT=app-platform/${app}-app"
         }
     }
 

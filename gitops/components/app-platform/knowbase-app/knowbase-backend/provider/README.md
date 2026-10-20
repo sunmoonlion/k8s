@@ -14,7 +14,7 @@ private_dir/provider-source.yaml为原文读取口令，provider-binding.json为
 
 ```sh
 make -C infrastructure application-deployment-plan APP=knowbase
-make -C infrastructure application-stage APP=knowbase
+make -C infrastructure platform-stage OBJECT=app-platform/knowbase-app
 ```
 
 plan只读；stage除了私有输入/候选文件，还调用已运行RAGFlow官方API准备私有中文纯文本数据集，不能当纯预览。现有绑定须匹配远端ID/名称；同名未记录对象或丢失绑定拒绝认领。创建POST结果不明停止，按已有输入与远端核对，不自动重发创建。列表查找有分页边界。

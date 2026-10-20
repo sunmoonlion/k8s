@@ -193,7 +193,7 @@
       ansible.builtin.assert:
         quiet: true
         that: application_action not in ['render', 'stage']
-        fail_msg: Use make application-render/stage APP=<app> or services-render/stage OBJECT=app-platform/<app>-app
+        fail_msg: Use make platform-stage OBJECT=app-platform/<app>-app (or components-render OBJECT=... to render only)
     - name: Validate rendered inputs against the promoted immutable source
       when: application_action == 'validate'
       block:

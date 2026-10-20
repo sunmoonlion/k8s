@@ -10,7 +10,7 @@ private_dir/identity.yaml保存两个独立client_secret，root0600、backup_dir
 
 ## 部署和验收
 
-application-stage APP=knowmart→提交/发布/晋级→bootstrap协调identity阶段，依赖RabbitMQ及Casdoor；成功Job保留。Job核管理会话、注册回读、秘密匹配、issuer/JWKS/PKCE；实际Web/Admin授权码、回调、SSR/session、退出及CSRF由后续application-check/check-public另验。
+platform-stage OBJECT=app-platform/knowmart-app→提交/发布/晋级→bootstrap协调identity阶段，依赖RabbitMQ及Casdoor；成功Job保留。Job核管理会话、注册回读、秘密匹配、issuer/JWKS/PKCE；实际Web/Admin授权码、回调、SSR/session、退出及CSRF由后续application-check/check-public另验。
 
 初始化及普通应用backchannel当前受NetworkPolicy限制的内部HTTP；公开issuer为HTTPS，不能宣称内部mTLS。跨应用服务关系使用独立组织/身份，见[服务身份机制](../../../common/backend/service-identity/README.md)。
 

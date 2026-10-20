@@ -25,7 +25,7 @@
 | `application-stage` | **删**，用 `platform-stage OBJECT=…`（它本来就是公开入口，发布卡和流水线用的都是它） | 纯转接 | 无活的调用者 |
 | `application-validate-release` | **删**，改调 `components-validate-release OBJECT=…` | 纯转接 | 无活的调用者 |
 | `services-render` / `services-stage` / `services-validate-release` | **改名** `components-render` / `components-stage` / `components-validate-release` | 剧本在 `components/`，名字叫 services 是历史 | `platform-stage-selected`、`application-bootstrap`、`services-bootstrap`、README |
-| `services-plan/materials/verify-materials/publish` 与 `application-plan/materials/verify-materials/publish` | **合成** `artifacts-plan/materials/verify/publish`（都是 `artifacts/publish.yaml`，只差变量） | 一份剧本两套名 | `platform-deploy-selected`、两个 `*-bootstrap`、artifacts README |
+| `services-plan/materials/verify-materials/publish` 与 `application-plan/materials/verify-materials/publish` | **留**（实施时改的判断，2026-10-21）：两家都调 `artifacts/publish.yaml`，但变量集不同（平台组件按 `SERVICE_IMAGES` 选镜像，应用按 `application_base_image_ids` 加容量操作名），不是转接名而是同一剧本的两种参数化；合成一个名字要加选择变量、改两处编排，D 段随 `applications/` 一起处理 | — | — |
 | `topology-render/stage/validate` | **改名** `components-topology-render/stage/validate`？——不，保留：`topology` 是独立对象，名字清楚 | — | — |
 | `platform-*`（14）、模块五动作（registry/entry/jenkins/jenkins-agent/cluster/edge/flux）、`application-deployment-plan`、`application-check(-public)`、`application-source-plan`、`application-build-*/publish-*/lock-*`、`component-*`、`flux-release/source-apply/source-status`、`secrets-*`、物料与工具那几个 | **留** | 真入口，流水线、卡、README 都认这些名 | — |
 | `*-bootstrap`（flux/foundations/services/application）、`jenkins-materials` | **留**（它们是编排用的复合目标，不是转接） | — | — |
@@ -105,6 +105,10 @@
 ### 5.3 不变的
 
 应用仓的名字和路径（`<app>-app/`）不变；`sunmoon-link` 不变；分支名不变；`infrastructure/`、`gitops/` 内部相对路径不变（构建链找应用仓是 `../../../<app>-app`，与根仓名无关）。
+
+### 2.1 停点 1 做成（2026-10-21）
+
+改了：Makefile（删 3 个转接名；`services-render/stage/validate-release` → `components-render/stage/validate-release`，调用处 `platform-stage-selected`、`platform-deploy-selected`、`services-bootstrap`、`application-bootstrap` 跟改；`help` 按层重写；要 APP 的目标清单去掉删的三个）、`ci/render-check.groovy`（改调 `components-render OBJECT=`）、`03-render-check.groovy.j2`（引导文本变了就更新任务定义，和 04 一样）、`deploy.yaml` 的提示语、19 份活文档里的名字（services/applications/components/jenkins README、kibana ui README、13 份应用组件 README、运行拓扑、代码地图）。远程验过：23 个公开入口 `make -n` 全通，6 个旧名 `No rule`，`make help` 可读。历史回执、CHECKPOINT、0010/0033 设计原文里的旧名不改。`capacity_operation: services-render` 这类容量操作标签不改（它们是容量例外表的键，不是入口）。顺带发现 `applications/tests/test_build_selection.py` 在改之前就有 15 个失败（它假定每个应用只带自己的 config，而 `CONFIG_FILES` 早已含六个应用的全部 config）——与本步无关，记给 D 段随 `applications/` 处理。
 
 ## 六、顺序与停点
 

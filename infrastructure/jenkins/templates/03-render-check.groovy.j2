@@ -1,5 +1,5 @@
 // 只读的 render-check 任务（0033 第四节末）：定时看 origin 有没有新提交，有就在宿主代理上
-// 跑迁移头核对与 application-render，不暂存、不发布、不碰 Harbor。任务体在仓里 ci/render-check.groovy，
+// 跑迁移头核对与 components-render，不暂存、不发布、不碰 Harbor。任务体在仓里 ci/render-check.groovy，
 // 这里只放一段很短的引导：在代理上把 k8s 仓更新到分支头，再 load 仓里的脚本。只建一次，不覆盖人改过的。
 import jenkins.model.Jenkins
 import hudson.model.ParametersDefinitionProperty
@@ -11,6 +11,15 @@ import org.jenkinsci.plugins.workflow.job.properties.DisableConcurrentBuildsJobP
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 
 def jenkins = Jenkins.get()
+def bootstrap = '''
+node('{{ jenkins_agent_name }}') {
+  dir('{{ jenkins_repos_dir }}/k8s') {
+    sh 'git fetch -q origin "+refs/heads/*:refs/remotes/origin/*" && git checkout -q --detach "origin/' + params.BRANCH + '"'
+    def body = load 'ci/render-check.groovy'
+    body.run(params, '{{ jenkins_repos_dir }}')
+  }
+}
+'''
 if (jenkins.getItem('render-check') == null) {
     def job = jenkins.createProject(WorkflowJob, 'render-check')
     // 同时只跑一个：宿主代理只有一个执行器，不设这条时定时触发的构建会一个个起来在 node() 里排队
@@ -23,22 +32,16 @@ if (jenkins.getItem('render-check') == null) {
         new BooleanParameterDefinition('FORCE', false, '分支头没变也跑一遍')
     ))
     job.addTrigger(new TimerTrigger('{{ jenkins_render_check_cron }}'))
-    def bootstrap = '''
-node('{{ jenkins_agent_name }}') {
-  dir('{{ jenkins_repos_dir }}/k8s') {
-    sh 'git fetch -q origin "+refs/heads/*:refs/remotes/origin/*" && git checkout -q --detach "origin/' + params.BRANCH + '"'
-    def body = load 'ci/render-check.groovy'
-    body.run(params, '{{ jenkins_repos_dir }}')
-  }
-}
-'''
     job.setDefinition(new CpsFlowDefinition(bootstrap, true))
     job.save()
 } else {
-    // 已建好的任务只补这一条属性（控制器重启时跑到这里），别的不碰
+    // 已建好的任务：补缺的属性，引导文本变了就更新 definition（和 04 一样）；参数与定时器是人可能改过的，不碰
     def job = jenkins.getItem('render-check')
-    if (job instanceof WorkflowJob && job.getProperty(DisableConcurrentBuildsJobProperty) == null) {
-        job.addProperty(new DisableConcurrentBuildsJobProperty())
-        job.save()
+    if (job instanceof WorkflowJob) {
+        def changed = false
+        if (job.getProperty(DisableConcurrentBuildsJobProperty) == null) { job.addProperty(new DisableConcurrentBuildsJobProperty()); changed = true }
+        def defn = job.getDefinition()
+        if (!(defn instanceof CpsFlowDefinition) || defn.getScript() != bootstrap) { job.setDefinition(new CpsFlowDefinition(bootstrap, true)); changed = true }
+        if (changed) { job.save() }
     }
 }

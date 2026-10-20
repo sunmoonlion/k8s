@@ -23,7 +23,7 @@ make -C infrastructure services-verify-materials
 make -C infrastructure services-publish
 make -C infrastructure services-tools
 make -C infrastructure services-chart
-make -C infrastructure services-render
+make -C infrastructure components-render
 ```
 
 依赖Harbor/入口、拥有的KIND、Flux/SOPS与完整物料。credentials保留已有输入、缺主时恢复备份；已有声明而两份均丢失则拒绝生成。platform口令和业务口令分开。轮换需服务器/客户端/Secret/备份同步，不能只编辑输入。
@@ -33,8 +33,8 @@ render会核唯一kube-system UID，准备静态目录/模型、身份备份、�
 ## 修改配置并发布
 
 ```sh
-make -C infrastructure services-render
-make -C infrastructure services-stage
+make -C infrastructure components-render
+make -C infrastructure components-stage
 ```
 
 审查`.build/services`公开对象与秘密语义；stage拷贝已生成候选至各组件，并经`topology-stage`更新clusters/kind/stages.yaml。提交工作树后按[Flux发布与晋级](../flux/README.md#发布与显式晋级)生成、审核并晋级同一产物。stage不代表声明已生效。
@@ -67,4 +67,4 @@ make -C infrastructure services-check
 
 ## Kibana浏览器访问
 
-浏览器配置、身份准备、声明和验收集中在[同一组件](../../gitops/components/data-platform/elk/kibana/ui/README.md)，共享services-render/stage/bootstrap/check原生链。启用时services-check从新集群入口验证实际TLS、登录会话、权限和退出；主机30443切换后运行`make -C infrastructure services-check-public`，同一playbook引用entry_port验证真实入口。Kibana公开入口的切换仍单独确认，不能把29443后端通过写成30443已通过。
+浏览器配置、身份准备、声明和验收集中在[同一组件](../../gitops/components/data-platform/elk/kibana/ui/README.md)，共享components-render/stage/bootstrap/check原生链。启用时services-check从新集群入口验证实际TLS、登录会话、权限和退出；主机30443切换后运行`make -C infrastructure services-check-public`，同一playbook引用entry_port验证真实入口。Kibana公开入口的切换仍单独确认，不能把29443后端通过写成30443已通过。

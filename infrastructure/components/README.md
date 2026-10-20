@@ -23,7 +23,7 @@ stages:
 | [stages.py](stages.py) | `graph`扫描`stage.yaml`生成`.build/components/stages.yaml`（`component_stages`、`stage_paths`）；`select`按OBJECT求选择与依赖闭包 |
 | [topology.yaml](topology.yaml) | 用图渲染`clusters/kind/stages.yaml.j2`；`render`只出候选，`stage`写回源树并拒绝改动未选阶段，`validate`要求已提交文件等于当前图 |
 
-入口：`make -C infrastructure topology-render|topology-stage|topology-validate OBJECT=...`。`platform-stage`会在组件暂存后调用`topology-stage`；`services-validate-release`（`application-validate-release`已转接过来）会调用`topology-validate`。所有改动仍要提交、`flux-release`并显式晋级后才会被集群执行。
+入口：`make -C infrastructure topology-render|topology-stage|topology-validate OBJECT=...`。`platform-stage`会在组件暂存后调用`topology-stage`；`components-validate-release`会调用`topology-validate`。所有改动仍要提交、`flux-release`并显式晋级后才会被集群执行。
 
 ## 增减阶段
 

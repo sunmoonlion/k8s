@@ -66,10 +66,10 @@ Harbor始终NO_PROXY直连，源与代理是配套选择；系统/Vlinux网络�
 
 ```sh
 make -C infrastructure application-deployment-plan APP=knowfeed
-make -C infrastructure application-stage APP=knowfeed
+make -C infrastructure platform-stage OBJECT=app-platform/knowfeed-app
 ```
 
-plan校验拥有的API与固定源码schema；`application-stage`走通用组件渲染器（`OBJECT=app-platform/<应用>-app`），生成/备份账号、TLS和候选并写本应用声明，不覆盖其他APP。`platform-stage OBJECT=all`只跑一次组件 stage，不再按应用重复准备。审阅公开与加密语义、提交组件image.lock/声明，再按[Flux发布晋级](../flux/README.md#发布与显式晋级)处理固定源。真实协议检查在[verify.yaml](verify.yaml)。
+plan校验拥有的API与固定源码schema；`platform-stage`走通用组件渲染器（`OBJECT=app-platform/<应用>-app`），生成/备份账号、TLS和候选并写本应用声明，不覆盖其他APP。`platform-stage OBJECT=all`只跑一次组件 stage，不再按应用重复准备。审阅公开与加密语义、提交组件image.lock/声明，再按[Flux发布晋级](../flux/README.md#发布与显式晋级)处理固定源。真实协议检查在[verify.yaml](verify.yaml)。
 
 **准备有副作用**：private/backup文件、身份和TLS；Knowledge provider还可通过远端RAGFlow API建立私有dataset，见[provider维护](../../gitops/components/app-platform/knowbase-app/knowbase-backend/provider/README.md)。未知同名/绑定冲突停止，不称stage纯只读。
 
