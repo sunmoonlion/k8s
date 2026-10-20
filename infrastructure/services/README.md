@@ -2,7 +2,7 @@
 
 > 所在层：5 平台层 + 横切交付链——平台组件的口令、工具、检查；D 段随渲染层重组（暂住）（[总览表](../README.md)）
 
-本模块是所有启用平台组件的原生Make→Ansible→Flux/SOPS编排。组件参数、模板、生成声明、身份准备与说明在[各责任组件](../../gitops/components/README.md)；阶段与依赖在各组件`stage.yaml`（见[components](../components/README.md)）；[layout.yaml](layout.yaml)只剩命名空间与保留卷清单，不再集中维护重复端口/账号表。
+本模块是所有启用平台组件的原生Make→Ansible→Flux/SOPS编排。组件参数、模板、生成声明、身份准备与说明在[各责任组件](../../gitops/components/README.md)；阶段与依赖在各组件`stage.yaml`（见[components](../components/README.md)）；[layout.yaml](../components/layout.yaml)只剩命名空间与保留卷清单，不再集中维护重复端口/账号表。
 
 ## 输入与准备
 当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
