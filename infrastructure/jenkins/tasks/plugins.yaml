@@ -1,0 +1,69 @@
+---
+# 控制器的插件（0033 第八节第 2 步）：锁里 jenkins-plugin-* 的 .hpi 已由 jenkins-materials 下载到物料目录；
+# 这里逐个核 sha256 与大小，改名 <名>.jpi 放进 ref-plugins/，容器里挂到 /usr/share/jenkins/ref/plugins（只读）。
+# 官方镜像启动时把 ref/plugins/*.jpi 拷进 JENKINS_HOME/plugins 并钉住（jenkins-support 的 copy_reference_file）。
+- name: Select the locked plugin files
+  ansible.builtin.set_fact:
+    jenkins_plugins: '{{ files.files | selectattr("id", "match", "^jenkins-plugin-") | list }}'
+
+- name: Require the locked plugin closure
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - jenkins_plugins | length >= 70
+      - jenkins_plugins | map(attribute='path') | select('match', '^host/jenkins/packages/[a-z0-9-]+-[A-Za-z0-9_.-]+\.hpi$') | list | length == jenkins_plugins | length
+
+- name: Inspect cached plugin files
+  ansible.builtin.stat:
+    path: '{{ artifact_cache_root }}/{{ item.path }}'
+    follow: false
+    checksum_algorithm: sha256
+  loop: '{{ jenkins_plugins }}'
+  loop_control:
+    label: '{{ item.id }}'
+  register: plugin_files
+
+- name: Require every plugin file to match its lock
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.stat.isreg | default(false)
+      - not item.stat.islnk | default(false)
+      - item.stat.checksum == item.item.sha256
+      - item.stat.size == item.item.size_bytes
+    fail_msg: 'Run jenkins-materials first; {{ item.item.id }} is missing or differs from the lock.'
+  loop: '{{ plugin_files.results }}'
+  loop_control:
+    label: '{{ item.item.id }}'
+
+- name: Create the reference plugin directory for the container user
+  ansible.builtin.file:
+    path: '{{ jenkins_runtime_dir }}/ref-plugins'
+    state: directory
+    owner: '{{ jenkins_uid }}'
+    group: '{{ jenkins_uid }}'
+    mode: '0755'
+
+- name: Place each verified plugin as <name>.jpi
+  ansible.builtin.copy:
+    src: '{{ artifact_cache_root }}/{{ item.path }}'
+    dest: '{{ jenkins_runtime_dir }}/ref-plugins/{{ item.id | regex_replace("^jenkins-plugin-", "") }}.jpi'
+    remote_src: true
+    owner: '{{ jenkins_uid }}'
+    group: '{{ jenkins_uid }}'
+    mode: '0644'
+  loop: '{{ jenkins_plugins }}'
+  loop_control:
+    label: '{{ item.id }}'
+
+- name: Find plugin files that are no longer in the lock
+  ansible.builtin.find:
+    paths: '{{ jenkins_runtime_dir }}/ref-plugins'
+    patterns: '*.jpi'
+  register: present_plugins
+
+- name: Refuse stray plugin files
+  ansible.builtin.assert:
+    quiet: true
+    that: present_plugins.files | map(attribute='path') | map('basename') | map('regex_replace', '\.jpi$', '') | difference(jenkins_plugins | map(attribute='id') | map('regex_replace', '^jenkins-plugin-', '') | list) | length == 0
+    fail_msg: ref-plugins holds files that are not in the lock; remove them deliberately.

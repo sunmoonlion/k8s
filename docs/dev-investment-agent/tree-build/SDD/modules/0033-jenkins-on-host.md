@@ -89,7 +89,7 @@ Jenkins 要做的只有一件事：**把这串固定的 `make` 目标按固定�
 ## 八、顺序
 
 1. 宿主模块 `infrastructure/jenkins/`：控制器起来、入口路由、账号导入（不碰现网集群）。**2026-10-20 已在本地机做成**（卡 fable-b1，回执 `scripts/results/fable-b1.20261020-173741.md`、`…175616.md`）：归档 sha256 与锁一致；第 13 项预设导入；控制器 active/enabled、只绑回环；首启脚本建了管理员、关了匿名读；入口加路由后经 `jenkins.sunmoonai.com:30443` 登录页 200、Harbor 仍 200；`platform-status` 列出 Jenkins。所有者 2026-10-20 晚浏览器登录成功（「jenkins 登录进去了」）；边缘 404 核对随第 2 步的检查一起做。**第 1 步闭合。**
-2. 代理单元加 `render-check`（只读），先在 render 上验代理的 sudo、命名空间、并列仓。
+2. 代理单元加 `render-check`（只读），先在 render 上验代理的 sudo、命名空间、并列仓。**代码已写（2026-10-20 晚）**：`infrastructure/jenkins/agent.yaml`、`tasks/{plugins,workspace}.yaml`、单元与两份首启脚本模板、仓根 `ci/render-check.groovy`；卡 fable-b2。与原稿不同处：仓克隆放 `jenkins_data_dir/repos/`（不是 `/data/jenkins/workspace`）；render-check 不靠 push 触发（内网收不到 webhook），改定时看 origin 有没有新提交、没变就 `NOT_BUILT`；任务体放在仓里由控制器里一段短引导 `load`，控制器不需要访问 Git。
 3. `release` 流水线跑到第 5 步为止（在 `sources.yaml` 副本上，不提交）。
 4. 全程一次，含人批（第七节第 6 条）。
 5. 0010 第九节 B 段的入口收敛：删转接名，流水线改认收敛后的名字。

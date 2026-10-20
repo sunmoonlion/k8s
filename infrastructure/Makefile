@@ -183,6 +183,17 @@ entry-plan entry-preview entry-deploy entry-start entry-stop entry-status:
 jenkins-plan jenkins-deploy jenkins-start jenkins-stop jenkins-status:
 	$(ANSIBLE) -i host/inventory.yaml jenkins/service.yaml $(CONFIG_ARGS) --extra-vars 'jenkins_action=$(patsubst jenkins-%,%,$@)'
 
+# 控制器镜像、HAProxy 归档，加 76 个插件与代理 JRE（文件锁里 jenkins-plugin-* 与 temurin-jre）
+.PHONY: jenkins-materials
+jenkins-materials:
+	$(MAKE) prepare-host-materials
+	$(MAKE) fetch-artifacts ARTIFACTS="$$(jq -r '[.files[].id | select(startswith("jenkins-plugin-"))] + ["temurin-jre"] | join(",")' artifacts/files.lock.json)"
+
+# 宿主代理（inbound agent，作为宿主用户跑）与只读 render-check：check = 触发一次 render-check 并等结果
+.PHONY: jenkins-agent-plan jenkins-agent-deploy jenkins-agent-start jenkins-agent-stop jenkins-agent-status jenkins-agent-check
+jenkins-agent-plan jenkins-agent-deploy jenkins-agent-start jenkins-agent-stop jenkins-agent-status jenkins-agent-check:
+	$(ANSIBLE) -i host/inventory.yaml jenkins/agent.yaml $(CONFIG_ARGS) --extra-vars 'jenkins_agent_action=$(patsubst jenkins-agent-%,%,$@)'
+
 .PHONY: prepare-host-materials check-host-materials
 prepare-host-materials:
 	$(ANSIBLE) -i host/inventory.yaml artifacts/image-archives.yaml $(CONFIG_ARGS) --extra-vars 'image_group=host image_action=fetch'
@@ -426,7 +437,7 @@ platform-deploy-selected:
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) prepare-harbor-materials)
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) registry-deploy)
 	$(if $(filter true,$(PLATFORM_ENTRY)),$(MAKE) entry-deploy)
-	$(if $(filter true,$(PLATFORM_JENKINS)),$(MAKE) prepare-host-materials jenkins-deploy)
+	$(if $(filter true,$(PLATFORM_JENKINS)),$(MAKE) jenkins-materials jenkins-deploy jenkins-agent-deploy)
 	$(if $(filter true,$(PLATFORM_CLUSTER)),$(MAKE) cluster-deploy)
 	# 先把选中阶段要用的平台镜像发到 Harbor，再让 Flux 应用源：整套声明是一个包，源一应用所有阶段就开始拉镜像
 	# （2026-10-06 第 27 轮：三个控制台镜像没发布，根调和等 10 分钟超时，发布那一段排在源应用之后根本没跑到）
@@ -457,7 +468,7 @@ platform-check-selected:
 	$(if $(filter true,$(PLATFORM_CLUSTER)),$(MAKE) cluster-status)
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) registry-status)
 	$(if $(filter true,$(PLATFORM_ENTRY)),$(MAKE) entry-status)
-	$(if $(filter true,$(PLATFORM_JENKINS)),$(MAKE) jenkins-status)
+	$(if $(filter true,$(PLATFORM_JENKINS)),$(MAKE) jenkins-status jenkins-agent-status)
 	$(if $(filter true,$(PLATFORM_FLUX)),$(MAKE) flux-source-status)
 	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) install-binaries BINARIES=mc)
 	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) services-check-public)

@@ -43,3 +43,21 @@ jenkins_human_account:
   # 第一版只有本地管理员的首次预设、查看与导入；改口令在 Jenkins 界面里做，轮换协议以后接。
   protocol_check_supported: false
   rotation_supported: false
+
+# ---- 第 2 步：宿主代理、插件、只读 render-check（0033 第八节第 2 步）----
+# 宿主代理用哪个用户跑：今天跑发布卡的那个宿主用户（和 cluster_operator 同一个），不新给任何权限
+jenkins_agent_user: '{{ cluster_operator }}'
+# 控制器里这个代理节点的名字与标签（流水线按标签 host 选它）
+jenkins_agent_name: host
+# 代理自己的目录（Jenkins 的 remoteFS、agent.jar 的 workDir）；在数据盘上
+jenkins_agent_dir: '{{ jenkins_data_dir }}/agent'
+# 代理干活用的仓：k8s 和六个应用仓并列，像 ~/worktrees/<工位> 一样，但不碰人的工位
+jenkins_repos_dir: '{{ jenkins_data_dir }}/repos'
+# 仓从哪克隆：按 fable 工位各仓的 origin（宿主用户已有的 git 凭据）；子仓按父仓 gitlink 检出
+jenkins_repo_source_workspace: fable
+# 代理上要装的工具（装在仓克隆里的 .tools，与人的工位一样）
+jenkins_tools_binaries: kubectl,compose
+# render-check 的定时：每 10 分钟看一眼 origin 有没有新提交，没有就不跑（只读检查）
+jenkins_render_check_cron: 'H/10 * * * *'
+jenkins_render_check_branch: fable
+jenkins_render_check_apps: tpl knowfeed knowbase knowbench knowlab knowmart

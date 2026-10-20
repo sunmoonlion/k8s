@@ -20,6 +20,8 @@
       - {src: compose.yaml.j2, dest: '{{ jenkins_runtime_dir }}/compose.yaml', mode: '0600', owner: root, group: root}
       - {src: haproxy.cfg.j2, dest: '{{ jenkins_runtime_dir }}/haproxy.cfg', mode: '0640', owner: root, group: '{{ tls_uid }}'}
       - {src: 01-platform.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/01-platform.groovy', mode: '0644', owner: root, group: root}
+      - {src: 02-agent-node.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/02-agent-node.groovy', mode: '0644', owner: root, group: root}
+      - {src: 03-render-check.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/03-render-check.groovy', mode: '0644', owner: root, group: root}
       - {src: sunmoon-jenkins.service.j2, dest: /etc/systemd/system/sunmoon-jenkins.service, mode: '0644', owner: root, group: root}
   tasks:
     - name: Validate site and operation
@@ -187,6 +189,9 @@
         - name: Create and validate the private administrator credential and certificates
           ansible.builtin.include_tasks: tasks/secrets.yaml
 
+        - name: Place the locked plugin closure for the container to pick up at start
+          ansible.builtin.include_tasks: tasks/plugins.yaml
+
         - name: Preview runtime configuration changes
           ansible.builtin.template:
             src: '{{ item.src }}'
@@ -316,6 +321,29 @@
             use_proxy: false
             status_code: [403]
             timeout: 20
+        - name: Require the locked plugins to be loaded and the agent node to exist
+          ansible.builtin.uri:
+            url: 'https://127.0.0.1:{{ jenkins_https_port }}/{{ item.path }}'
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+            url_username: '{{ jenkins_human_account.username }}'
+            url_password: '{{ admin_credential.content | b64decode }}'
+            force_basic_auth: true
+            return_content: true
+            status_code: [200, 404, 503]
+            timeout: 30
+          register: controller_state
+          no_log: true
+          until: controller_state.status == 200 and (item.key not in controller_state.json or (controller_state.json[item.key] | length) >= item.at_least)
+          retries: 12
+          delay: 10
+          failed_when: controller_state.status != 200 or (item.key in controller_state.json and (controller_state.json[item.key] | length) < item.at_least)
+          loop:
+            - {path: 'pluginManager/api/json?tree=plugins[shortName,active]', key: plugins, at_least: 70}
+            - {path: 'computer/{{ jenkins_agent_name }}/api/json?tree=displayName', key: displayName, at_least: 1}
+          loop_control:
+            label: '{{ item.path }}'
 
     - name: Report actual service state
       ansible.builtin.command:

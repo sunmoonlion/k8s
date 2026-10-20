@@ -1,0 +1,69 @@
+---
+# 代理干活用的仓（0033 第三节）：k8s 和六个应用仓并列在 jenkins_repos_dir 下，像 ~/worktrees/<工位>，但不碰人的工位。
+# 从哪克隆：按 jenkins_repo_source_workspace 工位各仓的 origin（宿主用户已有的 git 凭据，一般是 GitHub 的 SSH）；
+# 子仓按父仓 gitlink 检出，地址在 .gitmodules 里是 https，用 insteadOf 改走同一把 SSH 钥匙。
+- name: Read the origin of each repo from the source workspace
+  become: true
+  become_user: '{{ jenkins_agent_user }}'
+  ansible.builtin.command:
+    argv: [git, -C, '/home/{{ jenkins_agent_user }}/worktrees/{{ jenkins_repo_source_workspace }}/{{ item }}', remote, get-url, origin]
+  loop: '{{ jenkins_repos }}'
+  register: repo_origins
+  changed_when: false
+
+- name: Require plain SSH or HTTPS origins without embedded credentials
+  ansible.builtin.assert:
+    quiet: true
+    that: item.stdout is match('^(git@[a-zA-Z0-9.-]+:[a-zA-Z0-9_./-]+|https://[a-zA-Z0-9.-]+/[a-zA-Z0-9_./-]+)$')
+  loop: '{{ repo_origins.results }}'
+  loop_control:
+    label: '{{ item.item }}'
+
+- name: Inspect existing clones
+  ansible.builtin.stat:
+    path: '{{ jenkins_repos_dir }}/{{ item }}/.git'
+    follow: false
+  loop: '{{ jenkins_repos }}'
+  register: clones
+
+- name: Clone missing repos as the agent user
+  become: true
+  become_user: '{{ jenkins_agent_user }}'
+  ansible.builtin.command:
+    argv: [git, clone, --quiet, --branch, '{{ jenkins_render_check_branch }}', '{{ item.item.stdout }}', '{{ jenkins_repos_dir }}/{{ item.item.item }}']
+  loop: '{{ repo_origins.results }}'
+  loop_control:
+    label: '{{ item.item.item }}'
+    index_var: repo_index
+  when: not clones.results[repo_index].stat.exists
+  changed_when: true
+
+- name: Fetch all branches of existing clones
+  become: true
+  become_user: '{{ jenkins_agent_user }}'
+  ansible.builtin.command:
+    argv: [git, -C, '{{ jenkins_repos_dir }}/{{ item.item }}', fetch, --quiet, origin, '+refs/heads/*:refs/remotes/origin/*']
+  loop: '{{ clones.results }}'
+  loop_control:
+    label: '{{ item.item }}'
+  when: item.stat.exists
+  changed_when: false
+
+- name: Check out the submodules of the application repos over SSH
+  become: true
+  become_user: '{{ jenkins_agent_user }}'
+  ansible.builtin.command:
+    argv: [git, -C, '{{ jenkins_repos_dir }}/{{ item }}', -c, 'url.git@github.com:.insteadOf=https://github.com/', submodule, update, --init, --quiet]
+  loop: '{{ jenkins_repos | reject("equalto", "k8s") | list }}'
+  changed_when: false
+
+- name: Install the worktree tools in the k8s clone (venv, binaries, sops and age) as the agent user
+  become: true
+  become_user: '{{ jenkins_agent_user }}'
+  ansible.builtin.command:
+    argv: [make, -C, '{{ jenkins_repos_dir }}/k8s/infrastructure', '{{ item }}']
+  environment:
+    HOME: '/home/{{ jenkins_agent_user }}'
+    BINARIES: '{{ jenkins_tools_binaries }}'
+  loop: [tools, install-binaries, install-secrets-tools]
+  changed_when: true

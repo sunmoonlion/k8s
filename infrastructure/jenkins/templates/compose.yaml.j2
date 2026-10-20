@@ -37,6 +37,12 @@ services:
         read_only: true
         bind:
           create_host_path: false
+      - type: bind
+        source: {{ jenkins_runtime_dir }}/ref-plugins
+        target: /usr/share/jenkins/ref/plugins
+        read_only: true
+        bind:
+          create_host_path: false
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "--output", "/dev/null", "http://127.0.0.1:8080/login"]
       interval: 15s

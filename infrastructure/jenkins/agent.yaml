@@ -1,0 +1,336 @@
+---
+# 宿主上的 Jenkins 代理（0033 第八节第 2 步）：inbound agent 作为跑发布卡的那个宿主用户跑在 systemd 下
+# （PID 1 的命名空间，sudo、docker、kubeconfig、git 凭据都是它今天已有的），经回环连控制器。
+# JRE 与 agent.jar 装在 jenkins_runtime_dir，不依赖人的工位；仓克隆在数据盘 jenkins_repos_dir。
+- name: Install and control the host Jenkins agent
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    jenkins_agent_action: plan
+    files: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    jre: '{{ files.files | selectattr("id", "equalto", "temurin-jre") | first }}'
+    jre_dir: '{{ jenkins_runtime_dir }}/jre/{{ jre.version | replace("+", "_") }}'
+    jenkins_home: '{{ jenkins_data_dir }}/home'
+    jenkins_repos: '{{ ["k8s"] + (application_names | map("regex_replace", "$", "-app") | list) }}'
+    controller_base: 'https://127.0.0.1:{{ jenkins_https_port }}'
+    render_check_timeout_seconds: 2400
+  tasks:
+    - name: Validate action and settings
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - jenkins_agent_action in ['plan', 'deploy', 'start', 'stop', 'status', 'check']
+          - jenkins_agent_action in ['plan', 'stop', 'status'] or jenkins_enabled | bool
+          - jenkins_agent_user is match('^[a-z_][a-z0-9_-]{0,31}$')
+          - jenkins_agent_name is match('^[a-z][a-z0-9-]{0,30}$')
+          - jenkins_agent_dir is match('^' + (jenkins_data_dir | regex_escape) + '/[a-z0-9-]+$')
+          - jenkins_repos_dir is match('^' + (jenkins_data_dir | regex_escape) + '/[a-z0-9-]+$')
+          - jenkins_repo_source_workspace is match('^[a-z]+$')
+          - jenkins_render_check_branch is match('^[a-z0-9-]+$')
+          - jre.archive_members | length == 2
+          - jre.archive_members[0].path.endswith('/bin/java')
+
+    - name: Show the plan without secrets
+      ansible.builtin.debug:
+        msg:
+          action: '{{ jenkins_agent_action }}'
+          unit: 'sunmoon-jenkins-agent.service as {{ jenkins_agent_user }} -> http://127.0.0.1:{{ jenkins_http_port }} (node {{ jenkins_agent_name }})'
+          jre: '{{ jre.id }} {{ jre.version }} -> {{ jre_dir }}'
+          repos: '{{ jenkins_repos_dir }}: {{ jenkins_repos | join(", ") }} (origins from ~{{ jenkins_agent_user }}/worktrees/{{ jenkins_repo_source_workspace }})'
+          render_check: 'job render-check on {{ jenkins_render_check_branch }} every {{ jenkins_render_check_cron }}'
+
+    - name: Read controller and agent unit states
+      ansible.builtin.command:
+        argv: [systemctl, is-active, '{{ item }}']
+      loop: [sunmoon-jenkins.service, sunmoon-jenkins-agent.service]
+      register: unit_states
+      changed_when: false
+      failed_when: false
+      when: jenkins_agent_action != 'plan'
+
+    - name: Install the agent
+      when: jenkins_agent_action == 'deploy'
+      block:
+        - name: Check capacity for JRE, repos and tools
+          ansible.builtin.include_tasks:
+            file: ../host/tasks/capacity.yaml
+            apply:
+              become: false
+          vars:
+            capacity_operation: jenkins-agent-deploy
+            capacity_planned_bytes: 8589934592
+
+        - name: Require the controller to be running
+          ansible.builtin.assert:
+            quiet: true
+            that: unit_states.results[0].stdout == 'active'
+            fail_msg: Deploy or start the controller first (jenkins-deploy / jenkins-start).
+
+        - name: Verify the locked JRE package
+          ansible.builtin.stat:
+            path: '{{ artifact_cache_root }}/{{ jre.path }}'
+            follow: false
+            checksum_algorithm: sha256
+          register: jre_package
+
+        - name: Require the original JRE bytes
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - jre_package.stat.isreg | default(false)
+              - jre_package.stat.checksum | default('') == jre.sha256
+              - jre_package.stat.size | default(0) == jre.size_bytes
+            fail_msg: Run jenkins-materials first; the JRE package is missing or differs from the lock.
+
+        - name: Create runtime directories for the agent
+          ansible.builtin.file:
+            path: '{{ item.path }}'
+            state: directory
+            owner: '{{ item.owner | default("root") }}'
+            group: '{{ item.group | default("root") }}'
+            mode: '{{ item.mode }}'
+          loop:
+            - {path: '{{ jenkins_runtime_dir }}/jre', mode: '0755'}
+            - {path: '{{ jre_dir }}', mode: '0755'}
+            - {path: '{{ jenkins_agent_dir }}', mode: '0750', owner: '{{ jenkins_agent_user }}', group: '{{ jenkins_agent_user }}'}
+            - {path: '{{ jenkins_repos_dir }}', mode: '0755', owner: '{{ jenkins_agent_user }}', group: '{{ jenkins_agent_user }}'}
+          loop_control:
+            label: '{{ item.path }}'
+
+        - name: Extract the verified JRE once
+          ansible.builtin.unarchive:
+            src: '{{ artifact_cache_root }}/{{ jre.path }}'
+            dest: '{{ jre_dir }}'
+            remote_src: true
+            extra_opts: [--strip-components=1]
+            creates: '{{ jre_dir }}/bin/java'
+
+        - name: Verify the extracted JRE members against the lock
+          ansible.builtin.stat:
+            path: '{{ jre_dir }}/{{ item.path | regex_replace("^[^/]+/", "") }}'
+            checksum_algorithm: sha256
+          loop: '{{ jre.archive_members }}'
+          loop_control:
+            label: '{{ item.path }}'
+          register: jre_members
+
+        - name: Require exact JRE member bytes
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - item.stat.isreg | default(false)
+              - item.stat.checksum == item.item.sha256
+              - item.stat.size == item.item.size_bytes
+          loop: '{{ jre_members.results }}'
+          loop_control:
+            label: '{{ item.item.path }}'
+
+        - name: Point the current JRE at the verified version
+          ansible.builtin.file:
+            src: '{{ jre_dir }}'
+            dest: '{{ jenkins_runtime_dir }}/jre/current'
+            state: link
+
+        - name: Fetch agent.jar from our own controller (it is served by the controller, no third party)
+          ansible.builtin.get_url:
+            url: 'http://127.0.0.1:{{ jenkins_http_port }}/jnlpJars/agent.jar'
+            dest: '{{ jenkins_runtime_dir }}/agent.jar'
+            mode: '0644'
+            force: true
+            use_proxy: false
+            timeout: 60
+          register: agent_jar
+
+        - name: Read the node secret the controller wrote at start (init.groovy.d/02-agent-node)
+          ansible.builtin.slurp:
+            src: '{{ jenkins_home }}/secrets/sunmoon/agent-{{ jenkins_agent_name }}.secret'
+          register: node_secret
+          no_log: true
+
+        - name: Give the agent user its own read-only copy of the node secret
+          ansible.builtin.copy:
+            dest: '{{ jenkins_runtime_dir }}/secrets/agent-{{ jenkins_agent_name }}.secret'
+            content: '{{ node_secret.content | b64decode }}'
+            owner: '{{ jenkins_agent_user }}'
+            group: '{{ jenkins_agent_user }}'
+            mode: '0400'
+          no_log: true
+          diff: false
+
+        - name: Let the agent user traverse the secrets directory
+          ansible.builtin.file:
+            path: '{{ jenkins_runtime_dir }}/secrets'
+            state: directory
+            owner: root
+            group: '{{ jenkins_agent_user }}'
+            mode: '0750'
+
+        - name: Prepare the repos the agent works on
+          ansible.builtin.include_tasks: tasks/workspace.yaml
+
+        - name: Preview the unit
+          ansible.builtin.template:
+            src: sunmoon-jenkins-agent.service.j2
+            dest: /etc/systemd/system/sunmoon-jenkins-agent.service
+            mode: '0644'
+          check_mode: true
+          register: unit_preview
+          diff: false
+
+        - name: Write the unit
+          ansible.builtin.template:
+            src: sunmoon-jenkins-agent.service.j2
+            dest: /etc/systemd/system/sunmoon-jenkins-agent.service
+            mode: '0644'
+
+        - name: Reload, enable and (re)start the agent
+          ansible.builtin.systemd_service:
+            name: sunmoon-jenkins-agent.service
+            daemon_reload: true
+            enabled: true
+            state: '{{ "restarted" if (unit_preview.changed or agent_jar.changed) else "started" }}'
+
+    - name: Stop only the agent
+      ansible.builtin.systemd_service:
+        name: sunmoon-jenkins-agent.service
+        state: stopped
+      when: jenkins_agent_action == 'stop'
+
+    - name: Start the agent
+      ansible.builtin.systemd_service:
+        name: sunmoon-jenkins-agent.service
+        state: started
+      when: jenkins_agent_action == 'start'
+
+    - name: Verify the node is online through the controller API
+      when: jenkins_agent_action in ['deploy', 'start', 'status', 'check']
+      block:
+        - name: Read the administrator credential only for this check
+          ansible.builtin.slurp:
+            src: '{{ jenkins_config_dir }}/private/admin-password'
+          register: admin_credential
+          no_log: true
+        - name: Wait for the agent to be connected
+          ansible.builtin.uri:
+            url: '{{ controller_base }}/computer/{{ jenkins_agent_name }}/api/json?tree=offline,temporarilyOffline,numExecutors'
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+            url_username: '{{ jenkins_human_account.username }}'
+            url_password: '{{ admin_credential.content | b64decode }}'
+            force_basic_auth: true
+            return_content: true
+            status_code: [200, 404]
+            timeout: 20
+          register: node_state
+          no_log: true
+          until: node_state.status == 200 and not (node_state.json.offline | default(true))
+          retries: '{{ 36 if jenkins_agent_action in ["deploy", "start"] else 1 }}'
+          delay: 5
+          failed_when: node_state.status != 200 or (node_state.json.offline | default(true))
+
+    - name: Run render-check once and wait for it
+      when: jenkins_agent_action == 'check'
+      block:
+        - name: Get a CSRF crumb
+          ansible.builtin.uri:
+            url: '{{ controller_base }}/crumbIssuer/api/json'
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+            url_username: '{{ jenkins_human_account.username }}'
+            url_password: '{{ admin_credential.content | b64decode }}'
+            force_basic_auth: true
+            return_content: true
+            timeout: 20
+          register: crumb
+          no_log: true
+        - name: Queue a forced render-check build
+          ansible.builtin.uri:
+            url: '{{ controller_base }}/job/render-check/buildWithParameters?BRANCH={{ jenkins_render_check_branch }}&APPS={{ jenkins_render_check_apps | replace(" ", "%20") }}&FORCE=true'
+            method: POST
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+            url_username: '{{ jenkins_human_account.username }}'
+            url_password: '{{ admin_credential.content | b64decode }}'
+            force_basic_auth: true
+            headers: {'{{ crumb.json.crumbRequestField }}': '{{ crumb.json.crumb }}', Cookie: '{{ crumb.cookies_string | default("") }}'}
+            status_code: [201]
+            timeout: 20
+          register: queued
+          no_log: true
+        - name: Wait for the queue item to become a build
+          ansible.builtin.uri:
+            url: '{{ queued.location }}api/json'
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+            url_username: '{{ jenkins_human_account.username }}'
+            url_password: '{{ admin_credential.content | b64decode }}'
+            force_basic_auth: true
+            return_content: true
+            timeout: 20
+          register: queue_item
+          no_log: true
+          until: queue_item.json.executable is defined
+          retries: 60
+          delay: 5
+        - name: Wait for the build to finish
+          ansible.builtin.uri:
+            url: '{{ controller_base }}/job/render-check/{{ queue_item.json.executable.number }}/api/json?tree=building,result,displayName,description,duration'
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+            url_username: '{{ jenkins_human_account.username }}'
+            url_password: '{{ admin_credential.content | b64decode }}'
+            force_basic_auth: true
+            return_content: true
+            timeout: 20
+          register: build
+          no_log: true
+          until: not build.json.building
+          retries: '{{ (render_check_timeout_seconds / 15) | int }}'
+          delay: 15
+        - name: Create the local directory for build consoles
+          ansible.builtin.file:
+            path: '{{ playbook_dir }}/../.build/jenkins'
+            state: directory
+            owner: '{{ cluster_operator }}'
+            mode: '0755'
+        - name: Save the console log beside the other build receipts
+          ansible.builtin.uri:
+            url: '{{ controller_base }}/job/render-check/{{ queue_item.json.executable.number }}/consoleText'
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+            url_username: '{{ jenkins_human_account.username }}'
+            url_password: '{{ admin_credential.content | b64decode }}'
+            force_basic_auth: true
+            dest: '{{ playbook_dir }}/../.build/jenkins/render-check-{{ queue_item.json.executable.number }}.log'
+            creates: '{{ playbook_dir }}/../.build/jenkins/render-check-{{ queue_item.json.executable.number }}.log'
+            timeout: 60
+          no_log: true
+          ignore_errors: true
+        - name: Report the build result
+          ansible.builtin.debug:
+            msg: '{{ {"build": queue_item.json.executable.number, "name": build.json.displayName, "result": build.json.result, "description": build.json.description, "seconds": (build.json.duration / 1000) | int, "console": playbook_dir + "/../.build/jenkins/render-check-" + (queue_item.json.executable.number | string) + ".log"} }}'
+        - name: Require the check to pass
+          ansible.builtin.assert:
+            quiet: true
+            that: build.json.result in ['SUCCESS', 'NOT_BUILT']
+            fail_msg: 'render-check ended as {{ build.json.result }}; read the console log.'
+
+    - name: Report the agent unit state
+      ansible.builtin.command:
+        argv: [systemctl, show, sunmoon-jenkins-agent.service, '--property=Id,ActiveState,SubState,UnitFileState,NRestarts,User']
+      register: final_state
+      changed_when: false
+      when: jenkins_agent_action != 'plan'
+
+    - name: Display only non-secret state
+      ansible.builtin.debug:
+        var: final_state.stdout_lines
+      when: jenkins_agent_action != 'plan'

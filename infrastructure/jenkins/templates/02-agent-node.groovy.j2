@@ -1,0 +1,31 @@
+// 宿主代理的节点（0033 第八节第 2 步）：只建一次；节点的接入密钥由控制器算出，写进自己的 secrets/ 下
+// 给宿主上的部署剧本读（root），不经网页、不经接口。之后不覆盖已有节点。
+import jenkins.model.Jenkins
+import hudson.model.Node
+import hudson.slaves.DumbSlave
+import hudson.slaves.JNLPLauncher
+import hudson.slaves.RetentionStrategy
+import jenkins.slaves.JnlpAgentReceiver
+
+def jenkins = Jenkins.get()
+def name = '{{ jenkins_agent_name }}'
+if (jenkins.getNode(name) == null) {
+    def launcher = new JNLPLauncher()
+    def node = new DumbSlave(name, '{{ jenkins_agent_dir }}', launcher)
+    node.setNumExecutors(1)
+    node.setLabelString(name)
+    node.setMode(Node.Mode.EXCLUSIVE)
+    node.setRetentionStrategy(new RetentionStrategy.Always())
+    node.setNodeDescription('SunMoon host agent: runs the release chain as the host operator user')
+    jenkins.addNode(node)
+}
+def secretsDir = new File(jenkins.getRootDir(), 'secrets/sunmoon')
+secretsDir.mkdirs()
+def secretFile = new File(secretsDir, "agent-${name}.secret")
+if (!secretFile.isFile()) {
+    secretFile.setText(JnlpAgentReceiver.SLAVE_SECRET.mac(name), 'UTF-8')
+    secretFile.setReadable(false, false)
+    secretFile.setReadable(true, true)
+    secretFile.setWritable(false, false)
+    secretFile.setWritable(true, true)
+}

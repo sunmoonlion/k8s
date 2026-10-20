@@ -1,0 +1,27 @@
+[Unit]
+Description=SunMoon host Jenkins inbound agent ({{ jenkins_agent_name }})
+# 代理是宿主进程，不在容器里：要 sudo、docker、kubeconfig、PID 1 的挂载命名空间（0033 第三节）
+Requires=sunmoon-jenkins.service
+After=sunmoon-jenkins.service network-online.target
+Wants=network-online.target
+RequiresMountsFor={{ storage_mounts[0].target }}
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User={{ jenkins_agent_user }}
+Group={{ jenkins_agent_user }}
+Environment=HOME=/home/{{ jenkins_agent_user }}
+Environment=LANG=C.UTF-8
+WorkingDirectory={{ jenkins_agent_dir }}
+UMask=0022
+ExecStart={{ jenkins_runtime_dir }}/jre/current/bin/java -jar {{ jenkins_runtime_dir }}/agent.jar -url http://127.0.0.1:{{ jenkins_http_port }}/ -name {{ jenkins_agent_name }} -secret @{{ jenkins_runtime_dir }}/secrets/agent-{{ jenkins_agent_name }}.secret -workDir {{ jenkins_agent_dir }} -noReconnectAfter 1d
+Restart=always
+RestartSec=15
+TimeoutStopSec=120
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sunmoon-platform.target

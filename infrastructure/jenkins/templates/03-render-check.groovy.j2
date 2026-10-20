@@ -1,0 +1,33 @@
+// 只读的 render-check 任务（0033 第四节末）：定时看 origin 有没有新提交，有就在宿主代理上
+// 跑迁移头核对与 application-render，不暂存、不发布、不碰 Harbor。任务体在仓里 ci/render-check.groovy，
+// 这里只放一段很短的引导：在代理上把 k8s 仓更新到分支头，再 load 仓里的脚本。只建一次，不覆盖人改过的。
+import jenkins.model.Jenkins
+import hudson.model.ParametersDefinitionProperty
+import hudson.model.StringParameterDefinition
+import hudson.model.BooleanParameterDefinition
+import hudson.triggers.TimerTrigger
+import org.jenkinsci.plugins.workflow.job.WorkflowJob
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
+
+def jenkins = Jenkins.get()
+if (jenkins.getItem('render-check') == null) {
+    def job = jenkins.createProject(WorkflowJob, 'render-check')
+    job.setDescription('只读：对 BRANCH 上 APPS 列出的应用核迁移头并渲染声明候选；不暂存、不发布。任务体在 k8s 仓 ci/render-check.groovy。')
+    job.addProperty(new ParametersDefinitionProperty(
+        new StringParameterDefinition('BRANCH', '{{ jenkins_render_check_branch }}', 'k8s 与各应用仓都用这个分支'),
+        new StringParameterDefinition('APPS', '{{ jenkins_render_check_apps }}', '要核的应用，空格分隔；空 = 全部'),
+        new BooleanParameterDefinition('FORCE', false, '分支头没变也跑一遍')
+    ))
+    job.addTrigger(new TimerTrigger('{{ jenkins_render_check_cron }}'))
+    def bootstrap = '''
+node('{{ jenkins_agent_name }}') {
+  dir('{{ jenkins_repos_dir }}/k8s') {
+    sh 'git fetch -q origin "+refs/heads/*:refs/remotes/origin/*" && git checkout -q --detach "origin/' + params.BRANCH + '"'
+    def body = load 'ci/render-check.groovy'
+    body.run(params, '{{ jenkins_repos_dir }}')
+  }
+}
+'''
+    job.setDefinition(new CpsFlowDefinition(bootstrap, true))
+    job.save()
+}
