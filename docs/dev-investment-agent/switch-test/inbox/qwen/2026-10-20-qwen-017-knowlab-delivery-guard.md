@@ -5,8 +5,9 @@
 
 ```text
 被测仓：k8s，qwen 工作树 ~/worktrees/qwen/k8s，分支 qwen
-一段发布：knowlab，父仓、后端，3 行钉；一个镜像（后端）；没有新迁移（迁移头仍是 20261019_0010，config 不用改）
-网页、管理端的钉不动（仍是线上 6da5cef5…、d46b6bd5…）：两个前端的仓里撤掉了被否决的选择框，代码与线上一字不差，不重建
+一段发布：knowlab，父仓、后端、网页、管理端，7 行钉；三个镜像；没有新迁移（迁移头仍是 20261019_0010，config 不用改）
+网页、管理端：仓里撤掉了被否决的选择框，代码与线上 6da5cef5…、d46b6bd5… 一字不差，但提交号不同（d7589583…、2d5c1124…）；构建按父仓 gitlink 核提交号，所以钉跟着换、两个前端照样重建一次（摘要会变，代码不变）
+（第 1 版写成只换 3 行、前端不重建，构建在网页组件处被断言挡下：build.yaml「source_state … == component_revision」——Qwen 2026-10-20 停在 3.2，回执 5227c512；Opus 改成 7 行）
 停下的规则：任何一步 exit 不是 0 就停，输出原样进回执，不重试、不退回；带管道的命令包进 bash <<'SH' … SH 里跑
 不碰：knowbench、knowmart、测试电脑、沙箱；不写库；受 flux 管的部署不用 rollout restart
 做完：在 k8s 本地提交后停下（不推；推回是所有者的 human-remote.sh），等 Opus 审
@@ -16,6 +17,7 @@
 
 | 改了什么 | 为什么 | 出处 |
 | --- | --- | --- |
+| 网页、管理端钉到撤回选择框后的提交（代码与线上一字不差） | 暂停期间各仓的头与线上一致；构建按父仓 gitlink 核提交号 | 网页 `d7589583…`、管理端 `2d5c1124…` |
 | 「刷新结果」只记测试结论，**不再顺带交 knowmart** | 交付由用户定、上架前两道门（用户同意门、运营审核门）；两道门的页面随栏目改版第一期做，现在先保证谁都交不出去 | 决定记录「交付由用户定」与栏目方案那一条；knowlab 后端 `b7b7edb` |
 | 管理端「交付 / 重试交付」：用户没要的回 409 `not_accepted` | 同上；暂停期间 web端没有「要这一版」的按钮，所以谁都交不出去，这正是想要的 | 同上 |
 | 分身的返回里**不带** `accepted_at` | 线上两端按严格形状校验，多一个字段整页「读取失败」；形状与线上 `7c9731cd…` 完全一样（多了一个前端不调用的 `POST /web/v1/knowbot-drafts/{id}/accept`） | 待办账 144；knowlab 后端 `e3287024…` |
@@ -47,7 +49,7 @@ select id, status, run_id, updated_at from knowbot_draft where status = 'testing
 
 ## 三、knowlab 后端
 
-### 3.1 改钉（3 行）
+### 3.1 改钉（7 行）
 
 ```bash
 python3 - <<'PY'
@@ -55,7 +57,9 @@ import re, pathlib
 p = pathlib.Path('infrastructure/applications/sources.yaml'); s = p.read_text()
 want = {
   'knowlab': {'parent_revision': '43cd00fc7c930419474a86cee0317dfe54dad2f4',
-      'backend_parent_revision': 'e3287024050aef46b6d6954e5e8ab6f59294eaad', 'backend_revision': 'e3287024050aef46b6d6954e5e8ab6f59294eaad'},
+      'backend_parent_revision': 'e3287024050aef46b6d6954e5e8ab6f59294eaad', 'backend_revision': 'e3287024050aef46b6d6954e5e8ab6f59294eaad',
+      'web_parent_revision': 'd7589583436d7d42d90e390f91508acb6ed76a39', 'web_revision': 'd7589583436d7d42d90e390f91508acb6ed76a39',
+      'admin_parent_revision': '2d5c1124c0b3f76ec0efda2371fadbd5f13787b0', 'admin_revision': '2d5c1124c0b3f76ec0efda2371fadbd5f13787b0'},
 }
 for app, keys in want.items():
     m = re.search(rf'(?m)^  {app}:\n(?:^    .*\n)*', s); assert m, app
@@ -68,15 +72,15 @@ PY
 echo "pin exit=$?"; git diff --stat; git diff infrastructure/applications/sources.yaml | grep -c '^+ '
 ```
 
-要看到：`pin exit=0`；只动 `sources.yaml`；最后一行是 `3`；`web_*`、`admin_*` 四行没动。（Opus 已在 sources.yaml 的副本上空跑过：3 行。）
+要看到：`pin exit=0`；只动 `sources.yaml`；最后一行是 `7`。（Opus 已在副本上空跑过：7 行；7 个号与父仓 `43cd00fc` 里三个子仓的 gitlink 逐一相同。）
 
 ### 3.2 构建、暂存、计划
 
-照 qwen-014 一段的 2.2（日志名换成 `q017-*-knowlab`）。要看到：构建、暂存、计划都是 0；变了的镜像锁 **只有 1 个**（knowlab 后端 `e3287024…`）——网页或管理端的锁也变了就停；`key-check-done` 前没有文件名；暂存产物只有 knowlab 后端；后端运行时 diff 除镜像与摘要外只有 `DEPLOYMENT_ID`；迁移 workload 里 `EXPECTED_SCHEMA_REVISION` **仍是** `20261019_0010`（只变 Job 名与 `DEPLOYMENT_ID`）；计划核到 `20261019_0010`。别的应用有变化就停。
+照 qwen-014 一段的 2.2（日志名换成 `q017-*-knowlab`）。要看到：构建、暂存、计划都是 0；变了的镜像锁 **3 个**（knowlab 后端 `e3287024…`、网页 `d7589583…`、管理端 `2d5c1124…`）；`key-check-done` 前没有文件名；暂存产物只有 knowlab 的后端、网页、管理端；三个运行时 diff 除镜像与摘要外各只有 `DEPLOYMENT_ID`；迁移 workload 里 `EXPECTED_SCHEMA_REVISION` **仍是** `20261019_0010`（只变 Job 名与 `DEPLOYMENT_ID`）；计划核到 `20261019_0010`。别的应用有变化就停。
 
 ### 3.3 提交、发布、晋级、检查
 
-照 qwen-016 二段的 3.3（即 qwen-014 一段的 2.3），提交说明换成 `deploy(knowlab): 测试通过不再随刷新自动交付（qwen-017）`、`release(kind): 晋级到 …（qwen-017）`。要看到：各步都是 0；新的迁移 Job 按 Job 名直查 `Complete`（没有新迁移，Job 照样跑一次、什么都不改）；`application-check` 过、`admin_list_read: true`；`knowlab-api / worker / scheduler` 三个 deploy 镜像摘要与后端 `image.lock` 一致；`knowlab-web`、`knowlab-admin` 的镜像摘要**没变**。
+照 qwen-016 二段的 3.3（即 qwen-014 一段的 2.3），提交说明换成 `deploy(knowlab): 测试通过不再随刷新自动交付（qwen-017）`、`release(kind): 晋级到 …（qwen-017）`。要看到：各步都是 0；新的迁移 Job 按 Job 名直查 `Complete`（没有新迁移，Job 照样跑一次、什么都不改）；`application-check` 过、`admin_list_read: true`；`knowlab-api / worker / scheduler` 三个 deploy 镜像摘要与后端 `image.lock` 一致；`knowlab-web`、`knowlab-admin` 摘要各与网页、管理端 `image.lock` 一致（变了是正常的，代码与线上相同）。
 
 ## 四、上线后核
 
