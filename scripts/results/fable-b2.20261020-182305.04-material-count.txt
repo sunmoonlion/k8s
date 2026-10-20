@@ -1,0 +1,6 @@
+2026-10-20T18:31:14.962803+08:00
+packages count=77
+hpi count=76
+tar.gz count=1
+
+exit=0

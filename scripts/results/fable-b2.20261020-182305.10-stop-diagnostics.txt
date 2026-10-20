@@ -1,0 +1,97 @@
+2026-10-20T18:34:15+08:00
+Read-only diagnostics after agent-deploy exit=2; no retry or rollback.
+Id=sunmoon-jenkins.service
+WantedBy=sunmoon-platform.target
+ActiveState=active
+SubState=running
+UnitFileState=enabled
+Id=sunmoon-jenkins-agent.service
+LoadState=not-found
+ActiveState=inactive
+UnitFileState=
+Agent journal since 10 minutes ago (complete output):
+-- No entries --
+Controller journal covering this restart (complete output):
+Oct 20 18:31:47 wsl-dev systemd[1]: Stopping sunmoon-jenkins.service - SunMoon host Jenkins controller...
+Oct 20 18:31:47 wsl-dev docker-compose[3395906]:  Container sunmoon-jenkins-tls-1 Stopping
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: tls-1      | [NOTICE]   (1) : haproxy version is 3.4.6-56332c5
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: tls-1      | [NOTICE]   (1) : path to executable is /usr/local/sbin/haproxy
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: tls-1      | [WARNING]  (1) : Exiting Master process...
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: tls-1      | [WARNING]  (8) : Proxy jenkins_tls stopped (cumulated conns: FE: 11, BE: 0).
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: tls-1      | [WARNING]  (8) : Proxy jenkins stopped (cumulated conns: FE: 0, BE: 50).
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: tls-1      | [WARNING]  (1) : Current worker (8) exited with code 0 (Exit)
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: tls-1      | [WARNING]  (1) : All workers exited. Exiting... (0)
+Oct 20 18:31:47 wsl-dev docker-compose[3395906]:  Container sunmoon-jenkins-tls-1 Stopped
+Oct 20 18:31:47 wsl-dev docker-compose[3395906]:  Container sunmoon-jenkins-jenkins-1 Stopping
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]:  Compose Stopping Aborting on container exit...
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]:  Container sunmoon-jenkins-tls-1 Stopping
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]:  Container sunmoon-jenkins-tls-1 Stopped
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]:  Container sunmoon-jenkins-jenkins-1 Stopping
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: jenkins-1  | 2026-10-20 10:31:47.688+0000 [id=32]        INFO        winstone.Logger#logInternal: JVM is terminating. Shutting down Jetty
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: jenkins-1  | 2026-10-20 10:31:47.690+0000 [id=32]        INFO        org.eclipse.jetty.server.Server#doStop: Stopped oejs.Server@47b67fcb{STOPPING}[12.1.13,sto=0]
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: jenkins-1  | 2026-10-20 10:31:47.692+0000 [id=32]        INFO        o.e.j.server.AbstractConnector#doStop: Stopped oejs.ServerConnector@633a33e4{HTTP/1.1, (http/1.1)}{0.0.0.0:8080}
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: jenkins-1  | 2026-10-20 10:31:47.697+0000 [id=32]        INFO        hudson.lifecycle.Lifecycle#onStatusUpdate: Stopping Jenkins
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: jenkins-1  | 2026-10-20 10:31:47.700+0000 [id=32]        INFO        jenkins.model.Jenkins$13#onAttained: Started termination
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: jenkins-1  | 2026-10-20 10:31:47.707+0000 [id=32]        INFO        jenkins.model.Jenkins$13#onAttained: Completed termination
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: jenkins-1  | 2026-10-20 10:31:47.708+0000 [id=32]        INFO        jenkins.model.Jenkins#_cleanUpDisconnectComputers: Starting node disconnection
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: jenkins-1  | 2026-10-20 10:31:47.717+0000 [id=32]        INFO        jenkins.model.Jenkins#_cleanUpShutdownPluginManager: Stopping plugin manager
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: jenkins-1  | 2026-10-20 10:31:47.718+0000 [id=32]        INFO        jenkins.model.Jenkins#_cleanUpPersistQueue: Persisting build queue
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: jenkins-1  | 2026-10-20 10:31:47.726+0000 [id=32]        INFO        jenkins.model.Jenkins#_cleanUpAwaitDisconnects: Waiting for node disconnection completion
+Oct 20 18:31:47 wsl-dev docker-compose[3132371]: jenkins-1  | 2026-10-20 10:31:47.726+0000 [id=32]        INFO        hudson.lifecycle.Lifecycle#onStatusUpdate: Jenkins stopped
+Oct 20 18:31:48 wsl-dev docker-compose[3132371]:  Container sunmoon-jenkins-jenkins-1 Stopped
+Oct 20 18:31:48 wsl-dev docker-compose[3395906]:  Container sunmoon-jenkins-jenkins-1 Stopped
+Oct 20 18:31:48 wsl-dev systemd[1]: sunmoon-jenkins.service: Main process exited, code=exited, status=143/n/a
+Oct 20 18:31:48 wsl-dev docker-compose[3396161]:  Container sunmoon-jenkins-tls-1 Stopping
+Oct 20 18:31:48 wsl-dev docker-compose[3396161]:  Container sunmoon-jenkins-tls-1 Stopped
+Oct 20 18:31:48 wsl-dev docker-compose[3396161]:  Container sunmoon-jenkins-jenkins-1 Stopping
+Oct 20 18:31:48 wsl-dev docker-compose[3396161]:  Container sunmoon-jenkins-jenkins-1 Stopped
+Oct 20 18:31:48 wsl-dev systemd[1]: sunmoon-jenkins.service: Failed with result 'exit-code'.
+Oct 20 18:31:48 wsl-dev systemd[1]: Stopped sunmoon-jenkins.service - SunMoon host Jenkins controller.
+Oct 20 18:32:44 wsl-dev systemd[1]: Starting sunmoon-jenkins.service - SunMoon host Jenkins controller...
+Oct 20 18:32:44 wsl-dev systemd[1]: Started sunmoon-jenkins.service - SunMoon host Jenkins controller.
+Oct 20 18:32:44 wsl-dev docker-compose[3406362]:  Container sunmoon-jenkins-jenkins-1 Recreate
+Oct 20 18:32:45 wsl-dev docker-compose[3406362]:  Container sunmoon-jenkins-jenkins-1 Recreated
+Oct 20 18:32:45 wsl-dev docker-compose[3406362]:  Container sunmoon-jenkins-jenkins-1 Starting
+Oct 20 18:32:45 wsl-dev docker-compose[3406362]:  Container sunmoon-jenkins-jenkins-1 Started
+Oct 20 18:32:45 wsl-dev docker-compose[3406362]:  Container sunmoon-jenkins-jenkins-1 Waiting
+Oct 20 18:32:46 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:46.422+0000 [id=1]        INFO        winstone.Logger#logInternal: Beginning extraction from war file
+Oct 20 18:32:46 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:46.483+0000 [id=1]        WARNING        o.e.j.ee9.nested.ContextHandler#setContextPath: Empty contextPath
+Oct 20 18:32:46 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:46.529+0000 [id=1]        INFO        org.eclipse.jetty.server.Server#doStart: jetty-12.1.13; built: 2026-09-04T06:53:08.311Z; git: e99386749a0a4888cd9b555ffc96a476fd48d94e; jvm 21.0.12.1+1-LTS
+Oct 20 18:32:46 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:46.826+0000 [id=1]        INFO        o.e.j.e.w.StandardDescriptorProcessor#visitServlet: NO JSP Support for /, did not find org.eclipse.jetty.ee9.jsp.JettyJspServlet
+Oct 20 18:32:46 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:46.877+0000 [id=1]        INFO        o.e.j.s.DefaultSessionIdManager#doStart: Session workerName=node0
+Oct 20 18:32:47 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:47.140+0000 [id=1]        INFO        hudson.WebAppMain#contextInitialized: Jenkins home directory: /var/jenkins_home found at: EnvVars.masterEnvVars.get("JENKINS_HOME")
+Oct 20 18:32:47 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:47.209+0000 [id=1]        INFO        o.e.j.s.handler.ContextHandler#doStart: Started oeje9n.ContextHandler$CoreContextHandler@415156bf{Jenkins v2.580.1,/,b=file:///var/jenkins_home/war/,a=AVAILABLE,h=oeje9n.ContextHandler$CoreContextHandler$CoreToNestedHandler@393881f0{STARTED}}
+Oct 20 18:32:47 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:47.216+0000 [id=1]        INFO        o.e.j.server.AbstractConnector#doStart: Started oejs.ServerConnector@2c16fadb{HTTP/1.1, (http/1.1)}{0.0.0.0:8080}
+Oct 20 18:32:47 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:47.216+0000 [id=1]        INFO        org.eclipse.jetty.server.Server#doStart: Started oejs.Server@2227a6c1{STARTING}[12.1.13,sto=0] @687ms
+Oct 20 18:32:47 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:47.217+0000 [id=31]        INFO        winstone.Logger#logInternal: Winstone Servlet Engine running: controlPort=disabled
+Oct 20 18:32:47 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:47.289+0000 [id=30]        INFO        jenkins.model.Jenkins#<init>: Starting version 2.580.1
+Oct 20 18:32:47 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:47.333+0000 [id=38]        INFO        jenkins.InitReactorRunner$1#onAttained: Started initialization
+Oct 20 18:32:48 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:48.291+0000 [id=39]        INFO        jenkins.InitReactorRunner$1#onAttained: Listed all plugins
+Oct 20 18:32:50 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:50.002+0000 [id=38]        INFO        jenkins.InitReactorRunner$1#onAttained: Prepared all plugins
+Oct 20 18:32:50 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:50.012+0000 [id=39]        INFO        jenkins.InitReactorRunner$1#onAttained: Started all plugins
+Oct 20 18:32:50 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:50.013+0000 [id=38]        INFO        jenkins.InitReactorRunner$1#onAttained: Augmented all extensions
+Oct 20 18:32:51 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:51.115+0000 [id=37]        INFO        jenkins.InitReactorRunner$1#onAttained: System config loaded
+Oct 20 18:32:51 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:51.115+0000 [id=38]        INFO        jenkins.InitReactorRunner$1#onAttained: System config adapted
+Oct 20 18:32:51 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:51.116+0000 [id=36]        INFO        jenkins.InitReactorRunner$1#onAttained: Loaded all jobs
+Oct 20 18:32:51 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:51.171+0000 [id=38]        INFO        jenkins.InitReactorRunner$1#onAttained: Configuration for all jobs updated
+Oct 20 18:32:51 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:51.174+0000 [id=39]        INFO        j.util.groovy.GroovyHookScript#execute: Executing /var/jenkins_home/init.groovy.d/01-platform.groovy
+Oct 20 18:32:51 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:51.436+0000 [id=39]        INFO        j.util.groovy.GroovyHookScript#execute: Executing /var/jenkins_home/init.groovy.d/02-agent-node.groovy
+Oct 20 18:32:51 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:51.539+0000 [id=39]        INFO        j.util.groovy.GroovyHookScript#execute: Executing /var/jenkins_home/init.groovy.d/03-render-check.groovy
+Oct 20 18:32:51 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:51.688+0000 [id=38]        INFO        jenkins.InitReactorRunner$1#onAttained: Completed initialization
+Oct 20 18:32:51 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:51.724+0000 [id=30]        INFO        hudson.lifecycle.Lifecycle#onReady: Jenkins is fully up and running
+Oct 20 18:32:56 wsl-dev docker-compose[3406362]: jenkins-1  | 2026-10-20 10:32:56.724+0000 [id=64]        WARNING        h.n.DiskSpaceMonitorDescriptor#markNodeOfflineOrOnline: Making Built-In Node offline temporarily due to the lack of disk space
+Oct 20 18:32:56 wsl-dev docker-compose[3406362]:  Container sunmoon-jenkins-jenkins-1 Healthy
+Oct 20 18:32:56 wsl-dev docker-compose[3406362]:  Container sunmoon-jenkins-tls-1 Starting
+Oct 20 18:32:57 wsl-dev docker-compose[3406362]:  Container sunmoon-jenkins-tls-1 Started
+Oct 20 18:32:57 wsl-dev docker-compose[3406362]: tls-1      | [NOTICE]   (1) : Initializing new worker (8)
+Oct 20 18:32:57 wsl-dev docker-compose[3406362]: tls-1      | [NOTICE]   (1) : Loading success.
+Agent repo directory:
+total 8
+drwxr-xr-x 2 zymun zymun 4096 Oct 20 18:33 .
+drwx--x--x 5 root  root  4096 Oct 20 18:33 ..
+Agent unit file exists: no
+Independent certificate-verified entry checks:
+jenkins login 200
+harbor health 200
+
+exit=0

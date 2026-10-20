@@ -1,0 +1,8 @@
+2026-10-20T18:24:13.139392+08:00
+Execution correction: ssh must not read the bash heredoc; use -n and DEVNULL. The previous wrapper stopped with GitHub SSH expected exit 1 before logging the captured greeting. No deployment ran.
+$ ssh -n -o BatchMode=yes -o ConnectTimeout=15 -T git@github.com
+Hi sunmoonlion! You've successfully authenticated, but GitHub does not provide shell access.
+ssh exit=1
+$ git config --global --get-regexp 'url\..*insteadof'
+no insteadOf (fine: the playbook sets it per command)
+exit=0

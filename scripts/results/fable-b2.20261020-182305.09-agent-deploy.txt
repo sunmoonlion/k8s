@@ -1,0 +1,203 @@
+2026-10-20T18:33:35+08:00
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/agent.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_agent_action=deploy'
+
+PLAY [Install and control the host Jenkins agent] ******************************
+
+TASK [Validate action and settings] ********************************************
+ok: [localhost]
+
+TASK [Show the plan without secrets] *******************************************
+ok: [localhost] => {
+    "msg": {
+        "action": "deploy",
+        "jre": "temurin-jre 21.0.12.1+1 -> /opt/sunmoon/jenkins/jre/21.0.12.1_1",
+        "render_check": "job render-check on fable every H/10 * * * *",
+        "repos": "/mnt/sunmoon-data/jenkins/repos: k8s, tpl-app, knowfeed-app, knowbase-app, knowbench-app, knowlab-app, knowmart-app (origins from ~zymun/worktrees/fable)",
+        "unit": "sunmoon-jenkins-agent.service as zymun -> http://127.0.0.1:18080 (node host)"
+    }
+}
+
+TASK [Read controller and agent unit states] ***********************************
+ok: [localhost] => (item=sunmoon-jenkins.service)
+ok: [localhost] => (item=sunmoon-jenkins-agent.service)
+
+TASK [Check capacity for JRE, repos and tools] *********************************
+included: /home/zymun/worktrees/fable/k8s/infrastructure/host/tasks/capacity.yaml for localhost
+
+TASK [Validate the capacity budget and site floor] *****************************
+ok: [localhost]
+
+TASK [Validate an explicitly approved temporary capacity exception] ************
+skipping: [localhost]
+
+TASK [Report the active temporary exception without changing the site policy] ***
+skipping: [localhost]
+
+TASK [Publish read-only helper to Windows local script directory] **************
+ok: [localhost]
+
+TASK [Install the reviewed capacity helper without changing execution policy] ***
+ok: [localhost]
+
+TASK [Resolve Windows path to read-only capacity helper] ***********************
+ok: [localhost]
+
+TASK [Require Windows growth budget before writing] ****************************
+ok: [localhost]
+
+TASK [Report physical capacity budget] *****************************************
+ok: [localhost] => {
+    "msg": {
+        "c_free_bytes": 124453306368,
+        "checked_at_utc": "2026-10-20T10:33:38.8098851Z",
+        "configured_data_maximum_bytes": 246960619520,
+        "data_vhd_allocated_bytes": 180728365056,
+        "data_vhd_length": 180728365056,
+        "future_data_growth_bytes": 66232254464,
+        "minimum_free_bytes": 10737418240,
+        "passes": true,
+        "planned_bytes": 8589934592,
+        "remaining_after_growth_and_plan_bytes": 49631117312,
+        "scope": "Configured VHD growth plus requested operation; excludes other future system disk growth"
+    }
+}
+
+TASK [Enforce the approved batch ceiling as well as the reserve floor] *********
+skipping: [localhost]
+
+TASK [Require the controller to be running] ************************************
+ok: [localhost]
+
+TASK [Verify the locked JRE package] *******************************************
+ok: [localhost]
+
+TASK [Require the original JRE bytes] ******************************************
+ok: [localhost]
+
+TASK [Create runtime directories for the agent] ********************************
+changed: [localhost] => (item=/opt/sunmoon/jenkins/jre)
+changed: [localhost] => (item=/opt/sunmoon/jenkins/jre/21.0.12.1_1)
+changed: [localhost] => (item=/mnt/sunmoon-data/jenkins/agent)
+changed: [localhost] => (item=/mnt/sunmoon-data/jenkins/repos)
+
+TASK [Extract the verified JRE once] *******************************************
+changed: [localhost]
+
+TASK [Verify the extracted JRE members against the lock] ***********************
+ok: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java)
+ok: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so)
+
+TASK [Require exact JRE member bytes] ******************************************
+ok: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java)
+ok: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so)
+
+TASK [Point the current JRE at the verified version] ***************************
+changed: [localhost]
+
+TASK [Fetch agent.jar from our own controller (it is served by the controller, no third party)] ***
+changed: [localhost]
+
+TASK [Read the node secret the controller wrote at start (init.groovy.d/02-agent-node)] ***
+ok: [localhost]
+
+TASK [Give the agent user its own read-only copy of the node secret] ***********
+changed: [localhost]
+
+TASK [Let the agent user traverse the secrets directory] ***********************
+ok: [localhost]
+
+TASK [Prepare the repos the agent works on] ************************************
+included: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/workspace.yaml for localhost
+
+TASK [Read the origin of each repo from the source workspace] ******************
+ok: [localhost] => (item=k8s)
+ok: [localhost] => (item=tpl-app)
+ok: [localhost] => (item=knowfeed-app)
+ok: [localhost] => (item=knowbase-app)
+ok: [localhost] => (item=knowbench-app)
+ok: [localhost] => (item=knowlab-app)
+ok: [localhost] => (item=knowmart-app)
+
+TASK [Require plain SSH or HTTPS origins without embedded credentials] *********
+ok: [localhost] => (item=k8s)
+ok: [localhost] => (item=tpl-app)
+ok: [localhost] => (item=knowfeed-app)
+ok: [localhost] => (item=knowbase-app)
+ok: [localhost] => (item=knowbench-app)
+ok: [localhost] => (item=knowlab-app)
+ok: [localhost] => (item=knowmart-app)
+
+TASK [Inspect existing clones] *************************************************
+ok: [localhost] => (item=k8s)
+ok: [localhost] => (item=tpl-app)
+ok: [localhost] => (item=knowfeed-app)
+ok: [localhost] => (item=knowbase-app)
+ok: [localhost] => (item=knowbench-app)
+ok: [localhost] => (item=knowlab-app)
+ok: [localhost] => (item=knowmart-app)
+
+TASK [Clone missing repos as the agent user] ***********************************
+[WARNING]: Failed to template loop_control label: object of type 'str' has no attribute 'item'
+Origin: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/workspace.yaml:36:12
+
+34   loop: '{{ repo_origins.results }}'
+35   loop_control:
+36     label: '{{ item.item.item }}'
+              ^ column 12
+
+[ERROR]: Task failed: Finalization of task args for 'ansible.builtin.command' failed: Error while resolving value for 'argv': object of type 'str' has no attribute 'stdout'
+
+Task failed.
+Origin: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/workspace.yaml:29:3
+
+27   register: clones
+28
+29 - name: Clone missing repos as the agent user
+     ^ column 3
+
+<<< caused by >>>
+
+Finalization of task args for 'ansible.builtin.command' failed.
+Origin: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/workspace.yaml:32:3
+
+30   become: true
+31   become_user: '{{ jenkins_agent_user }}'
+32   ansible.builtin.command:
+     ^ column 3
+
+<<< caused by >>>
+
+Error while resolving value for 'argv'.
+Origin: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/workspace.yaml:33:11
+
+31   become_user: '{{ jenkins_agent_user }}'
+32   ansible.builtin.command:
+33     argv: [git, clone, --quiet, --branch, '{{ jenkins_render_check_branch }}', '{{ item.item.stdout }}', '{{ jenki...
+             ^ column 11
+
+<<< caused by >>>
+
+object of type 'str' has no attribute 'stdout'
+Origin: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/workspace.yaml:33:80
+
+31   become_user: '{{ jenkins_agent_user }}'
+32   ansible.builtin.command:
+33     argv: [git, clone, --quiet, --branch, '{{ jenkins_render_check_branch }}', '{{ item.item.stdout }}', '{{ jenki...
+                                                                                  ^ column 80
+
+failed: [localhost] (item={'changed': False, 'failed': False, 'msg': '', 'rc': 0, 'changed_when_result': False, 'ansible_loop_var': 'item', 'item': 'k8s', 'stdout': 'https://github.com/sunmoonlion/k8s.git', 'stderr': '', 'cmd': ['git', '-C', '/home/zymun/worktrees/fable/k8s', 'remote', 'get-url', 'origin'], 'start': '2026-10-20 18:33:46.148375', 'end': '2026-10-20 18:33:46.152267', 'delta': '0:00:00.003892', 'stdout_lines': ['https://github.com/sunmoonlion/k8s.git'], 'stderr_lines': []}) => {"ansible_index_var": "repo_index", "ansible_loop_var": "item", "changed": false, "item": {"ansible_loop_var": "item", "changed": false, "changed_when_result": false, "cmd": ["git", "-C", "/home/zymun/worktrees/fable/k8s", "remote", "get-url", "origin"], "delta": "0:00:00.003892", "end": "2026-10-20 18:33:46.152267", "failed": false, "item": "k8s", "msg": "", "rc": 0, "start": "2026-10-20 18:33:46.148375", "stderr": "", "stderr_lines": [], "stdout": "https://github.com/sunmoonlion/k8s.git", "stdout_lines": ["https://github.com/sunmoonlion/k8s.git"]}, "msg": "Task failed: Finalization of task args for 'ansible.builtin.command' failed: Error while resolving value for 'argv': object of type 'str' has no attribute 'stdout'", "repo_index": 0}
+failed: [localhost] (item={'changed': False, 'failed': False, 'msg': '', 'rc': 0, 'changed_when_result': False, 'ansible_loop_var': 'item', 'item': 'tpl-app', 'stdout': 'https://github.com/sunmoonlion/tpl-app.git', 'stderr': '', 'cmd': ['git', '-C', '/home/zymun/worktrees/fable/tpl-app', 'remote', 'get-url', 'origin'], 'start': '2026-10-20 18:33:46.312736', 'end': '2026-10-20 18:33:46.317618', 'delta': '0:00:00.004882', 'stdout_lines': ['https://github.com/sunmoonlion/tpl-app.git'], 'stderr_lines': []}) => {"ansible_index_var": "repo_index", "ansible_loop_var": "item", "changed": false, "item": {"ansible_loop_var": "item", "changed": false, "changed_when_result": false, "cmd": ["git", "-C", "/home/zymun/worktrees/fable/tpl-app", "remote", "get-url", "origin"], "delta": "0:00:00.004882", "end": "2026-10-20 18:33:46.317618", "failed": false, "item": "tpl-app", "msg": "", "rc": 0, "start": "2026-10-20 18:33:46.312736", "stderr": "", "stderr_lines": [], "stdout": "https://github.com/sunmoonlion/tpl-app.git", "stdout_lines": ["https://github.com/sunmoonlion/tpl-app.git"]}, "msg": "Task failed: Finalization of task args for 'ansible.builtin.command' failed: Error while resolving value for 'argv': object of type 'str' has no attribute 'stdout'", "repo_index": 1}
+failed: [localhost] (item={'changed': False, 'failed': False, 'msg': '', 'rc': 0, 'changed_when_result': False, 'ansible_loop_var': 'item', 'item': 'knowfeed-app', 'stdout': 'https://github.com/sunmoonlion/knowfeed-app.git', 'stderr': '', 'cmd': ['git', '-C', '/home/zymun/worktrees/fable/knowfeed-app', 'remote', 'get-url', 'origin'], 'start': '2026-10-20 18:33:46.471393', 'end': '2026-10-20 18:33:46.475483', 'delta': '0:00:00.004090', 'stdout_lines': ['https://github.com/sunmoonlion/knowfeed-app.git'], 'stderr_lines': []}) => {"ansible_index_var": "repo_index", "ansible_loop_var": "item", "changed": false, "item": {"ansible_loop_var": "item", "changed": false, "changed_when_result": false, "cmd": ["git", "-C", "/home/zymun/worktrees/fable/knowfeed-app", "remote", "get-url", "origin"], "delta": "0:00:00.004090", "end": "2026-10-20 18:33:46.475483", "failed": false, "item": "knowfeed-app", "msg": "", "rc": 0, "start": "2026-10-20 18:33:46.471393", "stderr": "", "stderr_lines": [], "stdout": "https://github.com/sunmoonlion/knowfeed-app.git", "stdout_lines": ["https://github.com/sunmoonlion/knowfeed-app.git"]}, "msg": "Task failed: Finalization of task args for 'ansible.builtin.command' failed: Error while resolving value for 'argv': object of type 'str' has no attribute 'stdout'", "repo_index": 2}
+failed: [localhost] (item={'changed': False, 'failed': False, 'msg': '', 'rc': 0, 'changed_when_result': False, 'ansible_loop_var': 'item', 'item': 'knowbase-app', 'stdout': 'https://github.com/sunmoonlion/knowbase-app.git', 'stderr': '', 'cmd': ['git', '-C', '/home/zymun/worktrees/fable/knowbase-app', 'remote', 'get-url', 'origin'], 'start': '2026-10-20 18:33:46.636064', 'end': '2026-10-20 18:33:46.640498', 'delta': '0:00:00.004434', 'stdout_lines': ['https://github.com/sunmoonlion/knowbase-app.git'], 'stderr_lines': []}) => {"ansible_index_var": "repo_index", "ansible_loop_var": "item", "changed": false, "item": {"ansible_loop_var": "item", "changed": false, "changed_when_result": false, "cmd": ["git", "-C", "/home/zymun/worktrees/fable/knowbase-app", "remote", "get-url", "origin"], "delta": "0:00:00.004434", "end": "2026-10-20 18:33:46.640498", "failed": false, "item": "knowbase-app", "msg": "", "rc": 0, "start": "2026-10-20 18:33:46.636064", "stderr": "", "stderr_lines": [], "stdout": "https://github.com/sunmoonlion/knowbase-app.git", "stdout_lines": ["https://github.com/sunmoonlion/knowbase-app.git"]}, "msg": "Task failed: Finalization of task args for 'ansible.builtin.command' failed: Error while resolving value for 'argv': object of type 'str' has no attribute 'stdout'", "repo_index": 3}
+failed: [localhost] (item={'changed': False, 'failed': False, 'msg': '', 'rc': 0, 'changed_when_result': False, 'ansible_loop_var': 'item', 'item': 'knowbench-app', 'stdout': 'https://github.com/sunmoonlion/knowbench-app.git', 'stderr': '', 'cmd': ['git', '-C', '/home/zymun/worktrees/fable/knowbench-app', 'remote', 'get-url', 'origin'], 'start': '2026-10-20 18:33:46.792340', 'end': '2026-10-20 18:33:46.797456', 'delta': '0:00:00.005116', 'stdout_lines': ['https://github.com/sunmoonlion/knowbench-app.git'], 'stderr_lines': []}) => {"ansible_index_var": "repo_index", "ansible_loop_var": "item", "changed": false, "item": {"ansible_loop_var": "item", "changed": false, "changed_when_result": false, "cmd": ["git", "-C", "/home/zymun/worktrees/fable/knowbench-app", "remote", "get-url", "origin"], "delta": "0:00:00.005116", "end": "2026-10-20 18:33:46.797456", "failed": false, "item": "knowbench-app", "msg": "", "rc": 0, "start": "2026-10-20 18:33:46.792340", "stderr": "", "stderr_lines": [], "stdout": "https://github.com/sunmoonlion/knowbench-app.git", "stdout_lines": ["https://github.com/sunmoonlion/knowbench-app.git"]}, "msg": "Task failed: Finalization of task args for 'ansible.builtin.command' failed: Error while resolving value for 'argv': object of type 'str' has no attribute 'stdout'", "repo_index": 4}
+failed: [localhost] (item={'changed': False, 'failed': False, 'msg': '', 'rc': 0, 'changed_when_result': False, 'ansible_loop_var': 'item', 'item': 'knowlab-app', 'stdout': 'https://github.com/sunmoonlion/knowlab-app.git', 'stderr': '', 'cmd': ['git', '-C', '/home/zymun/worktrees/fable/knowlab-app', 'remote', 'get-url', 'origin'], 'start': '2026-10-20 18:33:46.991149', 'end': '2026-10-20 18:33:46.995503', 'delta': '0:00:00.004354', 'stdout_lines': ['https://github.com/sunmoonlion/knowlab-app.git'], 'stderr_lines': []}) => {"ansible_index_var": "repo_index", "ansible_loop_var": "item", "changed": false, "item": {"ansible_loop_var": "item", "changed": false, "changed_when_result": false, "cmd": ["git", "-C", "/home/zymun/worktrees/fable/knowlab-app", "remote", "get-url", "origin"], "delta": "0:00:00.004354", "end": "2026-10-20 18:33:46.995503", "failed": false, "item": "knowlab-app", "msg": "", "rc": 0, "start": "2026-10-20 18:33:46.991149", "stderr": "", "stderr_lines": [], "stdout": "https://github.com/sunmoonlion/knowlab-app.git", "stdout_lines": ["https://github.com/sunmoonlion/knowlab-app.git"]}, "msg": "Task failed: Finalization of task args for 'ansible.builtin.command' failed: Error while resolving value for 'argv': object of type 'str' has no attribute 'stdout'", "repo_index": 5}
+failed: [localhost] (item={'changed': False, 'failed': False, 'msg': '', 'rc': 0, 'changed_when_result': False, 'ansible_loop_var': 'item', 'item': 'knowmart-app', 'stdout': 'https://github.com/sunmoonlion/knowmart-app.git', 'stderr': '', 'cmd': ['git', '-C', '/home/zymun/worktrees/fable/knowmart-app', 'remote', 'get-url', 'origin'], 'start': '2026-10-20 18:33:47.150681', 'end': '2026-10-20 18:33:47.155049', 'delta': '0:00:00.004368', 'stdout_lines': ['https://github.com/sunmoonlion/knowmart-app.git'], 'stderr_lines': []}) => {"ansible_index_var": "repo_index", "ansible_loop_var": "item", "changed": false, "item": {"ansible_loop_var": "item", "changed": false, "changed_when_result": false, "cmd": ["git", "-C", "/home/zymun/worktrees/fable/knowmart-app", "remote", "get-url", "origin"], "delta": "0:00:00.004368", "end": "2026-10-20 18:33:47.155049", "failed": false, "item": "knowmart-app", "msg": "", "rc": 0, "start": "2026-10-20 18:33:47.150681", "stderr": "", "stderr_lines": [], "stdout": "https://github.com/sunmoonlion/knowmart-app.git", "stdout_lines": ["https://github.com/sunmoonlion/knowmart-app.git"]}, "msg": "Task failed: Finalization of task args for 'ansible.builtin.command' failed: Error while resolving value for 'argv': object of type 'str' has no attribute 'stdout'", "repo_index": 6}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=26   changed=5    unreachable=0    failed=1    skipped=3    rescued=0    ignored=0   
+
+make: *** [Makefile:195: jenkins-agent-deploy] Error 2
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+
+exit=2

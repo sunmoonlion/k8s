@@ -1,0 +1,547 @@
+2026-10-20T18:31:56+08:00
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/service.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_action=deploy'
+
+PLAY [Configure and control the host Jenkins controller] ***********************
+
+TASK [Validate site and operation] *********************************************
+ok: [localhost]
+
+TASK [Show intended configuration without secrets] *****************************
+ok: [localhost] => {
+    "msg": {
+        "action": "deploy",
+        "administrator": "admin (table row 13; preset only at first start)",
+        "agent_port": "127.0.0.1:50000",
+        "directories": {
+            "config": "/etc/sunmoon/jenkins",
+            "data": "/mnt/sunmoon-data/jenkins/home",
+            "runtime": "/opt/sunmoon/jenkins"
+        },
+        "images": [
+            "docker.io/jenkins/jenkins@sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb",
+            "docker.io/library/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272"
+        ],
+        "intranet": "https://jenkins.sunmoonai.com:30443 -> entry SNI -> 127.0.0.1:18443 (TLS by the locked HAProxy) -> jenkins:8080",
+        "loopback_http": "127.0.0.1:18080 (host agent and local checks only)",
+        "public_edge": "not routed (SDD 0013: the edge forwards only knowbench, casdoor, relay)"
+    }
+}
+
+TASK [Inspect current service state] *******************************************
+ok: [localhost]
+
+TASK [Check capacity for the controller home and generated configuration] ******
+included: /home/zymun/worktrees/fable/k8s/infrastructure/host/tasks/capacity.yaml for localhost
+
+TASK [Validate the capacity budget and site floor] *****************************
+ok: [localhost]
+
+TASK [Validate an explicitly approved temporary capacity exception] ************
+skipping: [localhost]
+
+TASK [Report the active temporary exception without changing the site policy] ***
+skipping: [localhost]
+
+TASK [Publish read-only helper to Windows local script directory] **************
+ok: [localhost]
+
+TASK [Install the reviewed capacity helper without changing execution policy] ***
+ok: [localhost]
+
+TASK [Resolve Windows path to read-only capacity helper] ***********************
+ok: [localhost]
+
+TASK [Require Windows growth budget before writing] ****************************
+ok: [localhost]
+
+TASK [Report physical capacity budget] *****************************************
+ok: [localhost] => {
+    "msg": {
+        "c_free_bytes": 124689403904,
+        "checked_at_utc": "2026-10-20T10:31:59.3442823Z",
+        "configured_data_maximum_bytes": 246960619520,
+        "data_vhd_allocated_bytes": 180728365056,
+        "data_vhd_length": 180728365056,
+        "future_data_growth_bytes": 66232254464,
+        "minimum_free_bytes": 10737418240,
+        "passes": true,
+        "planned_bytes": 2147483648,
+        "remaining_after_growth_and_plan_bytes": 56309665792,
+        "scope": "Configured VHD growth plus requested operation; excludes other future system disk growth"
+    }
+}
+
+TASK [Enforce the approved batch ceiling as well as the reserve floor] *********
+skipping: [localhost]
+
+TASK [Require the locked local images] *****************************************
+ok: [localhost] => (item=jenkins)
+ok: [localhost] => (item=haproxy)
+
+TASK [Verify image platform and manifest] **************************************
+ok: [localhost] => (item=jenkins)
+ok: [localhost] => (item=haproxy)
+
+TASK [Verify the Compose binary source] ****************************************
+ok: [localhost]
+
+TASK [Require locked Compose] **************************************************
+ok: [localhost]
+
+TASK [Inspect managed root directories] ****************************************
+ok: [localhost] => (item=/etc/sunmoon/jenkins)
+ok: [localhost] => (item=/opt/sunmoon/jenkins)
+ok: [localhost] => (item=/mnt/sunmoon-data/jenkins)
+ok: [localhost] => (item=/mnt/sunmoon-data/jenkins/home)
+
+TASK [Refuse symlink or non-directory roots] ***********************************
+ok: [localhost] => (item=/etc/sunmoon/jenkins)
+ok: [localhost] => (item=/opt/sunmoon/jenkins)
+ok: [localhost] => (item=/mnt/sunmoon-data/jenkins)
+ok: [localhost] => (item=/mnt/sunmoon-data/jenkins/home)
+
+TASK [Create private configuration and runtime directories] ********************
+ok: [localhost] => (item=/etc/sunmoon/jenkins)
+ok: [localhost] => (item=/etc/sunmoon/jenkins/private)
+ok: [localhost] => (item=/etc/sunmoon/jenkins/private/presets)
+ok: [localhost] => (item=/etc/sunmoon/jenkins/tls)
+ok: [localhost] => (item=/opt/sunmoon/jenkins)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/secrets)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/tls)
+
+TASK [Install the shared standalone mount guard] *******************************
+ok: [localhost]
+
+TASK [Set startup storage policy] **********************************************
+ok: [localhost]
+
+TASK [Create the data directory on the data disk only] *************************
+ok: [localhost]
+
+TASK [Require Docker to see the actual data disk before creating the home] *****
+ok: [localhost]
+
+TASK [Create the controller home owned by the container user] ******************
+ok: [localhost]
+
+TASK [Create and validate the private administrator credential and certificates] ***
+included: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/secrets.yaml for localhost
+
+TASK [Inspect the credential file without reading its value] *******************
+ok: [localhost]
+
+TASK [Reject an unsafe credential file] ****************************************
+ok: [localhost]
+
+TASK [Inspect the independent backup directory and the initialized home] *******
+ok: [localhost] => (item=(censored due to no_log))
+ok: [localhost] => (item=(censored due to no_log))
+ok: [localhost] => (item=(censored due to no_log))
+
+TASK [Refuse a redirected or insecure backup] **********************************
+ok: [localhost]
+
+TASK [Refuse regenerating a lost credential for an initialized controller] *****
+ok: [localhost]
+
+TASK [Restore a missing primary credential only from its exact backup] *********
+skipping: [localhost]
+
+TASK [Read the human admin preset without changing an existing account] ********
+included: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/../../host/tasks/account-preset.yaml for localhost => (item=(censored due to no_log))
+
+TASK [Read or restore the explicitly supplied root-only preset and independent copy] ***
+ok: [localhost]
+
+TASK [Preserve the validated explicit first-install value only in memory] ******
+ok: [localhost]
+
+TASK [Retain the first-install value by its unique owning account object] ******
+ok: [localhost]
+
+TASK [Generate an independent initial credential only when absent and no preset was supplied] ***
+skipping: [localhost]
+
+TASK [Persist the initial credential without overwriting an existing file] *****
+skipping: [localhost]
+
+TASK [Create the independent private credential backup directory] **************
+ok: [localhost]
+
+TASK [Preserve the credential without replacing a prior identity] **************
+ok: [localhost]
+
+TASK [Require exact recoverable credential bytes] ******************************
+ok: [localhost]
+
+TASK [Read the credential only to validate its shape] **************************
+ok: [localhost]
+
+TASK [Require a valid credential value] ****************************************
+ok: [localhost]
+
+TASK [Give the container user its own read-only copy for the first start] ******
+ok: [localhost]
+
+TASK [Inspect the registry CA and the controller certificate pair] *************
+ok: [localhost] => (item=/etc/sunmoon/registry/tls/ca.crt)
+ok: [localhost] => (item=/etc/sunmoon/registry/tls/ca.key)
+ok: [localhost] => (item=/etc/sunmoon/jenkins/tls/server.key)
+ok: [localhost] => (item=/etc/sunmoon/jenkins/tls/server.crt)
+
+TASK [Require the platform CA and refuse symlinks or a partial pair] ***********
+ok: [localhost]
+
+TASK [Create a private server key and CSR once] ********************************
+skipping: [localhost]
+
+TASK [Write server certificate extensions] *************************************
+ok: [localhost]
+
+TASK [Sign the server certificate with the platform CA once, in place] *********
+skipping: [localhost]
+
+TASK [Restrict the private key] ************************************************
+ok: [localhost]
+
+TASK [Verify certificate chain, DNS identity and remaining validity] ***********
+ok: [localhost] => (item=['openssl', 'verify', '-CAfile', '/etc/sunmoon/registry/tls/ca.crt', '-verify_hostname', 'jenkins.sunmoonai.com', '/etc/sunmoon/jenkins/tls/server.crt'])
+ok: [localhost] => (item=['openssl', 'x509', '-checkend', '2592000', '-noout', '-in', '/etc/sunmoon/jenkins/tls/server.crt'])
+
+TASK [Read the certificate pair for the TLS terminator] ************************
+ok: [localhost] => (item=(censored due to no_log))
+ok: [localhost] => (item=(censored due to no_log))
+
+TASK [Assemble the HAProxy certificate bundle readable only by its container user] ***
+ok: [localhost]
+
+TASK [Place the locked plugin closure for the container to pick up at start] ***
+included: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/plugins.yaml for localhost
+
+TASK [Select the locked plugin files] ******************************************
+ok: [localhost]
+
+TASK [Require the locked plugin closure] ***************************************
+ok: [localhost]
+
+TASK [Inspect cached plugin files] *********************************************
+ok: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+ok: [localhost] => (item=jenkins-plugin-asm-api)
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+ok: [localhost] => (item=jenkins-plugin-branch-api)
+ok: [localhost] => (item=jenkins-plugin-caffeine-api)
+ok: [localhost] => (item=jenkins-plugin-checks-api)
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api)
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+ok: [localhost] => (item=jenkins-plugin-commons-text-api)
+ok: [localhost] => (item=jenkins-plugin-credentials-binding)
+ok: [localhost] => (item=jenkins-plugin-credentials)
+ok: [localhost] => (item=jenkins-plugin-display-url-api)
+ok: [localhost] => (item=jenkins-plugin-durable-task)
+ok: [localhost] => (item=jenkins-plugin-echarts-api)
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api)
+ok: [localhost] => (item=jenkins-plugin-git-client)
+ok: [localhost] => (item=jenkins-plugin-git)
+ok: [localhost] => (item=jenkins-plugin-gson-api)
+ok: [localhost] => (item=jenkins-plugin-instance-identity)
+ok: [localhost] => (item=jenkins-plugin-ionicons-api)
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson3-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jaxb)
+ok: [localhost] => (item=jenkins-plugin-joda-time-api)
+ok: [localhost] => (item=jenkins-plugin-jquery3-api)
+ok: [localhost] => (item=jenkins-plugin-json-api)
+ok: [localhost] => (item=jenkins-plugin-junit)
+ok: [localhost] => (item=jenkins-plugin-mailer)
+ok: [localhost] => (item=jenkins-plugin-matrix-project)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+ok: [localhost] => (item=jenkins-plugin-plain-credentials)
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api)
+ok: [localhost] => (item=jenkins-plugin-prism-api)
+ok: [localhost] => (item=jenkins-plugin-resource-disposer)
+ok: [localhost] => (item=jenkins-plugin-scm-api)
+ok: [localhost] => (item=jenkins-plugin-script-security)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials)
+ok: [localhost] => (item=jenkins-plugin-structs)
+ok: [localhost] => (item=jenkins-plugin-timestamper)
+ok: [localhost] => (item=jenkins-plugin-variant)
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+ok: [localhost] => (item=jenkins-plugin-workflow-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+ok: [localhost] => (item=jenkins-plugin-workflow-cps)
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-job)
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-support)
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup)
+
+TASK [Require every plugin file to match its lock] *****************************
+ok: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+ok: [localhost] => (item=jenkins-plugin-asm-api)
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+ok: [localhost] => (item=jenkins-plugin-branch-api)
+ok: [localhost] => (item=jenkins-plugin-caffeine-api)
+ok: [localhost] => (item=jenkins-plugin-checks-api)
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api)
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+ok: [localhost] => (item=jenkins-plugin-commons-text-api)
+ok: [localhost] => (item=jenkins-plugin-credentials-binding)
+ok: [localhost] => (item=jenkins-plugin-credentials)
+ok: [localhost] => (item=jenkins-plugin-display-url-api)
+ok: [localhost] => (item=jenkins-plugin-durable-task)
+ok: [localhost] => (item=jenkins-plugin-echarts-api)
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api)
+ok: [localhost] => (item=jenkins-plugin-git-client)
+ok: [localhost] => (item=jenkins-plugin-git)
+ok: [localhost] => (item=jenkins-plugin-gson-api)
+ok: [localhost] => (item=jenkins-plugin-instance-identity)
+ok: [localhost] => (item=jenkins-plugin-ionicons-api)
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson3-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jaxb)
+ok: [localhost] => (item=jenkins-plugin-joda-time-api)
+ok: [localhost] => (item=jenkins-plugin-jquery3-api)
+ok: [localhost] => (item=jenkins-plugin-json-api)
+ok: [localhost] => (item=jenkins-plugin-junit)
+ok: [localhost] => (item=jenkins-plugin-mailer)
+ok: [localhost] => (item=jenkins-plugin-matrix-project)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+ok: [localhost] => (item=jenkins-plugin-plain-credentials)
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api)
+ok: [localhost] => (item=jenkins-plugin-prism-api)
+ok: [localhost] => (item=jenkins-plugin-resource-disposer)
+ok: [localhost] => (item=jenkins-plugin-scm-api)
+ok: [localhost] => (item=jenkins-plugin-script-security)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials)
+ok: [localhost] => (item=jenkins-plugin-structs)
+ok: [localhost] => (item=jenkins-plugin-timestamper)
+ok: [localhost] => (item=jenkins-plugin-variant)
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+ok: [localhost] => (item=jenkins-plugin-workflow-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+ok: [localhost] => (item=jenkins-plugin-workflow-cps)
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-job)
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-support)
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup)
+
+TASK [Create the reference plugin directory for the container user] ************
+changed: [localhost]
+
+TASK [Place each verified plugin as <name>.jpi] ********************************
+changed: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+changed: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+changed: [localhost] => (item=jenkins-plugin-asm-api)
+changed: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+changed: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+changed: [localhost] => (item=jenkins-plugin-branch-api)
+changed: [localhost] => (item=jenkins-plugin-caffeine-api)
+changed: [localhost] => (item=jenkins-plugin-checks-api)
+changed: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+changed: [localhost] => (item=jenkins-plugin-commons-compress-api)
+changed: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+changed: [localhost] => (item=jenkins-plugin-commons-text-api)
+changed: [localhost] => (item=jenkins-plugin-credentials-binding)
+changed: [localhost] => (item=jenkins-plugin-credentials)
+changed: [localhost] => (item=jenkins-plugin-display-url-api)
+changed: [localhost] => (item=jenkins-plugin-durable-task)
+changed: [localhost] => (item=jenkins-plugin-echarts-api)
+changed: [localhost] => (item=jenkins-plugin-font-awesome-api)
+changed: [localhost] => (item=jenkins-plugin-git-client)
+changed: [localhost] => (item=jenkins-plugin-git)
+changed: [localhost] => (item=jenkins-plugin-gson-api)
+changed: [localhost] => (item=jenkins-plugin-instance-identity)
+changed: [localhost] => (item=jenkins-plugin-ionicons-api)
+changed: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+changed: [localhost] => (item=jenkins-plugin-jackson2-api)
+changed: [localhost] => (item=jenkins-plugin-jackson3-api)
+changed: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+changed: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+changed: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+changed: [localhost] => (item=jenkins-plugin-javax-activation-api)
+changed: [localhost] => (item=jenkins-plugin-jaxb)
+changed: [localhost] => (item=jenkins-plugin-joda-time-api)
+changed: [localhost] => (item=jenkins-plugin-jquery3-api)
+changed: [localhost] => (item=jenkins-plugin-json-api)
+changed: [localhost] => (item=jenkins-plugin-junit)
+changed: [localhost] => (item=jenkins-plugin-mailer)
+changed: [localhost] => (item=jenkins-plugin-matrix-project)
+changed: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+changed: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+changed: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+changed: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+changed: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+changed: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+changed: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+changed: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+changed: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+changed: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+changed: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+changed: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+changed: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+changed: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+changed: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+changed: [localhost] => (item=jenkins-plugin-plain-credentials)
+changed: [localhost] => (item=jenkins-plugin-plugin-util-api)
+changed: [localhost] => (item=jenkins-plugin-prism-api)
+changed: [localhost] => (item=jenkins-plugin-resource-disposer)
+changed: [localhost] => (item=jenkins-plugin-scm-api)
+changed: [localhost] => (item=jenkins-plugin-script-security)
+changed: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+changed: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+changed: [localhost] => (item=jenkins-plugin-ssh-credentials)
+changed: [localhost] => (item=jenkins-plugin-structs)
+changed: [localhost] => (item=jenkins-plugin-timestamper)
+changed: [localhost] => (item=jenkins-plugin-variant)
+changed: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+changed: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+changed: [localhost] => (item=jenkins-plugin-workflow-api)
+changed: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+changed: [localhost] => (item=jenkins-plugin-workflow-cps)
+changed: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+changed: [localhost] => (item=jenkins-plugin-workflow-job)
+changed: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+changed: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+changed: [localhost] => (item=jenkins-plugin-workflow-step-api)
+changed: [localhost] => (item=jenkins-plugin-workflow-support)
+changed: [localhost] => (item=jenkins-plugin-ws-cleanup)
+
+TASK [Find plugin files that are no longer in the lock] ************************
+ok: [localhost]
+
+TASK [Refuse stray plugin files] ***********************************************
+ok: [localhost]
+
+TASK [Preview runtime configuration changes] ***********************************
+[WARNING]: failed to look up group with gid 10001. Create group up to this point in real play
+changed: [localhost] => (item=/opt/sunmoon/jenkins/compose.yaml)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/haproxy.cfg)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy)
+changed: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy)
+changed: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy)
+ok: [localhost] => (item=/etc/systemd/system/sunmoon-jenkins.service)
+
+TASK [Require stopping this service before changing its runtime configuration] ***
+ok: [localhost]
+
+TASK [Write runtime configuration] *********************************************
+changed: [localhost] => (item=/opt/sunmoon/jenkins/compose.yaml)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/haproxy.cfg)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy)
+changed: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy)
+changed: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy)
+ok: [localhost] => (item=/etc/systemd/system/sunmoon-jenkins.service)
+
+TASK [Install verified Compose independent of the worktree] ********************
+ok: [localhost]
+
+TASK [Validate the generated Compose file without starting anything] ***********
+ok: [localhost]
+
+TASK [Validate the TLS terminator configuration with the locked HAProxy image] ***
+ok: [localhost]
+
+TASK [Reload service definitions and join the platform target] *****************
+ok: [localhost]
+
+TASK [Stop only the controller] ************************************************
+skipping: [localhost]
+
+TASK [Start the controller] ****************************************************
+changed: [localhost]
+
+TASK [Wait for the certificate-verified login page through the TLS backend] ****
+FAILED - RETRYING: [localhost]: Wait for the certificate-verified login page through the TLS backend (39 retries left).
+FAILED - RETRYING: [localhost]: Wait for the certificate-verified login page through the TLS backend (38 retries left).
+ok: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+ok: [localhost]
+
+TASK [Require an authenticated administrator identity] *************************
+ok: [localhost]
+
+TASK [Require anonymous access to be denied] ***********************************
+ok: [localhost]
+
+TASK [Require the locked plugins to be loaded and the agent node to exist] *****
+ok: [localhost] => (item=(censored due to no_log))
+ok: [localhost] => (item=(censored due to no_log))
+
+TASK [Report actual service state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "Id=sunmoon-jenkins.service",
+        "ActiveState=active",
+        "SubState=running",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=69   changed=5    unreachable=0    failed=0    skipped=9    rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+
+exit=0

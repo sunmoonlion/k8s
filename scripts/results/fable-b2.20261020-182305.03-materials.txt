@@ -1,0 +1,1398 @@
+2026-10-20T18:24:25+08:00
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+make prepare-host-materials
+make[1]: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml artifacts/image-archives.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'image_group=host image_action=fetch'
+
+PLAY [Prepare or verify locked offline image archives] *************************
+
+TASK [Validate image preparation mode and complete selection] ******************
+ok: [localhost]
+
+TASK [Validate immutable image descriptors] ************************************
+ok: [localhost] => (item=haproxy)
+ok: [localhost] => (item=skopeo)
+ok: [localhost] => (item=jenkins)
+
+TASK [Inspect the cache and image directory] ***********************************
+ok: [localhost] => (item=/home/zymun/k8s-packages)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images)
+
+TASK [Reject symlink or non-directory archive paths] ***************************
+ok: [localhost] => (item=/home/zymun/k8s-packages)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images)
+
+TASK [Prepare each archive through the same native path] ***********************
+included: /home/zymun/worktrees/fable/k8s/infrastructure/artifacts/tasks/image-archive.yaml for localhost => (item=haproxy)
+included: /home/zymun/worktrees/fable/k8s/infrastructure/artifacts/tasks/image-archive.yaml for localhost => (item=skopeo)
+included: /home/zymun/worktrees/fable/k8s/infrastructure/artifacts/tasks/image-archive.yaml for localhost => (item=jenkins)
+
+TASK [Set deterministic archive paths] *****************************************
+ok: [localhost]
+
+TASK [Inspect existing archive and receipt] ************************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images/haproxy-5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images/haproxy-5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272.tar.json)
+
+TASK [Refuse incomplete or unsafe existing output] *****************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images/haproxy-5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images/haproxy-5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272.tar.json)
+
+TASK [Show archive plan] *******************************************************
+ok: [localhost] => {
+    "msg": {
+        "destination": "/home/zymun/k8s-packages/host/entry/images/haproxy-5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272.tar",
+        "id": "haproxy",
+        "origin": "registry",
+        "present": true,
+        "source": "docker.io/library/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272"
+    }
+}
+
+TASK [Require archive for offline verification] ********************************
+skipping: [localhost]
+
+TASK [Budget pull, unpack, export and temporary files] *************************
+skipping: [localhost]
+
+TASK [Locate Docker storage before pulling or exporting] ***********************
+skipping: [localhost]
+
+TASK [Read cache and Docker filesystem space] **********************************
+skipping: [localhost]
+
+TASK [Require capacity on both filesystems] ************************************
+skipping: [localhost]
+
+TASK [Pull upstream by locked manifest digest] *********************************
+skipping: [localhost]
+
+TASK [Inspect exact local image identity] **************************************
+skipping: [localhost]
+
+TASK [Require the requested amd64 manifest] ************************************
+skipping: [localhost]
+
+TASK [Create typed archive directory] ******************************************
+skipping: [localhost]
+
+TASK [Allocate a private export file] ******************************************
+skipping: [localhost]
+
+TASK [Save the immutable local image ID with native Docker] ********************
+skipping: [localhost]
+
+TASK [Verify OCI blob hashes and descriptor closure] ***************************
+skipping: [localhost]
+
+TASK [Compute archive file identity] *******************************************
+skipping: [localhost]
+
+TASK [Require the frozen archive identity before publication] ******************
+skipping: [localhost]
+
+TASK [Publish verified archive atomically within its filesystem] ***************
+skipping: [localhost]
+
+TASK [Record file and manifest identities separately] **************************
+skipping: [localhost]
+
+TASK [Remove only this invocation temporary export file] ***********************
+skipping: [localhost]
+
+TASK [Read receipt] ************************************************************
+ok: [localhost]
+
+TASK [Read complete archive SHA256] ********************************************
+ok: [localhost]
+
+TASK [Require original file identity and requested source] *********************
+ok: [localhost]
+
+TASK [Independently verify every blob without Docker or a registry] ************
+ok: [localhost]
+
+TASK [Make verified public upstream archives readable by restricted tool containers] ***
+ok: [localhost]
+
+TASK [Report verified archive] *************************************************
+ok: [localhost] => {
+    "msg": {
+        "format": "oci",
+        "image": {
+            "config_digest": "sha256:c6f9accb39104d084a2e8012cdfc52f2a69db18790bf04e981cd6bbc8ea7c624",
+            "layers": 6,
+            "manifest_digest": "sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272"
+        },
+        "verified_blobs": 8
+    }
+}
+
+TASK [Set deterministic archive paths] *****************************************
+ok: [localhost]
+
+TASK [Inspect existing archive and receipt] ************************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images/skopeo-9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images/skopeo-9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99.tar.json)
+
+TASK [Refuse incomplete or unsafe existing output] *****************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images/skopeo-9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images/skopeo-9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99.tar.json)
+
+TASK [Show archive plan] *******************************************************
+ok: [localhost] => {
+    "msg": {
+        "destination": "/home/zymun/k8s-packages/shared/tools/images/skopeo-9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99.tar",
+        "id": "skopeo",
+        "origin": "registry",
+        "present": true,
+        "source": "quay.io/skopeo/stable@sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99"
+    }
+}
+
+TASK [Require archive for offline verification] ********************************
+skipping: [localhost]
+
+TASK [Budget pull, unpack, export and temporary files] *************************
+skipping: [localhost]
+
+TASK [Locate Docker storage before pulling or exporting] ***********************
+skipping: [localhost]
+
+TASK [Read cache and Docker filesystem space] **********************************
+skipping: [localhost]
+
+TASK [Require capacity on both filesystems] ************************************
+skipping: [localhost]
+
+TASK [Pull upstream by locked manifest digest] *********************************
+skipping: [localhost]
+
+TASK [Inspect exact local image identity] **************************************
+skipping: [localhost]
+
+TASK [Require the requested amd64 manifest] ************************************
+skipping: [localhost]
+
+TASK [Create typed archive directory] ******************************************
+skipping: [localhost]
+
+TASK [Allocate a private export file] ******************************************
+skipping: [localhost]
+
+TASK [Save the immutable local image ID with native Docker] ********************
+skipping: [localhost]
+
+TASK [Verify OCI blob hashes and descriptor closure] ***************************
+skipping: [localhost]
+
+TASK [Compute archive file identity] *******************************************
+skipping: [localhost]
+
+TASK [Require the frozen archive identity before publication] ******************
+skipping: [localhost]
+
+TASK [Publish verified archive atomically within its filesystem] ***************
+skipping: [localhost]
+
+TASK [Record file and manifest identities separately] **************************
+skipping: [localhost]
+
+TASK [Remove only this invocation temporary export file] ***********************
+skipping: [localhost]
+
+TASK [Read receipt] ************************************************************
+ok: [localhost]
+
+TASK [Read complete archive SHA256] ********************************************
+ok: [localhost]
+
+TASK [Require original file identity and requested source] *********************
+ok: [localhost]
+
+TASK [Independently verify every blob without Docker or a registry] ************
+ok: [localhost]
+
+TASK [Make verified public upstream archives readable by restricted tool containers] ***
+ok: [localhost]
+
+TASK [Report verified archive] *************************************************
+ok: [localhost] => {
+    "msg": {
+        "format": "oci",
+        "image": {
+            "config_digest": "sha256:5ef1074715887af7ae6fc9c61dd266b1dbcc574a102afe0f3293efa0e1cd579a",
+            "layers": 6,
+            "manifest_digest": "sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99"
+        },
+        "verified_blobs": 8
+    }
+}
+
+TASK [Set deterministic archive paths] *****************************************
+ok: [localhost]
+
+TASK [Inspect existing archive and receipt] ************************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images/jenkins-5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images/jenkins-5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb.tar.json)
+
+TASK [Refuse incomplete or unsafe existing output] *****************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images/jenkins-5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images/jenkins-5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb.tar.json)
+
+TASK [Show archive plan] *******************************************************
+ok: [localhost] => {
+    "msg": {
+        "destination": "/home/zymun/k8s-packages/host/jenkins/images/jenkins-5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb.tar",
+        "id": "jenkins",
+        "origin": "registry",
+        "present": true,
+        "source": "docker.io/jenkins/jenkins@sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb"
+    }
+}
+
+TASK [Require archive for offline verification] ********************************
+skipping: [localhost]
+
+TASK [Budget pull, unpack, export and temporary files] *************************
+skipping: [localhost]
+
+TASK [Locate Docker storage before pulling or exporting] ***********************
+skipping: [localhost]
+
+TASK [Read cache and Docker filesystem space] **********************************
+skipping: [localhost]
+
+TASK [Require capacity on both filesystems] ************************************
+skipping: [localhost]
+
+TASK [Pull upstream by locked manifest digest] *********************************
+skipping: [localhost]
+
+TASK [Inspect exact local image identity] **************************************
+skipping: [localhost]
+
+TASK [Require the requested amd64 manifest] ************************************
+skipping: [localhost]
+
+TASK [Create typed archive directory] ******************************************
+skipping: [localhost]
+
+TASK [Allocate a private export file] ******************************************
+skipping: [localhost]
+
+TASK [Save the immutable local image ID with native Docker] ********************
+skipping: [localhost]
+
+TASK [Verify OCI blob hashes and descriptor closure] ***************************
+skipping: [localhost]
+
+TASK [Compute archive file identity] *******************************************
+skipping: [localhost]
+
+TASK [Require the frozen archive identity before publication] ******************
+skipping: [localhost]
+
+TASK [Publish verified archive atomically within its filesystem] ***************
+skipping: [localhost]
+
+TASK [Record file and manifest identities separately] **************************
+skipping: [localhost]
+
+TASK [Remove only this invocation temporary export file] ***********************
+skipping: [localhost]
+
+TASK [Read receipt] ************************************************************
+ok: [localhost]
+
+TASK [Read complete archive SHA256] ********************************************
+ok: [localhost]
+
+TASK [Require original file identity and requested source] *********************
+ok: [localhost]
+
+TASK [Independently verify every blob without Docker or a registry] ************
+ok: [localhost]
+
+TASK [Make verified public upstream archives readable by restricted tool containers] ***
+ok: [localhost]
+
+TASK [Report verified archive] *************************************************
+ok: [localhost] => {
+    "msg": {
+        "format": "oci",
+        "image": {
+            "config_digest": "sha256:82becee636459f5f9d5195b47b76c891b49cb8c6cf0913986b63e0b3e4b3328b",
+            "layers": 12,
+            "manifest_digest": "sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb"
+        },
+        "verified_blobs": 14
+    }
+}
+
+TASK [Inspect local host tool images after archive verification] ***************
+ok: [localhost] => (item=haproxy)
+ok: [localhost] => (item=skopeo)
+ok: [localhost] => (item=jenkins)
+
+TASK [Budget loading missing host images from cached archives] *****************
+skipping: [localhost]
+
+TASK [Load missing host tool images from verified archives] ********************
+skipping: [localhost] => (item=haproxy) 
+skipping: [localhost] => (item=skopeo) 
+skipping: [localhost] => (item=jenkins) 
+skipping: [localhost]
+
+TASK [Confirm host tools are present by the pinned manifest] *******************
+ok: [localhost] => (item=haproxy)
+ok: [localhost] => (item=skopeo)
+ok: [localhost] => (item=jenkins)
+
+TASK [Require each loaded host tool identity] **********************************
+ok: [localhost] => (item=haproxy)
+ok: [localhost] => (item=skopeo)
+ok: [localhost] => (item=jenkins)
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=40   changed=0    unreachable=0    failed=0    skipped=53   rescued=0    ignored=0   
+
+make[1]: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+make fetch-artifacts ARTIFACTS="$(jq -r '[.files[].id | select(startswith("jenkins-plugin-"))] + ["temurin-jre"] | join(",")' artifacts/files.lock.json)"
+make[1]: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml artifacts/files.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'artifact_action=fetch artifact_ids=jenkins-plugin-antisamy-markup-formatter,jenkins-plugin-apache-httpcomponents-client-4-api,jenkins-plugin-asm-api,jenkins-plugin-bootstrap5-api,jenkins-plugin-bouncycastle-api,jenkins-plugin-branch-api,jenkins-plugin-caffeine-api,jenkins-plugin-checks-api,jenkins-plugin-cloudbees-folder,jenkins-plugin-commons-compress-api,jenkins-plugin-commons-lang3-api,jenkins-plugin-commons-text-api,jenkins-plugin-credentials-binding,jenkins-plugin-credentials,jenkins-plugin-display-url-api,jenkins-plugin-durable-task,jenkins-plugin-echarts-api,jenkins-plugin-font-awesome-api,jenkins-plugin-git-client,jenkins-plugin-git,jenkins-plugin-gson-api,jenkins-plugin-instance-identity,jenkins-plugin-ionicons-api,jenkins-plugin-jackson-annotations2-api,jenkins-plugin-jackson2-api,jenkins-plugin-jackson3-api,jenkins-plugin-jakarta-activation-api,jenkins-plugin-jakarta-mail-api,jenkins-plugin-jakarta-xml-bind-api,jenkins-plugin-javax-activation-api,jenkins-plugin-jaxb,jenkins-plugin-joda-time-api,jenkins-plugin-jquery3-api,jenkins-plugin-json-api,jenkins-plugin-junit,jenkins-plugin-mailer,jenkins-plugin-matrix-project,jenkins-plugin-mina-sshd-api-common,jenkins-plugin-mina-sshd-api-core,jenkins-plugin-pipeline-build-step,jenkins-plugin-pipeline-graph-analysis,jenkins-plugin-pipeline-groovy-lib,jenkins-plugin-pipeline-input-step,jenkins-plugin-pipeline-milestone-step,jenkins-plugin-pipeline-model-api,jenkins-plugin-pipeline-model-definition,jenkins-plugin-pipeline-model-extensions,jenkins-plugin-pipeline-rest-api,jenkins-plugin-pipeline-stage-step,jenkins-plugin-pipeline-stage-tags-metadata,jenkins-plugin-pipeline-stage-view,jenkins-plugin-pipeline-utility-steps,jenkins-plugin-plain-credentials,jenkins-plugin-plugin-util-api,jenkins-plugin-prism-api,jenkins-plugin-resource-disposer,jenkins-plugin-scm-api,jenkins-plugin-script-security,jenkins-plugin-snakeyaml-api,jenkins-plugin-snakeyaml-engine-api,jenkins-plugin-ssh-credentials,jenkins-plugin-structs,jenkins-plugin-timestamper,jenkins-plugin-variant,jenkins-plugin-woodstox-core-api,jenkins-plugin-workflow-aggregator,jenkins-plugin-workflow-api,jenkins-plugin-workflow-basic-steps,jenkins-plugin-workflow-cps,jenkins-plugin-workflow-durable-task-step,jenkins-plugin-workflow-job,jenkins-plugin-workflow-multibranch,jenkins-plugin-workflow-scm-step,jenkins-plugin-workflow-step-api,jenkins-plugin-workflow-support,jenkins-plugin-ws-cleanup,temurin-jre'
+
+PLAY [Plan, fetch or verify locked files] **************************************
+
+TASK [Validate operation and lock identity] ************************************
+ok: [localhost]
+
+TASK [Validate each file descriptor] *******************************************
+ok: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+ok: [localhost] => (item=jenkins-plugin-asm-api)
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+ok: [localhost] => (item=jenkins-plugin-branch-api)
+ok: [localhost] => (item=jenkins-plugin-caffeine-api)
+ok: [localhost] => (item=jenkins-plugin-checks-api)
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api)
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+ok: [localhost] => (item=jenkins-plugin-commons-text-api)
+ok: [localhost] => (item=jenkins-plugin-credentials-binding)
+ok: [localhost] => (item=jenkins-plugin-credentials)
+ok: [localhost] => (item=jenkins-plugin-display-url-api)
+ok: [localhost] => (item=jenkins-plugin-durable-task)
+ok: [localhost] => (item=jenkins-plugin-echarts-api)
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api)
+ok: [localhost] => (item=jenkins-plugin-git-client)
+ok: [localhost] => (item=jenkins-plugin-git)
+ok: [localhost] => (item=jenkins-plugin-gson-api)
+ok: [localhost] => (item=jenkins-plugin-instance-identity)
+ok: [localhost] => (item=jenkins-plugin-ionicons-api)
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson3-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jaxb)
+ok: [localhost] => (item=jenkins-plugin-joda-time-api)
+ok: [localhost] => (item=jenkins-plugin-jquery3-api)
+ok: [localhost] => (item=jenkins-plugin-json-api)
+ok: [localhost] => (item=jenkins-plugin-junit)
+ok: [localhost] => (item=jenkins-plugin-mailer)
+ok: [localhost] => (item=jenkins-plugin-matrix-project)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+ok: [localhost] => (item=jenkins-plugin-plain-credentials)
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api)
+ok: [localhost] => (item=jenkins-plugin-prism-api)
+ok: [localhost] => (item=jenkins-plugin-resource-disposer)
+ok: [localhost] => (item=jenkins-plugin-scm-api)
+ok: [localhost] => (item=jenkins-plugin-script-security)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials)
+ok: [localhost] => (item=jenkins-plugin-structs)
+ok: [localhost] => (item=jenkins-plugin-timestamper)
+ok: [localhost] => (item=jenkins-plugin-variant)
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+ok: [localhost] => (item=jenkins-plugin-workflow-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+ok: [localhost] => (item=jenkins-plugin-workflow-cps)
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-job)
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-support)
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup)
+ok: [localhost] => (item=temurin-jre)
+
+TASK [Inspect existing cache paths without following symlinks] *****************
+ok: [localhost] => (item=/home/zymun/k8s-packages)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/packages)
+
+TASK [Require existing cache paths to be real directories] *********************
+ok: [localhost] => (item=/home/zymun/k8s-packages)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/packages)
+
+TASK [Inspect selected cached files] *******************************************
+ok: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+ok: [localhost] => (item=jenkins-plugin-asm-api)
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+ok: [localhost] => (item=jenkins-plugin-branch-api)
+ok: [localhost] => (item=jenkins-plugin-caffeine-api)
+ok: [localhost] => (item=jenkins-plugin-checks-api)
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api)
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+ok: [localhost] => (item=jenkins-plugin-commons-text-api)
+ok: [localhost] => (item=jenkins-plugin-credentials-binding)
+ok: [localhost] => (item=jenkins-plugin-credentials)
+ok: [localhost] => (item=jenkins-plugin-display-url-api)
+ok: [localhost] => (item=jenkins-plugin-durable-task)
+ok: [localhost] => (item=jenkins-plugin-echarts-api)
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api)
+ok: [localhost] => (item=jenkins-plugin-git-client)
+ok: [localhost] => (item=jenkins-plugin-git)
+ok: [localhost] => (item=jenkins-plugin-gson-api)
+ok: [localhost] => (item=jenkins-plugin-instance-identity)
+ok: [localhost] => (item=jenkins-plugin-ionicons-api)
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson3-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jaxb)
+ok: [localhost] => (item=jenkins-plugin-joda-time-api)
+ok: [localhost] => (item=jenkins-plugin-jquery3-api)
+ok: [localhost] => (item=jenkins-plugin-json-api)
+ok: [localhost] => (item=jenkins-plugin-junit)
+ok: [localhost] => (item=jenkins-plugin-mailer)
+ok: [localhost] => (item=jenkins-plugin-matrix-project)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+ok: [localhost] => (item=jenkins-plugin-plain-credentials)
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api)
+ok: [localhost] => (item=jenkins-plugin-prism-api)
+ok: [localhost] => (item=jenkins-plugin-resource-disposer)
+ok: [localhost] => (item=jenkins-plugin-scm-api)
+ok: [localhost] => (item=jenkins-plugin-script-security)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials)
+ok: [localhost] => (item=jenkins-plugin-structs)
+ok: [localhost] => (item=jenkins-plugin-timestamper)
+ok: [localhost] => (item=jenkins-plugin-variant)
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+ok: [localhost] => (item=jenkins-plugin-workflow-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+ok: [localhost] => (item=jenkins-plugin-workflow-cps)
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-job)
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-support)
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup)
+ok: [localhost] => (item=temurin-jre)
+
+TASK [Reject unexpected existing files] ****************************************
+ok: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+ok: [localhost] => (item=jenkins-plugin-asm-api)
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+ok: [localhost] => (item=jenkins-plugin-branch-api)
+ok: [localhost] => (item=jenkins-plugin-caffeine-api)
+ok: [localhost] => (item=jenkins-plugin-checks-api)
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api)
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+ok: [localhost] => (item=jenkins-plugin-commons-text-api)
+ok: [localhost] => (item=jenkins-plugin-credentials-binding)
+ok: [localhost] => (item=jenkins-plugin-credentials)
+ok: [localhost] => (item=jenkins-plugin-display-url-api)
+ok: [localhost] => (item=jenkins-plugin-durable-task)
+ok: [localhost] => (item=jenkins-plugin-echarts-api)
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api)
+ok: [localhost] => (item=jenkins-plugin-git-client)
+ok: [localhost] => (item=jenkins-plugin-git)
+ok: [localhost] => (item=jenkins-plugin-gson-api)
+ok: [localhost] => (item=jenkins-plugin-instance-identity)
+ok: [localhost] => (item=jenkins-plugin-ionicons-api)
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson3-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jaxb)
+ok: [localhost] => (item=jenkins-plugin-joda-time-api)
+ok: [localhost] => (item=jenkins-plugin-jquery3-api)
+ok: [localhost] => (item=jenkins-plugin-json-api)
+ok: [localhost] => (item=jenkins-plugin-junit)
+ok: [localhost] => (item=jenkins-plugin-mailer)
+ok: [localhost] => (item=jenkins-plugin-matrix-project)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+ok: [localhost] => (item=jenkins-plugin-plain-credentials)
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api)
+ok: [localhost] => (item=jenkins-plugin-prism-api)
+ok: [localhost] => (item=jenkins-plugin-resource-disposer)
+ok: [localhost] => (item=jenkins-plugin-scm-api)
+ok: [localhost] => (item=jenkins-plugin-script-security)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials)
+ok: [localhost] => (item=jenkins-plugin-structs)
+ok: [localhost] => (item=jenkins-plugin-timestamper)
+ok: [localhost] => (item=jenkins-plugin-variant)
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+ok: [localhost] => (item=jenkins-plugin-workflow-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+ok: [localhost] => (item=jenkins-plugin-workflow-cps)
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-job)
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-support)
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup)
+ok: [localhost] => (item=temurin-jre)
+
+TASK [Show file plan] **********************************************************
+ok: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter) => {
+    "msg": "jenkins-plugin-antisamy-markup-formatter: missing -> /home/zymun/k8s-packages/host/jenkins/packages/antisamy-markup-formatter-173.v680e3a_b_69ff3.hpi (243960 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api) => {
+    "msg": "jenkins-plugin-apache-httpcomponents-client-4-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/apache-httpcomponents-client-4-api-4.5.14-269.vfa_2321039a_83.hpi (1774684 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-asm-api) => {
+    "msg": "jenkins-plugin-asm-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/asm-api-9.11.1-226.vff833a_e4c58e.hpi (385654 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api) => {
+    "msg": "jenkins-plugin-bootstrap5-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/bootstrap5-api-5.3.8-1048.va_c299057e35c.hpi (515073 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api) => {
+    "msg": "jenkins-plugin-bouncycastle-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/bouncycastle-api-2.30.1.86.2-310.v4655f6742752.hpi (8540094 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-branch-api) => {
+    "msg": "jenkins-plugin-branch-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/branch-api-2.1303.v9f3b_95dc329d.hpi (323407 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-caffeine-api) => {
+    "msg": "jenkins-plugin-caffeine-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/caffeine-api-3.3.1-214.v18eb_56b_34920.hpi (906539 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-checks-api) => {
+    "msg": "jenkins-plugin-checks-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/checks-api-422.vc7e8b_51488c6.hpi (75637 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder) => {
+    "msg": "jenkins-plugin-cloudbees-folder: missing -> /home/zymun/k8s-packages/host/jenkins/packages/cloudbees-folder-6.1106.v3a_d9a_6d2465e.hpi (243117 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api) => {
+    "msg": "jenkins-plugin-commons-compress-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/commons-compress-api-1.28.0-96.v8da_8cfa_57e2b_.hpi (7715407 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api) => {
+    "msg": "jenkins-plugin-commons-lang3-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/commons-lang3-api-3.21.0-122.v6a_ea_4fd34049.hpi (681225 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-commons-text-api) => {
+    "msg": "jenkins-plugin-commons-text-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/commons-text-api-1.15.0-218.va_61573470393.hpi (242039 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-credentials-binding) => {
+    "msg": "jenkins-plugin-credentials-binding: missing -> /home/zymun/k8s-packages/host/jenkins/packages/credentials-binding-728.v902a_273b_8947.hpi (91098 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-credentials) => {
+    "msg": "jenkins-plugin-credentials: missing -> /home/zymun/k8s-packages/host/jenkins/packages/credentials-1514.vb_01eb_014e7d4.hpi (505639 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-display-url-api) => {
+    "msg": "jenkins-plugin-display-url-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/display-url-api-2.217.va_6b_de84cc74b_.hpi (31901 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-durable-task) => {
+    "msg": "jenkins-plugin-durable-task: missing -> /home/zymun/k8s-packages/host/jenkins/packages/durable-task-686.v80ff80875b_82.hpi (7109258 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-echarts-api) => {
+    "msg": "jenkins-plugin-echarts-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/echarts-api-6.1.0-1321.v86c4c5114494.hpi (5787417 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api) => {
+    "msg": "jenkins-plugin-font-awesome-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/font-awesome-api-7.3.1-1013.v0835a_879ec6d.hpi (1403089 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-git-client) => {
+    "msg": "jenkins-plugin-git-client: missing -> /home/zymun/k8s-packages/host/jenkins/packages/git-client-6.6.1.hpi (3993880 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-git) => {
+    "msg": "jenkins-plugin-git: missing -> /home/zymun/k8s-packages/host/jenkins/packages/git-5.11.0.hpi (625223 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-gson-api) => {
+    "msg": "jenkins-plugin-gson-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/gson-api-2.14.0-201.v8eefe5515533.hpi (284023 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-instance-identity) => {
+    "msg": "jenkins-plugin-instance-identity: missing -> /home/zymun/k8s-packages/host/jenkins/packages/instance-identity-203.v15e81a_1b_7a_38.hpi (18485 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-ionicons-api) => {
+    "msg": "jenkins-plugin-ionicons-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/ionicons-api-94.vcc3065403257.hpi (516540 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api) => {
+    "msg": "jenkins-plugin-jackson-annotations2-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/jackson-annotations2-api-2.22-19.v10a_a_582ea_26e.hpi (75879 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-jackson2-api) => {
+    "msg": "jenkins-plugin-jackson2-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/jackson2-api-2.22.3-447.v6a_93ce7d2c82.hpi (2756390 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-jackson3-api) => {
+    "msg": "jenkins-plugin-jackson3-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/jackson3-api-3.2.4-103.vf5a_b_3f4ea_cec.hpi (2689172 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api) => {
+    "msg": "jenkins-plugin-jakarta-activation-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/jakarta-activation-api-2.1.4-1.hpi (89382 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api) => {
+    "msg": "jenkins-plugin-jakarta-mail-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/jakarta-mail-api-2.1.5-1.hpi (697901 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api) => {
+    "msg": "jenkins-plugin-jakarta-xml-bind-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/jakarta-xml-bind-api-4.0.9-19.v2b_a_5b_44d9a_1c.hpi (1134466 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api) => {
+    "msg": "jenkins-plugin-javax-activation-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/javax-activation-api-1.2.0-8.hpi (77202 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-jaxb) => {
+    "msg": "jenkins-plugin-jaxb: missing -> /home/zymun/k8s-packages/host/jenkins/packages/jaxb-2.3.9-143.v5979df3304e6.hpi (1097519 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-joda-time-api) => {
+    "msg": "jenkins-plugin-joda-time-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/joda-time-api-2.15.0-208.v6b_084e7a_d9f0.hpi (545773 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-jquery3-api) => {
+    "msg": "jenkins-plugin-jquery3-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/jquery3-api-3.7.1-687.v68d468e40b_30.hpi (175510 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-json-api) => {
+    "msg": "jenkins-plugin-json-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/json-api-20260814-226.v20f9685d642c.hpi (90707 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-junit) => {
+    "msg": "jenkins-plugin-junit: missing -> /home/zymun/k8s-packages/host/jenkins/packages/junit-1442.vb_b_a_467df2767.hpi (605104 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-mailer) => {
+    "msg": "jenkins-plugin-mailer: missing -> /home/zymun/k8s-packages/host/jenkins/packages/mailer-534.v1b_36f5864073.hpi (136332 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-matrix-project) => {
+    "msg": "jenkins-plugin-matrix-project: missing -> /home/zymun/k8s-packages/host/jenkins/packages/matrix-project-928.v1effc3f3a_236.hpi (243206 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common) => {
+    "msg": "jenkins-plugin-mina-sshd-api-common: missing -> /home/zymun/k8s-packages/host/jenkins/packages/mina-sshd-api-common-2.19.0-192.v2b_a_7b_2c1dc71.hpi (881357 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core) => {
+    "msg": "jenkins-plugin-mina-sshd-api-core: missing -> /home/zymun/k8s-packages/host/jenkins/packages/mina-sshd-api-core-2.19.0-192.v2b_a_7b_2c1dc71.hpi (1555964 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step) => {
+    "msg": "jenkins-plugin-pipeline-build-step: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-build-step-601.v6d4c6d1a_9dc7.hpi (55439 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis) => {
+    "msg": "jenkins-plugin-pipeline-graph-analysis: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-graph-analysis-254.v0f63a_a_447dca_.hpi (20797 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib) => {
+    "msg": "jenkins-plugin-pipeline-groovy-lib: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-groovy-lib-822.vc95f70dea_db_7.hpi (1412196 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step) => {
+    "msg": "jenkins-plugin-pipeline-input-step: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-input-step-560.v56198a_642157.hpi (40044 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step) => {
+    "msg": "jenkins-plugin-pipeline-milestone-step: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-milestone-step-152.v6e22b_8cfc66c.hpi (27470 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api) => {
+    "msg": "jenkins-plugin-pipeline-model-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-model-api-2.2293.v6e7193cec599.hpi (2366724 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition) => {
+    "msg": "jenkins-plugin-pipeline-model-definition: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-model-definition-2.2293.v6e7193cec599.hpi (985672 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions) => {
+    "msg": "jenkins-plugin-pipeline-model-extensions: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-model-extensions-2.2293.v6e7193cec599.hpi (49796 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api) => {
+    "msg": "jenkins-plugin-pipeline-rest-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-rest-api-2.41.hpi (70403 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step) => {
+    "msg": "jenkins-plugin-pipeline-stage-step: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-stage-step-345.va_96187909426.hpi (14188 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata) => {
+    "msg": "jenkins-plugin-pipeline-stage-tags-metadata: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-stage-tags-metadata-2.2293.v6e7193cec599.hpi (10451 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view) => {
+    "msg": "jenkins-plugin-pipeline-stage-view: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-stage-view-2.41.hpi (1025178 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps) => {
+    "msg": "jenkins-plugin-pipeline-utility-steps: missing -> /home/zymun/k8s-packages/host/jenkins/packages/pipeline-utility-steps-3.810.va_7672d206740.hpi (1346560 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-plain-credentials) => {
+    "msg": "jenkins-plugin-plain-credentials: missing -> /home/zymun/k8s-packages/host/jenkins/packages/plain-credentials-199.v9f8e1f741799.hpi (18078 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api) => {
+    "msg": "jenkins-plugin-plugin-util-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/plugin-util-api-7.1403.vd380b_c42e90c.hpi (480806 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-prism-api) => {
+    "msg": "jenkins-plugin-prism-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/prism-api-1.30.0-741.v034eb_0b_0a_a_fa_.hpi (849992 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-resource-disposer) => {
+    "msg": "jenkins-plugin-resource-disposer: missing -> /home/zymun/k8s-packages/host/jenkins/packages/resource-disposer-0.25.hpi (21381 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-scm-api) => {
+    "msg": "jenkins-plugin-scm-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/scm-api-728.vc30dcf7a_0df5.hpi (228866 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-script-security) => {
+    "msg": "jenkins-plugin-script-security: missing -> /home/zymun/k8s-packages/host/jenkins/packages/script-security-1436.v1082791135e4.hpi (221439 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api) => {
+    "msg": "jenkins-plugin-snakeyaml-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/snakeyaml-api-2.7-152.vc672728cf536.hpi (298072 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api) => {
+    "msg": "jenkins-plugin-snakeyaml-engine-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/snakeyaml-engine-api-3.2-18.v885ed7ff698f.hpi (274083 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials) => {
+    "msg": "jenkins-plugin-ssh-credentials: missing -> /home/zymun/k8s-packages/host/jenkins/packages/ssh-credentials-372.va_250881b_08cd.hpi (55874 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-structs) => {
+    "msg": "jenkins-plugin-structs: missing -> /home/zymun/k8s-packages/host/jenkins/packages/structs-362.va_b_695ef4fdf9.hpi (44685 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-timestamper) => {
+    "msg": "jenkins-plugin-timestamper: missing -> /home/zymun/k8s-packages/host/jenkins/packages/timestamper-1.30.hpi (93711 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-variant) => {
+    "msg": "jenkins-plugin-variant: missing -> /home/zymun/k8s-packages/host/jenkins/packages/variant-70.va_d9f17f859e0.hpi (9870 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api) => {
+    "msg": "jenkins-plugin-woodstox-core-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/woodstox-core-api-7.3.0-16.v017f30ed004c.hpi (1633381 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator) => {
+    "msg": "jenkins-plugin-workflow-aggregator: missing -> /home/zymun/k8s-packages/host/jenkins/packages/workflow-aggregator-608.v67378e9d3db_1.hpi (8317 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-workflow-api) => {
+    "msg": "jenkins-plugin-workflow-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/workflow-api-1413.v2ff1a_5e720fa_.hpi (190280 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps) => {
+    "msg": "jenkins-plugin-workflow-basic-steps: missing -> /home/zymun/k8s-packages/host/jenkins/packages/workflow-basic-steps-1098.v808b_fd7f8cf4.hpi (157728 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-workflow-cps) => {
+    "msg": "jenkins-plugin-workflow-cps: missing -> /home/zymun/k8s-packages/host/jenkins/packages/workflow-cps-4395.v738456a_5da_6b_.hpi (841572 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step) => {
+    "msg": "jenkins-plugin-workflow-durable-task-step: missing -> /home/zymun/k8s-packages/host/jenkins/packages/workflow-durable-task-step-1479.v56e587f413a_7.hpi (146195 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-workflow-job) => {
+    "msg": "jenkins-plugin-workflow-job: missing -> /home/zymun/k8s-packages/host/jenkins/packages/workflow-job-1609.v8926e7962024.hpi (137343 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch) => {
+    "msg": "jenkins-plugin-workflow-multibranch: missing -> /home/zymun/k8s-packages/host/jenkins/packages/workflow-multibranch-842.v3a_b_59b_57b_e6e.hpi (88863 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step) => {
+    "msg": "jenkins-plugin-workflow-scm-step: missing -> /home/zymun/k8s-packages/host/jenkins/packages/workflow-scm-step-487.v41313a_96b_65d.hpi (21275 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api) => {
+    "msg": "jenkins-plugin-workflow-step-api: missing -> /home/zymun/k8s-packages/host/jenkins/packages/workflow-step-api-724.v538c2362b_dfb_.hpi (86911 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-workflow-support) => {
+    "msg": "jenkins-plugin-workflow-support: missing -> /home/zymun/k8s-packages/host/jenkins/packages/workflow-support-1015.v785e5a_b_b_8b_22.hpi (415807 bytes)"
+}
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup) => {
+    "msg": "jenkins-plugin-ws-cleanup: missing -> /home/zymun/k8s-packages/host/jenkins/packages/ws-cleanup-0.49.hpi (44505 bytes)"
+}
+ok: [localhost] => (item=temurin-jre) => {
+    "msg": "temurin-jre: missing -> /home/zymun/k8s-packages/host/jenkins/packages/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz (52059408 bytes)"
+}
+
+TASK [Require complete selected files for offline verification] ****************
+skipping: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter) 
+skipping: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api) 
+skipping: [localhost] => (item=jenkins-plugin-asm-api) 
+skipping: [localhost] => (item=jenkins-plugin-bootstrap5-api) 
+skipping: [localhost] => (item=jenkins-plugin-bouncycastle-api) 
+skipping: [localhost] => (item=jenkins-plugin-branch-api) 
+skipping: [localhost] => (item=jenkins-plugin-caffeine-api) 
+skipping: [localhost] => (item=jenkins-plugin-checks-api) 
+skipping: [localhost] => (item=jenkins-plugin-cloudbees-folder) 
+skipping: [localhost] => (item=jenkins-plugin-commons-compress-api) 
+skipping: [localhost] => (item=jenkins-plugin-commons-lang3-api) 
+skipping: [localhost] => (item=jenkins-plugin-commons-text-api) 
+skipping: [localhost] => (item=jenkins-plugin-credentials-binding) 
+skipping: [localhost] => (item=jenkins-plugin-credentials) 
+skipping: [localhost] => (item=jenkins-plugin-display-url-api) 
+skipping: [localhost] => (item=jenkins-plugin-durable-task) 
+skipping: [localhost] => (item=jenkins-plugin-echarts-api) 
+skipping: [localhost] => (item=jenkins-plugin-font-awesome-api) 
+skipping: [localhost] => (item=jenkins-plugin-git-client) 
+skipping: [localhost] => (item=jenkins-plugin-git) 
+skipping: [localhost] => (item=jenkins-plugin-gson-api) 
+skipping: [localhost] => (item=jenkins-plugin-instance-identity) 
+skipping: [localhost] => (item=jenkins-plugin-ionicons-api) 
+skipping: [localhost] => (item=jenkins-plugin-jackson-annotations2-api) 
+skipping: [localhost] => (item=jenkins-plugin-jackson2-api) 
+skipping: [localhost] => (item=jenkins-plugin-jackson3-api) 
+skipping: [localhost] => (item=jenkins-plugin-jakarta-activation-api) 
+skipping: [localhost] => (item=jenkins-plugin-jakarta-mail-api) 
+skipping: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api) 
+skipping: [localhost] => (item=jenkins-plugin-javax-activation-api) 
+skipping: [localhost] => (item=jenkins-plugin-jaxb) 
+skipping: [localhost] => (item=jenkins-plugin-joda-time-api) 
+skipping: [localhost] => (item=jenkins-plugin-jquery3-api) 
+skipping: [localhost] => (item=jenkins-plugin-json-api) 
+skipping: [localhost] => (item=jenkins-plugin-junit) 
+skipping: [localhost] => (item=jenkins-plugin-mailer) 
+skipping: [localhost] => (item=jenkins-plugin-matrix-project) 
+skipping: [localhost] => (item=jenkins-plugin-mina-sshd-api-common) 
+skipping: [localhost] => (item=jenkins-plugin-mina-sshd-api-core) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-build-step) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-input-step) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-milestone-step) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-model-api) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-model-definition) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-model-extensions) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-rest-api) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-stage-step) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-stage-view) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-utility-steps) 
+skipping: [localhost] => (item=jenkins-plugin-plain-credentials) 
+skipping: [localhost] => (item=jenkins-plugin-plugin-util-api) 
+skipping: [localhost] => (item=jenkins-plugin-prism-api) 
+skipping: [localhost] => (item=jenkins-plugin-resource-disposer) 
+skipping: [localhost] => (item=jenkins-plugin-scm-api) 
+skipping: [localhost] => (item=jenkins-plugin-script-security) 
+skipping: [localhost] => (item=jenkins-plugin-snakeyaml-api) 
+skipping: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api) 
+skipping: [localhost] => (item=jenkins-plugin-ssh-credentials) 
+skipping: [localhost] => (item=jenkins-plugin-structs) 
+skipping: [localhost] => (item=jenkins-plugin-timestamper) 
+skipping: [localhost] => (item=jenkins-plugin-variant) 
+skipping: [localhost] => (item=jenkins-plugin-woodstox-core-api) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-aggregator) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-api) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-basic-steps) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-cps) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-durable-task-step) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-job) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-multibranch) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-scm-step) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-step-api) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-support) 
+skipping: [localhost] => (item=jenkins-plugin-ws-cleanup) 
+skipping: [localhost] => (item=temurin-jre) 
+skipping: [localhost]
+
+TASK [Check shared Windows growth budget] **************************************
+included: /home/zymun/worktrees/fable/k8s/infrastructure/host/tasks/capacity.yaml for localhost
+
+TASK [Validate the capacity budget and site floor] *****************************
+ok: [localhost]
+
+TASK [Validate an explicitly approved temporary capacity exception] ************
+skipping: [localhost]
+
+TASK [Report the active temporary exception without changing the site policy] ***
+skipping: [localhost]
+
+TASK [Publish read-only helper to Windows local script directory] **************
+ok: [localhost]
+
+TASK [Install the reviewed capacity helper without changing execution policy] ***
+ok: [localhost]
+
+TASK [Resolve Windows path to read-only capacity helper] ***********************
+ok: [localhost]
+
+TASK [Require Windows growth budget before writing] ****************************
+ok: [localhost]
+
+TASK [Report physical capacity budget] *****************************************
+ok: [localhost] => {
+    "msg": {
+        "c_free_bytes": 124689186816,
+        "checked_at_utc": "2026-10-20T10:24:53.5470908Z",
+        "configured_data_maximum_bytes": 246960619520,
+        "data_vhd_allocated_bytes": 180728365056,
+        "data_vhd_length": 180728365056,
+        "future_data_growth_bytes": 66232254464,
+        "minimum_free_bytes": 10737418240,
+        "passes": true,
+        "planned_bytes": 241437226,
+        "remaining_after_growth_and_plan_bytes": 58215495126,
+        "scope": "Configured VHD growth plus requested operation; excludes other future system disk growth"
+    }
+}
+
+TASK [Enforce the approved batch ceiling as well as the reserve floor] *********
+skipping: [localhost]
+
+TASK [Read free bytes on the cache parent filesystem] **************************
+ok: [localhost]
+
+TASK [Require space for downloads and atomic temporary files] ******************
+ok: [localhost]
+
+TASK [Create typed cache directories] ******************************************
+changed: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+ok: [localhost] => (item=jenkins-plugin-asm-api)
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+ok: [localhost] => (item=jenkins-plugin-branch-api)
+ok: [localhost] => (item=jenkins-plugin-caffeine-api)
+ok: [localhost] => (item=jenkins-plugin-checks-api)
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api)
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+ok: [localhost] => (item=jenkins-plugin-commons-text-api)
+ok: [localhost] => (item=jenkins-plugin-credentials-binding)
+ok: [localhost] => (item=jenkins-plugin-credentials)
+ok: [localhost] => (item=jenkins-plugin-display-url-api)
+ok: [localhost] => (item=jenkins-plugin-durable-task)
+ok: [localhost] => (item=jenkins-plugin-echarts-api)
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api)
+ok: [localhost] => (item=jenkins-plugin-git-client)
+ok: [localhost] => (item=jenkins-plugin-git)
+ok: [localhost] => (item=jenkins-plugin-gson-api)
+ok: [localhost] => (item=jenkins-plugin-instance-identity)
+ok: [localhost] => (item=jenkins-plugin-ionicons-api)
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson3-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jaxb)
+ok: [localhost] => (item=jenkins-plugin-joda-time-api)
+ok: [localhost] => (item=jenkins-plugin-jquery3-api)
+ok: [localhost] => (item=jenkins-plugin-json-api)
+ok: [localhost] => (item=jenkins-plugin-junit)
+ok: [localhost] => (item=jenkins-plugin-mailer)
+ok: [localhost] => (item=jenkins-plugin-matrix-project)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+ok: [localhost] => (item=jenkins-plugin-plain-credentials)
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api)
+ok: [localhost] => (item=jenkins-plugin-prism-api)
+ok: [localhost] => (item=jenkins-plugin-resource-disposer)
+ok: [localhost] => (item=jenkins-plugin-scm-api)
+ok: [localhost] => (item=jenkins-plugin-script-security)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials)
+ok: [localhost] => (item=jenkins-plugin-structs)
+ok: [localhost] => (item=jenkins-plugin-timestamper)
+ok: [localhost] => (item=jenkins-plugin-variant)
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+ok: [localhost] => (item=jenkins-plugin-workflow-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+ok: [localhost] => (item=jenkins-plugin-workflow-cps)
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-job)
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-support)
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup)
+ok: [localhost] => (item=temurin-jre)
+
+TASK [Fetch large databases and models with resumable HTTPS] *******************
+skipping: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter) 
+skipping: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api) 
+skipping: [localhost] => (item=jenkins-plugin-asm-api) 
+skipping: [localhost] => (item=jenkins-plugin-bootstrap5-api) 
+skipping: [localhost] => (item=jenkins-plugin-bouncycastle-api) 
+skipping: [localhost] => (item=jenkins-plugin-branch-api) 
+skipping: [localhost] => (item=jenkins-plugin-caffeine-api) 
+skipping: [localhost] => (item=jenkins-plugin-checks-api) 
+skipping: [localhost] => (item=jenkins-plugin-cloudbees-folder) 
+skipping: [localhost] => (item=jenkins-plugin-commons-compress-api) 
+skipping: [localhost] => (item=jenkins-plugin-commons-lang3-api) 
+skipping: [localhost] => (item=jenkins-plugin-commons-text-api) 
+skipping: [localhost] => (item=jenkins-plugin-credentials-binding) 
+skipping: [localhost] => (item=jenkins-plugin-credentials) 
+skipping: [localhost] => (item=jenkins-plugin-display-url-api) 
+skipping: [localhost] => (item=jenkins-plugin-durable-task) 
+skipping: [localhost] => (item=jenkins-plugin-echarts-api) 
+skipping: [localhost] => (item=jenkins-plugin-font-awesome-api) 
+skipping: [localhost] => (item=jenkins-plugin-git-client) 
+skipping: [localhost] => (item=jenkins-plugin-git) 
+skipping: [localhost] => (item=jenkins-plugin-gson-api) 
+skipping: [localhost] => (item=jenkins-plugin-instance-identity) 
+skipping: [localhost] => (item=jenkins-plugin-ionicons-api) 
+skipping: [localhost] => (item=jenkins-plugin-jackson-annotations2-api) 
+skipping: [localhost] => (item=jenkins-plugin-jackson2-api) 
+skipping: [localhost] => (item=jenkins-plugin-jackson3-api) 
+skipping: [localhost] => (item=jenkins-plugin-jakarta-activation-api) 
+skipping: [localhost] => (item=jenkins-plugin-jakarta-mail-api) 
+skipping: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api) 
+skipping: [localhost] => (item=jenkins-plugin-javax-activation-api) 
+skipping: [localhost] => (item=jenkins-plugin-jaxb) 
+skipping: [localhost] => (item=jenkins-plugin-joda-time-api) 
+skipping: [localhost] => (item=jenkins-plugin-jquery3-api) 
+skipping: [localhost] => (item=jenkins-plugin-json-api) 
+skipping: [localhost] => (item=jenkins-plugin-junit) 
+skipping: [localhost] => (item=jenkins-plugin-mailer) 
+skipping: [localhost] => (item=jenkins-plugin-matrix-project) 
+skipping: [localhost] => (item=jenkins-plugin-mina-sshd-api-common) 
+skipping: [localhost] => (item=jenkins-plugin-mina-sshd-api-core) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-build-step) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-input-step) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-milestone-step) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-model-api) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-model-definition) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-model-extensions) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-rest-api) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-stage-step) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-stage-view) 
+skipping: [localhost] => (item=jenkins-plugin-pipeline-utility-steps) 
+skipping: [localhost] => (item=jenkins-plugin-plain-credentials) 
+skipping: [localhost] => (item=jenkins-plugin-plugin-util-api) 
+skipping: [localhost] => (item=jenkins-plugin-prism-api) 
+skipping: [localhost] => (item=jenkins-plugin-resource-disposer) 
+skipping: [localhost] => (item=jenkins-plugin-scm-api) 
+skipping: [localhost] => (item=jenkins-plugin-script-security) 
+skipping: [localhost] => (item=jenkins-plugin-snakeyaml-api) 
+skipping: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api) 
+skipping: [localhost] => (item=jenkins-plugin-ssh-credentials) 
+skipping: [localhost] => (item=jenkins-plugin-structs) 
+skipping: [localhost] => (item=jenkins-plugin-timestamper) 
+skipping: [localhost] => (item=jenkins-plugin-variant) 
+skipping: [localhost] => (item=jenkins-plugin-woodstox-core-api) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-aggregator) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-api) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-basic-steps) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-cps) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-durable-task-step) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-job) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-multibranch) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-scm-step) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-step-api) 
+skipping: [localhost] => (item=jenkins-plugin-workflow-support) 
+skipping: [localhost] => (item=jenkins-plugin-ws-cleanup) 
+skipping: [localhost] => (item=temurin-jre) 
+skipping: [localhost]
+
+TASK [Download exact upstream files with checksum verification] ****************
+changed: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+changed: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+changed: [localhost] => (item=jenkins-plugin-asm-api)
+changed: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+changed: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+changed: [localhost] => (item=jenkins-plugin-branch-api)
+changed: [localhost] => (item=jenkins-plugin-caffeine-api)
+changed: [localhost] => (item=jenkins-plugin-checks-api)
+changed: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+changed: [localhost] => (item=jenkins-plugin-commons-compress-api)
+changed: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+changed: [localhost] => (item=jenkins-plugin-commons-text-api)
+changed: [localhost] => (item=jenkins-plugin-credentials-binding)
+changed: [localhost] => (item=jenkins-plugin-credentials)
+changed: [localhost] => (item=jenkins-plugin-display-url-api)
+changed: [localhost] => (item=jenkins-plugin-durable-task)
+changed: [localhost] => (item=jenkins-plugin-echarts-api)
+changed: [localhost] => (item=jenkins-plugin-font-awesome-api)
+changed: [localhost] => (item=jenkins-plugin-git-client)
+changed: [localhost] => (item=jenkins-plugin-git)
+changed: [localhost] => (item=jenkins-plugin-gson-api)
+changed: [localhost] => (item=jenkins-plugin-instance-identity)
+changed: [localhost] => (item=jenkins-plugin-ionicons-api)
+changed: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+changed: [localhost] => (item=jenkins-plugin-jackson2-api)
+changed: [localhost] => (item=jenkins-plugin-jackson3-api)
+changed: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+changed: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+changed: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+changed: [localhost] => (item=jenkins-plugin-javax-activation-api)
+changed: [localhost] => (item=jenkins-plugin-jaxb)
+changed: [localhost] => (item=jenkins-plugin-joda-time-api)
+changed: [localhost] => (item=jenkins-plugin-jquery3-api)
+changed: [localhost] => (item=jenkins-plugin-json-api)
+changed: [localhost] => (item=jenkins-plugin-junit)
+changed: [localhost] => (item=jenkins-plugin-mailer)
+changed: [localhost] => (item=jenkins-plugin-matrix-project)
+changed: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+changed: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+changed: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+changed: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+changed: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+changed: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+changed: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+changed: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+changed: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+changed: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+changed: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+changed: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+changed: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+changed: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+changed: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+changed: [localhost] => (item=jenkins-plugin-plain-credentials)
+changed: [localhost] => (item=jenkins-plugin-plugin-util-api)
+changed: [localhost] => (item=jenkins-plugin-prism-api)
+changed: [localhost] => (item=jenkins-plugin-resource-disposer)
+changed: [localhost] => (item=jenkins-plugin-scm-api)
+changed: [localhost] => (item=jenkins-plugin-script-security)
+changed: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+changed: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+changed: [localhost] => (item=jenkins-plugin-ssh-credentials)
+changed: [localhost] => (item=jenkins-plugin-structs)
+changed: [localhost] => (item=jenkins-plugin-timestamper)
+changed: [localhost] => (item=jenkins-plugin-variant)
+changed: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+changed: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+changed: [localhost] => (item=jenkins-plugin-workflow-api)
+changed: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+changed: [localhost] => (item=jenkins-plugin-workflow-cps)
+changed: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+changed: [localhost] => (item=jenkins-plugin-workflow-job)
+changed: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+changed: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+changed: [localhost] => (item=jenkins-plugin-workflow-step-api)
+changed: [localhost] => (item=jenkins-plugin-workflow-support)
+changed: [localhost] => (item=jenkins-plugin-ws-cleanup)
+changed: [localhost] => (item=temurin-jre)
+
+TASK [Verify downloaded bytes] *************************************************
+ok: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+ok: [localhost] => (item=jenkins-plugin-asm-api)
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+ok: [localhost] => (item=jenkins-plugin-branch-api)
+ok: [localhost] => (item=jenkins-plugin-caffeine-api)
+ok: [localhost] => (item=jenkins-plugin-checks-api)
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api)
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+ok: [localhost] => (item=jenkins-plugin-commons-text-api)
+ok: [localhost] => (item=jenkins-plugin-credentials-binding)
+ok: [localhost] => (item=jenkins-plugin-credentials)
+ok: [localhost] => (item=jenkins-plugin-display-url-api)
+ok: [localhost] => (item=jenkins-plugin-durable-task)
+ok: [localhost] => (item=jenkins-plugin-echarts-api)
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api)
+ok: [localhost] => (item=jenkins-plugin-git-client)
+ok: [localhost] => (item=jenkins-plugin-git)
+ok: [localhost] => (item=jenkins-plugin-gson-api)
+ok: [localhost] => (item=jenkins-plugin-instance-identity)
+ok: [localhost] => (item=jenkins-plugin-ionicons-api)
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson3-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jaxb)
+ok: [localhost] => (item=jenkins-plugin-joda-time-api)
+ok: [localhost] => (item=jenkins-plugin-jquery3-api)
+ok: [localhost] => (item=jenkins-plugin-json-api)
+ok: [localhost] => (item=jenkins-plugin-junit)
+ok: [localhost] => (item=jenkins-plugin-mailer)
+ok: [localhost] => (item=jenkins-plugin-matrix-project)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+ok: [localhost] => (item=jenkins-plugin-plain-credentials)
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api)
+ok: [localhost] => (item=jenkins-plugin-prism-api)
+ok: [localhost] => (item=jenkins-plugin-resource-disposer)
+ok: [localhost] => (item=jenkins-plugin-scm-api)
+ok: [localhost] => (item=jenkins-plugin-script-security)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials)
+ok: [localhost] => (item=jenkins-plugin-structs)
+ok: [localhost] => (item=jenkins-plugin-timestamper)
+ok: [localhost] => (item=jenkins-plugin-variant)
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+ok: [localhost] => (item=jenkins-plugin-workflow-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+ok: [localhost] => (item=jenkins-plugin-workflow-cps)
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-job)
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-support)
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup)
+ok: [localhost] => (item=temurin-jre)
+
+TASK [Require exact size and SHA256 after transfer] ****************************
+ok: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+ok: [localhost] => (item=jenkins-plugin-asm-api)
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+ok: [localhost] => (item=jenkins-plugin-branch-api)
+ok: [localhost] => (item=jenkins-plugin-caffeine-api)
+ok: [localhost] => (item=jenkins-plugin-checks-api)
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api)
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+ok: [localhost] => (item=jenkins-plugin-commons-text-api)
+ok: [localhost] => (item=jenkins-plugin-credentials-binding)
+ok: [localhost] => (item=jenkins-plugin-credentials)
+ok: [localhost] => (item=jenkins-plugin-display-url-api)
+ok: [localhost] => (item=jenkins-plugin-durable-task)
+ok: [localhost] => (item=jenkins-plugin-echarts-api)
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api)
+ok: [localhost] => (item=jenkins-plugin-git-client)
+ok: [localhost] => (item=jenkins-plugin-git)
+ok: [localhost] => (item=jenkins-plugin-gson-api)
+ok: [localhost] => (item=jenkins-plugin-instance-identity)
+ok: [localhost] => (item=jenkins-plugin-ionicons-api)
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson3-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jaxb)
+ok: [localhost] => (item=jenkins-plugin-joda-time-api)
+ok: [localhost] => (item=jenkins-plugin-jquery3-api)
+ok: [localhost] => (item=jenkins-plugin-json-api)
+ok: [localhost] => (item=jenkins-plugin-junit)
+ok: [localhost] => (item=jenkins-plugin-mailer)
+ok: [localhost] => (item=jenkins-plugin-matrix-project)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+ok: [localhost] => (item=jenkins-plugin-plain-credentials)
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api)
+ok: [localhost] => (item=jenkins-plugin-prism-api)
+ok: [localhost] => (item=jenkins-plugin-resource-disposer)
+ok: [localhost] => (item=jenkins-plugin-scm-api)
+ok: [localhost] => (item=jenkins-plugin-script-security)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials)
+ok: [localhost] => (item=jenkins-plugin-structs)
+ok: [localhost] => (item=jenkins-plugin-timestamper)
+ok: [localhost] => (item=jenkins-plugin-variant)
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+ok: [localhost] => (item=jenkins-plugin-workflow-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+ok: [localhost] => (item=jenkins-plugin-workflow-cps)
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-job)
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-support)
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup)
+ok: [localhost] => (item=temurin-jre)
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=20   changed=2    unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   
+
+make[1]: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+
+exit=0
