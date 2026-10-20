@@ -56,7 +56,9 @@ def run(params, reposDir) {
                 logged("3-build-${app}", "make -C infrastructure platform-build OBJECT=app-platform/${app}-app")
             }
             sh """
-for f in \$(git diff --name-only -- gitops | grep image.lock.yaml || true); do echo "\$f: \$(grep -E '^(source_revision|digest)' "\$f" | tr '\\n' ' ')"; done | tee '${out}/3-image-locks.txt'
+for f in \$(git diff --name-only -- gitops | grep image.lock.yaml || true); do echo "\$f: \$(grep -E '^(source_revision|digest)' "\$f" | tr '\\n' ' ')"; done > '${out}/3-image-locks.txt'
+[ -s '${out}/3-image-locks.txt' ] || echo "(no image lock changed: same pins rebuilt to the same digests)" > '${out}/3-image-locks.txt'
+cat '${out}/3-image-locks.txt'
 """
         }
 
