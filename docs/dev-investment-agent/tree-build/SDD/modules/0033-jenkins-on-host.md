@@ -102,3 +102,63 @@ Jenkins 要做的只有一件事：**把这串固定的 `make` 目标按固定�
 2. 界面只开内网、第一版本地管理员、Casdoor 登录等 D 段。
 3. 推送用宿主用户已有的 git 凭据，Jenkins 不存第二份。
 4. `render-check` 这条只读的自动检查要不要（第四节末）。我建议要，它能在卡写出来之前就抓住迁移头这类错。
+
+## 十、第 4 步的设计：release 的后半段与人批（2026-10-20 夜，待所有者定）
+
+第 3 步验到：到第 5 阶段为止的前半段能跑、幂等、产物齐。第 4 步把第四节表里的第 6 到 12 阶段接上，并借一次真发布走完整条链。原则不变：每一阶段就是今天发布卡手敲的那一两条命令，流水线只按顺序敲、存证据、在第 8 阶段停下等人；D 段换 Argo 时第 7 到 10 阶段整段替换，别的不动。
+
+### 10.1 阶段 6 到 12 落到命令
+
+全部在代理的 k8s 克隆里（`jenkins_repos_dir/k8s`，第 1 阶段已检到 `origin/BRANCH` 的头）。提交身份固定 `sunmoon-ci <ci@sunmoonai.com>`（命令级 `-c`，不动宿主用户的全局配置），说明里带 `NOTE` 和构建号，像今天卡里的 `deploy(knowlab): …（qwen-013 一段）`。
+
+| 阶段 | 跑什么（= 今天卡里的哪条） | 证据进产物 | 停下的条件 |
+| --- | --- | --- | --- |
+| 5.5 无差异就不发 | 第 5 阶段后看 `git status --porcelain -- gitops sources.yaml`；空就标 `NOT_BUILT`、说明「无差异，不发」，直接收尾 | — | 第五节「重复跑」那条 |
+| 6 提交 | `git add infrastructure/applications/sources.yaml gitops && git commit -m "deploy(<APPS>): <NOTE>（release #n）"` | `6-commit.txt`（提交号、`--stat`） | — |
+| 7 发布 | `make flux-release`（发布器只导出已提交对象、拒绝明文 Secret、发到 Harbor、写 `.build/flux/source-candidate.yaml`） | `7-source-candidate.yaml`（`sudo cat` 拷出来，无凭据） | 非 0 |
+| 8 人批 | Jenkins `input`：摆出 NOTE、应用、`2-sources.diff`、`4-gitops.stat`、`4-workload.diff` 行数、候选 `digest` 与 `revision`、产物链接；`submitter` 只允许所有者账号；`timeout` 默认 24 小时，到时中止 | `8-approval.txt`（谁、何时） | 拒绝 → ABORTED；超时 → ABORTED |
+| 9 写指针 | `sudo cat 候选 \| sudo tee environments/kind/flux-source.yaml`，`chown` 回代理用户，`git commit -m "release(kind): 晋级到 <短号>（release #n）"`，打 tag `release-<YYYYMMDD>-<当日序号>`（先 `git fetch --tags` 再数） | `9-pointer.txt`（指针内容、提交号、tag 名） | — |
+| 10 部署 | `make flux-source-apply`（它自己等 OCI 源 Ready、根 kustomization Ready、generation 与摘要一致）；再 `kubectl -n flux-system wait kustomizations <app>-* --for=condition=Ready --timeout=30m` | `10-apply.log`、`10-wait.txt` | 非 0 |
+| 11 检查 | 逐应用 `make application-check APP=`；`platform-check OBJECT=app-platform/<app>-app`（0033 第四节原文） | `11-check-<app>.log` | 非 0 |
+| 12 推送与回执 | 流水线自己生成 `scripts/results/release-<n>.<时间>.md`（参数、改钉、镜像锁、gitops 差异、候选、批准人与时间、apply 与 check 的尾部），`git commit -m "release(kind): 回执 #n"`；`git push origin HEAD:refs/heads/<BRANCH>` 加 tag | 回执本身 | 推送非快进 → 停，提交留在代理克隆（见 10.3） |
+
+第 10 阶段之后、第 11 之前不插人；第 11 不过就是「已部署但检查没过」，和今天手敲一样，由人看回执决定退回（退回 = 指针改回上一版再 apply，今天也是手做，这步**不进流水线**，第五节「不替代维护窗口的人工判断」）。
+
+### 10.2 人批不能占着执行器
+
+宿主代理只有一个执行器。`input` 要是写在 `node('host') {…}` 里面，等批的 24 小时里执行器被占着，render-check 跑不了、第二次 release 也排不进。所以引导脚本改成三段：
+
+```groovy
+def body
+node('host') { dir(repos + '/k8s') { sh '更新到分支头'; body = load 'ci/release.groovy' } }
+body.main(params, repos, approver)      // 在 node 外面
+```
+
+`ci/release.groovy` 自己开两段 `node('host')`：第 1 到 7 阶段一段，`input` 在两段之间（不占执行器，只占一个轻量的流水线线程），第 9 到 12 阶段另一段。两段之间代理克隆里的状态（第 6 阶段的提交、`.build/flux/` 的候选）留在盘上，第二段进来先核 `HEAD` 还是第 6 阶段那个提交、候选文件还在，才继续；期间 render-check 的定时构建照常跑（它结束时会 `git checkout -- gitops sources.yaml`，**不**会动已提交的东西，但会把 `k8s` 检到分支头——所以第二段开头要 `git checkout --detach <第 6 阶段的提交号>`，提交号存在第一段的产物里，不靠工作区）。
+
+`approver` 从控制器配置（`jenkins_human_account.username`，今天是 `admin`）由引导传进来，任务体不写死账号。引导脚本变了要重新落盘：`04-release.groovy` 加一个分支——任务已存在但引导文本与模板不同时，只更新 `definition`，参数与人改过的别的属性不动（第 2 步「只建一次」的意思是不覆盖人的改动，不是永远不更新引导）。
+
+### 10.3 停在半路怎么收
+
+- 第 6 阶段之前停：和第 3 步一样，`finally` 里 `git checkout -- gitops sources.yaml`，什么都没留下。
+- 第 6 阶段之后、第 12 之前停（发布失败、拒绝、超时、apply 或 check 非 0、推送非快进）：提交留在代理克隆里**不推**（第四节原文：发布器只打包已提交且晋级过的，不会被发布；但第 10 阶段之后已经 apply 了的，集群上就是新版，这时「没推」意味着 Git 上还看不到线上实际的指针——回执要把这点标红，人来补推或退回）。为了下一次构建的 `checkout --detach origin/BRANCH` 不把它丢进 reflog 深处，`finally` 里给它留一个本地分支 `abandoned/release-<n>`，并写进构建说明。
+- 中止（拒绝或超时）：候选留在 Harbor（无害，账 106 的 GC 管），第 6 阶段的提交按上一条处理，集群没动。
+
+### 10.4 要改的文件
+
+`ci/release.groovy`（第 5.5 到 12 阶段、两段 node、`abandoned/` 分支、回执生成）、`infrastructure/jenkins/templates/04-release.groovy.j2`（三段引导、`approver`、引导变了就更新 definition、新参数 `APPROVAL_TIMEOUT_MINUTES` 默认 1440）、`jenkins-release-run` 的等待上限随审批超时走、README 与使用说明（人批那一节、退回怎么做）。宿主侧不需要新东西：push 用代理用户已有的 SSH 钥匙（第四节「Jenkins 不存第二份凭据」），`sudo` 已有。
+
+### 10.5 怎么验（三次跑，由近到远）
+
+1. **失败路径**（第七节第 3 条）：开一个临时分支 `fable-b4-test`，把 tpl 后端 `config.yaml` 的 `expected_schema_revision` 改旧并提交推上；`release BRANCH=fable-b4-test APPS=tpl PIN=keep`。要看到：停在第 2 阶段（`2-plan-tpl.log` 里 `Expected schema differs`），`gitops/` 干净，Harbor 没多镜像，什么都没提交。跑完删分支。
+2. **人批路径**（第七节第 2 条的能验的一半）：`APPROVAL_TIMEOUT_MINUTES=2`，`APPS=tpl PIN=keep`，没人点；要看到：到第 8 阶段停、2 分钟后 ABORTED，`flux-source.yaml` 没变、现网没动、代理克隆里有 `abandoned/release-<n>` 指着第 6 阶段的提交，候选在 Harbor。「非所有者账号点不了」只有一个账号时验不了，记为按配置保证（`submitter`），等 D 段接 Casdoor 有第二个账号再验。
+3. **真发布**（第七节第 6 条）：借今天已知的一处真实差异——tpl 两个 ingress 的 `/api/internal` 收敛规则（模板比 tpl 已提交的声明新，别的五个应用都已有）。`APPS=tpl PIN=keep NOTE="tpl ingress 补 /api/internal（release）"`，所有者在页面上点批。要看到：`deploy(tpl)` 与 `release(kind): 晋级到 …` 两个提交加 tag 推上 `fable`，`flux-source.yaml` 指到新候选，apply 过、`tpl-*` kustomization Ready、`application-check APP=tpl` 过、`scripts/results/release-<n>.*.md` 随推送带上；浏览器走查：`https://tpl.sunmoonai.com:30443/api/internal/x` 回 404。不碰产品线的代码，风险最小，又把一处已知漂移收掉。
+
+### 10.6 要所有者定的
+
+1. 真发布用 tpl 的 `/api/internal` 这处（推荐），还是等产品线恢复借一张真卡。
+2. 审批超时默认 24 小时；批准人就是 `admin`（第一版唯一账号）。
+3. 回执由流水线生成并随推送带上（推荐），还是仍由本地助手手写。
+4. tag 序号规则 `release-<YYYYMMDD>-<当日序号>`，与 10-07 到 10-09 手打的五个同形。
+5. 第 11 阶段没过时流水线不退回、只标红交人（推荐；退回仍是人的维护窗口动作）。
+
