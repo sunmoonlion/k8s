@@ -52,7 +52,7 @@ make -C infrastructure jenkins-status
 | 本地管理员口令 | `jenkins_config_dir/private/admin-password`，root 0600；独立备份 `jenkins_credential_backup_dir/admin-password`；首次预设 `private/presets/admin-password`（密码表第 13 项导入） |
 | 容器读的那一份 | `jenkins_runtime_dir/secrets/admin-password`，容器用户 1000 只读 0400；只在第一次启动建账号时读 |
 | 服务证书与私钥 | `jenkins_config_dir/tls/server.{key,crt}`，由 registry 本地 CA 就地签发（不复制 CA 私钥）；HAProxy 用的合并件 `jenkins_runtime_dir/tls/jenkins.pem`，root:10001 0640 |
-| 运行配置 | `jenkins_runtime_dir/{compose.yaml,haproxy.cfg,init.groovy.d/,storage.json,check-storage.py,docker-compose}` |
+| 运行配置 | `jenkins_runtime_dir/{compose.yaml,haproxy.cfg,init.groovy.d/,storage.json,check-storage.py,docker-compose}`；`init.groovy.d/` 里的脚本带 `.override` 后缀，镜像入口每次启动都把它们覆盖进 `JENKINS_HOME/init.groovy.d/`（不带后缀的同名文件已存在就不拷，改过的脚本会悄悄不生效）；脚本自己判断任务、节点、账号是否已存在，存在就只补缺的属性 |
 | Jenkins 自己的数据 | `jenkins_data_dir/home`（JENKINS_HOME），容器用户 1000，0700 |
 | 代理节点的接入密钥 | 控制器首启写在 `JENKINS_HOME/secrets/sunmoon/agent-host.secret`（容器用户 0600）；部署剧本（root）读它，给代理用户一份 `jenkins_runtime_dir/secrets/agent-host.secret` 0400 |
 | 插件与 JRE | `jenkins_runtime_dir/ref-plugins/<名>.jpi`（容器用户，只读挂进 `ref/plugins`）、`jenkins_runtime_dir/jre/<版本>/`（`jre/current` 指向它）、`jenkins_runtime_dir/agent.jar` |

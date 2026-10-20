@@ -19,10 +19,13 @@
     jenkins_runtime_files:
       - {src: compose.yaml.j2, dest: '{{ jenkins_runtime_dir }}/compose.yaml', mode: '0600', owner: root, group: root}
       - {src: haproxy.cfg.j2, dest: '{{ jenkins_runtime_dir }}/haproxy.cfg', mode: '0640', owner: root, group: '{{ tls_uid }}'}
-      - {src: 01-platform.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/01-platform.groovy', mode: '0644', owner: root, group: root}
-      - {src: 02-agent-node.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/02-agent-node.groovy', mode: '0644', owner: root, group: root}
-      - {src: 03-render-check.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/03-render-check.groovy', mode: '0644', owner: root, group: root}
-      - {src: 04-release.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/04-release.groovy', mode: '0644', owner: root, group: root}
+      # 首启脚本挂到镜像的 ref 目录，入口在每次启动时把 ref 拷进 JENKINS_HOME：同名文件已存在就跳过，只有带 .override 后缀的
+      # 才总是覆盖（镜像 jenkins-support 的 copy_reference_file）。不带后缀时改过的脚本永远进不去（2026-10-20 回执 fable-b3）。
+      # 「只建一次、不覆盖人改过的」由脚本自己的 getItem == null 判断保证，不靠不拷。
+      - {src: 01-platform.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/01-platform.groovy.override', mode: '0644', owner: root, group: root}
+      - {src: 02-agent-node.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/02-agent-node.groovy.override', mode: '0644', owner: root, group: root}
+      - {src: 03-render-check.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/03-render-check.groovy.override', mode: '0644', owner: root, group: root}
+      - {src: 04-release.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/04-release.groovy.override', mode: '0644', owner: root, group: root}
       - {src: sunmoon-jenkins.service.j2, dest: /etc/systemd/system/sunmoon-jenkins.service, mode: '0644', owner: root, group: root}
   tasks:
     - name: Validate site and operation

@@ -1,8 +1,8 @@
-# qwen 卡 fable-b3：release 流水线到「计划」为止（0033 第八节第 3 步）
+# qwen 卡 fable-b3（第二版，从第二节续跑）：release 流水线到「计划」为止（0033 第八节第 3 步）
 
-> 状态：**可执行**（远程 Fable 2026-10-20 夜写）。B2 已过（b2e，#19 SUCCESS）。这张卡两件事：① 控制器重启一次，装上新的首启脚本（任务 `release`）和单元改动（`SuccessExitStatus=130 143`），顺带让第 2 步留下的「同时只跑一个」生效；② 用 tpl、`PIN=keep` 把 `release` 跑一遍到第 5 阶段。它会**构建 tpl 三个镜像并推进 Harbor**（候选，无害），不提交、不发布、不动集群；跑完 `gitops/` 和 `sources.yaml` 自动回到干净。
+> 状态：**可执行**（远程 Fable 2026-10-20 夜改）。第一版第二节停在「render-check 没装上并发闸」，Qwen 的根因对：首启脚本挂的是镜像的 ref 目录，镜像入口只拷 home 里不存在的文件，改过的 `03` 进不去。查了锁定镜像里的 `jenkins-support`：ref 里带 `.override` 后缀的文件总是覆盖，所以四份脚本现在都按 `0X-名字.groovy.override` 落盘，进 home 后名字不带后缀，每次启动都是新版；「只建一次」仍由脚本自己判断。顺带把计数判据改成只数开标签。
 >
-> 所有者点名由 Qwen 跑；工位仍是 fable。
+> 第一节已过不重做；第二节再做一次（这次停控制器用的是新单元，`Result` 该是 `success`）；然后第三节起照旧。
 
 ```text
 被测仓：k8s；工位 WS=fable：~/worktrees/fable/k8s，分支 fable；远程和本地都只推拉这个分支
@@ -39,12 +39,14 @@ make -C infrastructure jenkins-status; echo "status exit=$?"
 make -C infrastructure jenkins-agent-status; echo "agent status exit=$?"
 sudo -n bash <<'SH'
 ls /opt/sunmoon/jenkins/init.groovy.d/
+for f in /opt/sunmoon/jenkins/init.groovy.d/*.override; do b=$(basename "$f" .override); printf '%s ' "$b"; cmp -s "$f" "/mnt/sunmoon-data/jenkins/home/init.groovy.d/$b" && echo same || echo DIFFERENT; done
+ls /mnt/sunmoon-data/jenkins/home/init.groovy.d/
 test -f /mnt/sunmoon-data/jenkins/home/jobs/release/config.xml && echo "release job: present"
-grep -c DisableConcurrentBuildsJobProperty /mnt/sunmoon-data/jenkins/home/jobs/render-check/config.xml /mnt/sunmoon-data/jenkins/home/jobs/release/config.xml
+grep -c '<org.jenkinsci.plugins.workflow.job.properties.DisableConcurrentBuildsJobProperty>' /mnt/sunmoon-data/jenkins/home/jobs/render-check/config.xml /mnt/sunmoon-data/jenkins/home/jobs/release/config.xml
 SH
 ```
 
-要看到：四个 make 都是 0；停完那行 `ActiveState=inactive`、`Result=success`（旧单元会是 failed，新单元装上后下次停就不会了——这次停用的还是旧单元，`Result=exit-code` 也照实记，不算失败）；`init.groovy.d/` 里 01 到 04 四个；`release job: present`；两份 config.xml 的计数都是 1。
+要看到：四个 make 都是 0；停完那行 `ActiveState=inactive`、`Result=success`（这次停的是上一版装上的新单元）；`/opt` 下四个 `*.groovy.override`，四行都 `same`（home 里是覆盖后的新版）；home 的 `init.groovy.d/` 里只有四个不带后缀的 `.groovy`（要是还多出旧的 `03-render-check.groovy` 以外的东西，照实记）；`release job: present`；两份 config.xml 的开标签计数都是 1。
 
 deploy 不是 0 就停：贴失败任务那段与 `journalctl -u sunmoon-jenkins.service --since '10 min ago' | tail -30`（没有口令）。
 
