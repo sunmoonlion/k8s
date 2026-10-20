@@ -1,0 +1,552 @@
+2026-10-20T18:10:38.367539+08:00
+Phase 1: inspect each workstation, fetch only its own branch; retain full status output.
+== cursor
+$ git -C /home/zymun/worktrees/cursor/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s fetch -q origin cursor
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s rev-parse --abbrev-ref HEAD
+cursor
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s rev-parse HEAD
+f1248c16dcb51432e3f33be79c37e87b99d9b03d
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s rev-parse origin/cursor
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s rev-list --count origin/cursor..HEAD
+0
+command exit=0
+branch=cursor local=f1248c16dcb51432e3f33be79c37e87b99d9b03d origin=7e9619db056b97a89d5543d63b9844add825d895 unpushed=0
+== kimi
+$ git -C /home/zymun/worktrees/kimi/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s fetch -q origin kimi
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s rev-parse --abbrev-ref HEAD
+kimi
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s rev-parse HEAD
+f1248c16dcb51432e3f33be79c37e87b99d9b03d
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s rev-parse origin/kimi
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s rev-list --count origin/kimi..HEAD
+0
+command exit=0
+branch=kimi local=f1248c16dcb51432e3f33be79c37e87b99d9b03d origin=7e9619db056b97a89d5543d63b9844add825d895 unpushed=0
+== luna
+$ git -C /home/zymun/worktrees/luna/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s fetch -q origin luna
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s rev-parse --abbrev-ref HEAD
+luna
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s rev-parse HEAD
+f1248c16dcb51432e3f33be79c37e87b99d9b03d
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s rev-parse origin/luna
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s rev-list --count origin/luna..HEAD
+0
+command exit=0
+branch=luna local=f1248c16dcb51432e3f33be79c37e87b99d9b03d origin=7e9619db056b97a89d5543d63b9844add825d895 unpushed=0
+== qwen
+$ git -C /home/zymun/worktrees/qwen/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s fetch -q origin qwen
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s rev-parse --abbrev-ref HEAD
+qwen
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s rev-parse HEAD
+f1248c16dcb51432e3f33be79c37e87b99d9b03d
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s rev-parse origin/qwen
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s rev-list --count origin/qwen..HEAD
+0
+command exit=0
+branch=qwen local=f1248c16dcb51432e3f33be79c37e87b99d9b03d origin=7e9619db056b97a89d5543d63b9844add825d895 unpushed=0
+Phase 2: recheck all three preconditions immediately before each fast-forward pull.
+== cursor
+$ git -C /home/zymun/worktrees/cursor/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s rev-parse --abbrev-ref HEAD
+cursor
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s rev-list --count origin/cursor..HEAD
+0
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s pull --ff-only origin cursor
+From https://github.com/sunmoonlion/k8s
+ * branch              cursor     -> FETCH_HEAD
+Updating f1248c16..7e9619db
+Fast-forward
+ AGENTS.md                                          |     5 +
+ CHECKPOINT.md                                      |     3 +-
+ docs/README.md                                     |    15 +-
+ docs/dev-investment-agent/switch-test/README.md    |     9 +-
+ .../done/2026-10-20-fable-b1-jenkins-controller.md |    87 +
+ docs/dev-investment-agent/tree-build/README.md     |     1 +
+ .../tree-build/SDD/modules/0026-knowlab.md         |     2 +-
+ .../SDD/modules/0029-sample-fin-forecast/README.md |     2 +-
+ .../tree-build/SDD/modules/0033-jenkins-on-host.md |     4 +-
+ .../SDD/modules/0035-method-amendment.md           |     2 +-
+ .../tree-build/SDD/modules/0036-quote-check.md     |     2 +-
+ docs/dev-investment-agent/tree-build/decisions.md  |     2 +-
+ .../tree-build/rules/constraints.md                |     2 +-
+ ...273\243\347\240\201\345\234\260\345\233\276.md" |   297 +
+ docs/project-guide/README.md                       |     3 +-
+ docs/project-guide/governance.md                   |     2 +-
+ docs/project-guide/overall-architecture.md         |    16 +-
+ docs/project-guide/repos/k8s.md                    |    57 +-
+ docs/project-guide/repos/knowbase-app.md           |     2 +
+ docs/project-guide/repos/knowbench-app.md          |     2 +
+ docs/project-guide/repos/knowfeed-app.md           |     2 +
+ docs/project-guide/repos/sunmoon-link.md           |     2 +
+ docs/project-guide/repos/tpl-app.md                |     2 +
+ docs/project-guide/staging.md                      |     2 +-
+ docs/project-guide/topics/contracts.md             |     2 +
+ docs/project-guide/topics/data.md                  |     2 +
+ docs/project-guide/topics/knowbot.md               |     2 +
+ ...225\260\346\215\256\346\213\223\346\211\221.md" |     6 +-
+ ...236\266\346\236\204\346\200\273\347\272\262.md" |   131 +
+ ...277\220\350\241\214\346\213\223\346\211\221.md" |    39 +-
+ infrastructure/Makefile                            |     9 +-
+ infrastructure/artifacts/README.md                 |     2 +-
+ infrastructure/artifacts/files.lock.json           |   784 +-
+ infrastructure/artifacts/host-archives.lock.json   |    12 +-
+ infrastructure/artifacts/image-archives.yaml       |     4 +-
+ infrastructure/artifacts/upstream-images.lock.json |    14 +
+ infrastructure/entry/README.md                     |     2 +-
+ infrastructure/entry/config.yaml                   |     5 +
+ infrastructure/host/accounts.md                    |     1 +
+ infrastructure/host/accounts.yaml                  |     2 +-
+ infrastructure/host/deployment.yaml                |     3 +-
+ infrastructure/host/lifecycle.yaml                 |     4 +-
+ infrastructure/jenkins/README.md                   |    65 +
+ infrastructure/jenkins/config.yaml                 |    45 +
+ infrastructure/jenkins/service.yaml                |   330 +
+ infrastructure/jenkins/tasks/secrets.yaml          |   198 +
+ .../jenkins/templates/01-platform.groovy.j2        |    33 +
+ infrastructure/jenkins/templates/compose.yaml.j2   |    81 +
+ infrastructure/jenkins/templates/haproxy.cfg.j2    |    28 +
+ .../jenkins/templates/sunmoon-jenkins.service.j2   |    29 +
+ .../fable-b1.20261020-173741.01-preflight.txt      | 13685 +++++++++++++++++++
+ .../fable-b1.20261020-173741.02-materials.txt      |   419 +
+ .../fable-b1.20261020-173741.03-account-plan.txt   |   123 +
+ .../fable-b1.20261020-173741.04-account-import.txt |   149 +
+ .../fable-b1.20261020-173741.05-jenkins-plan.txt   |   156 +
+ .../fable-b1.20261020-173741.06-jenkins-deploy.txt |   287 +
+ .../fable-b1.20261020-173741.07-jenkins-status.txt |   164 +
+ ...ble-b1.20261020-173741.08-controller-checks.txt |    12 +
+ .../fable-b1.20261020-173741.10-ca-permissions.txt |    18 +
+ scripts/results/fable-b1.20261020-173741.md        |   105 +
+ ...ble-b1.20261020-175616.01-controller-checks.txt |    27 +
+ .../fable-b1.20261020-175616.02-entry-preview.txt  |   210 +
+ .../fable-b1.20261020-175616.03-entry-idle.txt     |     4 +
+ .../fable-b1.20261020-175616.04-entry-stop.txt     |   218 +
+ .../fable-b1.20261020-175616.05-entry-deploy.txt   |   214 +
+ .../fable-b1.20261020-175616.06-entry-checks.txt   |    11 +
+ ...fable-b1.20261020-175616.07-platform-status.txt | 13667 ++++++++++++++++++
+ scripts/results/fable-b1.20261020-175616.md        |   111 +
+ 68 files changed, 31856 insertions(+), 80 deletions(-)
+ create mode 100644 docs/dev-investment-agent/switch-test/done/2026-10-20-fable-b1-jenkins-controller.md
+ create mode 100644 "docs/dev-investment-agent/tree-build/\345\271\263\345\217\260\344\273\243\347\240\201\345\234\260\345\233\276.md"
+ rename "docs/\346\225\260\346\215\256\346\213\223\346\211\221.md" => "docs/\346\200\273\347\272\262/\346\225\260\346\215\256\346\213\223\346\211\221.md" (96%)
+ create mode 100644 "docs/\346\200\273\347\272\262/\346\236\266\346\236\204\346\200\273\347\272\262.md"
+ rename "docs/\350\277\220\350\241\214\346\213\223\346\211\221.md" => "docs/\346\200\273\347\272\262/\350\277\220\350\241\214\346\213\223\346\211\221.md" (82%)
+ create mode 100644 infrastructure/jenkins/README.md
+ create mode 100644 infrastructure/jenkins/config.yaml
+ create mode 100644 infrastructure/jenkins/service.yaml
+ create mode 100644 infrastructure/jenkins/tasks/secrets.yaml
+ create mode 100644 infrastructure/jenkins/templates/01-platform.groovy.j2
+ create mode 100644 infrastructure/jenkins/templates/compose.yaml.j2
+ create mode 100644 infrastructure/jenkins/templates/haproxy.cfg.j2
+ create mode 100644 infrastructure/jenkins/templates/sunmoon-jenkins.service.j2
+ create mode 100644 scripts/results/fable-b1.20261020-173741.01-preflight.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.02-materials.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.03-account-plan.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.04-account-import.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.05-jenkins-plan.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.06-jenkins-deploy.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.07-jenkins-status.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.08-controller-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.10-ca-permissions.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.md
+ create mode 100644 scripts/results/fable-b1.20261020-175616.01-controller-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.02-entry-preview.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.03-entry-idle.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.04-entry-stop.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.05-entry-deploy.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.06-entry-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.07-platform-status.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.md
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s rev-parse HEAD
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+cursor -> 7e9619db056b97a89d5543d63b9844add825d895
+== kimi
+$ git -C /home/zymun/worktrees/kimi/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s rev-parse --abbrev-ref HEAD
+kimi
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s rev-list --count origin/kimi..HEAD
+0
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s pull --ff-only origin kimi
+From https://github.com/sunmoonlion/k8s
+ * branch              kimi       -> FETCH_HEAD
+Updating f1248c16..7e9619db
+Fast-forward
+ AGENTS.md                                          |     5 +
+ CHECKPOINT.md                                      |     3 +-
+ docs/README.md                                     |    15 +-
+ docs/dev-investment-agent/switch-test/README.md    |     9 +-
+ .../done/2026-10-20-fable-b1-jenkins-controller.md |    87 +
+ docs/dev-investment-agent/tree-build/README.md     |     1 +
+ .../tree-build/SDD/modules/0026-knowlab.md         |     2 +-
+ .../SDD/modules/0029-sample-fin-forecast/README.md |     2 +-
+ .../tree-build/SDD/modules/0033-jenkins-on-host.md |     4 +-
+ .../SDD/modules/0035-method-amendment.md           |     2 +-
+ .../tree-build/SDD/modules/0036-quote-check.md     |     2 +-
+ docs/dev-investment-agent/tree-build/decisions.md  |     2 +-
+ .../tree-build/rules/constraints.md                |     2 +-
+ ...273\243\347\240\201\345\234\260\345\233\276.md" |   297 +
+ docs/project-guide/README.md                       |     3 +-
+ docs/project-guide/governance.md                   |     2 +-
+ docs/project-guide/overall-architecture.md         |    16 +-
+ docs/project-guide/repos/k8s.md                    |    57 +-
+ docs/project-guide/repos/knowbase-app.md           |     2 +
+ docs/project-guide/repos/knowbench-app.md          |     2 +
+ docs/project-guide/repos/knowfeed-app.md           |     2 +
+ docs/project-guide/repos/sunmoon-link.md           |     2 +
+ docs/project-guide/repos/tpl-app.md                |     2 +
+ docs/project-guide/staging.md                      |     2 +-
+ docs/project-guide/topics/contracts.md             |     2 +
+ docs/project-guide/topics/data.md                  |     2 +
+ docs/project-guide/topics/knowbot.md               |     2 +
+ ...225\260\346\215\256\346\213\223\346\211\221.md" |     6 +-
+ ...236\266\346\236\204\346\200\273\347\272\262.md" |   131 +
+ ...277\220\350\241\214\346\213\223\346\211\221.md" |    39 +-
+ infrastructure/Makefile                            |     9 +-
+ infrastructure/artifacts/README.md                 |     2 +-
+ infrastructure/artifacts/files.lock.json           |   784 +-
+ infrastructure/artifacts/host-archives.lock.json   |    12 +-
+ infrastructure/artifacts/image-archives.yaml       |     4 +-
+ infrastructure/artifacts/upstream-images.lock.json |    14 +
+ infrastructure/entry/README.md                     |     2 +-
+ infrastructure/entry/config.yaml                   |     5 +
+ infrastructure/host/accounts.md                    |     1 +
+ infrastructure/host/accounts.yaml                  |     2 +-
+ infrastructure/host/deployment.yaml                |     3 +-
+ infrastructure/host/lifecycle.yaml                 |     4 +-
+ infrastructure/jenkins/README.md                   |    65 +
+ infrastructure/jenkins/config.yaml                 |    45 +
+ infrastructure/jenkins/service.yaml                |   330 +
+ infrastructure/jenkins/tasks/secrets.yaml          |   198 +
+ .../jenkins/templates/01-platform.groovy.j2        |    33 +
+ infrastructure/jenkins/templates/compose.yaml.j2   |    81 +
+ infrastructure/jenkins/templates/haproxy.cfg.j2    |    28 +
+ .../jenkins/templates/sunmoon-jenkins.service.j2   |    29 +
+ .../fable-b1.20261020-173741.01-preflight.txt      | 13685 +++++++++++++++++++
+ .../fable-b1.20261020-173741.02-materials.txt      |   419 +
+ .../fable-b1.20261020-173741.03-account-plan.txt   |   123 +
+ .../fable-b1.20261020-173741.04-account-import.txt |   149 +
+ .../fable-b1.20261020-173741.05-jenkins-plan.txt   |   156 +
+ .../fable-b1.20261020-173741.06-jenkins-deploy.txt |   287 +
+ .../fable-b1.20261020-173741.07-jenkins-status.txt |   164 +
+ ...ble-b1.20261020-173741.08-controller-checks.txt |    12 +
+ .../fable-b1.20261020-173741.10-ca-permissions.txt |    18 +
+ scripts/results/fable-b1.20261020-173741.md        |   105 +
+ ...ble-b1.20261020-175616.01-controller-checks.txt |    27 +
+ .../fable-b1.20261020-175616.02-entry-preview.txt  |   210 +
+ .../fable-b1.20261020-175616.03-entry-idle.txt     |     4 +
+ .../fable-b1.20261020-175616.04-entry-stop.txt     |   218 +
+ .../fable-b1.20261020-175616.05-entry-deploy.txt   |   214 +
+ .../fable-b1.20261020-175616.06-entry-checks.txt   |    11 +
+ ...fable-b1.20261020-175616.07-platform-status.txt | 13667 ++++++++++++++++++
+ scripts/results/fable-b1.20261020-175616.md        |   111 +
+ 68 files changed, 31856 insertions(+), 80 deletions(-)
+ create mode 100644 docs/dev-investment-agent/switch-test/done/2026-10-20-fable-b1-jenkins-controller.md
+ create mode 100644 "docs/dev-investment-agent/tree-build/\345\271\263\345\217\260\344\273\243\347\240\201\345\234\260\345\233\276.md"
+ rename "docs/\346\225\260\346\215\256\346\213\223\346\211\221.md" => "docs/\346\200\273\347\272\262/\346\225\260\346\215\256\346\213\223\346\211\221.md" (96%)
+ create mode 100644 "docs/\346\200\273\347\272\262/\346\236\266\346\236\204\346\200\273\347\272\262.md"
+ rename "docs/\350\277\220\350\241\214\346\213\223\346\211\221.md" => "docs/\346\200\273\347\272\262/\350\277\220\350\241\214\346\213\223\346\211\221.md" (82%)
+ create mode 100644 infrastructure/jenkins/README.md
+ create mode 100644 infrastructure/jenkins/config.yaml
+ create mode 100644 infrastructure/jenkins/service.yaml
+ create mode 100644 infrastructure/jenkins/tasks/secrets.yaml
+ create mode 100644 infrastructure/jenkins/templates/01-platform.groovy.j2
+ create mode 100644 infrastructure/jenkins/templates/compose.yaml.j2
+ create mode 100644 infrastructure/jenkins/templates/haproxy.cfg.j2
+ create mode 100644 infrastructure/jenkins/templates/sunmoon-jenkins.service.j2
+ create mode 100644 scripts/results/fable-b1.20261020-173741.01-preflight.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.02-materials.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.03-account-plan.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.04-account-import.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.05-jenkins-plan.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.06-jenkins-deploy.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.07-jenkins-status.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.08-controller-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.10-ca-permissions.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.md
+ create mode 100644 scripts/results/fable-b1.20261020-175616.01-controller-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.02-entry-preview.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.03-entry-idle.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.04-entry-stop.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.05-entry-deploy.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.06-entry-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.07-platform-status.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.md
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s rev-parse HEAD
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+kimi -> 7e9619db056b97a89d5543d63b9844add825d895
+== luna
+$ git -C /home/zymun/worktrees/luna/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s rev-parse --abbrev-ref HEAD
+luna
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s rev-list --count origin/luna..HEAD
+0
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s pull --ff-only origin luna
+From https://github.com/sunmoonlion/k8s
+ * branch              luna       -> FETCH_HEAD
+Updating f1248c16..7e9619db
+Fast-forward
+ AGENTS.md                                          |     5 +
+ CHECKPOINT.md                                      |     3 +-
+ docs/README.md                                     |    15 +-
+ docs/dev-investment-agent/switch-test/README.md    |     9 +-
+ .../done/2026-10-20-fable-b1-jenkins-controller.md |    87 +
+ docs/dev-investment-agent/tree-build/README.md     |     1 +
+ .../tree-build/SDD/modules/0026-knowlab.md         |     2 +-
+ .../SDD/modules/0029-sample-fin-forecast/README.md |     2 +-
+ .../tree-build/SDD/modules/0033-jenkins-on-host.md |     4 +-
+ .../SDD/modules/0035-method-amendment.md           |     2 +-
+ .../tree-build/SDD/modules/0036-quote-check.md     |     2 +-
+ docs/dev-investment-agent/tree-build/decisions.md  |     2 +-
+ .../tree-build/rules/constraints.md                |     2 +-
+ ...273\243\347\240\201\345\234\260\345\233\276.md" |   297 +
+ docs/project-guide/README.md                       |     3 +-
+ docs/project-guide/governance.md                   |     2 +-
+ docs/project-guide/overall-architecture.md         |    16 +-
+ docs/project-guide/repos/k8s.md                    |    57 +-
+ docs/project-guide/repos/knowbase-app.md           |     2 +
+ docs/project-guide/repos/knowbench-app.md          |     2 +
+ docs/project-guide/repos/knowfeed-app.md           |     2 +
+ docs/project-guide/repos/sunmoon-link.md           |     2 +
+ docs/project-guide/repos/tpl-app.md                |     2 +
+ docs/project-guide/staging.md                      |     2 +-
+ docs/project-guide/topics/contracts.md             |     2 +
+ docs/project-guide/topics/data.md                  |     2 +
+ docs/project-guide/topics/knowbot.md               |     2 +
+ ...225\260\346\215\256\346\213\223\346\211\221.md" |     6 +-
+ ...236\266\346\236\204\346\200\273\347\272\262.md" |   131 +
+ ...277\220\350\241\214\346\213\223\346\211\221.md" |    39 +-
+ infrastructure/Makefile                            |     9 +-
+ infrastructure/artifacts/README.md                 |     2 +-
+ infrastructure/artifacts/files.lock.json           |   784 +-
+ infrastructure/artifacts/host-archives.lock.json   |    12 +-
+ infrastructure/artifacts/image-archives.yaml       |     4 +-
+ infrastructure/artifacts/upstream-images.lock.json |    14 +
+ infrastructure/entry/README.md                     |     2 +-
+ infrastructure/entry/config.yaml                   |     5 +
+ infrastructure/host/accounts.md                    |     1 +
+ infrastructure/host/accounts.yaml                  |     2 +-
+ infrastructure/host/deployment.yaml                |     3 +-
+ infrastructure/host/lifecycle.yaml                 |     4 +-
+ infrastructure/jenkins/README.md                   |    65 +
+ infrastructure/jenkins/config.yaml                 |    45 +
+ infrastructure/jenkins/service.yaml                |   330 +
+ infrastructure/jenkins/tasks/secrets.yaml          |   198 +
+ .../jenkins/templates/01-platform.groovy.j2        |    33 +
+ infrastructure/jenkins/templates/compose.yaml.j2   |    81 +
+ infrastructure/jenkins/templates/haproxy.cfg.j2    |    28 +
+ .../jenkins/templates/sunmoon-jenkins.service.j2   |    29 +
+ .../fable-b1.20261020-173741.01-preflight.txt      | 13685 +++++++++++++++++++
+ .../fable-b1.20261020-173741.02-materials.txt      |   419 +
+ .../fable-b1.20261020-173741.03-account-plan.txt   |   123 +
+ .../fable-b1.20261020-173741.04-account-import.txt |   149 +
+ .../fable-b1.20261020-173741.05-jenkins-plan.txt   |   156 +
+ .../fable-b1.20261020-173741.06-jenkins-deploy.txt |   287 +
+ .../fable-b1.20261020-173741.07-jenkins-status.txt |   164 +
+ ...ble-b1.20261020-173741.08-controller-checks.txt |    12 +
+ .../fable-b1.20261020-173741.10-ca-permissions.txt |    18 +
+ scripts/results/fable-b1.20261020-173741.md        |   105 +
+ ...ble-b1.20261020-175616.01-controller-checks.txt |    27 +
+ .../fable-b1.20261020-175616.02-entry-preview.txt  |   210 +
+ .../fable-b1.20261020-175616.03-entry-idle.txt     |     4 +
+ .../fable-b1.20261020-175616.04-entry-stop.txt     |   218 +
+ .../fable-b1.20261020-175616.05-entry-deploy.txt   |   214 +
+ .../fable-b1.20261020-175616.06-entry-checks.txt   |    11 +
+ ...fable-b1.20261020-175616.07-platform-status.txt | 13667 ++++++++++++++++++
+ scripts/results/fable-b1.20261020-175616.md        |   111 +
+ 68 files changed, 31856 insertions(+), 80 deletions(-)
+ create mode 100644 docs/dev-investment-agent/switch-test/done/2026-10-20-fable-b1-jenkins-controller.md
+ create mode 100644 "docs/dev-investment-agent/tree-build/\345\271\263\345\217\260\344\273\243\347\240\201\345\234\260\345\233\276.md"
+ rename "docs/\346\225\260\346\215\256\346\213\223\346\211\221.md" => "docs/\346\200\273\347\272\262/\346\225\260\346\215\256\346\213\223\346\211\221.md" (96%)
+ create mode 100644 "docs/\346\200\273\347\272\262/\346\236\266\346\236\204\346\200\273\347\272\262.md"
+ rename "docs/\350\277\220\350\241\214\346\213\223\346\211\221.md" => "docs/\346\200\273\347\272\262/\350\277\220\350\241\214\346\213\223\346\211\221.md" (82%)
+ create mode 100644 infrastructure/jenkins/README.md
+ create mode 100644 infrastructure/jenkins/config.yaml
+ create mode 100644 infrastructure/jenkins/service.yaml
+ create mode 100644 infrastructure/jenkins/tasks/secrets.yaml
+ create mode 100644 infrastructure/jenkins/templates/01-platform.groovy.j2
+ create mode 100644 infrastructure/jenkins/templates/compose.yaml.j2
+ create mode 100644 infrastructure/jenkins/templates/haproxy.cfg.j2
+ create mode 100644 infrastructure/jenkins/templates/sunmoon-jenkins.service.j2
+ create mode 100644 scripts/results/fable-b1.20261020-173741.01-preflight.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.02-materials.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.03-account-plan.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.04-account-import.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.05-jenkins-plan.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.06-jenkins-deploy.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.07-jenkins-status.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.08-controller-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.10-ca-permissions.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.md
+ create mode 100644 scripts/results/fable-b1.20261020-175616.01-controller-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.02-entry-preview.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.03-entry-idle.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.04-entry-stop.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.05-entry-deploy.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.06-entry-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.07-platform-status.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.md
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s rev-parse HEAD
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+luna -> 7e9619db056b97a89d5543d63b9844add825d895
+== qwen
+$ git -C /home/zymun/worktrees/qwen/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s rev-parse --abbrev-ref HEAD
+qwen
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s rev-list --count origin/qwen..HEAD
+0
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s pull --ff-only origin qwen
+From https://github.com/sunmoonlion/k8s
+ * branch              qwen       -> FETCH_HEAD
+Updating f1248c16..7e9619db
+Fast-forward
+ AGENTS.md                                          |     5 +
+ CHECKPOINT.md                                      |     3 +-
+ docs/README.md                                     |    15 +-
+ docs/dev-investment-agent/switch-test/README.md    |     9 +-
+ .../done/2026-10-20-fable-b1-jenkins-controller.md |    87 +
+ docs/dev-investment-agent/tree-build/README.md     |     1 +
+ .../tree-build/SDD/modules/0026-knowlab.md         |     2 +-
+ .../SDD/modules/0029-sample-fin-forecast/README.md |     2 +-
+ .../tree-build/SDD/modules/0033-jenkins-on-host.md |     4 +-
+ .../SDD/modules/0035-method-amendment.md           |     2 +-
+ .../tree-build/SDD/modules/0036-quote-check.md     |     2 +-
+ docs/dev-investment-agent/tree-build/decisions.md  |     2 +-
+ .../tree-build/rules/constraints.md                |     2 +-
+ ...273\243\347\240\201\345\234\260\345\233\276.md" |   297 +
+ docs/project-guide/README.md                       |     3 +-
+ docs/project-guide/governance.md                   |     2 +-
+ docs/project-guide/overall-architecture.md         |    16 +-
+ docs/project-guide/repos/k8s.md                    |    57 +-
+ docs/project-guide/repos/knowbase-app.md           |     2 +
+ docs/project-guide/repos/knowbench-app.md          |     2 +
+ docs/project-guide/repos/knowfeed-app.md           |     2 +
+ docs/project-guide/repos/sunmoon-link.md           |     2 +
+ docs/project-guide/repos/tpl-app.md                |     2 +
+ docs/project-guide/staging.md                      |     2 +-
+ docs/project-guide/topics/contracts.md             |     2 +
+ docs/project-guide/topics/data.md                  |     2 +
+ docs/project-guide/topics/knowbot.md               |     2 +
+ ...225\260\346\215\256\346\213\223\346\211\221.md" |     6 +-
+ ...236\266\346\236\204\346\200\273\347\272\262.md" |   131 +
+ ...277\220\350\241\214\346\213\223\346\211\221.md" |    39 +-
+ infrastructure/Makefile                            |     9 +-
+ infrastructure/artifacts/README.md                 |     2 +-
+ infrastructure/artifacts/files.lock.json           |   784 +-
+ infrastructure/artifacts/host-archives.lock.json   |    12 +-
+ infrastructure/artifacts/image-archives.yaml       |     4 +-
+ infrastructure/artifacts/upstream-images.lock.json |    14 +
+ infrastructure/entry/README.md                     |     2 +-
+ infrastructure/entry/config.yaml                   |     5 +
+ infrastructure/host/accounts.md                    |     1 +
+ infrastructure/host/accounts.yaml                  |     2 +-
+ infrastructure/host/deployment.yaml                |     3 +-
+ infrastructure/host/lifecycle.yaml                 |     4 +-
+ infrastructure/jenkins/README.md                   |    65 +
+ infrastructure/jenkins/config.yaml                 |    45 +
+ infrastructure/jenkins/service.yaml                |   330 +
+ infrastructure/jenkins/tasks/secrets.yaml          |   198 +
+ .../jenkins/templates/01-platform.groovy.j2        |    33 +
+ infrastructure/jenkins/templates/compose.yaml.j2   |    81 +
+ infrastructure/jenkins/templates/haproxy.cfg.j2    |    28 +
+ .../jenkins/templates/sunmoon-jenkins.service.j2   |    29 +
+ .../fable-b1.20261020-173741.01-preflight.txt      | 13685 +++++++++++++++++++
+ .../fable-b1.20261020-173741.02-materials.txt      |   419 +
+ .../fable-b1.20261020-173741.03-account-plan.txt   |   123 +
+ .../fable-b1.20261020-173741.04-account-import.txt |   149 +
+ .../fable-b1.20261020-173741.05-jenkins-plan.txt   |   156 +
+ .../fable-b1.20261020-173741.06-jenkins-deploy.txt |   287 +
+ .../fable-b1.20261020-173741.07-jenkins-status.txt |   164 +
+ ...ble-b1.20261020-173741.08-controller-checks.txt |    12 +
+ .../fable-b1.20261020-173741.10-ca-permissions.txt |    18 +
+ scripts/results/fable-b1.20261020-173741.md        |   105 +
+ ...ble-b1.20261020-175616.01-controller-checks.txt |    27 +
+ .../fable-b1.20261020-175616.02-entry-preview.txt  |   210 +
+ .../fable-b1.20261020-175616.03-entry-idle.txt     |     4 +
+ .../fable-b1.20261020-175616.04-entry-stop.txt     |   218 +
+ .../fable-b1.20261020-175616.05-entry-deploy.txt   |   214 +
+ .../fable-b1.20261020-175616.06-entry-checks.txt   |    11 +
+ ...fable-b1.20261020-175616.07-platform-status.txt | 13667 ++++++++++++++++++
+ scripts/results/fable-b1.20261020-175616.md        |   111 +
+ 68 files changed, 31856 insertions(+), 80 deletions(-)
+ create mode 100644 docs/dev-investment-agent/switch-test/done/2026-10-20-fable-b1-jenkins-controller.md
+ create mode 100644 "docs/dev-investment-agent/tree-build/\345\271\263\345\217\260\344\273\243\347\240\201\345\234\260\345\233\276.md"
+ rename "docs/\346\225\260\346\215\256\346\213\223\346\211\221.md" => "docs/\346\200\273\347\272\262/\346\225\260\346\215\256\346\213\223\346\211\221.md" (96%)
+ create mode 100644 "docs/\346\200\273\347\272\262/\346\236\266\346\236\204\346\200\273\347\272\262.md"
+ rename "docs/\350\277\220\350\241\214\346\213\223\346\211\221.md" => "docs/\346\200\273\347\272\262/\350\277\220\350\241\214\346\213\223\346\211\221.md" (82%)
+ create mode 100644 infrastructure/jenkins/README.md
+ create mode 100644 infrastructure/jenkins/config.yaml
+ create mode 100644 infrastructure/jenkins/service.yaml
+ create mode 100644 infrastructure/jenkins/tasks/secrets.yaml
+ create mode 100644 infrastructure/jenkins/templates/01-platform.groovy.j2
+ create mode 100644 infrastructure/jenkins/templates/compose.yaml.j2
+ create mode 100644 infrastructure/jenkins/templates/haproxy.cfg.j2
+ create mode 100644 infrastructure/jenkins/templates/sunmoon-jenkins.service.j2
+ create mode 100644 scripts/results/fable-b1.20261020-173741.01-preflight.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.02-materials.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.03-account-plan.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.04-account-import.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.05-jenkins-plan.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.06-jenkins-deploy.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.07-jenkins-status.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.08-controller-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.10-ca-permissions.txt
+ create mode 100644 scripts/results/fable-b1.20261020-173741.md
+ create mode 100644 scripts/results/fable-b1.20261020-175616.01-controller-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.02-entry-preview.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.03-entry-idle.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.04-entry-stop.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.05-entry-deploy.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.06-entry-checks.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.07-platform-status.txt
+ create mode 100644 scripts/results/fable-b1.20261020-175616.md
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s rev-parse HEAD
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+qwen -> 7e9619db056b97a89d5543d63b9844add825d895
+exit=0

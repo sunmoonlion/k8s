@@ -1,0 +1,53 @@
+== cursor
+$ git -C /home/zymun/worktrees/cursor/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s rev-parse --abbrev-ref HEAD
+cursor
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s rev-parse HEAD
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+$ git -C /home/zymun/worktrees/cursor/k8s rev-list --count origin/cursor..HEAD
+0
+command exit=0
+New per-workstation sync rule present=True
+== kimi
+$ git -C /home/zymun/worktrees/kimi/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s rev-parse --abbrev-ref HEAD
+kimi
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s rev-parse HEAD
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+$ git -C /home/zymun/worktrees/kimi/k8s rev-list --count origin/kimi..HEAD
+0
+command exit=0
+New per-workstation sync rule present=True
+== luna
+$ git -C /home/zymun/worktrees/luna/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s rev-parse --abbrev-ref HEAD
+luna
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s rev-parse HEAD
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+$ git -C /home/zymun/worktrees/luna/k8s rev-list --count origin/luna..HEAD
+0
+command exit=0
+New per-workstation sync rule present=True
+== qwen
+$ git -C /home/zymun/worktrees/qwen/k8s status --porcelain=v1
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s rev-parse --abbrev-ref HEAD
+qwen
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s rev-parse HEAD
+7e9619db056b97a89d5543d63b9844add825d895
+command exit=0
+$ git -C /home/zymun/worktrees/qwen/k8s rev-list --count origin/qwen..HEAD
+0
+command exit=0
+New per-workstation sync rule present=True
+exit=0
