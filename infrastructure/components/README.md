@@ -1,5 +1,7 @@
 # 组件阶段图与集群阶段声明
 
+> 所在层：横切交付链（渲染层）——通用渲染器与阶段图；D 段换 Helm/Kustomize 进 gitops/（暂住）（[总览表](../README.md)）
+
 每个可部署对象（OBJECT）就是`gitops/components/`下含`stage.yaml`的目录；依赖图只来自这些文件，没有第二份集中映射。`gitops/clusters/kind/stages.yaml`由图渲染，Flux按它创建Kustomization阶段。
 
 ## stage.yaml 写法

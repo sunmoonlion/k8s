@@ -1,5 +1,7 @@
 # 公共TLS入口维护
 
+> 所在层：3 宿主层——内网 TLS 入口（[总览表](../README.md)）
+
 HAProxy仅读取ClientHello的SNI做TCP分流，不终止TLS、不持应用或Harbor私钥。公共30443由仓库与应用共用；服务端证书分别由Harbor/Traefik持有。
 
 ## 配置与当前路由

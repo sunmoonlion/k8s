@@ -1,5 +1,7 @@
 # 物料、镜像与版本锁
 
+> 所在层：1 物料层——下载、校验、归档所有外来物料（镜像、二进制、插件）并锁版本（[总览表](../README.md)）
+
 物料根唯一在[site.yaml](../environments/kind/site.yaml)。当前物料根为`/home/zymun/k8s-packages`；物料先按组件归属分类，再按bin/packages/images/charts/manifests/models/databases区分类型；不凭tar/tgz扩展名猜用途。运行数据、秘密、备份和构建日志不放在本目录。
 
 新体系只使用`~/k8s-packages`；`~/packages-to-be-installed`属于原始旧体系，含legacy/kind中的旧kubectl，不从旧目录补物料或设置路径转接。根目录由site.yaml唯一配置，版本/摘要和组件相对路径仍由锁维护。

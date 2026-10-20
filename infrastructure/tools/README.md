@@ -1,5 +1,7 @@
 # 工具安装与依赖维护
 
+> 所在层：1 物料层——工具安装与 Python 依赖锁（[总览表](../README.md)）
+
 工具在本工作树`.venv/`、`.tools/bin/`和版本目录中隔离，服务运行工具另复制到其`/opt/sunmoon/...`目录。宿主Python用于Ansible/校验，不与应用容器Python runtime混为同一版本。
 
 ## 安装前提与入口

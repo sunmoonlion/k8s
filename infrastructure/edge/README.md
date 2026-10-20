@@ -1,5 +1,7 @@
 # 公网边缘（东京 VM）
 
+> 所在层：2 站点层——公网边缘（东京 VM 上的 frps 与 Traefik）（[总览表](../README.md)）
+
 设计见 `docs/design/SDD/modules/0013-edge.md`。只在边缘机上运行；集群侧的 frpc 不在这里。
 
 | 命令（在 `infrastructure/` 下） | 作用 |

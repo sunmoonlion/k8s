@@ -1,5 +1,7 @@
 # KIND集群维护
 
+> 所在层：4 集群层——kind 建群（建法可换的模块之一）（[总览表](../README.md)）
+
 共享身份来自[site](../environments/kind/site.yaml)，参数在[config](config.yaml)，工具和节点身份取[artifacts锁](../artifacts/README.md)。当前正式开发环境sunmoon-kind；原始kind是受保护旧环境，不由此入口接管。
 
 ## 配置和存储

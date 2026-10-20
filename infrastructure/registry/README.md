@@ -1,5 +1,7 @@
 # 外置Harbor维护
 
+> 所在层：3 宿主层——Harbor（[总览表](../README.md)）
+
 Harbor由宿主WSL上的官方离线安装包、同版prepare、官方配套镜像、Compose与systemd运行，数据与KIND节点独立。版本、归档和镜像身份分别见[文件锁](../artifacts/files.lock.json)、[启动镜像锁](../artifacts/harbor-offline-images.lock.json)、[发布策略](release.yaml)；不复制第二套BOM。
 
 ## 安装、启停和前提

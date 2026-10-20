@@ -1,5 +1,7 @@
 # Flux发布与协调维护
 
+> 所在层：5 平台层 + 横切交付链——集群内同步器与声明包发布；D 段换 Argo（暂住）（[总览表](../README.md)）
+
 控制器工具/镜像与部署声明是两类物料。共享源指针唯一在[flux-source.yaml](../environments/kind/flux-source.yaml)，加密recipient在同环境目录，私钥在[秘密维护](secrets.md)说明的私有根。当前实现使用Harbor上的不可变OCI声明，不依赖Flux直接访问远端Git。
 
 ## 引导与查看
