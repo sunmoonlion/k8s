@@ -21,7 +21,7 @@ make -C infrastructure jenkins-status; echo "status exit=$?"
 ssh -n -o BatchMode=yes -o ConnectTimeout=15 -T git@github.com 2>&1 | head -1; echo "ssh exit=$? (1 = ok)"
 ```
 
-要看到：HEAD 是本卡这次提交或更新；`insteadOf` 计数 3（第三处在子仓那条的 argv 模板里）；控制器 `status exit=0`；ssh 那行 `successfully authenticated`。
+要看到：HEAD 是本卡这次提交或更新；`insteadOf` 计数 5（两处注释、克隆、取回、子仓）；控制器 `status exit=0`；ssh 那行 `successfully authenticated`。
 
 ## 二、宿主代理（接原卡第四节）
 
