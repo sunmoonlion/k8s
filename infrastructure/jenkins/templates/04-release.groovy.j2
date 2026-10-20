@@ -14,12 +14,12 @@ def jenkins = Jenkins.get()
 def bootstrap = '''
 def body
 node('{{ jenkins_agent_name }}') {
-  dir('{{ jenkins_repos_dir }}/k8s') {
+  dir('{{ jenkins_repos_dir }}/{{ jenkins_root_repo }}') {
     sh 'git fetch -q origin "+refs/heads/*:refs/remotes/origin/*" && git checkout -q --detach "origin/' + params.BRANCH + '"'
     body = load 'ci/release.groovy'
   }
 }
-body.main(params, '{{ jenkins_repos_dir }}', '{{ jenkins_human_account.username }}')
+body.main(params, '{{ jenkins_repos_dir }}', '{{ jenkins_human_account.username }}', '{{ jenkins_root_repo }}')
 '''
 def wantedParams = ['BRANCH', 'APPS', 'PIN', 'NOTE', 'APPROVAL_TIMEOUT_MINUTES']
 def newParams = {

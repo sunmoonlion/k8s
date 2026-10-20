@@ -10,8 +10,9 @@ if [ -z "${WS:-}" ]; then
   exit 2
 fi
 WS="$WS"
-K8S="$HOME/worktrees/$WS/k8s"; ST="$K8S/docs/process/switch-test"
-FIVE="k8s knowfeed-app knowbench-app knowbase-app tpl-app knowlab-app knowmart-app"
+ROOT_REPO="${ROOT_REPO:-k8s}"   # 根仓目录名；改名 sunmoonun 时改这里（与 infrastructure/jenkins/config.yaml 的 jenkins_root_repo 同步）
+K8S="$HOME/worktrees/$WS/$ROOT_REPO"; ST="$K8S/docs/process/switch-test"
+FIVE="$ROOT_REPO knowfeed-app knowbench-app knowbase-app tpl-app knowlab-app knowmart-app"
 # 父仓下的全部子仓（与 human-remote.sh 同一份）
 SUBS="knowfeed-app/knowfeed-backend knowfeed-app/knowfeed-web-frontend knowfeed-app/knowfeed-admin-frontend
   knowbench-app/knowbench-backend knowbench-app/knowbench-web-frontend knowbench-app/knowbench-admin-frontend
@@ -90,7 +91,7 @@ for name in human-local.sh human-remote.sh; do
 #!/usr/bin/env bash
 # 转发器：跑仓里 WS 工位的最新版（WS 必须给，不猜）；本文件由 human-local.sh 生成，不要手改
 if [ -z "\${WS:-}" ]; then echo "✗ 要指定工位：WS=<fable|cursor|kimi|luna|qwen> bash ~/switch-test/$name" >&2; exit 2; fi
-exec bash "\$HOME/worktrees/\$WS/k8s/docs/process/switch-test/$name" "\$@"
+exec bash "\$HOME/worktrees/\$WS/$ROOT_REPO/docs/process/switch-test/$name" "\$@"
 SHIM
   chmod +x "$HOME/switch-test/$name"
 done

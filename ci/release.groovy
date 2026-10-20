@@ -2,7 +2,7 @@
 // 第 4 步（2026-10-20）：十二个阶段全接上。前半段（1–7）在一段 node 里，人批（8）在 node 外面不占执行器，
 // 后半段（9–12）另一段 node。入口只认 make 的公开目标，不认内部剧本名。D 段换 Argo 时第 7–10 阶段整段替换。
 
-def main(params, reposDir, approver) {
+def main(params, reposDir, approver, rootRepo = 'k8s') {
     def apps = (params.APPS ?: '').trim() ? params.APPS.trim().split(/\s+/) as List : ['tpl', 'knowfeed', 'knowbase', 'knowbench', 'knowlab', 'knowmart']
     def branch = params.BRANCH.trim()
     def note = (params.NOTE ?: '').trim()
@@ -14,7 +14,8 @@ def main(params, reposDir, approver) {
     if (!(approvalMinutes ==~ /[1-9][0-9]{0,4}/)) { error 'APPROVAL_TIMEOUT_MINUTES 要是 1 到 99999 的整数' }
     if (!(approver ==~ /[a-z][a-z0-9_-]{0,31}/)) { error "批准人账号不合法: ${approver}" }
 
-    def k8s = "${reposDir}/k8s"
+    if (!(rootRepo ==~ /[a-z][a-z0-9-]{0,30}/)) { error "根仓名不合法: ${rootRepo}" }
+    def k8s = "${reposDir}/${rootRepo}"   // 根仓的克隆（名字由引导从 jenkins_root_repo 传入）
     def n = env.BUILD_NUMBER
     def out = "infrastructure/.build/release/${n}"
     def state = [commit: '', candidate: '', pointerCommit: '', tag: '', approvedBy: '', pushed: false, nothing: false]

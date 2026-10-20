@@ -101,6 +101,8 @@
 | 活文档里的 `~/worktrees/<ws>/k8s`、`/mnt/sunmoon-data/jenkins/repos/k8s` | 改；历史回执不改 |
 | `AGENTS.md`、`README.md`、总纲 | 仓名 |
 
+**5.1 已做（2026-10-21，所有者「先把仓内准备做了」）**：`jenkins_root_repo`（config.yaml，今天 `k8s`）进了 `agent.yaml`、`workspace.yaml`、两份引导、`ci/release.groovy`（`main` 多一个 `rootRepo` 参数，引导传入）；三个同步脚本和 `scripts/test_switch_test_sync.py` 改读 `ROOT_REPO`（默认 `k8s`）。改名那天：`jenkins_root_repo: sunmoonun`、三处 `ROOT_REPO` 默认值、活文档里的 `~/worktrees/<ws>/k8s` 与 `repos/k8s`，一笔提交。
+
 ### 5.2 两台机器上要做的（一次坐下来做完，所有者在场）
 
 顺序固定，先远程后本地，每步可回退（改回去就是）：

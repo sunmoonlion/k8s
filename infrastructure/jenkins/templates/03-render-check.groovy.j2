@@ -13,7 +13,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 def jenkins = Jenkins.get()
 def bootstrap = '''
 node('{{ jenkins_agent_name }}') {
-  dir('{{ jenkins_repos_dir }}/k8s') {
+  dir('{{ jenkins_repos_dir }}/{{ jenkins_root_repo }}') {
     sh 'git fetch -q origin "+refs/heads/*:refs/remotes/origin/*" && git checkout -q --detach "origin/' + params.BRANCH + '"'
     def body = load 'ci/render-check.groovy'
     body.run(params, '{{ jenkins_repos_dir }}')

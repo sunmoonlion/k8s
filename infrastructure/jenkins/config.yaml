@@ -55,6 +55,8 @@ jenkins_agent_dir: '{{ jenkins_data_dir }}/agent'
 jenkins_repos_dir: '{{ jenkins_data_dir }}/repos'
 # 仓从哪克隆：按 fable 工位各仓的 origin（宿主用户已有的 git 凭据）；子仓按父仓 gitlink 检出
 jenkins_repo_source_workspace: fable
+# 根仓的目录名（代理克隆、引导脚本、工位路径都用它）。改名 sunmoonun 那天只改这一处再重装代理与控制器（SDD 0038 第五节）。
+jenkins_root_repo: k8s
 # 代理上要装的工具（装在仓克隆里的 .tools，与人的工位一样）
 jenkins_tools_binaries: kubectl,compose
 # render-check 的定时：每 10 分钟看一眼 origin 有没有新提交，没有就不跑（只读检查）

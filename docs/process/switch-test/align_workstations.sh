@@ -12,7 +12,8 @@
 # 只 git fetch 与本地检出；push-branches 之外不推任何东西。
 set -uo pipefail
 WS_LIST=(master cursor fable kimi luna qwen)
-REPOS=(k8s sunmoon-link knowfeed-app knowbase-app knowbench-app tpl-app knowlab-app knowmart-app)
+ROOT_REPO="${ROOT_REPO:-k8s}"
+REPOS=("$ROOT_REPO" sunmoon-link knowfeed-app knowbase-app knowbench-app tpl-app knowlab-app knowmart-app)
 MODE=${1:-}; APPLY=${2:-}
 case "$MODE:$APPLY" in list:|align:|align:--apply|push-branches:|push-branches:--apply) ;; *) echo "用法: bash $0 list | align [--apply] | push-branches [--apply]"; exit 2 ;; esac
 STAMP=$(date +%Y%m%d-%H%M%S)

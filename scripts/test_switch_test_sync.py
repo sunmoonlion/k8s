@@ -9,7 +9,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "docs/process/switch-test/human-remote.sh"
-PARENTS = ("k8s", "knowfeed-app", "knowbench-app", "knowbase-app", "tpl-app")
+ROOT_REPO = "k8s"  # 根仓目录名，与 human-*.sh 的 ROOT_REPO 同步
+PARENTS = (ROOT_REPO, "knowfeed-app", "knowbench-app", "knowbase-app", "tpl-app")
 CHILDREN = ("knowbench-app/knowbench-backend", "knowbase-app/knowbase-backend")
 
 
@@ -76,9 +77,9 @@ class PublishTests(unittest.TestCase):
 
     def test_publish_rebases_onto_new_origin_commits(self):
         # 远程助手在本地跑测试期间又推了提交：回传要先叠上去再推，不应被非快进拒绝
-        parent = self.worktrees / "k8s"
+        parent = self.worktrees / ROOT_REPO
         other = self.root / "other-k8s"
-        run("git", "clone", "-q", "-b", "fable", str(self.origins["k8s"]), str(other))
+        run("git", "clone", "-q", "-b", "fable", str(self.origins[ROOT_REPO]), str(other))
         git(other, "config", "user.name", "Remote"); git(other, "config", "user.email", "remote@example.invalid")
         git(other, "config", "commit.gpgsign", "false")
         (other / "remote-note.txt").write_text("from remote\n")
@@ -127,12 +128,12 @@ class PublishTests(unittest.TestCase):
         hook = self.origins[CHILDREN[0]] / "hooks/pre-receive"
         hook.write_text("#!/bin/sh\nexit 1\n")
         hook.chmod(0o755)
-        parent = self.worktrees / "k8s"
+        parent = self.worktrees / ROOT_REPO
         before = git(parent, "rev-parse", "HEAD")
         (parent / "local.txt").write_text("still uncommitted\n")
         self.publish(success=False)
         self.assertEqual(git(parent, "rev-parse", "HEAD"), before)
-        self.assertEqual(git(self.origins["k8s"], "rev-parse", "fable"), before)
+        self.assertEqual(git(self.origins[ROOT_REPO], "rev-parse", "fable"), before)
 
     def test_wrong_named_child_branch_stops_before_commits(self):
         repo = self.worktrees / CHILDREN[0]

@@ -12,7 +12,7 @@
     jre: '{{ files.files | selectattr("id", "equalto", "temurin-jre") | first }}'
     jre_dir: '{{ jenkins_runtime_dir }}/jre/{{ jre.version | replace("+", "_") }}'
     jenkins_home: '{{ jenkins_data_dir }}/home'
-    jenkins_repos: '{{ ["k8s"] + (application_names | map("regex_replace", "$", "-app") | list) }}'
+    jenkins_repos: '{{ [jenkins_root_repo] + (application_names | map("regex_replace", "$", "-app") | list) }}'
     controller_base: 'https://127.0.0.1:{{ jenkins_https_port }}'
     # check 动作：跑一个任务并等结果。默认是只读的 render-check；make jenkins-release-run 换成 release（第 3 步）。
     jenkins_run_job: render-check
@@ -32,6 +32,7 @@
           - jenkins_agent_dir is match('^' + (jenkins_data_dir | regex_escape) + '/[a-z0-9-]+$')
           - jenkins_repos_dir is match('^' + (jenkins_data_dir | regex_escape) + '/[a-z0-9-]+$')
           - jenkins_repo_source_workspace is match('^[a-z]+$')
+          - jenkins_root_repo is match('^[a-z][a-z0-9-]{0,30}$')
           - jenkins_render_check_branch is match('^[a-z0-9-]+$')
           - jenkins_run_job in ['render-check', 'release']
           - jenkins_run_params is mapping
