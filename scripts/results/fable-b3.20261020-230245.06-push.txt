@@ -1,0 +1,10 @@
++command: git push origin fable
+To https://github.com/sunmoonlion/k8s.git
+   62d44f99..ffd8ff91  fable -> fable
+remote: Powered by [01;33mGITEE.COM [0m[1.1.23]        
+remote: Set trace flag f146c696        
+To https://gitee.com/sunmoonlion/k8s.git
+   62d44f99..ffd8ff91  fable -> fable
+
+exit=0
+
