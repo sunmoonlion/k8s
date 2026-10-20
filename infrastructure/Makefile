@@ -195,13 +195,16 @@ jenkins-agent-plan jenkins-agent-deploy jenkins-agent-start jenkins-agent-stop j
 	$(ANSIBLE) -i host/inventory.yaml jenkins/agent.yaml $(CONFIG_ARGS) --extra-vars 'jenkins_agent_action=$(patsubst jenkins-agent-%,%,$@)'
 # release 流水线跑一次并等结果（0033 第四节；第 3 步只到第 5 阶段「计划」，不提交）。
 # RELEASE_BRANCH、APPS（空格分隔）、PIN=keep|heads、NOTE（一行，不含引号）；参数经 urlencode 进请求，中文可以。
+# APPROVAL_TIMEOUT_MINUTES：第 8 阶段等人批多久（默认 24 小时）；等待上限 = 90 分钟构建与部署 + 审批时长。
+# 结果 NOT_BUILT = 无差异不发，也算过；ABORTED（拒绝或超时）与 FAILURE 退出非 0。
 RELEASE_BRANCH ?= fable
 APPS ?= tpl
 PIN ?= keep
 NOTE ?=
+APPROVAL_TIMEOUT_MINUTES ?= 1440
 .PHONY: jenkins-release-run
 jenkins-release-run:
-	$(ANSIBLE) -i host/inventory.yaml jenkins/agent.yaml $(CONFIG_ARGS) --extra-vars 'jenkins_agent_action=check jenkins_run_job=release jenkins_run_timeout_seconds=5400' --extra-vars '{"jenkins_run_ok_results":["SUCCESS"],"jenkins_run_params":{"BRANCH":"$(RELEASE_BRANCH)","APPS":"$(APPS)","PIN":"$(PIN)","NOTE":"$(NOTE)"}}'
+	$(ANSIBLE) -i host/inventory.yaml jenkins/agent.yaml $(CONFIG_ARGS) --extra-vars 'jenkins_agent_action=check jenkins_run_job=release jenkins_run_timeout_seconds=$(shell echo $$((5400 + $(APPROVAL_TIMEOUT_MINUTES) * 60)))' --extra-vars '{"jenkins_run_ok_results":["SUCCESS","NOT_BUILT"],"jenkins_run_params":{"BRANCH":"$(RELEASE_BRANCH)","APPS":"$(APPS)","PIN":"$(PIN)","NOTE":"$(NOTE)","APPROVAL_TIMEOUT_MINUTES":"$(APPROVAL_TIMEOUT_MINUTES)"}}'
 
 .PHONY: prepare-host-materials check-host-materials
 prepare-host-materials:
