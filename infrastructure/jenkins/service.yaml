@@ -228,6 +228,14 @@
             label: '{{ item.dest }}'
           diff: false
 
+        - name: Remove init scripts written without the .override suffix by earlier deploys (they would be skipped by the image entrypoint anyway)
+          ansible.builtin.file:
+            path: '{{ item.dest | regex_replace("\\.override$", "") }}'
+            state: absent
+          loop: '{{ jenkins_runtime_files | selectattr("dest", "search", "\\.groovy\\.override$") | list }}'
+          loop_control:
+            label: '{{ item.dest | regex_replace("\\.override$", "") }}'
+
         - name: Install verified Compose independent of the worktree
           ansible.builtin.copy:
             src: '{{ playbook_dir }}/../.tools/bin/docker-compose'
