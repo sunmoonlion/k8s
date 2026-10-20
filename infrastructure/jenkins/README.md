@@ -81,6 +81,7 @@ make -C infrastructure jenkins-status
 - 代理：`jenkins-agent-status` 退出 0（节点在线）；`systemctl show sunmoon-jenkins-agent.service` 里 `User=` 是宿主用户、`UnitFileState=enabled`；Jenkins 页面「节点」里 `host` 在线、执行器 1。
 - render-check：`jenkins-agent-check` 退出 0，结果 `SUCCESS`（或 `NOT_BUILT` 表示分支头没变），控制台日志在 `infrastructure/.build/jenkins/render-check-<n>.log`；产物 `diff.txt` 在任务页。
 - 边缘：不关证书校验地验「边缘没有这个域名」：`openssl s_client -servername jenkins.sunmoonai.com -connect <边缘IP>:30443` 回的是 Traefik 的默认自签证书（主题不是 jenkins.sunmoonai.com），`curl`（不加 `-k`）退出 60。有合法证书且回 200 才算泄露。
+- 有没有构建在跑（重启控制器前要看）：`build.xml` 在构建进行中就已写着 `<result>SUCCESS</result>` 占位，不能拿它判；看 `<duration>0</duration>`（进行中）加 `jobs/*/builds/*/log` 的 mtime 还在长，以及 `queue.xml` 里有没有 `BuildableItem`/`WaitingItem`。定时器每 10 分钟一发，「扫一次再停」之间有窗口，被打断的定时构建会自行恢复但那次记 FAILURE，无害（2026-10-20 回执 fable-b3 第二版）。
 - release：`jenkins-release-run APPS=tpl PIN=keep` 退出 0，结果 `SUCCESS`，构建页有 `infrastructure/.build/release/<n>/` 下的产物；跑完代理仓 `git status --short --untracked-files=no` 为空。
 - 控制器单元 `SuccessExitStatus=130 143`：`jenkins-stop` 后单元是 `inactive`，不再 `failed`（第 3 步改的）。
 - 开机：`wsl --shutdown` 后随 `sunmoon-platform.target` 自己起来（0033 第七节第 4 条，账 104 的一部分）。

@@ -230,11 +230,12 @@
 
         - name: Remove init scripts written without the .override suffix by earlier deploys (they would be skipped by the image entrypoint anyway)
           ansible.builtin.file:
-            path: '{{ item.dest | regex_replace("\\.override$", "") }}'
+            # 正则里不用反斜杠：YAML 单引号里的 \\. 到 Jinja 不会还原成 \.，选不中任何项（b3 第二版 /opt 里旧文件没删掉）
+            path: '{{ item.dest | regex_replace("[.]override$", "") }}'
             state: absent
-          loop: '{{ jenkins_runtime_files | selectattr("dest", "search", "\\.groovy\\.override$") | list }}'
+          loop: '{{ jenkins_runtime_files | selectattr("dest", "search", "groovy[.]override$") | list }}'
           loop_control:
-            label: '{{ item.dest | regex_replace("\\.override$", "") }}'
+            label: '{{ item.dest | regex_replace("[.]override$", "") }}'
 
         - name: Install verified Compose independent of the worktree
           ansible.builtin.copy:

@@ -300,7 +300,8 @@
           register: build
           no_log: true
           until: not build.json.building
-          retries: '{{ (jenkins_run_timeout_seconds / 15) | int }}'
+          # --extra-vars 传进来的是字符串，先 | int 再除（2026-10-20 回执 fable-b3 第二版）
+          retries: '{{ ((jenkins_run_timeout_seconds | int) / 15) | int }}'
           delay: 15
         - name: Create the local directory for build consoles
           ansible.builtin.file:

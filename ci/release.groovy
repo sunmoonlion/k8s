@@ -24,7 +24,8 @@ def run(params, reposDir) {
 
     try {
         stage('1 核对') {
-            // 工作区必须干净（引导已经把 k8s 检到分支头；这里看的是上次有没有留下东西）
+            // 工作区必须干净（引导已经把 k8s 检到分支头；这里看的是上次有没有留下东西）。
+            // 应用仓这里先同步到分支头（PIN=heads 要读 origin/<branch>），第 2 阶段末尾再按钉对齐。
             def dirty = sh(script: 'git status --porcelain --untracked-files=no -- gitops infrastructure/applications/sources.yaml', returnStdout: true).trim()
             if (dirty) { error "工作区不干净:\n${dirty}" }
             for (app in apps) {
@@ -42,6 +43,8 @@ def run(params, reposDir) {
                 echo 'PIN=keep：sources.yaml 按已提交的钉，不改'
             }
             sh "git diff -- infrastructure/applications/sources.yaml > '${out}/2-sources.diff'; git diff --stat -- infrastructure/applications/sources.yaml"
+            // 按钉对齐检出：构建链要求子仓 HEAD 恰等于钉的号；第 1 阶段检的是分支头，PIN=keep 时钉常落后于头（b3 第二版撞的闸）
+            logged('2-align', "python3 ci/align-sources.py --repos '${reposDir}' --apps '${apps.join(' ')}'")
             // 前置核对：钉到的后端的 alembic 头要等于 expected_schema_revision；不对就停在这里，不进构建
             for (app in apps) {
                 logged("2-plan-${app}", "make -C infrastructure application-deployment-plan APP=${app}")
