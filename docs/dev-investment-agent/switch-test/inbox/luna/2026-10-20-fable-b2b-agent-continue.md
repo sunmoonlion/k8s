@@ -6,7 +6,7 @@
 
 ```text
 被测仓：k8s；工位 WS=fable（所有者指定）：~/worktrees/fable/k8s，分支 fable；远程和本地都只推拉这个分支
-改动（本次）：infrastructure/jenkins/tasks/workspace.yaml（循环项、SSH 改写）、templates/sunmoon-jenkins-agent.service.j2（SuccessExitStatus=143）、README
+改动（本次）：infrastructure/jenkins/tasks/workspace.yaml（循环项、SSH 改写、对象从本机工位拷）、templates/sunmoon-jenkins-agent.service.j2（SuccessExitStatus=143）、README
 会联网的：克隆七个仓（GitHub SSH）、uv 装 .venv、下载工具二进制
 停下的规则：任何一步 exit 不是 0 就停，输出原样进回执，不重试、不退回；ssh 用 -n，别放进 heredoc 的 stdin
 不碰：控制器（不 stop/deploy）、入口、集群、应用、Harbor 数据；不写库；不替所有者在界面里点
@@ -25,6 +25,20 @@ ssh -n -o BatchMode=yes -o ConnectTimeout=15 -T git@github.com 2>&1 | head -1; e
 
 ## 二、宿主代理（接原卡第四节）
 
+先清掉上一轮没克隆完的半截仓（那一轮走 GitHub 只有几十 KB/s，所有者已叫停）。`repos/` 是代理的数据目录，不是人的工位，里面没有人的工作，可以删：
+
+```bash
+bash <<'SH'
+ls -la /mnt/sunmoon-data/jenkins/repos
+for d in /mnt/sunmoon-data/jenkins/repos/*/; do [ -d "$d" ] && sudo -n -u zymun rm -rf "$d"; done
+ls -A /mnt/sunmoon-data/jenkins/repos | wc -l
+SH
+```
+
+要看到：最后一行 `0`。
+
+这次克隆不再从 GitHub 拉历史：对象从你工位 `~/worktrees/fable/<仓>` 的对象库拷（本机盘对盘，秒级），拷完断开，GitHub 只补工位里没有的新提交。七个仓加九个子仓一两分钟内该克隆完；要是又卡在克隆几分钟不动，停下，把 `ps -o pid,etime,args -u zymun | grep 'git '` 的输出（没有口令）贴进回执。
+
 ```bash
 make -C infrastructure jenkins-agent-plan; echo "plan exit=$?"
 make -C infrastructure jenkins-agent-deploy; echo "deploy exit=$?"
@@ -37,7 +51,7 @@ git -C /mnt/sunmoon-data/jenkins/repos/knowbench-app submodule status | cut -c1-
 SH
 ```
 
-要看到：deploy 退出 0（克隆七个仓加子仓、装 .venv 与工具，十来分钟）；`ActiveState=active`、`UnitFileState=enabled`、`User=zymun`、`WantedBy=sunmoon-platform.target`；`repos` 下七个目录；`.venv`、`.tools/bin` 在；knowbench 的三个子仓有提交号（不是 `-` 开头）。
+要看到：deploy 退出 0（克隆一两分钟，装 .venv 与工具要联网下载，几分钟到十来分钟）；`ActiveState=active`、`UnitFileState=enabled`、`User=zymun`、`WantedBy=sunmoon-platform.target`；`repos` 下七个目录；`.venv`、`.tools/bin` 在；knowbench 的三个子仓有提交号（不是 `-` 开头）。
 
 deploy 不是 0：贴失败任务那段与 `journalctl -u sunmoon-jenkins-agent.service --since '20 min ago' | tail -40`（没有口令）。
 
