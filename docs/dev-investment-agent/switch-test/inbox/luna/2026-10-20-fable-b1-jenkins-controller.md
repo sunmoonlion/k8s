@@ -2,6 +2,8 @@
 
 > 状态：**可执行**（远程 Fable 2026-10-20 写；所有者「可以开始 B」）。设计 [0033](../../../tree-build/SDD/modules/0033-jenkins-on-host.md) 第八节第 1 步，手册 [`infrastructure/jenkins/README.md`](../../../../../infrastructure/jenkins/README.md)。
 > 这一步只把控制器起来、入口加一条路由、管理员口令导入。不碰集群、不发版、不动 Harbor 里的东西、不改任何应用。
+>
+> **第二次接续（2026-10-20 晚）**：第一、二节和第三节的 plan/deploy/status 已过（回执 `scripts/results/fable-b1.20261020-173741.md`：归档 sha256 与锁一致、预设已导入、控制器 active 且 enabled、剧本内三项核对都过）。停在第三节的独立 curl：`/etc/sunmoon/registry/tls/` 是 root 0700，普通用户读不到 CA，退出 77。这是卡写错了执行身份，不是控制器的问题。**从第三节的 bash 块接着跑**（curl 改成 `sudo -n`），不要重跑 deploy；然后第四节。
 
 ```text
 被测仓：k8s，fable 工位 ~/worktrees/fable/k8s，分支 fable（luna 在本地机的 fable 工位跑平台线的卡，所有者 2026-10-20）
@@ -40,10 +42,11 @@ make -C infrastructure jenkins-plan; echo "plan exit=$?"
 make -C infrastructure jenkins-deploy; echo "deploy exit=$?"
 make -C infrastructure jenkins-status; echo "status exit=$?"
 bash <<'SH'
-sudo ss -ltnp | grep -E ':18443|:18080|:50000' ; echo "ports listed above must all be 127.0.0.1"
-curl -sS -o /dev/null -w 'tls login %{http_code}\n' --cacert /etc/sunmoon/registry/tls/ca.crt https://127.0.0.1:18443/login
+sudo -n ss -ltnp | grep -E ':18443|:18080|:50000' ; echo "ports listed above must all be 127.0.0.1"
+# CA 在 root 0700 的目录里，独立 curl 用 sudo 读（和剧本里 become 的检查同一身份）；判据不变
+sudo -n curl -sS -o /dev/null -w 'tls login %{http_code}\n' --cacert /etc/sunmoon/registry/tls/ca.crt https://127.0.0.1:18443/login
 curl -sS -o /dev/null -w 'http login %{http_code}\n' http://127.0.0.1:18080/login
-curl -sS -o /dev/null -w 'anonymous api %{http_code}\n' --cacert /etc/sunmoon/registry/tls/ca.crt https://127.0.0.1:18443/api/json
+sudo -n curl -sS -o /dev/null -w 'anonymous api %{http_code}\n' --cacert /etc/sunmoon/registry/tls/ca.crt https://127.0.0.1:18443/api/json
 systemctl show sunmoon-jenkins.service --property=ActiveState,UnitFileState,WantedBy | cat
 SH
 ```
@@ -59,8 +62,8 @@ make -C infrastructure entry-preview; echo "preview exit=$?"
 make -C infrastructure entry-stop; echo "stop exit=$?"
 make -C infrastructure entry-deploy; echo "deploy exit=$?"
 bash <<'SH'
-curl -sS -o /dev/null -w 'via entry %{http_code}\n' --cacert /etc/sunmoon/registry/tls/ca.crt --resolve jenkins.sunmoonai.com:30443:127.0.0.1 https://jenkins.sunmoonai.com:30443/login
-curl -sS -o /dev/null -w 'harbor still %{http_code}\n' --cacert /etc/sunmoon/registry/tls/ca.crt --resolve harbor.sunmoonai.com:30443:127.0.0.1 https://harbor.sunmoonai.com:30443/api/v2.0/health
+sudo -n curl -sS -o /dev/null -w 'via entry %{http_code}\n' --cacert /etc/sunmoon/registry/tls/ca.crt --resolve jenkins.sunmoonai.com:30443:127.0.0.1 https://jenkins.sunmoonai.com:30443/login
+sudo -n curl -sS -o /dev/null -w 'harbor still %{http_code}\n' --cacert /etc/sunmoon/registry/tls/ca.crt --resolve harbor.sunmoonai.com:30443:127.0.0.1 https://harbor.sunmoonai.com:30443/api/v2.0/health
 SH
 make -C infrastructure platform-status; echo "status exit=$?"
 ```
@@ -73,7 +76,7 @@ make -C infrastructure platform-status; echo "status exit=$?"
 
 ## 六、回执
 
-`scripts/results/fable-b1.<时间>.md`：每节命令与 exit、第三节四行 curl 与 systemctl 输出、第四节两行 curl、停在哪（若有）。不拍、不抄任何口令。
+`scripts/results/fable-b1.<时间>.md`（第二次用新时间戳，另起一份，不改第一次的）：每节命令与 exit、第三节四行 curl 与 systemctl 输出、第四节两行 curl、停在哪（若有）。不拍、不抄任何口令。
 
 ## 七、推回（新规矩，不再经所有者的脚本）
 

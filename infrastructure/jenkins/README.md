@@ -61,5 +61,5 @@ make -C infrastructure jenkins-status
 - `jenkins-status` 退出 0，`ActiveState=active`。
 - 内网：浏览器开 `https://jenkins.sunmoonai.com:30443/`，证书由平台 CA 签（和 Harbor 一样），用第 13 项登录。
 - 边缘：从东京边缘访问同一域名得 404（0013 未列出的域名）。
-- 宿主：`curl --cacert /etc/sunmoon/registry/tls/ca.crt https://127.0.0.1:18443/login` 200；`http://127.0.0.1:18080/login` 200（代理用）；`ss -ltn` 里三个端口都只在 127.0.0.1。
+- 宿主：`sudo curl --cacert /etc/sunmoon/registry/tls/ca.crt https://127.0.0.1:18443/login` 200（CA 在 root 0700 的目录里，要 sudo）；`http://127.0.0.1:18080/login` 200（代理用）；`ss -ltn` 里三个端口都只在 127.0.0.1。
 - 开机：`wsl --shutdown` 后随 `sunmoon-platform.target` 自己起来（0033 第七节第 4 条，账 104 的一部分）。
