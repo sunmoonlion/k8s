@@ -302,4 +302,38 @@ cd ~/worktrees/fable/sunmoonun && git pull --ff-only origin fable \
 
 ### 推回原文
 
-（推送后补写）
+```text
+$ git pull --ff-only origin fable
+From github.com:sunmoonlion/sunmoonun
+ * branch                fable      -> FETCH_HEAD
+Already up to date.
+pull exit=0
+
+$ git add … && git mv … && git status --short
+R  docs/process/switch-test/inbox/qwen/2026-10-21-fable-b5-4-rename-sunmoonun.md -> docs/process/switch-test/done/2026-10-21-fable-b5-4-rename-sunmoonun.md
+A  scripts/results/fable-b5-4.20261021-0226.md
+
+$ git commit -m "fable-b5-4 回执：根仓改名 sunmoonun，本地机（qwen）"
+[fable 4a3bf74ab] fable-b5-4 回执：根仓改名 sunmoonun，本地机（qwen）
+ 2 files changed, 305 insertions(+)
+ rename docs/process/switch-test/{inbox/qwen => done}/2026-10-21-fable-b5-4-rename-sunmoonun.md (100%)
+ create mode 100644 scripts/results/fable-b5-4.20261021-0226.md
+commit exit=0
+
+$ git push origin fable
+To github.com:sunmoonlion/sunmoonun.git
+   fc9f47c8b..4a3bf74ab  fable -> fable
+remote: Powered by GITEE.COM [1.1.23]
+remote: Set trace flag 1d477da7
+To https://gitee.com/sunmoonlion/sunmoonun.git
+   fc9f47c8b..4a3bf74ab  fable -> fable
+push exit=0
+
+$ git status --short                                   → 空
+$ git rev-list --left-right --count origin/fable...HEAD → 0  0
+$ git log --oneline -1                                  → 4a3bf74ab (HEAD -> fable, origin/fable)
+```
+
+只有两样改动：回执新增（`A`）与卡移 `done/`（`R`，100% 相同）✓，符合「只提交回执与卡的移动」。**推送走的是第三节改过的新地址**：GitHub 那条是 SSH（`To github.com:sunmoonlion/sunmoonun.git`）、Gitee 那条是 https，两站同一号 `fc9f47c8b..4a3bf74ab`，一条 `git push origin fable` 同时到双远程。本节这段推回原文是推完之后补写的，故还有一笔只动本回执的补写提交。
+
+`/tmp/b54-*.log` 19 个一次性日志已删（删除后 `ls /tmp/b54-*` 报 `no matches found`）；`infrastructure/.build/jenkins/render-check-51.log` 是 make 链自己的产物，按规矩留在 `.build/`、不进 git。
