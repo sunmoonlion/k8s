@@ -1,0 +1,9 @@
+2026-10-20T19:20:00.755241+08:00
+Read-only current timer #1 progress; selected stage and task names only.
+TASK [Verify candidate using independent recovery identity] ********************
+TASK [Inspect the candidate and the committed ciphertext] **********************
+TASK [Seed the candidate from the committed ciphertext when this worktree has none yet] ***
+first timer log path=/mnt/sunmoon-data/jenkins/home/jobs/render-check/builds/1/log
+file bytes=280275
+
+exit=0

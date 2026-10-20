@@ -1,0 +1,39 @@
+2026-10-20T19:19:19.822487+08:00
+Read-only persisted Jenkins build metadata; no credential reads, no API request or job trigger.
+build=1
+result=None
+timestamp=1792492560195
+duration=0
+displayName=#1 fable@a686ce59fe
+timer cause=True
+live console path=/mnt/sunmoon-data/jenkins/home/jobs/render-check/builds/1/log bytes=236297
+build=2
+result=None
+timestamp=1792493160181
+duration=0
+displayName=None
+timer cause=True
+live console path=/mnt/sunmoon-data/jenkins/home/jobs/render-check/builds/2/log bytes=956
+build=3
+result=None
+timestamp=1792493760181
+duration=0
+displayName=None
+timer cause=True
+live console path=/mnt/sunmoon-data/jenkins/home/jobs/render-check/builds/3/log bytes=956
+build=4
+result=None
+timestamp=1792494360181
+duration=0
+displayName=None
+timer cause=True
+live console path=/mnt/sunmoon-data/jenkins/home/jobs/render-check/builds/4/log bytes=956
+build=5
+result=None
+timestamp=1792494960182
+duration=0
+displayName=None
+timer cause=True
+live console path=/mnt/sunmoon-data/jenkins/home/jobs/render-check/builds/5/log bytes=984
+
+exit=0

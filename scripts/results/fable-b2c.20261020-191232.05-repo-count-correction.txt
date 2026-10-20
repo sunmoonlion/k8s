@@ -1,0 +1,19 @@
+2026-10-20T19:17:14.307307+08:00
+Execution check correction: Jenkins creates sibling @tmp directories; repo count must count Git repos, not every directory. Preserve previous exit=1 output.
+Git repos=k8s,knowbase-app,knowbench-app,knowfeed-app,knowlab-app,knowmart-app,tpl-app
+Git repo count=7
+Jenkins companion directory: k8s@tmp
+Jenkins companion directory: knowbase-app@tmp
+Jenkins companion directory: knowbench-app@tmp
+Jenkins companion directory: knowfeed-app@tmp
+Jenkins companion directory: knowlab-app@tmp
+Jenkins companion directory: knowmart-app@tmp
+Jenkins companion directory: tpl-app@tmp
+ 26964553ed9d581ac855c38edeaee8e65add792f knowbench-admin-frontend (2.0.0-14-g2696455)
+ 44888e23934fc50479fb0ddba978e794f62236a4 knowbench-backend (2.0.0-158-g44888e2)
+ 4748b94ebf589ee870ca5efa097f212a59a1d04e knowbench-web-frontend (2.0.0-101-g4748b94)
+$ sudo -n find /mnt/sunmoon-data/jenkins/repos -name alternates
+find exit=0
+alternates count=0
+
+exit=0

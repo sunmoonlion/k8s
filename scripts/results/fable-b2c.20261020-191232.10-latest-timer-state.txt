@@ -1,0 +1,11 @@
+2026-10-20T19:22:22.866869+08:00
+result=None
+timestamp=1792492560195
+duration=0
+displayName=#1 fable@a686ce59fe
+TASK [Inspect the candidate and the committed ciphertext] **********************
+TASK [Seed the candidate from the committed ciphertext when this worktree has none yet] ***
+TASK [Read prior ciphertext through the independent backup identity] ***********
+console bytes=416801
+
+exit=0
