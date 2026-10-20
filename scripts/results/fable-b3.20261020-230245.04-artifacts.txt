@@ -1,0 +1,52 @@
+infrastructure/.build/jenkins/release-2.log
+13:[Pipeline] { (ci/release.groovy)
+21:[Pipeline] { (1 核对)
+13703:[Pipeline] { (2 改钉)
+13710:tpl: parent 65b8b11d3c backend ab7139389c web 479c7e6ce6 admin b89e474191
+13834:[Pipeline] { (3 构建)
+14914:[Pipeline] { (4 暂存)
+16075:[Pipeline] { (5 计划)
+16202:[Pipeline] { (秘密样子核查与产物)
+16205:total=0
+16211:[Pipeline] { (工作区回到干净)
+16223:Finished: SUCCESS
+/mnt/sunmoon-data/jenkins/repos/k8s/infrastructure/.build/release/2
+1-platform-status.log
+2-align.log
+2-plan-tpl.log
+2-sources.diff
+3-build-tpl.log
+3-image-locks.txt
+4-gitops-touched.txt
+4-gitops.stat
+4-stage-tpl.log
+4-workload.diff
+5-plan-tpl.log
+2-sources.diff: 0 lines
+2-align.log
+tpl: parent 65b8b11d3c backend ab7139389c web 479c7e6ce6 admin b89e474191
+3-image-locks.txt
+4-gitops-touched.txt
+      1 components/app-platform/tpl-app/tpl-admin-frontend
+      1 components/app-platform/tpl-app/tpl-web-frontend
+4-gitops.stat
+ .../components/app-platform/tpl-app/tpl-admin-frontend/workload.yaml  | 4 ++++
+ gitops/components/app-platform/tpl-app/tpl-web-frontend/workload.yaml | 4 ++++
+ 2 files changed, 8 insertions(+)
+4-workload.diff: 12 lines; first 60:
++++ b/gitops/components/app-platform/tpl-app/tpl-admin-frontend/workload.yaml
+@@ -79,6 +79,10 @@ spec:
++          # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
++          - path: /api/internal
++            pathType: Prefix
++            backend: {service: {name: tpl-admin, port: {number: 3000}}}
++++ b/gitops/components/app-platform/tpl-app/tpl-web-frontend/workload.yaml
+@@ -79,6 +79,10 @@ spec:
++          # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
++          - path: /api/internal
++            pathType: Prefix
++            backend: {service: {name: tpl-web, port: {number: 3000}}}
+agent k8s tracked working tree:
+clean-check-done
+
+exit=0

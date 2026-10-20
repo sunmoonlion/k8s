@@ -1,0 +1,45 @@
+385:/mnt/sunmoon-data/jenkins/repos/k8s/infrastructure/../gitops/components/app-platform/tpl-app/tpl-backend/image.lock.yaml: 已是这一份（sha256:395b14bed28e）
+725:/mnt/sunmoon-data/jenkins/repos/k8s/infrastructure/../gitops/components/app-platform/tpl-app/tpl-web-frontend/image.lock.yaml: 已是这一份（sha256:a7cf0f3844d1）
+1065:/mnt/sunmoon-data/jenkins/repos/k8s/infrastructure/../gitops/components/app-platform/tpl-app/tpl-admin-frontend/image.lock.yaml: 已是这一份（sha256:f2e8ca667609）
+gitops/components/app-platform/tpl-app/tpl-backend/image.lock.yaml equals committed baseline=True
+# Built and published through the native chain; written by application-lock-* after a successful publish.
+---
+repository: tpl-backend
+digest: sha256:395b14bed28e4f728959310a83d74dafc45f100a592d04d85114cc44250d893f
+source_revision: ab7139389cbc40a04459a3403ffc5ee4c8e26d89
+deployment_id: tpl-backend-395b14bed28e4f72
+gitops/components/app-platform/tpl-app/tpl-web-frontend/image.lock.yaml equals committed baseline=True
+# Built and published through the native chain; written by application-lock-* after a successful publish.
+---
+repository: tpl-web-frontend
+digest: sha256:a7cf0f3844d1dfc792dec6957d06bfb643fe454a91cc42ba35ba5fb3d1ef9e27
+source_revision: 479c7e6ce6e69a5e4daf41bb55aed5f3b95a87c7
+deployment_id: tpl-web-frontend-a7cf0f3844d1dfc7
+gitops/components/app-platform/tpl-app/tpl-admin-frontend/image.lock.yaml equals committed baseline=True
+# Built and published through the native chain; written by application-lock-* after a successful publish.
+---
+repository: tpl-admin-frontend
+digest: sha256:f2e8ca667609c0a91e5a9f974d47e1a9550cff5c84520a1fbb07bee5ee6a3880
+source_revision: b89e474191109d807cdd50d56ecea971c0269a4a
+deployment_id: tpl-admin-frontend-f2e8ca667609c0a9
+k8s_HEAD=62d44f99e0d7fb295aebe7a6e3c32c5f7ac08482
+agent tracked status=''
+result=SUCCESS
+duration=171186
+displayName=#2 fable@62d44f99e0 tpl
+description=B3 试跑 tpl 到计划为止 — 到第 5 阶段为止（B3）；gitops 变更 2 个文件，未提交
+timestamp=1792508573970
+archived_files=11
+1-platform-status.log bytes=711054 archive_matches_candidate=True
+2-align.log bytes=74 archive_matches_candidate=True
+2-plan-tpl.log bytes=9136 archive_matches_candidate=True
+2-sources.diff bytes=0 archive_matches_candidate=True
+3-build-tpl.log bytes=77945 archive_matches_candidate=True
+3-image-locks.txt bytes=0 archive_matches_candidate=True
+4-gitops-touched.txt bytes=116 archive_matches_candidate=True
+4-gitops.stat bytes=194 archive_matches_candidate=True
+4-stage-tpl.log bytes=65891 archive_matches_candidate=True
+4-workload.diff bytes=744 archive_matches_candidate=True
+5-plan-tpl.log bytes=9136 archive_matches_candidate=True
+
+exit=0
