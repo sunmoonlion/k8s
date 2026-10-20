@@ -154,6 +154,10 @@ body.main(params, repos, approver)      // 在 node 外面
 2. **人批路径**（第七节第 2 条的能验的一半）：`APPROVAL_TIMEOUT_MINUTES=2`，`APPS=tpl PIN=keep`，没人点；要看到：到第 8 阶段停、2 分钟后 ABORTED，`flux-source.yaml` 没变、现网没动、代理克隆里有 `abandoned/release-<n>` 指着第 6 阶段的提交，候选在 Harbor。「非所有者账号点不了」只有一个账号时验不了，记为按配置保证（`submitter`），等 D 段接 Casdoor 有第二个账号再验。
 3. **真发布**（第七节第 6 条）：借今天已知的一处真实差异——tpl 两个 ingress 的 `/api/internal` 收敛规则（模板比 tpl 已提交的声明新，别的五个应用都已有）。`APPS=tpl PIN=keep NOTE="tpl ingress 补 /api/internal（release）"`，所有者在页面上点批。要看到：`deploy(tpl)` 与 `release(kind): 晋级到 …` 两个提交加 tag 推上 `fable`，`flux-source.yaml` 指到新候选，apply 过、`tpl-*` kustomization Ready、`application-check APP=tpl` 过、`scripts/results/release-<n>.*.md` 随推送带上；浏览器走查：`https://tpl.sunmoonai.com:30443/api/internal/x` 回 404。不碰产品线的代码，风险最小，又把一处已知漂移收掉。
 
+### 10.5b 生产站点怎么用这条链（所有者 2026-10-20 深夜问起，C 段定）
+
+结构同形：生产站点内网宿主上同样有 Harbor、控制器加代理、入口，集群在旁边；公网不可达。两点：① `docker build` 里的 `pip`/`npm` 要出站拉依赖（基础镜像从本地 Harbor 取，依赖走 `download-modes.json` 的源），内网宿主要么能出站到包源，要么站点内有包镜像。② 推荐**开发构建、生产只部署**：第 1 到 7 阶段在开发站点跑，镜像与声明包按摘要复制到生产 Harbor（Harbor 自带复制），生产 Jenkins 跑第 8 到 12 阶段；线上跑的和开发验过的是同一个摘要，生产宿主不需要构建工具和出站。流水线形状不变，多一个「复制到生产 Harbor」的阶段和 `SITE` 参数（第五节已预留）。
+
 ### 10.6 要所有者定的（2026-10-20 夜所有者：「按推荐」——五项都按推荐定）
 
 1. 真发布用 tpl 的 `/api/internal` 这处（推荐），还是等产品线恢复借一张真卡。
