@@ -2,7 +2,7 @@
   "schema_version": 1,
   "platform": "linux/amd64",
   "resolved_at": "2026-09-30T16:48:40.153892+00:00",
-  "scope": "Bootstrap tools, Harbor installer, Calico manifest, host Docker packages and dated Trivy databases; not a complete offline release; Qwen3 CPU embedding model at immutable revision",
+  "scope": "Bootstrap tools, Harbor installer, Calico manifest, host Docker packages and dated Trivy databases; not a complete offline release; Qwen3 CPU embedding model at immutable revision; host Jenkins agent JRE (Temurin 21) and the 76-plugin closure for the controller (SDD 0033)",
   "offline_ready": false,
   "files": [
     {
@@ -477,6 +477,788 @@
       "model": "Qwen/Qwen3-Embedding-0.6B",
       "model_path": "tokenizer.json",
       "identity_source": "Official Hugging Face pinned revision; LFS SHA256 for model/tokenizer, SHA256 computed from pinned bytes otherwise"
+    },
+    {
+      "id": "jenkins-plugin-antisamy-markup-formatter",
+      "version": "173.v680e3a_b_69ff3",
+      "kind": "package",
+      "path": "host/jenkins/packages/antisamy-markup-formatter-173.v680e3a_b_69ff3.hpi",
+      "size_bytes": 243960,
+      "sha256": "29b4765797f26c44574a2732ddf9d7d98ea0283295352497dd9eef84aed0102f",
+      "url": "https://updates.jenkins.io/download/plugins/antisamy-markup-formatter/173.v680e3a_b_69ff3/antisamy-markup-formatter.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-apache-httpcomponents-client-4-api",
+      "version": "4.5.14-269.vfa_2321039a_83",
+      "kind": "package",
+      "path": "host/jenkins/packages/apache-httpcomponents-client-4-api-4.5.14-269.vfa_2321039a_83.hpi",
+      "size_bytes": 1774684,
+      "sha256": "cea2f61cc72890b962fd4b767c31778c6cb30015b4a8758b4c26b62e51ca9533",
+      "url": "https://updates.jenkins.io/download/plugins/apache-httpcomponents-client-4-api/4.5.14-269.vfa_2321039a_83/apache-httpcomponents-client-4-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-asm-api",
+      "version": "9.11.1-226.vff833a_e4c58e",
+      "kind": "package",
+      "path": "host/jenkins/packages/asm-api-9.11.1-226.vff833a_e4c58e.hpi",
+      "size_bytes": 385654,
+      "sha256": "ba315fe727be0311cd5115205a09a2abb550b73287cc4ee07af5f7ef6502f1f8",
+      "url": "https://updates.jenkins.io/download/plugins/asm-api/9.11.1-226.vff833a_e4c58e/asm-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-bootstrap5-api",
+      "version": "5.3.8-1048.va_c299057e35c",
+      "kind": "package",
+      "path": "host/jenkins/packages/bootstrap5-api-5.3.8-1048.va_c299057e35c.hpi",
+      "size_bytes": 515073,
+      "sha256": "4027b4cecbdb400c4cdf6beed351cb27a2e0ef4c39d27618e342fad76a4490df",
+      "url": "https://updates.jenkins.io/download/plugins/bootstrap5-api/5.3.8-1048.va_c299057e35c/bootstrap5-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-bouncycastle-api",
+      "version": "2.30.1.86.2-310.v4655f6742752",
+      "kind": "package",
+      "path": "host/jenkins/packages/bouncycastle-api-2.30.1.86.2-310.v4655f6742752.hpi",
+      "size_bytes": 8540094,
+      "sha256": "57cc5cf1585f9a8f29c5a1e3985f07dace5d5359545d788e72ecaa3636515a58",
+      "url": "https://updates.jenkins.io/download/plugins/bouncycastle-api/2.30.1.86.2-310.v4655f6742752/bouncycastle-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-branch-api",
+      "version": "2.1303.v9f3b_95dc329d",
+      "kind": "package",
+      "path": "host/jenkins/packages/branch-api-2.1303.v9f3b_95dc329d.hpi",
+      "size_bytes": 323407,
+      "sha256": "6ecfc3d335cec791008a2d06ca933c6ccc97db1c14a4aee5030affebb97482e0",
+      "url": "https://updates.jenkins.io/download/plugins/branch-api/2.1303.v9f3b_95dc329d/branch-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-caffeine-api",
+      "version": "3.3.1-214.v18eb_56b_34920",
+      "kind": "package",
+      "path": "host/jenkins/packages/caffeine-api-3.3.1-214.v18eb_56b_34920.hpi",
+      "size_bytes": 906539,
+      "sha256": "768ed05774f12d85bf8ecff5d509f037810d1359de8b4fb1385624f6f547c90b",
+      "url": "https://updates.jenkins.io/download/plugins/caffeine-api/3.3.1-214.v18eb_56b_34920/caffeine-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-checks-api",
+      "version": "422.vc7e8b_51488c6",
+      "kind": "package",
+      "path": "host/jenkins/packages/checks-api-422.vc7e8b_51488c6.hpi",
+      "size_bytes": 75637,
+      "sha256": "0225cfed99479f7b3ce20fbc534764ee31ce3b1accbd364cea62486868733bcc",
+      "url": "https://updates.jenkins.io/download/plugins/checks-api/422.vc7e8b_51488c6/checks-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-cloudbees-folder",
+      "version": "6.1106.v3a_d9a_6d2465e",
+      "kind": "package",
+      "path": "host/jenkins/packages/cloudbees-folder-6.1106.v3a_d9a_6d2465e.hpi",
+      "size_bytes": 243117,
+      "sha256": "4ccfcfe145a1b36aef61f19187e8aa74eb3c90fdb9c9bfce865e09aa13c8a70a",
+      "url": "https://updates.jenkins.io/download/plugins/cloudbees-folder/6.1106.v3a_d9a_6d2465e/cloudbees-folder.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-commons-compress-api",
+      "version": "1.28.0-96.v8da_8cfa_57e2b_",
+      "kind": "package",
+      "path": "host/jenkins/packages/commons-compress-api-1.28.0-96.v8da_8cfa_57e2b_.hpi",
+      "size_bytes": 7715407,
+      "sha256": "f7d4fc6a72561173b7e68a3829262392429b72eb14403fa4fac8bc4b88c9b18a",
+      "url": "https://updates.jenkins.io/download/plugins/commons-compress-api/1.28.0-96.v8da_8cfa_57e2b_/commons-compress-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-commons-lang3-api",
+      "version": "3.21.0-122.v6a_ea_4fd34049",
+      "kind": "package",
+      "path": "host/jenkins/packages/commons-lang3-api-3.21.0-122.v6a_ea_4fd34049.hpi",
+      "size_bytes": 681225,
+      "sha256": "4d6194f8d3b3f2b69264f0403fe5a51846236a41f4e363f6aae45f82f7761657",
+      "url": "https://updates.jenkins.io/download/plugins/commons-lang3-api/3.21.0-122.v6a_ea_4fd34049/commons-lang3-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-commons-text-api",
+      "version": "1.15.0-218.va_61573470393",
+      "kind": "package",
+      "path": "host/jenkins/packages/commons-text-api-1.15.0-218.va_61573470393.hpi",
+      "size_bytes": 242039,
+      "sha256": "ae2abdf957694f4aa39b9ba0b539edabc384f3da277551879e34ffb22fb13764",
+      "url": "https://updates.jenkins.io/download/plugins/commons-text-api/1.15.0-218.va_61573470393/commons-text-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-credentials-binding",
+      "version": "728.v902a_273b_8947",
+      "kind": "package",
+      "path": "host/jenkins/packages/credentials-binding-728.v902a_273b_8947.hpi",
+      "size_bytes": 91098,
+      "sha256": "bd7d1a187e35c8e2b6619cd50f2f8c5d28aafc4ef8fd9de572fb2cfa464f466d",
+      "url": "https://updates.jenkins.io/download/plugins/credentials-binding/728.v902a_273b_8947/credentials-binding.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-credentials",
+      "version": "1514.vb_01eb_014e7d4",
+      "kind": "package",
+      "path": "host/jenkins/packages/credentials-1514.vb_01eb_014e7d4.hpi",
+      "size_bytes": 505639,
+      "sha256": "b6e0a05d107fe492bb57baea75fb585fb65dd90c2456a6432b90b87226997457",
+      "url": "https://updates.jenkins.io/download/plugins/credentials/1514.vb_01eb_014e7d4/credentials.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-display-url-api",
+      "version": "2.217.va_6b_de84cc74b_",
+      "kind": "package",
+      "path": "host/jenkins/packages/display-url-api-2.217.va_6b_de84cc74b_.hpi",
+      "size_bytes": 31901,
+      "sha256": "07eeaae738b451bade4756900b48561c6c493a42c7ba07a45b22a2dce71ac0ca",
+      "url": "https://updates.jenkins.io/download/plugins/display-url-api/2.217.va_6b_de84cc74b_/display-url-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-durable-task",
+      "version": "686.v80ff80875b_82",
+      "kind": "package",
+      "path": "host/jenkins/packages/durable-task-686.v80ff80875b_82.hpi",
+      "size_bytes": 7109258,
+      "sha256": "1f5bb92ee5784ee01a4e4e0307e806fa1e260db8aceba56fe8d277e939278dfa",
+      "url": "https://updates.jenkins.io/download/plugins/durable-task/686.v80ff80875b_82/durable-task.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-echarts-api",
+      "version": "6.1.0-1321.v86c4c5114494",
+      "kind": "package",
+      "path": "host/jenkins/packages/echarts-api-6.1.0-1321.v86c4c5114494.hpi",
+      "size_bytes": 5787417,
+      "sha256": "280663806fd6538a16284fc61668a42af4272b7e96b66f48ec82409975cff51b",
+      "url": "https://updates.jenkins.io/download/plugins/echarts-api/6.1.0-1321.v86c4c5114494/echarts-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-font-awesome-api",
+      "version": "7.3.1-1013.v0835a_879ec6d",
+      "kind": "package",
+      "path": "host/jenkins/packages/font-awesome-api-7.3.1-1013.v0835a_879ec6d.hpi",
+      "size_bytes": 1403089,
+      "sha256": "7ee382c678545f5fd5b022e5dbb75d129a97db2b0180fb42f17edcebdfdbbf5a",
+      "url": "https://updates.jenkins.io/download/plugins/font-awesome-api/7.3.1-1013.v0835a_879ec6d/font-awesome-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-git-client",
+      "version": "6.6.1",
+      "kind": "package",
+      "path": "host/jenkins/packages/git-client-6.6.1.hpi",
+      "size_bytes": 3993880,
+      "sha256": "69ab80e3bd51e2e4e676a18722c02c7b163eb11a758b52ecf179d58e1ca1738f",
+      "url": "https://updates.jenkins.io/download/plugins/git-client/6.6.1/git-client.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-git",
+      "version": "5.11.0",
+      "kind": "package",
+      "path": "host/jenkins/packages/git-5.11.0.hpi",
+      "size_bytes": 625223,
+      "sha256": "bf4639abb65e6ca210bd0d7cb9b6570e93717894bdcd008b2e7e5a916dd818f6",
+      "url": "https://updates.jenkins.io/download/plugins/git/5.11.0/git.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-gson-api",
+      "version": "2.14.0-201.v8eefe5515533",
+      "kind": "package",
+      "path": "host/jenkins/packages/gson-api-2.14.0-201.v8eefe5515533.hpi",
+      "size_bytes": 284023,
+      "sha256": "6940cd0f795f72371fd5644d885db9ec0a2077985ac55de85d19ab3b1fac2bb7",
+      "url": "https://updates.jenkins.io/download/plugins/gson-api/2.14.0-201.v8eefe5515533/gson-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-instance-identity",
+      "version": "203.v15e81a_1b_7a_38",
+      "kind": "package",
+      "path": "host/jenkins/packages/instance-identity-203.v15e81a_1b_7a_38.hpi",
+      "size_bytes": 18485,
+      "sha256": "df2b3205a6177248f12b294650a60405f65ba2cd503ca9599b2dcb72c1de5018",
+      "url": "https://updates.jenkins.io/download/plugins/instance-identity/203.v15e81a_1b_7a_38/instance-identity.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-ionicons-api",
+      "version": "94.vcc3065403257",
+      "kind": "package",
+      "path": "host/jenkins/packages/ionicons-api-94.vcc3065403257.hpi",
+      "size_bytes": 516540,
+      "sha256": "95f3504375d628d887425ccdf32d5606a230261ee42dc683f13958d8e973ac3f",
+      "url": "https://updates.jenkins.io/download/plugins/ionicons-api/94.vcc3065403257/ionicons-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-jackson-annotations2-api",
+      "version": "2.22-19.v10a_a_582ea_26e",
+      "kind": "package",
+      "path": "host/jenkins/packages/jackson-annotations2-api-2.22-19.v10a_a_582ea_26e.hpi",
+      "size_bytes": 75879,
+      "sha256": "f13d0a17af6f8c8939a6edd30952006b77dca4760b1f40e0289c363918b7d17d",
+      "url": "https://updates.jenkins.io/download/plugins/jackson-annotations2-api/2.22-19.v10a_a_582ea_26e/jackson-annotations2-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-jackson2-api",
+      "version": "2.22.3-447.v6a_93ce7d2c82",
+      "kind": "package",
+      "path": "host/jenkins/packages/jackson2-api-2.22.3-447.v6a_93ce7d2c82.hpi",
+      "size_bytes": 2756390,
+      "sha256": "ce2cfb7a5ad6e66aea9a5b6c4a5ea0622bfc5c05db5db8918581ae7f1d10ff33",
+      "url": "https://updates.jenkins.io/download/plugins/jackson2-api/2.22.3-447.v6a_93ce7d2c82/jackson2-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-jackson3-api",
+      "version": "3.2.4-103.vf5a_b_3f4ea_cec",
+      "kind": "package",
+      "path": "host/jenkins/packages/jackson3-api-3.2.4-103.vf5a_b_3f4ea_cec.hpi",
+      "size_bytes": 2689172,
+      "sha256": "4397f73c11ba5085a40280555b519c9427cf8d69d63d5d60f4f623f72f953fe2",
+      "url": "https://updates.jenkins.io/download/plugins/jackson3-api/3.2.4-103.vf5a_b_3f4ea_cec/jackson3-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-jakarta-activation-api",
+      "version": "2.1.4-1",
+      "kind": "package",
+      "path": "host/jenkins/packages/jakarta-activation-api-2.1.4-1.hpi",
+      "size_bytes": 89382,
+      "sha256": "e62298341742f14b374045387ba641ad8a19376793c76bdafebb4a05b5099712",
+      "url": "https://updates.jenkins.io/download/plugins/jakarta-activation-api/2.1.4-1/jakarta-activation-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-jakarta-mail-api",
+      "version": "2.1.5-1",
+      "kind": "package",
+      "path": "host/jenkins/packages/jakarta-mail-api-2.1.5-1.hpi",
+      "size_bytes": 697901,
+      "sha256": "244735ea85a51332c079d235a5713e70d3810bea62332894002acc39914ce11b",
+      "url": "https://updates.jenkins.io/download/plugins/jakarta-mail-api/2.1.5-1/jakarta-mail-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-jakarta-xml-bind-api",
+      "version": "4.0.9-19.v2b_a_5b_44d9a_1c",
+      "kind": "package",
+      "path": "host/jenkins/packages/jakarta-xml-bind-api-4.0.9-19.v2b_a_5b_44d9a_1c.hpi",
+      "size_bytes": 1134466,
+      "sha256": "2f59227936687ec00f7ea62b550e7a6e9c86cda3423f3567ffe66bbdf235ffb5",
+      "url": "https://updates.jenkins.io/download/plugins/jakarta-xml-bind-api/4.0.9-19.v2b_a_5b_44d9a_1c/jakarta-xml-bind-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-javax-activation-api",
+      "version": "1.2.0-8",
+      "kind": "package",
+      "path": "host/jenkins/packages/javax-activation-api-1.2.0-8.hpi",
+      "size_bytes": 77202,
+      "sha256": "e96e88c52edf07ba00fb45b26cc411a7a95fa3d4491aaa1a5d36637665880560",
+      "url": "https://updates.jenkins.io/download/plugins/javax-activation-api/1.2.0-8/javax-activation-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-jaxb",
+      "version": "2.3.9-143.v5979df3304e6",
+      "kind": "package",
+      "path": "host/jenkins/packages/jaxb-2.3.9-143.v5979df3304e6.hpi",
+      "size_bytes": 1097519,
+      "sha256": "38ddf4cf5db61a591044130c2f7ccb2b7aa9abebc8fcd8a6953f8da550d002ed",
+      "url": "https://updates.jenkins.io/download/plugins/jaxb/2.3.9-143.v5979df3304e6/jaxb.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-joda-time-api",
+      "version": "2.15.0-208.v6b_084e7a_d9f0",
+      "kind": "package",
+      "path": "host/jenkins/packages/joda-time-api-2.15.0-208.v6b_084e7a_d9f0.hpi",
+      "size_bytes": 545773,
+      "sha256": "427513635d122f62fcd8e52af08cc895913b9a70568e7665a3ce8fc1a4871ddf",
+      "url": "https://updates.jenkins.io/download/plugins/joda-time-api/2.15.0-208.v6b_084e7a_d9f0/joda-time-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-jquery3-api",
+      "version": "3.7.1-687.v68d468e40b_30",
+      "kind": "package",
+      "path": "host/jenkins/packages/jquery3-api-3.7.1-687.v68d468e40b_30.hpi",
+      "size_bytes": 175510,
+      "sha256": "16716d59a3df872a3b8700337de9e8306b2d5104320e6916731aa7185d3de880",
+      "url": "https://updates.jenkins.io/download/plugins/jquery3-api/3.7.1-687.v68d468e40b_30/jquery3-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-json-api",
+      "version": "20260814-226.v20f9685d642c",
+      "kind": "package",
+      "path": "host/jenkins/packages/json-api-20260814-226.v20f9685d642c.hpi",
+      "size_bytes": 90707,
+      "sha256": "c5ac5ecfddd35c07087b3333ae05ec4167a70abae8bf0ebcb7338b6b54540889",
+      "url": "https://updates.jenkins.io/download/plugins/json-api/20260814-226.v20f9685d642c/json-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-junit",
+      "version": "1442.vb_b_a_467df2767",
+      "kind": "package",
+      "path": "host/jenkins/packages/junit-1442.vb_b_a_467df2767.hpi",
+      "size_bytes": 605104,
+      "sha256": "332059c251ca4192c10e1d9e0e13a31228dc6f75b5b725e2918a9036fe1b03c2",
+      "url": "https://updates.jenkins.io/download/plugins/junit/1442.vb_b_a_467df2767/junit.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-mailer",
+      "version": "534.v1b_36f5864073",
+      "kind": "package",
+      "path": "host/jenkins/packages/mailer-534.v1b_36f5864073.hpi",
+      "size_bytes": 136332,
+      "sha256": "5426a66a3f879d25fcb4baff678a28422afbabff22cd6e4f0f998fc67a3dc3fa",
+      "url": "https://updates.jenkins.io/download/plugins/mailer/534.v1b_36f5864073/mailer.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-matrix-project",
+      "version": "928.v1effc3f3a_236",
+      "kind": "package",
+      "path": "host/jenkins/packages/matrix-project-928.v1effc3f3a_236.hpi",
+      "size_bytes": 243206,
+      "sha256": "d48804fec60f2ebbc8e1b2d79510113b624cdad1c422fb860455f29ee0798879",
+      "url": "https://updates.jenkins.io/download/plugins/matrix-project/928.v1effc3f3a_236/matrix-project.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-mina-sshd-api-common",
+      "version": "2.19.0-192.v2b_a_7b_2c1dc71",
+      "kind": "package",
+      "path": "host/jenkins/packages/mina-sshd-api-common-2.19.0-192.v2b_a_7b_2c1dc71.hpi",
+      "size_bytes": 881357,
+      "sha256": "887ebd645e43919b6113201257821b990fc923f375382a5dada0c089e49b85bc",
+      "url": "https://updates.jenkins.io/download/plugins/mina-sshd-api-common/2.19.0-192.v2b_a_7b_2c1dc71/mina-sshd-api-common.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-mina-sshd-api-core",
+      "version": "2.19.0-192.v2b_a_7b_2c1dc71",
+      "kind": "package",
+      "path": "host/jenkins/packages/mina-sshd-api-core-2.19.0-192.v2b_a_7b_2c1dc71.hpi",
+      "size_bytes": 1555964,
+      "sha256": "5039ea17ea1aa9e349712ccc1e036c38ea9f20f722affc220c2c751369f32495",
+      "url": "https://updates.jenkins.io/download/plugins/mina-sshd-api-core/2.19.0-192.v2b_a_7b_2c1dc71/mina-sshd-api-core.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-build-step",
+      "version": "601.v6d4c6d1a_9dc7",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-build-step-601.v6d4c6d1a_9dc7.hpi",
+      "size_bytes": 55439,
+      "sha256": "1b61a1820844f3f72f9dfcd6d7eeab66fa0fbcee5e3923b912cd1ed10fbf63c5",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-build-step/601.v6d4c6d1a_9dc7/pipeline-build-step.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-graph-analysis",
+      "version": "254.v0f63a_a_447dca_",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-graph-analysis-254.v0f63a_a_447dca_.hpi",
+      "size_bytes": 20797,
+      "sha256": "8c89351cb13f694b9cc620501a75aed8bd4acdc0b9a6e6918b5dcb0543f08e7f",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-graph-analysis/254.v0f63a_a_447dca_/pipeline-graph-analysis.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-groovy-lib",
+      "version": "822.vc95f70dea_db_7",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-groovy-lib-822.vc95f70dea_db_7.hpi",
+      "size_bytes": 1412196,
+      "sha256": "a633824da17e95fe2a9f03e8d951a771c70a729e987fc51874146723f3b6343b",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-groovy-lib/822.vc95f70dea_db_7/pipeline-groovy-lib.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-input-step",
+      "version": "560.v56198a_642157",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-input-step-560.v56198a_642157.hpi",
+      "size_bytes": 40044,
+      "sha256": "7c61bb745ecd1e4e5c7864dc7c8352148d9b2281bcca5a48fd3a7cca7290a135",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-input-step/560.v56198a_642157/pipeline-input-step.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-milestone-step",
+      "version": "152.v6e22b_8cfc66c",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-milestone-step-152.v6e22b_8cfc66c.hpi",
+      "size_bytes": 27470,
+      "sha256": "cb3187809e219f01b42068f277058a818033f3cfd14da7ec59c86f028fc38386",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-milestone-step/152.v6e22b_8cfc66c/pipeline-milestone-step.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-model-api",
+      "version": "2.2293.v6e7193cec599",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-model-api-2.2293.v6e7193cec599.hpi",
+      "size_bytes": 2366724,
+      "sha256": "cdd72a69bf2863a1683b282febd0256d5d266111134c3803a8c4a051b6b4c133",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-model-api/2.2293.v6e7193cec599/pipeline-model-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-model-definition",
+      "version": "2.2293.v6e7193cec599",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-model-definition-2.2293.v6e7193cec599.hpi",
+      "size_bytes": 985672,
+      "sha256": "9f4f62e0a13fefc9c5736a20ad5124af2a324357294fd8ea8d8f848b7c497f92",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-model-definition/2.2293.v6e7193cec599/pipeline-model-definition.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-model-extensions",
+      "version": "2.2293.v6e7193cec599",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-model-extensions-2.2293.v6e7193cec599.hpi",
+      "size_bytes": 49796,
+      "sha256": "00fbf0938ef13f6aedaa0900ec4cd03fcc986e34b1820bf13f761c2f29831861",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-model-extensions/2.2293.v6e7193cec599/pipeline-model-extensions.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-rest-api",
+      "version": "2.41",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-rest-api-2.41.hpi",
+      "size_bytes": 70403,
+      "sha256": "6e463affa43f4013c4b0865d4c0442abd738440c54c8bb0cd70f0c1164743159",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-rest-api/2.41/pipeline-rest-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-stage-step",
+      "version": "345.va_96187909426",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-stage-step-345.va_96187909426.hpi",
+      "size_bytes": 14188,
+      "sha256": "2eba433b28f2dfc90519e233b14264890f97b93b78e25c664d56607141fcd94b",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-stage-step/345.va_96187909426/pipeline-stage-step.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-stage-tags-metadata",
+      "version": "2.2293.v6e7193cec599",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-stage-tags-metadata-2.2293.v6e7193cec599.hpi",
+      "size_bytes": 10451,
+      "sha256": "032f011fc50cb273b300d44fb6c2800e3dbdf0d78548b15e0f192ba7cc95d178",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-stage-tags-metadata/2.2293.v6e7193cec599/pipeline-stage-tags-metadata.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-stage-view",
+      "version": "2.41",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-stage-view-2.41.hpi",
+      "size_bytes": 1025178,
+      "sha256": "fbc9dd724278f69b8c7638907363a609a8484cfaaa59321169468ee6c908952f",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-stage-view/2.41/pipeline-stage-view.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-pipeline-utility-steps",
+      "version": "3.810.va_7672d206740",
+      "kind": "package",
+      "path": "host/jenkins/packages/pipeline-utility-steps-3.810.va_7672d206740.hpi",
+      "size_bytes": 1346560,
+      "sha256": "e188b3272dd6dfb0250c7961b016a0e38527a0a2236f5e25fc8c50652582098c",
+      "url": "https://updates.jenkins.io/download/plugins/pipeline-utility-steps/3.810.va_7672d206740/pipeline-utility-steps.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-plain-credentials",
+      "version": "199.v9f8e1f741799",
+      "kind": "package",
+      "path": "host/jenkins/packages/plain-credentials-199.v9f8e1f741799.hpi",
+      "size_bytes": 18078,
+      "sha256": "b5e5e35cf93ad3b818a983916cbcdf3f7866699410a4df923e6a2968ecc3a448",
+      "url": "https://updates.jenkins.io/download/plugins/plain-credentials/199.v9f8e1f741799/plain-credentials.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-plugin-util-api",
+      "version": "7.1403.vd380b_c42e90c",
+      "kind": "package",
+      "path": "host/jenkins/packages/plugin-util-api-7.1403.vd380b_c42e90c.hpi",
+      "size_bytes": 480806,
+      "sha256": "06ea312ee4c012ed5c2b8f091a6e6f7db7ccc714ab25d25d751f30dc22ad8307",
+      "url": "https://updates.jenkins.io/download/plugins/plugin-util-api/7.1403.vd380b_c42e90c/plugin-util-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-prism-api",
+      "version": "1.30.0-741.v034eb_0b_0a_a_fa_",
+      "kind": "package",
+      "path": "host/jenkins/packages/prism-api-1.30.0-741.v034eb_0b_0a_a_fa_.hpi",
+      "size_bytes": 849992,
+      "sha256": "2b7aa7809e0f656afce98c0b6a0a9b62885af6ae85ad90bed67a4f18f18e8354",
+      "url": "https://updates.jenkins.io/download/plugins/prism-api/1.30.0-741.v034eb_0b_0a_a_fa_/prism-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-resource-disposer",
+      "version": "0.25",
+      "kind": "package",
+      "path": "host/jenkins/packages/resource-disposer-0.25.hpi",
+      "size_bytes": 21381,
+      "sha256": "2794c871cc479ed37fd04a85fe8d4f4aa7fee1c7929c447c8b8fa239548e3bf2",
+      "url": "https://updates.jenkins.io/download/plugins/resource-disposer/0.25/resource-disposer.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-scm-api",
+      "version": "728.vc30dcf7a_0df5",
+      "kind": "package",
+      "path": "host/jenkins/packages/scm-api-728.vc30dcf7a_0df5.hpi",
+      "size_bytes": 228866,
+      "sha256": "1336472987daa2fa912210aba00e1e37b739ce03f75c973a6794d1a0f55c0326",
+      "url": "https://updates.jenkins.io/download/plugins/scm-api/728.vc30dcf7a_0df5/scm-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-script-security",
+      "version": "1436.v1082791135e4",
+      "kind": "package",
+      "path": "host/jenkins/packages/script-security-1436.v1082791135e4.hpi",
+      "size_bytes": 221439,
+      "sha256": "c2292e200c5796675c16d19325469aac4a5460c7ad23974952b9823f62066f6a",
+      "url": "https://updates.jenkins.io/download/plugins/script-security/1436.v1082791135e4/script-security.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-snakeyaml-api",
+      "version": "2.7-152.vc672728cf536",
+      "kind": "package",
+      "path": "host/jenkins/packages/snakeyaml-api-2.7-152.vc672728cf536.hpi",
+      "size_bytes": 298072,
+      "sha256": "bfa595a283634c8dd63aa8d1b039cf3d3f52e0952048058fc0b9a4826ca06508",
+      "url": "https://updates.jenkins.io/download/plugins/snakeyaml-api/2.7-152.vc672728cf536/snakeyaml-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-snakeyaml-engine-api",
+      "version": "3.2-18.v885ed7ff698f",
+      "kind": "package",
+      "path": "host/jenkins/packages/snakeyaml-engine-api-3.2-18.v885ed7ff698f.hpi",
+      "size_bytes": 274083,
+      "sha256": "89c14c0ac2816c1efc192dd333b4b26d97ae58d2ab1d492e8b52feca406e220e",
+      "url": "https://updates.jenkins.io/download/plugins/snakeyaml-engine-api/3.2-18.v885ed7ff698f/snakeyaml-engine-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-ssh-credentials",
+      "version": "372.va_250881b_08cd",
+      "kind": "package",
+      "path": "host/jenkins/packages/ssh-credentials-372.va_250881b_08cd.hpi",
+      "size_bytes": 55874,
+      "sha256": "7b4d035b05b331038f3dfa99ddfef0cabbacede8f0ad2a6ca9611fb0844108a9",
+      "url": "https://updates.jenkins.io/download/plugins/ssh-credentials/372.va_250881b_08cd/ssh-credentials.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-structs",
+      "version": "362.va_b_695ef4fdf9",
+      "kind": "package",
+      "path": "host/jenkins/packages/structs-362.va_b_695ef4fdf9.hpi",
+      "size_bytes": 44685,
+      "sha256": "a0a5db44f2cb082a9ec6572c088340521f033fff8c351fc7eba9ef7f07dbbf8d",
+      "url": "https://updates.jenkins.io/download/plugins/structs/362.va_b_695ef4fdf9/structs.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-timestamper",
+      "version": "1.30",
+      "kind": "package",
+      "path": "host/jenkins/packages/timestamper-1.30.hpi",
+      "size_bytes": 93711,
+      "sha256": "b4d6589e7a169f06b26bc7e15bc37ef2fb3986dc20b502cb91c2a9918eaf980b",
+      "url": "https://updates.jenkins.io/download/plugins/timestamper/1.30/timestamper.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-variant",
+      "version": "70.va_d9f17f859e0",
+      "kind": "package",
+      "path": "host/jenkins/packages/variant-70.va_d9f17f859e0.hpi",
+      "size_bytes": 9870,
+      "sha256": "12e214ea694469a4461b55881ecb4074ae5dfb04797dbc0dad390f6f4bc75aaf",
+      "url": "https://updates.jenkins.io/download/plugins/variant/70.va_d9f17f859e0/variant.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-woodstox-core-api",
+      "version": "7.3.0-16.v017f30ed004c",
+      "kind": "package",
+      "path": "host/jenkins/packages/woodstox-core-api-7.3.0-16.v017f30ed004c.hpi",
+      "size_bytes": 1633381,
+      "sha256": "fca0ce7cd19274833df226cd6746d71ce4025b784a81bd5b8512730f5d34a9df",
+      "url": "https://updates.jenkins.io/download/plugins/woodstox-core-api/7.3.0-16.v017f30ed004c/woodstox-core-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-workflow-aggregator",
+      "version": "608.v67378e9d3db_1",
+      "kind": "package",
+      "path": "host/jenkins/packages/workflow-aggregator-608.v67378e9d3db_1.hpi",
+      "size_bytes": 8317,
+      "sha256": "7b94227c1afa01bb262c14919ad4a333412f1b51d947c0f21909ec2daff357dc",
+      "url": "https://updates.jenkins.io/download/plugins/workflow-aggregator/608.v67378e9d3db_1/workflow-aggregator.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-workflow-api",
+      "version": "1413.v2ff1a_5e720fa_",
+      "kind": "package",
+      "path": "host/jenkins/packages/workflow-api-1413.v2ff1a_5e720fa_.hpi",
+      "size_bytes": 190280,
+      "sha256": "f4adbd6b34a2a0b643a12b898110bd976350142eff6322efda21efacbccb6835",
+      "url": "https://updates.jenkins.io/download/plugins/workflow-api/1413.v2ff1a_5e720fa_/workflow-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-workflow-basic-steps",
+      "version": "1098.v808b_fd7f8cf4",
+      "kind": "package",
+      "path": "host/jenkins/packages/workflow-basic-steps-1098.v808b_fd7f8cf4.hpi",
+      "size_bytes": 157728,
+      "sha256": "93449eb494658d065d097e8c54f707c98c9ce3e54da2fb98281b0a0487154eaf",
+      "url": "https://updates.jenkins.io/download/plugins/workflow-basic-steps/1098.v808b_fd7f8cf4/workflow-basic-steps.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-workflow-cps",
+      "version": "4395.v738456a_5da_6b_",
+      "kind": "package",
+      "path": "host/jenkins/packages/workflow-cps-4395.v738456a_5da_6b_.hpi",
+      "size_bytes": 841572,
+      "sha256": "2af278f3012f294165db715bfa608045feaf781a6c7c85b5d7ab1ee5b707f021",
+      "url": "https://updates.jenkins.io/download/plugins/workflow-cps/4395.v738456a_5da_6b_/workflow-cps.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-workflow-durable-task-step",
+      "version": "1479.v56e587f413a_7",
+      "kind": "package",
+      "path": "host/jenkins/packages/workflow-durable-task-step-1479.v56e587f413a_7.hpi",
+      "size_bytes": 146195,
+      "sha256": "a0f0f1464ce3592f76d0f0079ce9fc2d4272594f995bf3d1a7ede4cd5031452e",
+      "url": "https://updates.jenkins.io/download/plugins/workflow-durable-task-step/1479.v56e587f413a_7/workflow-durable-task-step.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-workflow-job",
+      "version": "1609.v8926e7962024",
+      "kind": "package",
+      "path": "host/jenkins/packages/workflow-job-1609.v8926e7962024.hpi",
+      "size_bytes": 137343,
+      "sha256": "1f63a3dc4e9f8bfbde7b759530da4073e105a92fee3b647962d981de223ac8f5",
+      "url": "https://updates.jenkins.io/download/plugins/workflow-job/1609.v8926e7962024/workflow-job.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-workflow-multibranch",
+      "version": "842.v3a_b_59b_57b_e6e",
+      "kind": "package",
+      "path": "host/jenkins/packages/workflow-multibranch-842.v3a_b_59b_57b_e6e.hpi",
+      "size_bytes": 88863,
+      "sha256": "af26afd93b5d730d203d8f58d1e104712ad1a7ddcf6837886d3272b1c0057e46",
+      "url": "https://updates.jenkins.io/download/plugins/workflow-multibranch/842.v3a_b_59b_57b_e6e/workflow-multibranch.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-workflow-scm-step",
+      "version": "487.v41313a_96b_65d",
+      "kind": "package",
+      "path": "host/jenkins/packages/workflow-scm-step-487.v41313a_96b_65d.hpi",
+      "size_bytes": 21275,
+      "sha256": "532fc247cba83845df3c7fccaabfc3cb1f637729b145211728bcb974a3a67552",
+      "url": "https://updates.jenkins.io/download/plugins/workflow-scm-step/487.v41313a_96b_65d/workflow-scm-step.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-workflow-step-api",
+      "version": "724.v538c2362b_dfb_",
+      "kind": "package",
+      "path": "host/jenkins/packages/workflow-step-api-724.v538c2362b_dfb_.hpi",
+      "size_bytes": 86911,
+      "sha256": "887491de444174228471993b0b2db958db2e7fb577857c8516c58e9618049896",
+      "url": "https://updates.jenkins.io/download/plugins/workflow-step-api/724.v538c2362b_dfb_/workflow-step-api.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-workflow-support",
+      "version": "1015.v785e5a_b_b_8b_22",
+      "kind": "package",
+      "path": "host/jenkins/packages/workflow-support-1015.v785e5a_b_b_8b_22.hpi",
+      "size_bytes": 415807,
+      "sha256": "914ee717ab8c1d60d0d3ea49a1af11e4ea65c1e74c0b44dc3522f9a2fe5b2a8e",
+      "url": "https://updates.jenkins.io/download/plugins/workflow-support/1015.v785e5a_b_b_8b_22/workflow-support.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "jenkins-plugin-ws-cleanup",
+      "version": "0.49",
+      "kind": "package",
+      "path": "host/jenkins/packages/ws-cleanup-0.49.hpi",
+      "size_bytes": 44505,
+      "sha256": "3bf5fbc4b6f2f5eaf8bf4d7b02542573ea537a3a38023a3d53cd24520dbecd05",
+      "url": "https://updates.jenkins.io/download/plugins/ws-cleanup/0.49/ws-cleanup.hpi",
+      "identity_source": "https://updates.jenkins.io/update-center.json (resolved by jenkins-plugin-cli of jenkins/jenkins 2.580.1 on 2026-10-20; seed: workflow-aggregator git credentials-binding timestamper ws-cleanup pipeline-utility-steps pipeline-stage-view)"
+    },
+    {
+      "id": "temurin-jre",
+      "version": "21.0.12.1+1",
+      "kind": "package",
+      "path": "host/jenkins/packages/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz",
+      "size_bytes": 52059408,
+      "sha256": "2413149700df0f7d440500a84a8f764c535f21e5a5e87d38328b64eec2c5b500",
+      "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz",
+      "identity_source": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz.sha256.txt",
+      "archive_members": [
+        {
+          "path": "jdk-21.0.12.1+1-jre/bin/java",
+          "size_bytes": 13024,
+          "sha256": "999c141a6e620c71aa4230ccb62341a89162f37818753ff006d766bf935dcbe1"
+        },
+        {
+          "path": "jdk-21.0.12.1+1-jre/lib/server/libjvm.so",
+          "size_bytes": 26964072,
+          "sha256": "4c74b4e180a7e25ae209cd1a5dc89baab80d56eaa193c3c957efd728a43f3d9a"
+        }
+      ]
     }
   ],
   "material_layout": "component-owned-v1"

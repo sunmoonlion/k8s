@@ -42,6 +42,16 @@ make -C infrastructure jenkins-status
 | 运行配置 | `jenkins_runtime_dir/{compose.yaml,haproxy.cfg,init.groovy.d/,storage.json,check-storage.py,docker-compose}` |
 | Jenkins 自己的数据 | `jenkins_data_dir/home`（JENKINS_HOME），容器用户 1000，0700 |
 
+## 物料（都在 [文件锁](../artifacts/files.lock.json) 与 [上游镜像锁](../artifacts/upstream-images.lock.json)，归属 `host/jenkins`）
+
+| 物料 | 版本 | 给谁用 | 怎么来的 |
+| --- | --- | --- | --- |
+| 控制器镜像 `jenkins/jenkins` | 2.580.1-lts-jdk21（linux/amd64 manifest `sha256:5e70c4e8…`） | 第 1 步控制器 | 多架构索引解析到 amd64，归档按 docker save 锁 sha256 |
+| 插件闭包 76 个 `.hpi`（`jenkins-plugin-<名>`） | 各自钉死，见锁 | 第 2 步起：流水线、Git、凭据绑定、时间戳、清工作区、读 YAML、阶段视图 | 2026-10-20 用官方镜像里的 `jenkins-plugin-cli` 按 2.580.1 对 `updates.jenkins.io` 解出的依赖闭包；种子 7 个：workflow-aggregator、git、credentials-binding、timestamper、ws-cleanup、pipeline-utility-steps、pipeline-stage-view；下载地址 `updates.jenkins.io/download/plugins/<名>/<版本>/<名>.hpi`（跳转到镜像站，字节与解析时相同，抽查过 git、timestamper）。官方镜像不带插件，运行时不从公网装 |
+| 代理 JRE `temurin-jre` | Temurin 21.0.12.1+1（jre，linux x64） | 第 2 步宿主代理（inbound agent 要 Java 17 或 21） | Adoptium 发布包，sha256 与其 `.sha256.txt` 一致；包内 `bin/java`、`lib/server/libjvm.so` 另锁 |
+
+取物料：`make -C infrastructure fetch-artifacts ARTIFACTS=<id,…>`（插件可一次给全部 `jenkins-plugin-*` 的 id）。第 2 步的剧本把插件放进控制器的 `ref/plugins/`、把 JRE 装到 `.tools/`，都按锁校验后才用。
+
 ## 账号
 
 第一版只有本地管理员 `admin`：`platform-account-plan/import/view OBJECT=jenkins` 走 [host/accounts.md](../host/accounts.md) 的同一套。导入只写预设；第一次启动时 `init.groovy.d/01-platform.groovy` 用预设建账号、关匿名读、执行器数设 0、固定 agent 端口、设根地址，之后不再覆盖（改口令在 Jenkins 界面里做，真值与表的同步以后随轮换协议接）。预设缺失时 deploy 生成随机口令写进私有文件并备份，从不覆盖已有身份；控制器已初始化而口令文件丢了，必须从独立备份恢复，拒绝重新生成。Casdoor 单点登录等 D 段一起接。
