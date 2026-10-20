@@ -2,13 +2,13 @@
 
 本导航适用新体系`infrastructure/`、`gitops/`与`docs/`。从五仓并列的platform-kind-v1/k8s根目录执行手册命令；新开发集群是sunmoon-kind，原始kind属于受保护旧环境。
 
-## 先读这三页（所有者面向的概念页，都在本目录根下；每页开头写明它是全图的哪一块）
+## 先读这三页（[`总纲/`](总纲/)：架构总纲是全图，另两页各是一块，每页开头写明自己的位置）
 
 | 页 | 讲什么 |
 | --- | --- |
-| [架构总纲](架构总纲.md) | 七层加三横切：每样东西归哪一层、层间只有哪几种关系、新东西往哪放、目录与文档怎么跟上（2026-10-20 定） |
-| [运行拓扑](运行拓扑.md) | 东西在哪、谁连谁；版本怎么进集群 |
-| [数据拓扑](数据拓扑.md) | 数据归属与三区 |
+| [架构总纲](总纲/架构总纲.md) | 七层加三横切：每样东西归哪一层、层间只有哪几种关系、新东西往哪放、目录与文档怎么跟上（2026-10-20 定） |
+| [运行拓扑](总纲/运行拓扑.md) | 东西在哪、谁连谁；版本怎么进集群 |
+| [数据拓扑](总纲/数据拓扑.md) | 数据归属与三区 |
 
 动结构之前再看 [平台代码地图](dev-investment-agent/tree-build/平台代码地图.md)（代码事实，活页）。
 
@@ -25,14 +25,14 @@
 | 域名/公共30443切换 | [entry](../infrastructure/entry/README.md) | 原生预览/启停/配置部署 |
 | KIND建群/节点拉取 | [cluster](../infrastructure/cluster/README.md) | 拥有的集群原生引导；整体重建持久化待验 |
 | 物料/工具/版本来源 | [artifacts](../infrastructure/artifacts/README.md)、[tools](../infrastructure/tools/README.md) | 固定锁与校验 |
-| 理解摘要/声明/发布/晋级整条链 | [运行拓扑](运行拓扑.md) 第二部分 | 概念与顺序；命令以 Flux 手册为准 |
+| 理解摘要/声明/发布/晋级整条链 | [运行拓扑](总纲/运行拓扑.md) 第二部分 | 概念与顺序；命令以 Flux 手册为准 |
 | 发布部署声明/晋级/退回 | [Flux](../infrastructure/flux/README.md) | 不可变OCI与显式晋级 |
 | 密钥/Secret生成和恢复 | [secrets](../infrastructure/flux/secrets.md) | SOPS/私有主备；统一轮换待实现 |
 | 组件阶段/依赖（stage.yaml） | [components](../infrastructure/components/README.md) | 图由组件目录汇成 |
 | 平台部署/检查 | [services](../infrastructure/services/README.md) | 平台bootstrap存在 |
 | 应用构建/发布/部署/真实检查 | [applications](../infrastructure/applications/README.md) | 4应用共享原生入口 |
 | 理解职责/适用边界 | [规则](dev-investment-agent/tree-build/rules/constraints.md#发布)「发布」`C-R*`、[项目总览](project-guide/overall-architecture.md) | 稳定设计 |
-| 看用户、本地 link、沙箱、会合点、供给器怎么连 | [运行拓扑](运行拓扑.md) 第一部分 | 图与各自职责 |
+| 看用户、本地 link、沙箱、会合点、供给器怎么连 | [运行拓扑](总纲/运行拓扑.md) 第一部分 | 图与各自职责 |
 | 账号、电脑、本地 link、会合点四个词怎么对应 | [账号-电脑-link-会合点](账号-电脑-link-会合点.md) | 说明文档，不是地图；位置以后另定 |
 | 看还没完成的 | [待办账](dev-investment-agent/tree-build/pending-after-migration.md) 104–109 | 计划，不是实时状态 |
 

@@ -1,6 +1,6 @@
 # 宿主上的 Jenkins：把发布卡变成流水线（0033，B 段）
 
-> 状态：**B 段进行中**。2026-10-20 所有者「可以开始 B」；第八节第 1 步的代码已写（`infrastructure/jenkins/`，卡 `switch-test/inbox/qwen/2026-10-20-fable-b1-jenkins-controller.md`），第九节四条按本页建议做、所有者事后确认。两处落地时与原稿不同：数据目录用数据盘整盘挂载点下的 `/mnt/sunmoon-data/jenkins`，不另加 `/data/jenkins` 的 bind（同一块盘，少一个挂载单元）；TLS 由随附的已锁 HAProxy 镜像终止，证书由 registry 的本地 CA 就地签发，Jenkins 自己只听回环 HTTP。原起草说明：2026-10-18 远程 Fable 起草，所有者当天「那你先把 Jenkins 那一页设计写出来」。依据：决定记录 2026-10-06「CI 用 Jenkins、CD 在冷建时换 Argo CD」「晋级时打 Git tag」、2026-10-12「发布攒批」；CHECKPOINT 主线 B；[`运行拓扑.md`](../../../../运行拓扑.md) 第二部分（原 `发布链.md`，2026-10-20 合并进来）；0010 第九节。**不动代码**，审定后再排实现。只写一页：做什么、放哪、怎么跑、不做什么、怎么验。
+> 状态：**B 段进行中**。2026-10-20 所有者「可以开始 B」；第八节第 1 步的代码已写（`infrastructure/jenkins/`，卡 `switch-test/inbox/qwen/2026-10-20-fable-b1-jenkins-controller.md`），第九节四条按本页建议做、所有者事后确认。两处落地时与原稿不同：数据目录用数据盘整盘挂载点下的 `/mnt/sunmoon-data/jenkins`，不另加 `/data/jenkins` 的 bind（同一块盘，少一个挂载单元）；TLS 由随附的已锁 HAProxy 镜像终止，证书由 registry 的本地 CA 就地签发，Jenkins 自己只听回环 HTTP。原起草说明：2026-10-18 远程 Fable 起草，所有者当天「那你先把 Jenkins 那一页设计写出来」。依据：决定记录 2026-10-06「CI 用 Jenkins、CD 在冷建时换 Argo CD」「晋级时打 Git tag」、2026-10-12「发布攒批」；CHECKPOINT 主线 B；[`总纲/运行拓扑.md`](../../../../总纲/运行拓扑.md) 第二部分（原 `发布链.md`，2026-10-20 合并进来）；0010 第九节。**不动代码**，审定后再排实现。只写一页：做什么、放哪、怎么跑、不做什么、怎么验。
 
 ## 一、要解决什么
 

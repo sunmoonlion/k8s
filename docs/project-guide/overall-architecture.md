@@ -4,7 +4,7 @@
 >
 > **本文件是进入这个项目的入口。**读完它，你应当知道：这个产品是什么、改动落在哪个仓、东西跑在哪里、怎么发布、去哪里查更细的。细节都在指路的文档里；本文不写易腐的值（提交号、镜像摘要、迁移头、版本号、副本数）。与代码冲突时**永远以代码为准**，并请指出本文件需要更新。
 >
-> **地图位置**（2026-10-20 按 [架构总纲](../架构总纲.md) 标注）：本页以**第 6 层应用层与第 7 层产品线**为主，是部分地图；第 3 节只给站点与现网的概貌（全图在 [运行拓扑](../运行拓扑.md)），第 6 节只给交付链的入口（宿主层、集群层、平台层的目录在 [`repos/k8s.md`](repos/k8s.md)，代码事实在 [平台代码地图](../dev-investment-agent/tree-build/平台代码地图.md)）。层次与归属以总纲为准，本页只写现状。
+> **地图位置**（2026-10-20 按 [架构总纲](../总纲/架构总纲.md) 标注）：本页以**第 6 层应用层与第 7 层产品线**为主，是部分地图；第 3 节只给站点与现网的概貌（全图在 [运行拓扑](../总纲/运行拓扑.md)），第 6 节只给交付链的入口（宿主层、集群层、平台层的目录在 [`repos/k8s.md`](repos/k8s.md)，代码事实在 [平台代码地图](../dev-investment-agent/tree-build/平台代码地图.md)）。层次与归属以总纲为准，本页只写现状。
 
 ---
 
@@ -71,7 +71,7 @@
 - **公网边缘 = 东京云 VM**：Traefik + frps，对公网只放工作台、`casdoor`、`relay.sunmoonai.com`；工作台现在仍是改名前的 `investment.sunmoonai.com`，0028 R5 换成 `knowbench.sunmoonai.com`；knowfeed、knowbase、knowlab、knowmart 与各管理端只在所有者机器上可用。
 - 集群里的后端**不按公网名互连**：访问 Casdoor、会合点、供给器一律走集群内 Service（`*_BACKCHANNEL_ENDPOINT` 等）；公网名只出现在交给浏览器与本地代理的地址里。
 
-拓扑的图与一次「工作」的顺序：[`k8s/docs/运行拓扑.md`](../运行拓扑.md)；裁定与风险：[拓扑设计](../dev-investment-agent/tree-build/SDD/architecture/topology.md)。
+拓扑的图与一次「工作」的顺序：[`k8s/docs/总纲/运行拓扑.md`](../总纲/运行拓扑.md)；裁定与风险：[拓扑设计](../dev-investment-agent/tree-build/SDD/architecture/topology.md)。
 
 ## 4. 应用与数据怎么流
 
@@ -192,7 +192,7 @@ knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/
 | 知道某块怎么设计 | [`SDD/architecture/`](../dev-investment-agent/tree-build/SDD/architecture/README.md)、[`SDD/modules/`](../dev-investment-agent/tree-build/SDD/modules/) |
 | 动代码前必读的规则 | [`rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) |
 | 一次求助 / 一次委托怎么走 | [流水线](../dev-investment-agent/pipeline.md)、[`turn/`](../dev-investment-agent/turn/README.md) |
-| 拓扑、谁连谁、发布链 | [`k8s/docs/运行拓扑.md`](../运行拓扑.md) |
+| 拓扑、谁连谁、发布链 | [`k8s/docs/总纲/运行拓扑.md`](../总纲/运行拓扑.md) |
 | 部署、发版、某个组件怎么维护 | `k8s/README.md`、`infrastructure/` 与各组件目录的 `README.md`、[规则「发布」](../dev-investment-agent/tree-build/rules/constraints.md#发布) |
 | 派活卡、回执、两台机器怎么同步 | [`switch-test/`](../dev-investment-agent/switch-test/README.md)（`inbox/`、`done/`、`human-*.sh`）；回执在各仓 `scripts/results/` |
 | 改某个仓的代码 | [`repos/`](repos/) 对应文件 |
