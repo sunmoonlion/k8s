@@ -257,7 +257,9 @@
             url_username: '{{ jenkins_human_account.username }}'
             url_password: '{{ admin_credential.content | b64decode }}'
             force_basic_auth: true
-            headers: {'{{ crumb.json.crumbRequestField }}': '{{ crumb.json.crumb }}', Cookie: '{{ crumb.cookies_string | default("") }}'}
+            # Ansible 不模板化字典的键：写成 {'{{ x }}': …} 时头名会原样带着花括号发出去，HAProxy 回 400 Bad request
+            # （2026-10-20 回执 fable-b2c 第三节）。所以整个 headers 用一个表达式算出来；crumb 与发它的会话绑定，cookie 一并带上。
+            headers: "{{ {crumb.json.crumbRequestField: crumb.json.crumb} | combine({'Cookie': crumb.cookies_string} if crumb.cookies_string | default('') else {}) }}"
             status_code: [201]
             timeout: 20
           register: queued

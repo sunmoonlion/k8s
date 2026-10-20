@@ -7,11 +7,15 @@ import hudson.model.StringParameterDefinition
 import hudson.model.BooleanParameterDefinition
 import hudson.triggers.TimerTrigger
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
+import org.jenkinsci.plugins.workflow.job.properties.DisableConcurrentBuildsJobProperty
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 
 def jenkins = Jenkins.get()
 if (jenkins.getItem('render-check') == null) {
     def job = jenkins.createProject(WorkflowJob, 'render-check')
+    // 同时只跑一个：宿主代理只有一个执行器，不设这条时定时触发的构建会一个个起来在 node() 里排队
+    //（2026-10-20 回执 fable-b2c：#1 在跑，#2–#5 都已开始、挂着等执行器）；设了就只进队列，队列里同参数的会合并。
+    job.addProperty(new DisableConcurrentBuildsJobProperty())
     job.setDescription('只读：对 BRANCH 上 APPS 列出的应用核迁移头并渲染声明候选；不暂存、不发布。任务体在 k8s 仓 ci/render-check.groovy。')
     job.addProperty(new ParametersDefinitionProperty(
         new StringParameterDefinition('BRANCH', '{{ jenkins_render_check_branch }}', 'k8s 与各应用仓都用这个分支'),
@@ -30,4 +34,11 @@ node('{{ jenkins_agent_name }}') {
 '''
     job.setDefinition(new CpsFlowDefinition(bootstrap, true))
     job.save()
+} else {
+    // 已建好的任务只补这一条属性（控制器重启时跑到这里），别的不碰
+    def job = jenkins.getItem('render-check')
+    if (job instanceof WorkflowJob && job.getProperty(DisableConcurrentBuildsJobProperty) == null) {
+        job.addProperty(new DisableConcurrentBuildsJobProperty())
+        job.save()
+    }
 }
