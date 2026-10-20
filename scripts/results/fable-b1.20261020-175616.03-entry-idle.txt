@@ -1,0 +1,4 @@
+2026-10-20T17:56:53+08:00
+$ sudo -n ss -Htn state established (sport or dport 30443), count only
+entry_active_tcp_connections=6
+exit=0

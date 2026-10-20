@@ -1,0 +1,11 @@
+2026-10-20T17:59:19+08:00
+Section 4 certificate-verified SNI checks
+$ sudo -n curl -sS -o /dev/null -w via\ entry\ %\{http_code\}\\n --cacert /etc/sunmoon/registry/tls/ca.crt --resolve jenkins.sunmoonai.com:30443:127.0.0.1 https://jenkins.sunmoonai.com:30443/login
+via entry 200
+command exit=0
+$ sudo -n curl -sS -o /dev/null -w harbor\ still\ %\{http_code\}\\n --cacert /etc/sunmoon/registry/tls/ca.crt --resolve harbor.sunmoonai.com:30443:127.0.0.1 https://harbor.sunmoonai.com:30443/api/v2.0/health
+harbor still 200
+command exit=0
+
+checks exit=0
+exit=0

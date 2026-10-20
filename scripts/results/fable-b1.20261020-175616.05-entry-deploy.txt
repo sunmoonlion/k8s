@@ -1,0 +1,214 @@
+2026-10-20T17:59:09+08:00
+Owner confirmed maintenance window in this session: 现在可以切换
+$ make -C infrastructure entry-deploy
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml entry/service.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'entry_action=deploy'
+
+PLAY [Configure the standalone TLS passthrough entry] **************************
+
+TASK [Validate entry configuration] ********************************************
+ok: [localhost]
+
+TASK [Require explicit bounded SNI routes] *************************************
+ok: [localhost] => (item=template)
+ok: [localhost] => (item=information)
+ok: [localhost] => (item=knowledge)
+ok: [localhost] => (item=knowbench)
+ok: [localhost] => (item=knowlab)
+ok: [localhost] => (item=knowmart)
+ok: [localhost] => (item=kibana)
+ok: [localhost] => (item=operator-consoles)
+ok: [localhost] => (item=relay)
+ok: [localhost] => (item=jenkins)
+
+TASK [Show the routing plan] ***************************************************
+ok: [localhost] => {
+    "msg": {
+        "action": "deploy",
+        "application_routes": [
+            {
+                "backend": "127.0.0.1:29443",
+                "hostnames": [
+                    "casdoor.sunmoonai.com",
+                    "tpl.sunmoonai.com",
+                    "tpl-admin.sunmoonai.com"
+                ],
+                "name": "template"
+            },
+            {
+                "backend": "127.0.0.1:29443",
+                "hostnames": [
+                    "knowfeed.sunmoonai.com",
+                    "knowfeed-admin.sunmoonai.com"
+                ],
+                "name": "information"
+            },
+            {
+                "backend": "127.0.0.1:29443",
+                "hostnames": [
+                    "knowbase.sunmoonai.com",
+                    "knowbase-admin.sunmoonai.com"
+                ],
+                "name": "knowledge"
+            },
+            {
+                "backend": "127.0.0.1:29443",
+                "hostnames": [
+                    "knowbench.sunmoonai.com",
+                    "knowbench-admin.sunmoonai.com"
+                ],
+                "name": "knowbench"
+            },
+            {
+                "backend": "127.0.0.1:29443",
+                "hostnames": [
+                    "knowlab.sunmoonai.com",
+                    "knowlab-admin.sunmoonai.com"
+                ],
+                "name": "knowlab"
+            },
+            {
+                "backend": "127.0.0.1:29443",
+                "hostnames": [
+                    "knowmart.sunmoonai.com",
+                    "knowmart-admin.sunmoonai.com"
+                ],
+                "name": "knowmart"
+            },
+            {
+                "backend": "127.0.0.1:29443",
+                "hostnames": [
+                    "kibana.sunmoonai.com"
+                ],
+                "name": "kibana"
+            },
+            {
+                "backend": "127.0.0.1:29443",
+                "hostnames": [
+                    "rabbitmq.sunmoonai.com",
+                    "neo4j.sunmoonai.com",
+                    "aistor.sunmoonai.com",
+                    "pgadmin.sunmoonai.com",
+                    "redisinsight.sunmoonai.com",
+                    "flower.sunmoonai.com",
+                    "mongo-express.sunmoonai.com"
+                ],
+                "name": "operator-consoles"
+            },
+            {
+                "backend": "127.0.0.1:29443",
+                "hostnames": [
+                    "relay.sunmoonai.com"
+                ],
+                "name": "relay"
+            },
+            {
+                "backend": "127.0.0.1:18443",
+                "hostnames": [
+                    "jenkins.sunmoonai.com"
+                ],
+                "name": "jenkins"
+            }
+        ],
+        "boot": "Disabled until boot acceptance; existing listeners are not stopped by this entry.",
+        "image": "docker.io/library/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272",
+        "listen": "0.0.0.0:30443",
+        "other_domains": "172.18.0.5:30443",
+        "registry": "harbor.sunmoonai.com -> 127.0.0.1:11443"
+    }
+}
+
+TASK [Read current service state] **********************************************
+ok: [localhost]
+
+TASK [Verify the preview uses the locally locked HAProxy image] ****************
+skipping: [localhost]
+
+TASK [Require the exact preview image identity] ********************************
+skipping: [localhost]
+
+TASK [Create nonsecret preview directory] **************************************
+skipping: [localhost]
+
+TASK [Render the same template used by deploy into the preview] ****************
+skipping: [localhost]
+
+TASK [Validate with the locked HAProxy binary in an isolated container] ********
+skipping: [localhost]
+
+TASK [Require the locked local image] ******************************************
+ok: [localhost]
+
+TASK [Verify image platform and manifest] **************************************
+ok: [localhost]
+
+TASK [Verify the Compose binary source] ****************************************
+ok: [localhost]
+
+TASK [Require locked Compose] **************************************************
+ok: [localhost]
+
+TASK [Inspect owned directories] ***********************************************
+ok: [localhost] => (item=/etc/sunmoon/entry)
+ok: [localhost] => (item=/opt/sunmoon/entry)
+
+TASK [Refuse unsafe owned directories] *****************************************
+ok: [localhost] => (item=/etc/sunmoon/entry)
+ok: [localhost] => (item=/opt/sunmoon/entry)
+
+TASK [Create nonsecret configuration directories] ******************************
+ok: [localhost] => (item=/etc/sunmoon/entry)
+ok: [localhost] => (item=/opt/sunmoon/entry)
+
+TASK [Preview desired configuration] *******************************************
+changed: [localhost] => (item={'src': 'haproxy.cfg.j2', 'dest': '/etc/sunmoon/entry/haproxy.cfg'})
+ok: [localhost] => (item={'src': 'entry-compose.yaml.j2', 'dest': '/opt/sunmoon/entry/compose.yaml'})
+ok: [localhost] => (item={'src': 'sunmoon-entry.service.j2', 'dest': '/etc/systemd/system/sunmoon-entry.service'})
+
+TASK [Require a stop before changing an active listener] ***********************
+ok: [localhost]
+
+TASK [Write desired configuration] *********************************************
+changed: [localhost] => (item={'src': 'haproxy.cfg.j2', 'dest': '/etc/sunmoon/entry/haproxy.cfg'})
+ok: [localhost] => (item={'src': 'entry-compose.yaml.j2', 'dest': '/opt/sunmoon/entry/compose.yaml'})
+ok: [localhost] => (item={'src': 'sunmoon-entry.service.j2', 'dest': '/etc/systemd/system/sunmoon-entry.service'})
+
+TASK [Install verified Compose independent of the worktree] ********************
+ok: [localhost]
+
+TASK [Reload service definitions without enabling boot] ************************
+ok: [localhost]
+
+TASK [Stop only the owned proxy] ***********************************************
+skipping: [localhost]
+
+TASK [Start the owned proxy] ***************************************************
+changed: [localhost]
+
+TASK [Verify Harbor SNI routing with the trusted certificate] ******************
+FAILED - RETRYING: [localhost]: Verify Harbor SNI routing with the trusted certificate (5 retries left).
+ok: [localhost]
+
+TASK [Read final service state] ************************************************
+ok: [localhost]
+
+TASK [Report final state] ******************************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "ActiveState=active",
+        "SubState=running",
+        "UnitFileState=disabled"
+    ]
+}
+
+TASK [Require the requested lifecycle outcome] *********************************
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=21   changed=3    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+
+deploy exit=0
+exit=0
