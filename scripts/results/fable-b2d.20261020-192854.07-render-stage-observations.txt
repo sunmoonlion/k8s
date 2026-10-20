@@ -1,0 +1,12 @@
+2026-10-20T19:43:45.424281+08:00
+Read-only extraction from saved forced-build console; original full console stays under .build/.
+application-deployment-plan apps=tpl,knowfeed,knowbase,knowbench,knowlab,knowmart
+app count=6
+application-render apps=tpl,knowfeed,knowbase,knowbench,knowlab,knowmart
+app count=6
+Ansible recap count=12
+recaps with failed!=0=0
+matched identity task-status observations=119
+matched changed task count=0
+Task statuses do not establish a before/after byte comparison of private input files.
+exit=0

@@ -1,0 +1,46 @@
+2026-10-20T19:42:57.818769+08:00
+Full forced-build console remains local, excluded from git: /home/zymun/worktrees/fable/k8s/infrastructure/.build/jenkins/render-check-7.log
+Console bytes=405843
+Last 40 lines (original saved consoleText):
+ok: [localhost] => (item=app-platform/knowmart-app/knowmart-backend/migration)
+ok: [localhost] => (item=app-platform/knowmart-app/knowmart-backend/redis)
+ok: [localhost] => (item=app-platform/knowmart-app/knowmart-backend/rabbitmq)
+ok: [localhost] => (item=app-platform/knowmart-app/knowmart-backend/identity)
+ok: [localhost] => (item=app-platform/knowmart-app/knowmart-backend/runtime)
+ok: [localhost] => (item=app-platform/knowmart-app/knowmart-web-frontend)
+
+TASK [Find only renderer candidate files] **************************************
+skipping: [localhost]
+
+TASK [Refuse an incomplete staging candidate] **********************************
+skipping: [localhost]
+
+TASK [Prepare declared component directories] **********************************
+skipping: [localhost]
+
+TASK [Copy only rendered declarations into the source tree] ********************
+skipping: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=202  changed=0    unreachable=0    failed=0    skipped=89   rescued=0    ignored=0   
+
+make[1]: Leaving directory '/mnt/sunmoon-data/jenkins/repos/k8s/infrastructure'
+make: Leaving directory '/mnt/sunmoon-data/jenkins/repos/k8s/infrastructure'
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (候选与已提交的差异)
+[Pipeline] sh
++ set -o pipefail
+/mnt/sunmoon-data/jenkins/repos/k8s@tmp/durable-9f5af81c/script.sh.copy: 2: set: Illegal option -o pipefail
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // dir
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+ERROR: script returned exit code 2
+Finished: FAILURE
+
+exit=0

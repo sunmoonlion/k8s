@@ -1,0 +1,125 @@
+2026-10-20T19:37:09.988713+08:00
+Read-only task-name/status extraction from completed timer #1 local console; no credential values printed.
+Source: /home/zymun/worktrees/fable/k8s/infrastructure/.build/jenkins/timer-render-check-1.final.log
+app=tpl task=Preserve independent non-overwritten credential backup status=ok
+app=tpl task=Restore a preserved Redis input without rotating its password status=skipping
+app=tpl task=Refuse to regenerate a declared Redis identity status=ok
+app=tpl task=Preserve the independent Redis credential backup status=ok
+app=tpl task=Restore a preserved RabbitMQ input without rotating its password status=skipping
+app=tpl task=Refuse to regenerate a declared RabbitMQ identity status=ok
+app=tpl task=Preserve the independent RabbitMQ credential backup status=ok
+app=tpl task=Restore a preserved browser identity input without rotating its password status=skipping
+app=tpl task=Refuse to regenerate a declared browser identity identity status=ok
+app=tpl task=Preserve the independent browser identity credential backup status=ok
+app=tpl task=Refuse regeneration of a previously declared TLS identity status=ok
+app=tpl task=Generate the application TLS key only once status=ok
+app=tpl task=Refuse silently regenerating declared domain secrets status=skipping
+app=tpl task=Generate random domain secrets only on first preparation status=skipping
+app=knowfeed task=Preserve independent non-overwritten credential backup status=ok
+app=knowfeed task=Restore a preserved Redis input without rotating its password status=skipping
+app=knowfeed task=Refuse to regenerate a declared Redis identity status=ok
+app=knowfeed task=Preserve the independent Redis credential backup status=ok
+app=knowfeed task=Restore a preserved RabbitMQ input without rotating its password status=skipping
+app=knowfeed task=Refuse to regenerate a declared RabbitMQ identity status=ok
+app=knowfeed task=Preserve the independent RabbitMQ credential backup status=ok
+app=knowfeed task=Restore a preserved browser identity input without rotating its password status=skipping
+app=knowfeed task=Refuse to regenerate a declared browser identity identity status=ok
+app=knowfeed task=Preserve the independent browser identity credential backup status=ok
+app=knowfeed task=Refuse regeneration of a previously declared TLS identity status=ok
+app=knowfeed task=Generate the application TLS key only once status=ok
+app=knowfeed task=Inspect preserved application S3 identity status=ok
+app=knowfeed task=Restore preserved S3 identity without rotation status=skipping
+app=knowfeed task=Generate an independent application S3 secret only on first preparation status=skipping
+app=knowfeed task=Preserve non-overwritten S3 identity backup status=ok
+app=knowfeed task=Restore missing workload credentials without rotation status=skipping
+app=knowfeed task=Refuse regeneration of existing workload identity status=ok
+app=knowfeed task=Initialize an independent service credential once status=skipping
+app=knowfeed task=Preserve non-overwritten service identity backup status=ok
+app=knowfeed task=Refuse silently regenerating declared domain secrets status=skipping
+app=knowfeed task=Generate random domain secrets only on first preparation status=skipping
+app=knowbase task=Preserve independent non-overwritten credential backup status=ok
+app=knowbase task=Restore a preserved Redis input without rotating its password status=skipping
+app=knowbase task=Refuse to regenerate a declared Redis identity status=ok
+app=knowbase task=Preserve the independent Redis credential backup status=ok
+app=knowbase task=Restore a preserved RabbitMQ input without rotating its password status=skipping
+app=knowbase task=Refuse to regenerate a declared RabbitMQ identity status=ok
+app=knowbase task=Preserve the independent RabbitMQ credential backup status=ok
+app=knowbase task=Restore a preserved browser identity input without rotating its password status=skipping
+app=knowbase task=Refuse to regenerate a declared browser identity identity status=ok
+app=knowbase task=Preserve the independent browser identity credential backup status=ok
+app=knowbase task=Refuse regeneration of a previously declared TLS identity status=ok
+app=knowbase task=Generate the application TLS key only once status=ok
+app=knowbase task=Inspect preserved application S3 identity status=ok
+app=knowbase task=Restore preserved S3 identity without rotation status=skipping
+app=knowbase task=Generate an independent application S3 secret only on first preparation status=skipping
+app=knowbase task=Preserve non-overwritten S3 identity backup status=ok
+app=knowbase task=Restore preserved dataset binding without replacing its identity status=skipping
+app=knowbase task=Save a new operator binding without overwriting a preserved identity status=ok
+app=knowbase task=Refuse silently regenerating declared domain secrets status=skipping
+app=knowbase task=Generate random domain secrets only on first preparation status=skipping
+app=knowbase task=Generate a candidate ES256 key pair only in memory status=ok
+app=knowbase task=Refuse regenerating declared component passwords status=ok
+app=knowbench task=Preserve independent non-overwritten credential backup status=ok
+app=knowbench task=Restore a preserved Redis input without rotating its password status=skipping
+app=knowbench task=Refuse to regenerate a declared Redis identity status=ok
+app=knowbench task=Preserve the independent Redis credential backup status=ok
+app=knowbench task=Restore a preserved RabbitMQ input without rotating its password status=skipping
+app=knowbench task=Refuse to regenerate a declared RabbitMQ identity status=ok
+app=knowbench task=Preserve the independent RabbitMQ credential backup status=ok
+app=knowbench task=Restore a preserved browser identity input without rotating its password status=skipping
+app=knowbench task=Refuse to regenerate a declared browser identity identity status=ok
+app=knowbench task=Preserve the independent browser identity credential backup status=ok
+app=knowbench task=Refuse regeneration of a previously declared TLS identity status=ok
+app=knowbench task=Generate the application TLS key only once status=ok
+app=knowbench task=Restore missing workload credentials without rotation status=skipping
+app=knowbench task=Refuse regeneration of existing workload identity status=ok
+app=knowbench task=Initialize an independent service credential once status=skipping
+app=knowbench task=Preserve non-overwritten service identity backup status=ok
+app=knowbench task=Restore missing client credentials without rotation status=skipping
+app=knowbench task=Initialize this client's independent credential once status=skipping
+app=knowbench task=Restore missing client credentials without rotation status=skipping
+app=knowbench task=Initialize this client's independent credential once status=skipping
+app=knowbench task=Refuse silently regenerating declared domain secrets status=ok
+app=knowbench task=Generate random domain secrets only on first preparation status=skipping
+app=knowbench task=Generate a candidate ES256 key pair only in memory status=ok
+app=knowbench task=Refuse regenerating declared component passwords status=ok
+app=knowbench task=Refuse regenerating declared component passwords status=ok
+app=knowlab task=Preserve independent non-overwritten credential backup status=ok
+app=knowlab task=Restore a preserved Redis input without rotating its password status=skipping
+app=knowlab task=Refuse to regenerate a declared Redis identity status=ok
+app=knowlab task=Preserve the independent Redis credential backup status=ok
+app=knowlab task=Restore a preserved RabbitMQ input without rotating its password status=skipping
+app=knowlab task=Refuse to regenerate a declared RabbitMQ identity status=ok
+app=knowlab task=Preserve the independent RabbitMQ credential backup status=ok
+app=knowlab task=Restore a preserved browser identity input without rotating its password status=skipping
+app=knowlab task=Refuse to regenerate a declared browser identity identity status=ok
+app=knowlab task=Preserve the independent browser identity credential backup status=ok
+app=knowlab task=Refuse regeneration of a previously declared TLS identity status=ok
+app=knowlab task=Generate the application TLS key only once status=ok
+app=knowlab task=Inspect preserved application S3 identity status=ok
+app=knowlab task=Restore preserved S3 identity without rotation status=skipping
+app=knowlab task=Generate an independent application S3 secret only on first preparation status=skipping
+app=knowlab task=Preserve non-overwritten S3 identity backup status=ok
+app=knowlab task=Restore missing client credentials without rotation status=skipping
+app=knowlab task=Initialize this client's independent credential once status=skipping
+app=knowlab task=Restore missing client credentials without rotation status=skipping
+app=knowlab task=Initialize this client's independent credential once status=skipping
+app=knowlab task=Refuse silently regenerating declared domain secrets status=skipping
+app=knowlab task=Generate random domain secrets only on first preparation status=skipping
+app=knowmart task=Preserve independent non-overwritten credential backup status=ok
+app=knowmart task=Restore a preserved Redis input without rotating its password status=skipping
+app=knowmart task=Refuse to regenerate a declared Redis identity status=ok
+app=knowmart task=Preserve the independent Redis credential backup status=ok
+app=knowmart task=Restore a preserved RabbitMQ input without rotating its password status=skipping
+app=knowmart task=Refuse to regenerate a declared RabbitMQ identity status=ok
+app=knowmart task=Preserve the independent RabbitMQ credential backup status=ok
+app=knowmart task=Restore a preserved browser identity input without rotating its password status=skipping
+app=knowmart task=Refuse to regenerate a declared browser identity identity status=ok
+app=knowmart task=Preserve the independent browser identity credential backup status=ok
+app=knowmart task=Refuse regeneration of a previously declared TLS identity status=ok
+app=knowmart task=Generate the application TLS key only once status=ok
+app=knowmart task=Refuse silently regenerating declared domain secrets status=skipping
+app=knowmart task=Generate random domain secrets only on first preparation status=skipping
+matched task count=119
+These are log observations, not a before/after byte comparison of private identities.
+exit=0

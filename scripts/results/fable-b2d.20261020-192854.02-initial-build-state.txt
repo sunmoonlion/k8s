@@ -1,0 +1,11 @@
+2026-10-20T19:29:33.688760+08:00
+Read persisted build metadata with sudo; an unprivileged -f test cannot traverse the private Jenkins home.
+#1 {'result': 'FAILURE', 'duration': '2795696', 'displayName': '#1 fable@a686ce59fe'}
+#2 {'result': 'NOT_BUILT', 'duration': '2208330', 'displayName': '#2 fable@a686ce59fe'}
+#3 {'result': 'NOT_BUILT', 'duration': '1622036', 'displayName': '#3 fable@a686ce59fe'}
+#4 {'result': 'NOT_BUILT', 'duration': '1034662', 'displayName': '#4 fable@a686ce59fe'}
+#5 {'result': 'FAILURE', 'duration': '798637', 'displayName': '#5 fable@63f7fe6afb'}
+#6 {'result': None, 'duration': '0', 'displayName': '#6 fable@eca2073827'}
+Wait before forced check=False
+
+exit=0

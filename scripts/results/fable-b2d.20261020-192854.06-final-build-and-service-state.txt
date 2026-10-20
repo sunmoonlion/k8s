@@ -1,0 +1,33 @@
+2026-10-20T19:42:57+08:00
+#1 {'result': 'FAILURE', 'duration': '2795696', 'displayName': '#1 fable@a686ce59fe', 'timestamp': '1792492560195'}
+#1 start=2026-10-20T18:36:00.195000+08:00
+#1 finish=2026-10-20T19:22:35.891000+08:00
+#2 {'result': 'NOT_BUILT', 'duration': '2208330', 'displayName': '#2 fable@a686ce59fe', 'timestamp': '1792493160181'}
+#3 {'result': 'NOT_BUILT', 'duration': '1622036', 'displayName': '#3 fable@a686ce59fe', 'timestamp': '1792493760181'}
+#4 {'result': 'NOT_BUILT', 'duration': '1034662', 'displayName': '#4 fable@a686ce59fe', 'timestamp': '1792494360181'}
+#5 {'result': 'FAILURE', 'duration': '798637', 'displayName': '#5 fable@63f7fe6afb', 'timestamp': '1792494960182'}
+#6 {'result': 'FAILURE', 'duration': '576994', 'displayName': '#6 fable@eca2073827', 'timestamp': '1792495560181'}
+#7 {'result': 'FAILURE', 'duration': '697529', 'displayName': '#7 fable@eca2073827', 'timestamp': '1792495812980'}
+#7 FORCE=true
+#8 {'result': 'NOT_BUILT', 'duration': '362802', 'displayName': '#8 fable@eca2073827', 'timestamp': '1792496160181'}
+Candidate directory facts (read-only; no second diff run):
+/mnt/sunmoon-data/jenkins/repos/k8s/.build/components/app-platform exists=False
+/mnt/sunmoon-data/jenkins/repos/k8s/infrastructure/.build/components/app-platform exists=True
+/mnt/sunmoon-data/jenkins/repos/k8s/.build/render-check/diff.txt exists=False
+Current default /bin/sh resolves to /usr/bin/dash
+Id=sunmoon-jenkins.service
+WantedBy=sunmoon-platform.target
+ActiveState=active
+UnitFileState=enabled
+NRestarts=0
+User=zymun
+Id=sunmoon-jenkins-agent.service
+WantedBy=sunmoon-platform.target
+ActiveState=active
+SubState=running
+UnitFileState=enabled
+Certificate-verified intranet probes after failure (not card edge/global checks):
+jenkins login 200
+harbor health 200
+
+exit=0

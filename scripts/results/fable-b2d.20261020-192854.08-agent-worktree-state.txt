@@ -1,0 +1,6 @@
+2026-10-20T19:45:08+08:00
+Read-only agent worktree check after failed diff stage:
+eca20738276b5b4d179c261e3fa307053cd9bfe9
+Tracked gitops/sources changes (expected empty):
+
+exit=0
