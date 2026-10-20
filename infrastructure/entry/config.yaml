@@ -64,3 +64,8 @@ entry_cluster_routes:
     backend: '127.0.0.1:{{ cluster_ingress_port }}'
     hostnames:
       - '{{ relay_origin | urlsplit("hostname") }}'
+  # 宿主上的 Jenkins（SDD 0033）：直通到它自己的回环 TLS 后端，只在内网入口上，边缘不转发这个域名。
+  - name: jenkins
+    backend: '127.0.0.1:{{ jenkins_https_port }}'
+    hostnames:
+      - '{{ jenkins_hostname }}'

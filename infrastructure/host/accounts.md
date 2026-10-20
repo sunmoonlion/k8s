@@ -7,6 +7,7 @@
 | 对象 | 账号 | 用途 | 本轮能力 |
 |---|---|---|---|
 | registry | admin | Harbor管理员 | 计划、私有查看、初次预设、表导入、真实检查；轮换候选待维护验证 |
+| jenkins | admin | 宿主 Jenkins 本地管理员（SDD 0033） | 计划、私有查看、初次预设、表导入（第 13 项）；首次启动读预设建账号，之后改口令在 Jenkins 界面；协议检查与轮换未接 |
 | app-platform/auth-app/casdoor | built-in/admin | 认证管理员 | 同上；轮换由SOPS候选和Flux同步 |
 | data-platform/elk/kibana/ui | sunmoon_kibana_reader | 人工只读 | 计划、查看、真实检查；本轮密码保持 |
 | data-platform/postgresql | postgres | 数据库管理员 | 计划、查看、首次私有预设；实际轮换未实现 |

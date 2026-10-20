@@ -1,0 +1,45 @@
+# KIND 当前配置；与本目录实现同源维护。秘密与版本摘要不在这里。
+---
+# 部署/启动准入；修改边界见同目录 README 的字段表。
+jenkins_enabled: true
+# 控制器的 TLS/SNI 域名（只在内网入口 30443 上，边缘不转发）；修改边界见同目录 README 的字段表。
+jenkins_hostname: jenkins.sunmoonai.com
+# Compose 实例名；修改边界见同目录 README 的字段表。
+jenkins_project: sunmoon-jenkins
+# 宿主回环 HTTPS 后端端口（入口 SNI 直通到这里，由随附的 HAProxy 终止 TLS）；修改边界见同目录 README 的字段表。
+jenkins_https_port: 18443
+# 宿主回环 HTTP 端口（宿主上的代理和本机检查用，不经 TLS）；修改边界见同目录 README 的字段表。
+jenkins_http_port: 18080
+# 宿主回环 inbound agent 端口（第 2 步的宿主代理连这里）；修改边界见同目录 README 的字段表。
+jenkins_agent_port: 50000
+# 私有配置、身份与 TLS 目录；修改边界见同目录 README 的字段表。
+jenkins_config_dir: /etc/sunmoon/jenkins
+# Compose、启动脚本与运行配置目录；修改边界见同目录 README 的字段表。
+jenkins_runtime_dir: /opt/sunmoon/jenkins
+# 数据目录：数据盘整盘挂载点下的子目录，不另加 bind；修改边界见同目录 README 的字段表。
+jenkins_data_dir: /mnt/sunmoon-data/jenkins
+# 控制器容器资源上限；修改边界见同目录 README 的字段表。
+jenkins_memory: 2g
+jenkins_cpus: 2
+# 服务证书有效期（天），由 registry 的本地 CA 签发；修改边界见同目录 README 的字段表。
+jenkins_certificate_days: 1825
+
+# Human login policy; initial files are private inputs, not passwords in configuration.
+jenkins_credential_backup_dir: /mnt/sunmoon-data/backups/jenkins/credentials
+jenkins_human_account:
+  object: jenkins
+  id: admin
+  username: admin
+  table_row: '13'
+  table_import: true
+  current_file: '{{ jenkins_config_dir }}/private/admin-password'
+  current_field: ''
+  backup_file: '{{ jenkins_credential_backup_dir }}/admin-password'
+  initial_file: '{{ jenkins_config_dir }}/private/presets/admin-password'
+  initial_backup_file: '{{ jenkins_credential_backup_dir }}/presets/admin-password'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: jenkins
+  # 第一版只有本地管理员的首次预设、查看与导入；改口令在 Jenkins 界面里做，轮换协议以后接。
+  protocol_check_supported: false
+  rotation_supported: false

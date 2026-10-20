@@ -34,7 +34,7 @@
     - name: Compute selection and dependency closure from the unique phase graph
       ansible.builtin.command:
         argv: ['{{ playbook_dir }}/../.venv/bin/python', '{{ playbook_dir }}/../components/stages.py', select]
-        stdin: '{{ {"object":requested_object,"action":deployment_action,"stages":component_stages,"application_names":application_names,"modules":{"host":{"enabled":true},"registry":{"enabled":registry_enabled},"entry":{"enabled":entry_enabled},"cluster":{"enabled":cluster_enabled},"flux":{"enabled":flux_enabled}},"config_files":lookup("env","PLATFORM_CONFIG_FILES").split(),"buildable_objects":component_image_objects.values() | list,"component_image_objects":component_image_objects,"site":lookup("env","SITE") | default("environments/kind/site.yaml",true)} | to_json }}'
+        stdin: '{{ {"object":requested_object,"action":deployment_action,"stages":component_stages,"application_names":application_names,"modules":{"host":{"enabled":true},"registry":{"enabled":registry_enabled},"entry":{"enabled":entry_enabled},"jenkins":{"enabled":jenkins_enabled},"cluster":{"enabled":cluster_enabled},"flux":{"enabled":flux_enabled}},"config_files":lookup("env","PLATFORM_CONFIG_FILES").split(),"buildable_objects":component_image_objects.values() | list,"component_image_objects":component_image_objects,"site":lookup("env","SITE") | default("environments/kind/site.yaml",true)} | to_json }}'
       register: selection_bytes
       changed_when: false
     - name: Preserve the selected public object contract
@@ -81,6 +81,7 @@
           PLATFORM_RAGFLOW := {{ ("data-platform/ragflow" in selection.services) | lower }}
           PLATFORM_REGISTRY := {{ selection.modules.registry | bool | lower }}
           PLATFORM_ENTRY := {{ selection.modules.entry | bool | lower }}
+          PLATFORM_JENKINS := {{ selection.modules.jenkins | bool | lower }}
           PLATFORM_CLUSTER := {{ selection.modules.cluster | bool | lower }}
           PLATFORM_FLUX := {{ selection.modules.flux | bool | lower }}
           PLATFORM_FOUNDATIONS := {{ ('foundations' in selection.services) | lower }}

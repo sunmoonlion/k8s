@@ -1,0 +1,28 @@
+global
+    maxconn 1024
+    log stdout format raw local0 warning
+    ssl-default-bind-options ssl-min-ver TLSv1.2
+
+defaults
+    mode http
+    log global
+    option forwardfor
+    timeout connect 5s
+    timeout client 1h
+    timeout server 1h
+    timeout tunnel 1h
+
+frontend jenkins_tls
+    bind *:{{ jenkins_https_port }} ssl crt /usr/local/etc/haproxy/jenkins.pem alpn h2,http/1.1
+    http-request set-header X-Forwarded-Proto https
+    default_backend jenkins
+
+# Compose 内置 DNS；控制器容器先于本容器就绪（depends_on 健康），启动时按 libc 解析，之后按 resolvers 刷新。
+# init-addr 带 none：没有网络的 `haproxy -c` 校验也能过（deploy 时离线核配置）。
+resolvers docker
+    nameserver dns 127.0.0.11:53
+    hold valid 10s
+
+backend jenkins
+    default-server init-addr libc,none
+    server jenkins jenkins:8080 check inter 10s fall 3 rise 2 resolvers docker resolve-prefer ipv4

@@ -1,0 +1,29 @@
+[Unit]
+Description=SunMoon host Jenkins controller
+Requires=docker.service
+After=docker.service
+PartOf=docker.service
+RequiresMountsFor={{ storage_mounts[0].target }}
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
+[Service]
+Type=exec
+WorkingDirectory={{ jenkins_runtime_dir }}
+UMask=0077
+ExecStartPre=/usr/bin/python3 {{ jenkins_runtime_dir }}/check-storage.py {{ jenkins_runtime_dir }}/storage.json
+ExecStart={{ jenkins_runtime_dir }}/docker-compose --project-name {{ jenkins_project }} -f compose.yaml up --no-build --pull never --abort-on-container-exit --exit-code-from jenkins --no-color --no-attach jenkins --no-attach tls
+ExecStop={{ jenkins_runtime_dir }}/docker-compose --project-name {{ jenkins_project }} -f compose.yaml stop --timeout 60
+ExecStopPost=-{{ jenkins_runtime_dir }}/docker-compose --project-name {{ jenkins_project }} -f compose.yaml stop --timeout 60
+# Compose 5.5.1 returns 130 when interrupted by the explicit stop operation.
+SuccessExitStatus=130
+Restart=always
+RestartSec=10
+TimeoutStartSec=300
+TimeoutStopSec=120
+StandardOutput=null
+StandardError=journal
+
+[Install]
+# 并入统一目标用 Wants（目标模板里就是 Wants，不是 Requires）：单独停 Jenkins 不会把目标和别的服务带停。
+WantedBy=sunmoon-platform.target

@@ -25,7 +25,7 @@
           - host_action not in ['install','enable-boot','start'] or (cluster_enabled | bool and registry_enabled | bool and entry_enabled | bool)
     - name: Read installed service states without starting anything
       ansible.builtin.command:
-        argv: [systemctl, show, sunmoon-platform.target, sunmoon-platform-boot.service, sunmoon-cluster.service, sunmoon-registry.service, sunmoon-entry.service, '--property=Id,ActiveState,UnitFileState']
+        argv: [systemctl, show, sunmoon-platform.target, sunmoon-platform-boot.service, sunmoon-cluster.service, sunmoon-registry.service, sunmoon-entry.service, sunmoon-jenkins.service, '--property=Id,ActiveState,UnitFileState']
       changed_when: false
       register: states
     - name: Report lifecycle state
@@ -50,7 +50,7 @@
           ansible.builtin.systemd_service:
             name: '{{ item }}'
             state: stopped
-          loop: [sunmoon-platform-boot.service, sunmoon-platform.target, sunmoon-entry.service, sunmoon-cluster.service, sunmoon-registry.service]
+          loop: [sunmoon-platform-boot.service, sunmoon-platform.target, sunmoon-jenkins.service, sunmoon-entry.service, sunmoon-cluster.service, sunmoon-registry.service]
     - name: Ensure stopped services cannot leave unmanaged owned nodes running
       when: host_action == 'stop'
       block:

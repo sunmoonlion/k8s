@@ -9,7 +9,7 @@
     image_group: bootstrap
     upstream: '{{ lookup("ansible.builtin.file", playbook_dir + "/upstream-images.lock.json") | from_json }}'
     node_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/node-image.lock.json") | from_json }}'
-    selected: '{{ (node_lock.images + (upstream.images | selectattr("id", "in", ["calico-node", "calico-cni", "calico-kube-controllers"]) | list)) if image_group == "bootstrap" else (upstream.images | selectattr("id", "in", ["haproxy", "skopeo"]) | list) }}'
+    selected: '{{ (node_lock.images + (upstream.images | selectattr("id", "in", ["calico-node", "calico-cni", "calico-kube-controllers"]) | list)) if image_group == "bootstrap" else (upstream.images | selectattr("id", "in", ["haproxy", "skopeo", "jenkins"]) | list) }}'
     archive_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/" + image_group + "-archives.lock.json") | from_json }}'
     cache_directories: >-
       {% set paths = [artifact_cache_root] %}
@@ -32,7 +32,7 @@
           - image_action in ['plan', 'fetch', 'verify']
           - image_group in ['bootstrap', 'host']
           - node_lock.schema_version == 1
-          - selected | length == (4 if image_group == "bootstrap" else 2)
+          - selected | length == (4 if image_group == "bootstrap" else 3)
           - selected | map(attribute='id') | unique | length == selected | length
           - artifact_cache_root is match('^/[a-zA-Z0-9_./-]+$')
           - "'..' not in artifact_cache_root.split('/')"

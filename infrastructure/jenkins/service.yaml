@@ -1,0 +1,330 @@
+---
+# 宿主上的 Jenkins 控制器（SDD 0033 B 段第 1 步）：官方 LTS 镜像走物料锁，Compose 加 systemd，数据在数据盘，
+# 只绑回环；随附一个用已锁 HAProxy 镜像的 TLS 终止器，供入口按 SNI 直通到 jenkins_https_port。
+# 控制器里不存任何平台秘密；本地管理员口令是它自己的身份，首次启动从私有文件读一次。
+- name: Configure and control the host Jenkins controller
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    jenkins_action: plan
+    upstream: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
+    files: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    jenkins_image: '{{ upstream.images | selectattr("id", "equalto", "jenkins") | first }}'
+    tls_image: '{{ upstream.images | selectattr("id", "equalto", "haproxy") | first }}'
+    compose_input: '{{ files.files | selectattr("id", "equalto", "compose") | first }}'
+    jenkins_home: '{{ jenkins_data_dir }}/home'
+    jenkins_uid: 1000   # 官方镜像里 jenkins 用户的 uid/gid
+    tls_uid: 10001      # 与 entry 的 HAProxy 同一个非 root 身份
+    jenkins_runtime_files:
+      - {src: compose.yaml.j2, dest: '{{ jenkins_runtime_dir }}/compose.yaml', mode: '0600', owner: root, group: root}
+      - {src: haproxy.cfg.j2, dest: '{{ jenkins_runtime_dir }}/haproxy.cfg', mode: '0640', owner: root, group: '{{ tls_uid }}'}
+      - {src: 01-platform.groovy.j2, dest: '{{ jenkins_runtime_dir }}/init.groovy.d/01-platform.groovy', mode: '0644', owner: root, group: root}
+      - {src: sunmoon-jenkins.service.j2, dest: /etc/systemd/system/sunmoon-jenkins.service, mode: '0644', owner: root, group: root}
+  tasks:
+    - name: Validate site and operation
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - jenkins_action in ['plan', 'deploy', 'start', 'stop', 'status']
+          - jenkins_action in ['plan', 'stop', 'status'] or jenkins_enabled | bool
+          - jenkins_hostname is match('^[a-z0-9][a-z0-9.-]*[a-z0-9]$')
+          - jenkins_hostname != registry_hostname
+          - jenkins_project is match('^[a-z][a-z0-9-]{1,40}$')
+          - "[jenkins_https_port, jenkins_http_port, jenkins_agent_port] | map('int') | unique | length == 3"
+          - "[jenkins_https_port, jenkins_http_port, jenkins_agent_port] | map('int') | min > 1024"
+          - "[jenkins_https_port, jenkins_http_port, jenkins_agent_port] | map('int') | max < 65536"
+          - "(entry_port | int) not in ([jenkins_https_port, jenkins_http_port, jenkins_agent_port] | map('int'))"
+          - "(registry_https_port | int) not in ([jenkins_https_port, jenkins_http_port, jenkins_agent_port] | map('int'))"
+          - jenkins_config_dir is match('^/etc/[a-zA-Z0-9_/-]+$')
+          - jenkins_runtime_dir is match('^/opt/[a-zA-Z0-9_/-]+$')
+          - jenkins_data_dir is match('^' + (storage_mounts[0].target | regex_escape) + '/[a-zA-Z0-9_-]+$')
+          - jenkins_credential_backup_dir == storage_mounts[0].target + '/backups/jenkins/credentials'
+          - "'..' not in jenkins_config_dir.split('/')"
+          - "'..' not in jenkins_runtime_dir.split('/')"
+          - jenkins_human_account.object == 'jenkins'
+          - jenkins_human_account.current_file == jenkins_config_dir + '/private/admin-password'
+          - jenkins_human_account.initial_file == jenkins_config_dir + '/private/presets/admin-password'
+          - jenkins_memory is match('^[0-9]+[mg]$')
+          - jenkins_certificate_days | int >= 365
+          - jenkins_image.reference.endswith('@' + jenkins_image.manifest_digest)
+          - tls_image.reference.endswith('@' + tls_image.manifest_digest)
+
+    - name: Show intended configuration without secrets
+      ansible.builtin.debug:
+        msg:
+          action: '{{ jenkins_action }}'
+          intranet: 'https://{{ jenkins_hostname }}:{{ entry_port }} -> entry SNI -> 127.0.0.1:{{ jenkins_https_port }} (TLS by the locked HAProxy) -> jenkins:8080'
+          loopback_http: '127.0.0.1:{{ jenkins_http_port }} (host agent and local checks only)'
+          agent_port: '127.0.0.1:{{ jenkins_agent_port }}'
+          images: ['{{ jenkins_image.reference }}', '{{ tls_image.reference }}']
+          directories: {config: '{{ jenkins_config_dir }}', runtime: '{{ jenkins_runtime_dir }}', data: '{{ jenkins_home }}'}
+          administrator: '{{ jenkins_human_account.username }} (table row {{ jenkins_human_account.table_row }}; preset only at first start)'
+          public_edge: 'not routed (SDD 0013: the edge forwards only knowbench, casdoor, relay)'
+
+    - name: Inspect current service state
+      ansible.builtin.command:
+        argv: [systemctl, is-active, sunmoon-jenkins.service]
+      register: current_service
+      changed_when: false
+      failed_when: current_service.rc not in [0, 3, 4]
+      when: jenkins_action != 'plan'
+
+    - name: Configure the controller
+      when: jenkins_action == 'deploy'
+      block:
+        - name: Check capacity for the controller home and generated configuration
+          ansible.builtin.include_tasks:
+            file: ../host/tasks/capacity.yaml
+            apply:
+              become: false
+          vars:
+            capacity_operation: jenkins-deploy
+            capacity_planned_bytes: 2147483648
+
+        - name: Require the locked local images
+          ansible.builtin.command:
+            argv: [docker, image, inspect, '{{ item.reference }}']
+          loop: ['{{ jenkins_image }}', '{{ tls_image }}']
+          loop_control:
+            label: '{{ item.id }}'
+          register: local_images
+          changed_when: false
+
+        - name: Verify image platform and manifest
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (item.stdout | from_json)[0].Descriptor.digest == item.item.manifest_digest
+              - (item.stdout | from_json)[0].Architecture == 'amd64'
+              - (item.stdout | from_json)[0].Os == 'linux'
+            fail_msg: 'Run prepare-host-materials first; the locked {{ item.item.id }} image is not loaded.'
+          loop: '{{ local_images.results }}'
+          loop_control:
+            label: '{{ item.item.id }}'
+
+        - name: Verify the Compose binary source
+          ansible.builtin.stat:
+            path: '{{ playbook_dir }}/../.tools/bin/docker-compose'
+            checksum_algorithm: sha256
+          register: compose_binary
+
+        - name: Require locked Compose
+          ansible.builtin.assert:
+            quiet: true
+            that: compose_binary.stat.checksum | default('') == compose_input.sha256
+
+        - name: Inspect managed root directories
+          ansible.builtin.stat:
+            path: '{{ item }}'
+            follow: false
+          loop: ['{{ jenkins_config_dir }}', '{{ jenkins_runtime_dir }}', '{{ jenkins_data_dir }}', '{{ jenkins_home }}']
+          register: roots
+
+        - name: Refuse symlink or non-directory roots
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - not item.stat.exists or item.stat.isdir | default(false)
+              - not item.stat.islnk | default(false)
+          loop: '{{ roots.results }}'
+          loop_control:
+            label: '{{ item.item }}'
+
+        - name: Create private configuration and runtime directories
+          ansible.builtin.file:
+            path: '{{ item.path }}'
+            state: directory
+            owner: root
+            group: '{{ item.group | default("root") }}'
+            mode: '{{ item.mode }}'
+          loop:
+            - {path: '{{ jenkins_config_dir }}', mode: '0700'}
+            - {path: '{{ jenkins_config_dir }}/private', mode: '0700'}
+            - {path: '{{ jenkins_config_dir }}/private/presets', mode: '0700'}
+            - {path: '{{ jenkins_config_dir }}/tls', mode: '0700'}
+            - {path: '{{ jenkins_runtime_dir }}', mode: '0711'}
+            - {path: '{{ jenkins_runtime_dir }}/init.groovy.d', mode: '0755'}
+            - {path: '{{ jenkins_runtime_dir }}/secrets', mode: '0750', group: '{{ jenkins_uid }}'}
+            - {path: '{{ jenkins_runtime_dir }}/tls', mode: '0750', group: '{{ tls_uid }}'}
+          loop_control:
+            label: '{{ item.path }}'
+
+        - name: Install the shared standalone mount guard
+          ansible.builtin.copy:
+            src: ../registry/check-storage.py
+            dest: '{{ jenkins_runtime_dir }}/check-storage.py'
+            mode: '0755'
+
+        - name: Set startup storage policy
+          ansible.builtin.copy:
+            dest: '{{ jenkins_runtime_dir }}/storage.json'
+            mode: '0600'
+            content: '{{ {"uuid": storage_uuid, "mounts": [storage_mounts[0]], "data_root": jenkins_data_dir, "probe_image": jenkins_image.reference, "directories": [jenkins_home]} | to_nice_json }}'
+
+        - name: Create the data directory on the data disk only
+          ansible.builtin.file:
+            path: '{{ jenkins_data_dir }}'
+            state: directory
+            owner: root
+            group: root
+            mode: '0711'
+
+        - name: Require Docker to see the actual data disk before creating the home
+          ansible.builtin.command:
+            argv: [/usr/bin/python3, '{{ jenkins_runtime_dir }}/check-storage.py', '{{ jenkins_runtime_dir }}/storage.json', --mounts-only]
+          changed_when: false
+
+        - name: Create the controller home owned by the container user
+          ansible.builtin.file:
+            path: '{{ jenkins_home }}'
+            state: directory
+            owner: '{{ jenkins_uid }}'
+            group: '{{ jenkins_uid }}'
+            mode: '0700'
+
+        - name: Create and validate the private administrator credential and certificates
+          ansible.builtin.include_tasks: tasks/secrets.yaml
+
+        - name: Preview runtime configuration changes
+          ansible.builtin.template:
+            src: '{{ item.src }}'
+            dest: '{{ item.dest }}'
+            mode: '{{ item.mode }}'
+            owner: '{{ item.owner }}'
+            group: '{{ item.group }}'
+          loop: '{{ jenkins_runtime_files }}'
+          loop_control:
+            label: '{{ item.dest }}'
+          check_mode: true
+          register: runtime_preview
+          diff: false
+
+        - name: Require stopping this service before changing its runtime configuration
+          ansible.builtin.assert:
+            quiet: true
+            that: current_service.stdout != 'active' or not runtime_preview.changed
+            fail_msg: Use jenkins-stop before applying changed runtime configuration.
+
+        - name: Write runtime configuration
+          ansible.builtin.template:
+            src: '{{ item.src }}'
+            dest: '{{ item.dest }}'
+            mode: '{{ item.mode }}'
+            owner: '{{ item.owner }}'
+            group: '{{ item.group }}'
+          loop: '{{ jenkins_runtime_files }}'
+          loop_control:
+            label: '{{ item.dest }}'
+          diff: false
+
+        - name: Install verified Compose independent of the worktree
+          ansible.builtin.copy:
+            src: '{{ playbook_dir }}/../.tools/bin/docker-compose'
+            dest: '{{ jenkins_runtime_dir }}/docker-compose'
+            mode: '0755'
+            remote_src: true
+
+        - name: Validate the generated Compose file without starting anything
+          ansible.builtin.command:
+            argv: ['{{ jenkins_runtime_dir }}/docker-compose', --project-name, '{{ jenkins_project }}', -f, '{{ jenkins_runtime_dir }}/compose.yaml', config, --quiet]
+          changed_when: false
+
+        - name: Validate the TLS terminator configuration with the locked HAProxy image
+          ansible.builtin.command:
+            argv:
+              - docker
+              - run
+              - --rm
+              - --pull=never
+              - --network=none
+              - --read-only
+              - --cap-drop=ALL
+              - --security-opt=no-new-privileges:true
+              - --user={{ tls_uid }}:{{ tls_uid }}
+              - --mount
+              - 'type=bind,source={{ jenkins_runtime_dir }}/haproxy.cfg,target=/usr/local/etc/haproxy/haproxy.cfg,readonly'
+              - --mount
+              - 'type=bind,source={{ jenkins_runtime_dir }}/tls/jenkins.pem,target=/usr/local/etc/haproxy/jenkins.pem,readonly'
+              - '{{ tls_image.reference }}'
+              - haproxy
+              - -c
+              - -f
+              - /usr/local/etc/haproxy/haproxy.cfg
+          changed_when: false
+
+        - name: Reload service definitions and join the platform target
+          ansible.builtin.systemd_service:
+            name: sunmoon-jenkins.service
+            daemon_reload: true
+            enabled: true
+
+    - name: Stop only the controller
+      ansible.builtin.systemd_service:
+        name: sunmoon-jenkins.service
+        state: stopped
+      when: jenkins_action == 'stop'
+
+    - name: Start the controller
+      ansible.builtin.systemd_service:
+        name: sunmoon-jenkins.service
+        state: started
+      when: jenkins_action in ['deploy', 'start']
+
+    - name: Wait for the certificate-verified login page through the TLS backend
+      ansible.builtin.uri:
+        url: 'https://127.0.0.1:{{ jenkins_https_port }}/login'
+        ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+        validate_certs: true
+        use_proxy: false
+        status_code: 200
+        timeout: 15
+      register: login_page
+      until: login_page.status == 200
+      retries: 40
+      delay: 10
+      when: jenkins_action in ['deploy', 'start']
+
+    - name: Verify the local administrator through the TLS backend
+      when: jenkins_action in ['deploy', 'start']
+      block:
+        - name: Read the administrator credential only for this check
+          ansible.builtin.slurp:
+            src: '{{ jenkins_config_dir }}/private/admin-password'
+          register: admin_credential
+          no_log: true
+        - name: Require an authenticated administrator identity
+          ansible.builtin.uri:
+            url: 'https://127.0.0.1:{{ jenkins_https_port }}/whoAmI/api/json'
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+            url_username: '{{ jenkins_human_account.username }}'
+            url_password: '{{ admin_credential.content | b64decode }}'
+            force_basic_auth: true
+            return_content: true
+            timeout: 20
+          register: whoami
+          no_log: true
+          failed_when: whoami.status != 200 or whoami.json.name | default('') != jenkins_human_account.username or not (whoami.json.authenticated | default(false))
+        - name: Require anonymous access to be denied
+          ansible.builtin.uri:
+            url: 'https://127.0.0.1:{{ jenkins_https_port }}/api/json'
+            ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+            validate_certs: true
+            use_proxy: false
+            status_code: [403]
+            timeout: 20
+
+    - name: Report actual service state
+      ansible.builtin.command:
+        argv: [systemctl, show, sunmoon-jenkins.service, '--property=Id,ActiveState,SubState,UnitFileState,NRestarts']
+      register: final_state
+      changed_when: false
+      when: jenkins_action != 'plan'
+
+    - name: Display only non-secret state
+      ansible.builtin.debug:
+        var: final_state.stdout_lines
+      when: jenkins_action != 'plan'

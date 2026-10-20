@@ -1,0 +1,81 @@
+services:
+  jenkins:
+    image: {{ jenkins_image.reference }}
+    pull_policy: never
+    restart: "no"
+    user: "{{ jenkins_uid }}:{{ jenkins_uid }}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 2048
+    mem_limit: {{ jenkins_memory }}
+    cpus: {{ jenkins_cpus }}
+    environment:
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false -Djava.awt.headless=true"
+      JENKINS_OPTS: "--httpPort=8080"
+      TZ: Asia/Shanghai
+    tmpfs:
+      - /tmp:size=1g,uid={{ jenkins_uid }},gid={{ jenkins_uid }}
+    ports:
+      - "127.0.0.1:{{ jenkins_http_port }}:8080"
+      - "127.0.0.1:{{ jenkins_agent_port }}:50000"
+    volumes:
+      - type: bind
+        source: {{ jenkins_home }}
+        target: /var/jenkins_home
+        bind:
+          create_host_path: false
+      - type: bind
+        source: {{ jenkins_runtime_dir }}/init.groovy.d
+        target: /usr/share/jenkins/ref/init.groovy.d
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: {{ jenkins_runtime_dir }}/secrets/admin-password
+        target: /run/secrets/admin-password
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--output", "/dev/null", "http://127.0.0.1:8080/login"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 120s
+    logging:
+      driver: local
+      options: {max-size: "20m", max-file: "3"}
+  tls:
+    image: {{ tls_image.reference }}
+    pull_policy: never
+    restart: "no"
+    depends_on:
+      jenkins:
+        condition: service_healthy
+    user: "{{ tls_uid }}:{{ tls_uid }}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+    ports:
+      - "127.0.0.1:{{ jenkins_https_port }}:{{ jenkins_https_port }}"
+    volumes:
+      - type: bind
+        source: {{ jenkins_runtime_dir }}/haproxy.cfg
+        target: /usr/local/etc/haproxy/haproxy.cfg
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: {{ jenkins_runtime_dir }}/tls/jenkins.pem
+        target: /usr/local/etc/haproxy/jenkins.pem
+        read_only: true
+        bind:
+          create_host_path: false
+    command: [haproxy, -W, -db, -f, /usr/local/etc/haproxy/haproxy.cfg]
+    logging:
+      driver: local
+      options: {max-size: "20m", max-file: "3"}

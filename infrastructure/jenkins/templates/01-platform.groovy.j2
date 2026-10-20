@@ -1,0 +1,33 @@
+// SunMoon 宿主 Jenkins 第一次启动的本地管理员与基本安全设置（SDD 0033 B 段第 1 步）。
+// 只在还没有安全域时跑一次：口令从只读挂进来的私有文件读，不写进任何配置；之后的改动在界面里做，这里不再覆盖。
+import jenkins.model.Jenkins
+import jenkins.model.JenkinsLocationConfiguration
+import hudson.security.FullControlOnceLoggedInAuthorizationStrategy
+import hudson.security.HudsonPrivateSecurityRealm
+
+def jenkins = Jenkins.get()
+if (!(jenkins.getSecurityRealm() instanceof HudsonPrivateSecurityRealm)) {
+    def secret = new File('/run/secrets/admin-password')
+    if (!secret.isFile()) {
+        throw new IllegalStateException('admin password file is missing; refusing to start without a local administrator')
+    }
+    def password = secret.getText('UTF-8').replaceAll('\\r?\\n\\z', '')
+    if (password.length() < {{ jenkins_human_account.minimum_length }}) {
+        throw new IllegalStateException('admin password file is too short')
+    }
+    def realm = new HudsonPrivateSecurityRealm(false)
+    realm.createAccount('{{ jenkins_human_account.username }}', password)
+    jenkins.setSecurityRealm(realm)
+    def strategy = new FullControlOnceLoggedInAuthorizationStrategy()
+    strategy.setAllowAnonymousRead(false)
+    jenkins.setAuthorizationStrategy(strategy)
+    jenkins.setNumExecutors(0)
+    jenkins.setSlaveAgentPort({{ jenkins_agent_port }})
+    jenkins.setNoUsageStatistics(true)
+    jenkins.save()
+}
+def location = JenkinsLocationConfiguration.get()
+if (!location.getUrl()) {
+    location.setUrl('https://{{ jenkins_hostname }}:{{ entry_port }}/')
+    location.save()
+}

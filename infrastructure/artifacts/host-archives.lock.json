@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "platform": "linux/amd64",
-  "scope": "HAProxy and official skopeo stable runtime archives",
+  "scope": "HAProxy, official skopeo stable and Jenkins LTS controller runtime archives",
   "files": [
     {
       "id": "haproxy",
@@ -22,6 +22,16 @@
       "config_digest": "sha256:5ef1074715887af7ae6fc9c61dd266b1dbcc574a102afe0f3293efa0e1cd579a",
       "layers": 6,
       "manifest_digest": "sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99"
+    },
+    {
+      "id": "jenkins",
+      "path": "host/jenkins/images/jenkins-5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb.tar",
+      "size_bytes": 246174208,
+      "sha256": "916dd7d36e38460b4fe5600e83ea201e79f56f841fa37a3b8e8022654803a87d",
+      "source": "docker.io/jenkins/jenkins@sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb",
+      "config_digest": "sha256:82becee636459f5f9d5195b47b76c891b49cb8c6cf0913986b63e0b3e4b3328b",
+      "layers": 12,
+      "manifest_digest": "sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb"
     }
   ],
   "material_layout": "component-owned-v1"

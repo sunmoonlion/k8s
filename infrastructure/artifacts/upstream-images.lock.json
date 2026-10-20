@@ -728,6 +728,20 @@
       "compressed_layer_bytes": 10463177,
       "material_owner": "components/ingress-platform/frpc",
       "selection_note": "linux/amd64 platform manifest. Multi-arch index sha256:99ece6a2b62cfc68731e0df289af804ff1c699911cfc47871856434f1d6d53ee is the edge smoke pin for the same image."
+    },
+    {
+      "id": "jenkins",
+      "group": "host",
+      "source": "docker.io/jenkins/jenkins:2.580.1-lts-jdk21",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb",
+      "reference": "docker.io/jenkins/jenkins@sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb",
+      "config_digest": "sha256:82becee636459f5f9d5195b47b76c891b49cb8c6cf0913986b63e0b3e4b3328b",
+      "compressed_layer_bytes": 246142607,
+      "runtime_version": "2.580.1",
+      "selection_note": "Official LTS image (jdk21) resolved from the multi-arch index sha256:a660310e39ade10631f774bacd5219de767dfd08947ea5c32a739b5e5bb382c1 to its linux/amd64 manifest on 2026-10-20; SDD 0033 host Jenkins controller.",
+      "material_owner": "host/jenkins"
     }
   ],
   "offline_ready": false,

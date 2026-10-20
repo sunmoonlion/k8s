@@ -20,7 +20,7 @@ make -C infrastructure material-inventory MATERIAL_OWNER=registry
 | 相对目录 | 对应代码/使用方 |
 |---|---|
 | `cluster/kind`、`cluster/kubernetes`、`cluster/calico` | infrastructure/cluster：建群工具、节点、网络及构建输入 |
-| `host/docker`、`host/entry` | 宿主安装与infrastructure/entry；保留被锁引用的Docker回退包 |
+| `host/docker`、`host/entry`、`host/jenkins` | 宿主安装、infrastructure/entry 与 infrastructure/jenkins（宿主 Jenkins 控制器镜像）；保留被锁引用的Docker回退包 |
 | `registry/harbor`、`registry/harbor-scanner` | infrastructure/registry：官方安装包、扫描情报库 |
 | `shared/tools`、`shared/flux`、`shared/build-base-images` | 共用工具、Flux与Python/Node基础镜像；每份只保存一次 |
 | `components/<平台>/<组件或应用/组件>` | 对应gitops/components；ELK聚合相关镜像，向量组件同时拥有镜像与模型 |

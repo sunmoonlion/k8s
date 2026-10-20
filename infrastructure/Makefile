@@ -75,6 +75,7 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml \
 	registry/config.yaml \
 	entry/config.yaml \
+	jenkins/config.yaml \
 	cluster/config.yaml \
 	flux/config.yaml \
 	services/config.yaml \
@@ -177,6 +178,10 @@ registry-plan registry-deploy registry-start registry-stop registry-status:
 .PHONY: entry-plan entry-preview entry-deploy entry-start entry-stop entry-status
 entry-plan entry-preview entry-deploy entry-start entry-stop entry-status:
 	$(ANSIBLE) -i host/inventory.yaml entry/service.yaml $(CONFIG_ARGS) --extra-vars 'entry_action=$(patsubst entry-%,%,$@)'
+
+.PHONY: jenkins-plan jenkins-deploy jenkins-start jenkins-stop jenkins-status
+jenkins-plan jenkins-deploy jenkins-start jenkins-stop jenkins-status:
+	$(ANSIBLE) -i host/inventory.yaml jenkins/service.yaml $(CONFIG_ARGS) --extra-vars 'jenkins_action=$(patsubst jenkins-%,%,$@)'
 
 .PHONY: prepare-host-materials check-host-materials
 prepare-host-materials:
@@ -417,10 +422,11 @@ platform-deploy-selected:
 	@.venv/bin/python -c 'import json,os; d=json.load(open("$(SELECTION_PREFIX).json")); assert d["object"]==os.environ["OBJECT"] and d["action"]=="deploy", "Run the public platform-deploy entry to validate this object afresh"'
 	$(MAKE) preflight
 	$(ANSIBLE) -i host/inventory.yaml host/dependencies.yaml $(CONFIG_ARGS)
-	$(if $(or $(filter true,$(PLATFORM_REGISTRY)),$(filter true,$(PLATFORM_ENTRY))),$(MAKE) install-binaries BINARIES=compose)
+	$(if $(or $(filter true,$(PLATFORM_REGISTRY)),$(filter true,$(PLATFORM_ENTRY)),$(filter true,$(PLATFORM_JENKINS))),$(MAKE) install-binaries BINARIES=compose)
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) prepare-harbor-materials)
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) registry-deploy)
 	$(if $(filter true,$(PLATFORM_ENTRY)),$(MAKE) entry-deploy)
+	$(if $(filter true,$(PLATFORM_JENKINS)),$(MAKE) prepare-host-materials jenkins-deploy)
 	$(if $(filter true,$(PLATFORM_CLUSTER)),$(MAKE) cluster-deploy)
 	# 先把选中阶段要用的平台镜像发到 Harbor，再让 Flux 应用源：整套声明是一个包，源一应用所有阶段就开始拉镜像
 	# （2026-10-06 第 27 轮：三个控制台镜像没发布，根调和等 10 分钟超时，发布那一段排在源应用之后根本没跑到）
@@ -451,6 +457,7 @@ platform-check-selected:
 	$(if $(filter true,$(PLATFORM_CLUSTER)),$(MAKE) cluster-status)
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) registry-status)
 	$(if $(filter true,$(PLATFORM_ENTRY)),$(MAKE) entry-status)
+	$(if $(filter true,$(PLATFORM_JENKINS)),$(MAKE) jenkins-status)
 	$(if $(filter true,$(PLATFORM_FLUX)),$(MAKE) flux-source-status)
 	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) install-binaries BINARIES=mc)
 	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) services-check-public)
