@@ -1,0 +1,8 @@
+origin push --dry-run:
+Everything up-to-date
+origin dry-run exit=0
+mirror push --dry-run:
+Everything up-to-date
+mirror dry-run exit=0
+
+exit=0

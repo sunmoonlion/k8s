@@ -1,0 +1,437 @@
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/agent.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_agent_action=deploy'
+
+PLAY [Install and control the host Jenkins agent] ******************************
+
+TASK [Validate action and settings] ********************************************
+ok: [localhost]
+
+TASK [Show the plan without secrets] *******************************************
+ok: [localhost] => {
+    "msg": {
+        "action": "deploy",
+        "jre": "temurin-jre 21.0.12.1+1 -> /opt/sunmoon/jenkins/jre/21.0.12.1_1",
+        "render_check": "job render-check on fable every H/10 * * * *",
+        "repos": "/mnt/sunmoon-data/jenkins/repos: k8s, tpl-app, knowfeed-app, knowbase-app, knowbench-app, knowlab-app, knowmart-app (origins from ~zymun/worktrees/fable)",
+        "unit": "sunmoon-jenkins-agent.service as zymun -> http://127.0.0.1:18080 (node host)"
+    }
+}
+
+TASK [Read controller and agent unit states] ***********************************
+ok: [localhost] => (item=sunmoon-jenkins.service)
+ok: [localhost] => (item=sunmoon-jenkins-agent.service)
+
+TASK [Check capacity for JRE, repos and tools] *********************************
+included: /home/zymun/worktrees/fable/k8s/infrastructure/host/tasks/capacity.yaml for localhost
+
+TASK [Validate the capacity budget and site floor] *****************************
+ok: [localhost]
+
+TASK [Validate an explicitly approved temporary capacity exception] ************
+skipping: [localhost]
+
+TASK [Report the active temporary exception without changing the site policy] ***
+skipping: [localhost]
+
+TASK [Publish read-only helper to Windows local script directory] **************
+ok: [localhost]
+
+TASK [Install the reviewed capacity helper without changing execution policy] ***
+ok: [localhost]
+
+TASK [Resolve Windows path to read-only capacity helper] ***********************
+ok: [localhost]
+
+TASK [Require Windows growth budget before writing] ****************************
+ok: [localhost]
+
+TASK [Report physical capacity budget] *****************************************
+ok: [localhost] => {
+    "msg": {
+        "c_free_bytes": 119320096768,
+        "checked_at_utc": "2026-10-20T17:12:09.4012575Z",
+        "configured_data_maximum_bytes": 246960619520,
+        "data_vhd_allocated_bytes": 180728365056,
+        "data_vhd_length": 180728365056,
+        "future_data_growth_bytes": 66232254464,
+        "minimum_free_bytes": 10737418240,
+        "passes": true,
+        "planned_bytes": 8589934592,
+        "remaining_after_growth_and_plan_bytes": 44497907712,
+        "scope": "Configured VHD growth plus requested operation; excludes other future system disk growth"
+    }
+}
+
+TASK [Enforce the approved batch ceiling as well as the reserve floor] *********
+skipping: [localhost]
+
+TASK [Require the controller to be running] ************************************
+ok: [localhost]
+
+TASK [Verify the locked JRE package] *******************************************
+ok: [localhost]
+
+TASK [Require the original JRE bytes] ******************************************
+ok: [localhost]
+
+TASK [Create runtime directories for the agent] ********************************
+ok: [localhost] => (item=/opt/sunmoon/jenkins/jre)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/jre/21.0.12.1_1)
+ok: [localhost] => (item=/mnt/sunmoon-data/jenkins/agent)
+ok: [localhost] => (item=/mnt/sunmoon-data/jenkins/repos)
+
+TASK [Extract the verified JRE once] *******************************************
+skipping: [localhost]
+
+TASK [Verify the extracted JRE members against the lock] ***********************
+ok: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java)
+ok: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so)
+
+TASK [Require exact JRE member bytes] ******************************************
+ok: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java)
+ok: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so)
+
+TASK [Point the current JRE at the verified version] ***************************
+ok: [localhost]
+
+TASK [Fetch agent.jar from our own controller (it is served by the controller, no third party)] ***
+ok: [localhost]
+
+TASK [Read the node secret the controller wrote at start (init.groovy.d/02-agent-node)] ***
+ok: [localhost]
+
+TASK [Give the agent user its own read-only copy of the node secret] ***********
+ok: [localhost]
+
+TASK [Let the agent user traverse the secrets directory] ***********************
+ok: [localhost]
+
+TASK [Prepare the repos the agent works on] ************************************
+included: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/workspace.yaml for localhost
+
+TASK [Read the origin of each repo from the source workspace] ******************
+ok: [localhost] => (item=k8s)
+ok: [localhost] => (item=tpl-app)
+ok: [localhost] => (item=knowfeed-app)
+ok: [localhost] => (item=knowbase-app)
+ok: [localhost] => (item=knowbench-app)
+ok: [localhost] => (item=knowlab-app)
+ok: [localhost] => (item=knowmart-app)
+
+TASK [Require plain SSH or HTTPS origins without embedded credentials] *********
+ok: [localhost] => (item=k8s)
+ok: [localhost] => (item=tpl-app)
+ok: [localhost] => (item=knowfeed-app)
+ok: [localhost] => (item=knowbase-app)
+ok: [localhost] => (item=knowbench-app)
+ok: [localhost] => (item=knowlab-app)
+ok: [localhost] => (item=knowmart-app)
+
+TASK [Locate the object store of each repo in the source workspace] ************
+ok: [localhost] => (item=k8s)
+ok: [localhost] => (item=tpl-app)
+ok: [localhost] => (item=knowfeed-app)
+ok: [localhost] => (item=knowbase-app)
+ok: [localhost] => (item=knowbench-app)
+ok: [localhost] => (item=knowlab-app)
+ok: [localhost] => (item=knowmart-app)
+
+TASK [Inspect existing clones] *************************************************
+ok: [localhost] => (item=k8s)
+ok: [localhost] => (item=tpl-app)
+ok: [localhost] => (item=knowfeed-app)
+ok: [localhost] => (item=knowbase-app)
+ok: [localhost] => (item=knowbench-app)
+ok: [localhost] => (item=knowlab-app)
+ok: [localhost] => (item=knowmart-app)
+
+TASK [Clone missing repos as the agent user (objects copied from the source workspace, GitHub https rewritten to SSH for this command)] ***
+skipping: [localhost] => (item=k8s) 
+skipping: [localhost] => (item=tpl-app) 
+skipping: [localhost] => (item=knowfeed-app) 
+skipping: [localhost] => (item=knowbase-app) 
+skipping: [localhost] => (item=knowbench-app) 
+skipping: [localhost] => (item=knowlab-app) 
+skipping: [localhost] => (item=knowmart-app) 
+skipping: [localhost]
+
+TASK [Read the push URLs of the k8s origin in the source workspace] ************
+ok: [localhost]
+
+TASK [Require plain push URLs without embedded credentials] ********************
+ok: [localhost] => (item=https://github.com/sunmoonlion/k8s.git)
+ok: [localhost] => (item=https://gitee.com/sunmoonlion/k8s.git)
+
+TASK [Point the mirror remote of the k8s clone at the second push URL (or drop it when there is none)] ***
+changed: [localhost]
+
+TASK [Fetch all branches of existing clones] ***********************************
+ok: [localhost] => (item=k8s)
+ok: [localhost] => (item=tpl-app)
+ok: [localhost] => (item=knowfeed-app)
+ok: [localhost] => (item=knowbase-app)
+ok: [localhost] => (item=knowbench-app)
+ok: [localhost] => (item=knowlab-app)
+ok: [localhost] => (item=knowmart-app)
+
+TASK [List the submodules of the application repos (name and path from .gitmodules)] ***
+ok: [localhost] => (item=tpl-app)
+ok: [localhost] => (item=knowfeed-app)
+ok: [localhost] => (item=knowbase-app)
+ok: [localhost] => (item=knowbench-app)
+ok: [localhost] => (item=knowlab-app)
+ok: [localhost] => (item=knowmart-app)
+
+TASK [Locate the object store of each submodule in the source workspace] *******
+ok: [localhost] => (item=tpl-app/tpl-web-frontend)
+ok: [localhost] => (item=tpl-app/tpl-backend)
+ok: [localhost] => (item=tpl-app/tpl-admin-frontend)
+ok: [localhost] => (item=knowfeed-app/knowfeed-admin-frontend)
+ok: [localhost] => (item=knowfeed-app/knowfeed-web-frontend)
+ok: [localhost] => (item=knowfeed-app/knowfeed-backend)
+ok: [localhost] => (item=knowbase-app/knowbase-admin-frontend)
+ok: [localhost] => (item=knowbase-app/knowbase-web-frontend)
+ok: [localhost] => (item=knowbase-app/knowbase-backend)
+ok: [localhost] => (item=knowbench-app/knowbench-backend)
+ok: [localhost] => (item=knowbench-app/knowbench-admin-frontend)
+ok: [localhost] => (item=knowbench-app/knowbench-web-frontend)
+ok: [localhost] => (item=knowlab-app/knowlab-backend)
+ok: [localhost] => (item=knowlab-app/knowlab-admin-frontend)
+ok: [localhost] => (item=knowlab-app/knowlab-web-frontend)
+ok: [localhost] => (item=knowmart-app/knowmart-backend)
+ok: [localhost] => (item=knowmart-app/knowmart-admin-frontend)
+ok: [localhost] => (item=knowmart-app/knowmart-web-frontend)
+
+TASK [Check out each submodule over SSH, objects copied from the source workspace when it has them] ***
+ok: [localhost] => (item=tpl-app/tpl-web-frontend)
+ok: [localhost] => (item=tpl-app/tpl-backend)
+ok: [localhost] => (item=tpl-app/tpl-admin-frontend)
+ok: [localhost] => (item=knowfeed-app/knowfeed-admin-frontend)
+ok: [localhost] => (item=knowfeed-app/knowfeed-web-frontend)
+ok: [localhost] => (item=knowfeed-app/knowfeed-backend)
+ok: [localhost] => (item=knowbase-app/knowbase-admin-frontend)
+ok: [localhost] => (item=knowbase-app/knowbase-web-frontend)
+ok: [localhost] => (item=knowbase-app/knowbase-backend)
+ok: [localhost] => (item=knowbench-app/knowbench-backend)
+ok: [localhost] => (item=knowbench-app/knowbench-admin-frontend)
+ok: [localhost] => (item=knowbench-app/knowbench-web-frontend)
+ok: [localhost] => (item=knowlab-app/knowlab-backend)
+ok: [localhost] => (item=knowlab-app/knowlab-admin-frontend)
+ok: [localhost] => (item=knowlab-app/knowlab-web-frontend)
+ok: [localhost] => (item=knowmart-app/knowmart-backend)
+ok: [localhost] => (item=knowmart-app/knowmart-admin-frontend)
+ok: [localhost] => (item=knowmart-app/knowmart-web-frontend)
+
+TASK [Install the worktree tools in the k8s clone (venv, binaries, Flux, sops and age) as the agent user] ***
+changed: [localhost] => (item=tools)
+changed: [localhost] => (item=install-binaries)
+changed: [localhost] => (item=install-flux)
+changed: [localhost] => (item=install-secrets-tools)
+
+TASK [Preview the unit] ********************************************************
+ok: [localhost]
+
+TASK [Write the unit] **********************************************************
+ok: [localhost]
+
+TASK [Reload, enable and (re)start the agent] **********************************
+ok: [localhost]
+
+TASK [Stop only the agent] *****************************************************
+skipping: [localhost]
+
+TASK [Start the agent] *********************************************************
+skipping: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+ok: [localhost]
+
+TASK [Wait for the agent to be connected] **************************************
+ok: [localhost]
+
+TASK [Get a CSRF crumb] ********************************************************
+skipping: [localhost]
+
+TASK [Queue the build] *********************************************************
+skipping: [localhost]
+
+TASK [Wait for the queue item to become a build] *******************************
+skipping: [localhost]
+
+TASK [Wait for the build to finish] ********************************************
+skipping: [localhost]
+
+TASK [Create the local directory for build consoles] ***************************
+skipping: [localhost]
+
+TASK [Save the console log beside the other build receipts] ********************
+skipping: [localhost]
+
+TASK [Report the build result] *************************************************
+skipping: [localhost]
+
+TASK [Require the check to pass] ***********************************************
+skipping: [localhost]
+
+TASK [Report the agent unit state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "User=zymun",
+        "Id=sunmoon-jenkins-agent.service",
+        "ActiveState=active",
+        "SubState=running",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=41   changed=2    unreachable=0    failed=0    skipped=15   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/agent.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_agent_action=status'
+
+PLAY [Install and control the host Jenkins agent] ******************************
+
+TASK [Validate action and settings] ********************************************
+ok: [localhost]
+
+TASK [Show the plan without secrets] *******************************************
+ok: [localhost] => {
+    "msg": {
+        "action": "status",
+        "jre": "temurin-jre 21.0.12.1+1 -> /opt/sunmoon/jenkins/jre/21.0.12.1_1",
+        "render_check": "job render-check on fable every H/10 * * * *",
+        "repos": "/mnt/sunmoon-data/jenkins/repos: k8s, tpl-app, knowfeed-app, knowbase-app, knowbench-app, knowlab-app, knowmart-app (origins from ~zymun/worktrees/fable)",
+        "unit": "sunmoon-jenkins-agent.service as zymun -> http://127.0.0.1:18080 (node host)"
+    }
+}
+
+TASK [Read controller and agent unit states] ***********************************
+ok: [localhost] => (item=sunmoon-jenkins.service)
+ok: [localhost] => (item=sunmoon-jenkins-agent.service)
+
+TASK [Check capacity for JRE, repos and tools] *********************************
+skipping: [localhost]
+
+TASK [Require the controller to be running] ************************************
+skipping: [localhost]
+
+TASK [Verify the locked JRE package] *******************************************
+skipping: [localhost]
+
+TASK [Require the original JRE bytes] ******************************************
+skipping: [localhost]
+
+TASK [Create runtime directories for the agent] ********************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre/21.0.12.1_1) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/agent) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/repos) 
+skipping: [localhost]
+
+TASK [Extract the verified JRE once] *******************************************
+skipping: [localhost]
+
+TASK [Verify the extracted JRE members against the lock] ***********************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Require exact JRE member bytes] ******************************************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Point the current JRE at the verified version] ***************************
+skipping: [localhost]
+
+TASK [Fetch agent.jar from our own controller (it is served by the controller, no third party)] ***
+skipping: [localhost]
+
+TASK [Read the node secret the controller wrote at start (init.groovy.d/02-agent-node)] ***
+skipping: [localhost]
+
+TASK [Give the agent user its own read-only copy of the node secret] ***********
+skipping: [localhost]
+
+TASK [Let the agent user traverse the secrets directory] ***********************
+skipping: [localhost]
+
+TASK [Prepare the repos the agent works on] ************************************
+skipping: [localhost]
+
+TASK [Preview the unit] ********************************************************
+skipping: [localhost]
+
+TASK [Write the unit] **********************************************************
+skipping: [localhost]
+
+TASK [Reload, enable and (re)start the agent] **********************************
+skipping: [localhost]
+
+TASK [Stop only the agent] *****************************************************
+skipping: [localhost]
+
+TASK [Start the agent] *********************************************************
+skipping: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+ok: [localhost]
+
+TASK [Wait for the agent to be connected] **************************************
+ok: [localhost]
+
+TASK [Get a CSRF crumb] ********************************************************
+skipping: [localhost]
+
+TASK [Queue the build] *********************************************************
+skipping: [localhost]
+
+TASK [Wait for the queue item to become a build] *******************************
+skipping: [localhost]
+
+TASK [Wait for the build to finish] ********************************************
+skipping: [localhost]
+
+TASK [Create the local directory for build consoles] ***************************
+skipping: [localhost]
+
+TASK [Save the console log beside the other build receipts] ********************
+skipping: [localhost]
+
+TASK [Report the build result] *************************************************
+skipping: [localhost]
+
+TASK [Require the check to pass] ***********************************************
+skipping: [localhost]
+
+TASK [Report the agent unit state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "User=zymun",
+        "Id=sunmoon-jenkins-agent.service",
+        "ActiveState=active",
+        "SubState=running",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=27   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+mirror	https://gitee.com/sunmoonlion/k8s.git (fetch)
+mirror	https://gitee.com/sunmoonlion/k8s.git (push)
+origin	https://github.com/sunmoonlion/k8s.git (fetch)
+origin	https://github.com/sunmoonlion/k8s.git (push)
+
+exit=0
