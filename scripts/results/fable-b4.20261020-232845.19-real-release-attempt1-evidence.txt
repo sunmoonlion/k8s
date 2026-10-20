@@ -1,0 +1,27 @@
+15:[Pipeline] { (ci/release.groovy)
+33:[Pipeline] { (1 核对)
+13715:[Pipeline] { (2 改钉)
+13846:[Pipeline] { (3 构建)
+14929:[Pipeline] { (4 暂存)
+16090:[Pipeline] { (5 计划)
+16217:[Pipeline] { (6 提交)
+16230:[Pipeline] { (7 发布)
+16711:[Pipeline] { (前半段收尾)
+16726:[Pipeline] { (8 人批)
+16743:Approved by admin
+16755:[Pipeline] { (9 写指针)
+16757:批准人 admin  2026-10-21T00:04:31+08:00
+16758:fatal: unable to access 'https://github.com/sunmoonlion/k8s.git/': gnutls_handshake() failed: The TLS connection was non-properly terminated.
+16762:[Pipeline] { (后半段收尾)
+16778:Finished: FAILURE
+33b1ba85 release(kind): 晋级到 38a5dc48（release #6）
+38a5dc48 deploy(tpl): tpl ingress 补 /api/internal 收敛规则（release #6）
+tracked status=''
+prior deployment pointer (origin/fable):
+digest: sha256:7812a0d1f2d5a066c16a8caa38b0ecce2b672b4e6606be76927e12e450007ac0
+path: ./clusters/kind
+repository: oci://harbor.sunmoonai.com:30443/platform/deployments-kind
+requires_sops: true
+revision: 33024551cddc44ada0b2e16980a019d018d1f4f6
+
+exit=0

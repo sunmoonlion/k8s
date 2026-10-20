@@ -1,0 +1,12 @@
+Deleted branch fable-b4-test (was fda48bce).
+remote: Powered by [01;33mGITEE.COM [0m[1.1.23]        
+remote: Set trace flag 7b442691        
+remote: Powered by [01;33mGITEE.COM [0m[1.1.23]        
+remote: Set trace flag 384ef888        
+k8s https://github.com/sunmoonlion/k8s.git test_branch_absent=True
+k8s https://gitee.com/sunmoonlion/k8s.git test_branch_absent=True
+tpl-app https://github.com/sunmoonlion/tpl-app.git test_branch_absent=True
+tpl-app https://gitee.com/sunmoonlion/tpl-app.git test_branch_absent=True
+branches-deleted
+
+exit=0

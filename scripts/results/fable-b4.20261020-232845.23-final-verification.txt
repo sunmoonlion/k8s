@@ -1,0 +1,54 @@
+13:[Pipeline] { (ci/release.groovy)
+31:[Pipeline] { (1 核对)
+13713:[Pipeline] { (2 改钉)
+13844:[Pipeline] { (3 构建)
+14927:[Pipeline] { (4 暂存)
+16088:[Pipeline] { (5 计划)
+16215:[Pipeline] { (6 提交)
+16228:[Pipeline] { (7 发布)
+16709:[Pipeline] { (前半段收尾)
+16712:total=0
+16724:[Pipeline] { (8 人批)
+16753:[Pipeline] { (9 写指针)
+16755:批准人 admin  2026-10-21T00:10:57+08:00
+16762:tag release-20261021-1
+16773:[Pipeline] { (10 部署)
+17012:[Pipeline] { (11 检查)
+17423:[Pipeline] { (12 推送与回执)
+17426:total=0
+17436:[Pipeline] { (后半段收尾)
+17439:total=0
+17449:Finished: SUCCESS
+From https://github.com/sunmoonlion/k8s
+ * branch                fable      -> FETCH_HEAD
+   52b8c527f..48838294b  fable      -> origin/fable
+Updating 52b8c527f..48838294b
+Fast-forward
+ .../tpl-app/tpl-admin-frontend/workload.yaml       |  4 +
+ .../tpl-app/tpl-web-frontend/workload.yaml         |  4 +
+ infrastructure/environments/kind/flux-source.yaml  |  4 +-
+ scripts/results/release-7.20261021-001448.md       | 93 ++++++++++++++++++++++
+ 4 files changed, 103 insertions(+), 2 deletions(-)
+ create mode 100644 scripts/results/release-7.20261021-001448.md
+48838294b release(kind): 回执 #7
+a7985bffd release(kind): 晋级到 ef103e4d（release #7）
+ef103e4db deploy(tpl): tpl ingress 补 /api/internal 收敛规则（release #7）
+52b8c527f fix(ci): release 取标签沿用现有 GitHub SSH 凭据
+digest: sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788
+path: ./clusters/kind
+repository: oci://harbor.sunmoonai.com:30443/platform/deployments-kind
+requires_sops: true
+revision: ef103e4db89ec082e7819ff57fb106f3a8f889cc
+scripts/results/release-7.20261021-001448.md
+tpl-admin Ready=True lastAppliedRevision=sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788
+tpl-database Ready=True lastAppliedRevision=sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788
+tpl-identity Ready=True lastAppliedRevision=sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788
+tpl-migration Ready=True lastAppliedRevision=sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788
+tpl-rabbitmq Ready=True lastAppliedRevision=sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788
+tpl-redis Ready=True lastAppliedRevision=sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788
+tpl-runtime Ready=True lastAppliedRevision=sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788
+tpl-web Ready=True lastAppliedRevision=sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788
+tpl web /api/internal 404
+tpl admin /api/internal 404
+
+exit=0

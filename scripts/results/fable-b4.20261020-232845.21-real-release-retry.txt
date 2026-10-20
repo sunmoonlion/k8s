@@ -1,0 +1,183 @@
+2026-10-21T00:06:31+08:00
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/agent.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_agent_action=check jenkins_run_job=release jenkins_run_timeout_seconds=91800' --extra-vars '{"jenkins_run_ok_results":["SUCCESS","NOT_BUILT"],"jenkins_run_params":{"BRANCH":"fable","APPS":"tpl","PIN":"keep","NOTE":"tpl ingress 补 /api/internal 收敛规则","APPROVAL_TIMEOUT_MINUTES":"1440"}}'
+
+PLAY [Install and control the host Jenkins agent] ******************************
+
+TASK [Validate action and settings] ********************************************
+ok: [localhost]
+
+TASK [Show the plan without secrets] *******************************************
+ok: [localhost] => {
+    "msg": {
+        "action": "check",
+        "jre": "temurin-jre 21.0.12.1+1 -> /opt/sunmoon/jenkins/jre/21.0.12.1_1",
+        "render_check": "job render-check on fable every H/10 * * * *",
+        "repos": "/mnt/sunmoon-data/jenkins/repos: k8s, tpl-app, knowfeed-app, knowbase-app, knowbench-app, knowlab-app, knowmart-app (origins from ~zymun/worktrees/fable)",
+        "unit": "sunmoon-jenkins-agent.service as zymun -> http://127.0.0.1:18080 (node host)"
+    }
+}
+
+TASK [Read controller and agent unit states] ***********************************
+ok: [localhost] => (item=sunmoon-jenkins.service)
+ok: [localhost] => (item=sunmoon-jenkins-agent.service)
+
+TASK [Check capacity for JRE, repos and tools] *********************************
+skipping: [localhost]
+
+TASK [Require the controller to be running] ************************************
+skipping: [localhost]
+
+TASK [Verify the locked JRE package] *******************************************
+skipping: [localhost]
+
+TASK [Require the original JRE bytes] ******************************************
+skipping: [localhost]
+
+TASK [Create runtime directories for the agent] ********************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre/21.0.12.1_1) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/agent) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/repos) 
+skipping: [localhost]
+
+TASK [Extract the verified JRE once] *******************************************
+skipping: [localhost]
+
+TASK [Verify the extracted JRE members against the lock] ***********************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Require exact JRE member bytes] ******************************************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Point the current JRE at the verified version] ***************************
+skipping: [localhost]
+
+TASK [Fetch agent.jar from our own controller (it is served by the controller, no third party)] ***
+skipping: [localhost]
+
+TASK [Read the node secret the controller wrote at start (init.groovy.d/02-agent-node)] ***
+skipping: [localhost]
+
+TASK [Give the agent user its own read-only copy of the node secret] ***********
+skipping: [localhost]
+
+TASK [Let the agent user traverse the secrets directory] ***********************
+skipping: [localhost]
+
+TASK [Prepare the repos the agent works on] ************************************
+skipping: [localhost]
+
+TASK [Preview the unit] ********************************************************
+skipping: [localhost]
+
+TASK [Write the unit] **********************************************************
+skipping: [localhost]
+
+TASK [Reload, enable and (re)start the agent] **********************************
+skipping: [localhost]
+
+TASK [Stop only the agent] *****************************************************
+skipping: [localhost]
+
+TASK [Start the agent] *********************************************************
+skipping: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+ok: [localhost]
+
+TASK [Wait for the agent to be connected] **************************************
+ok: [localhost]
+
+TASK [Get a CSRF crumb] ********************************************************
+ok: [localhost]
+
+TASK [Queue the build] *********************************************************
+ok: [localhost]
+
+TASK [Wait for the queue item to become a build] *******************************
+FAILED - RETRYING: [localhost]: Wait for the queue item to become a build (59 retries left).
+FAILED - RETRYING: [localhost]: Wait for the queue item to become a build (58 retries left).
+ok: [localhost]
+
+TASK [Wait for the build to finish] ********************************************
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6119 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6118 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6117 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6116 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6115 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6114 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6113 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6112 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6111 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6110 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6109 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6108 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6107 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6106 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6105 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6104 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6103 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6102 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6101 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6100 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6099 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6098 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6097 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6096 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6095 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6094 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6093 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6092 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6091 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6090 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6089 retries left).
+FAILED - RETRYING: [localhost]: Wait for the build to finish (6088 retries left).
+ok: [localhost]
+
+TASK [Create the local directory for build consoles] ***************************
+ok: [localhost]
+
+TASK [Save the console log beside the other build receipts] ********************
+changed: [localhost]
+
+TASK [Report the build result] *************************************************
+ok: [localhost] => {
+    "msg": {
+        "build": 7,
+        "console": "/home/zymun/worktrees/fable/k8s/infrastructure/jenkins/../.build/jenkins/release-7.log",
+        "description": "tpl ingress 补 /api/internal 收敛规则 — 已发布：release-20261021-1，指针 a7985bffdc，回执 scripts/results/release-7.20261021-001448.md",
+        "name": "#7 fable@52b8c527fd tpl",
+        "result": "SUCCESS",
+        "seconds": 493
+    }
+}
+
+TASK [Require the check to pass] ***********************************************
+ok: [localhost]
+
+TASK [Report the agent unit state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "User=zymun",
+        "Id=sunmoon-jenkins-agent.service",
+        "ActiveState=active",
+        "SubState=running",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=15   changed=1    unreachable=0    failed=0    skipped=19   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+
+exit=0

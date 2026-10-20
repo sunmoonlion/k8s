@@ -1,0 +1,31 @@
+result=SUCCESS
+duration=493760
+displayName=#7 fable@52b8c527fd tpl
+description=tpl ingress 补 /api/internal 收敛规则 — 已发布：release-20261021-1，指针 a7985bffdc，回执 scripts/results/release-7.20261021-001448.md
+infrastructure/.build/release/7/1-platform-status.log
+infrastructure/.build/release/7/10-apply.log
+infrastructure/.build/release/7/10-wait.txt
+infrastructure/.build/release/7/11-check-tpl.log
+infrastructure/.build/release/7/12-push.txt
+infrastructure/.build/release/7/2-align.log
+infrastructure/.build/release/7/2-plan-tpl.log
+infrastructure/.build/release/7/2-sources.diff
+infrastructure/.build/release/7/3-build-tpl.log
+infrastructure/.build/release/7/3-image-locks.txt
+infrastructure/.build/release/7/4-gitops-touched.txt
+infrastructure/.build/release/7/4-gitops.stat
+infrastructure/.build/release/7/4-stage-tpl.log
+infrastructure/.build/release/7/4-workload.diff
+infrastructure/.build/release/7/5-plan-tpl.log
+infrastructure/.build/release/7/6-commit.txt
+infrastructure/.build/release/7/7-release.log
+infrastructure/.build/release/7/7-source-candidate.yaml
+infrastructure/.build/release/7/8-approval.txt
+infrastructure/.build/release/7/9-pointer.txt
+archived_release_receipts=0
+12-push.txt:
+To github.com:sunmoonlion/k8s.git
+   52b8c527..48838294  HEAD -> fable
+ * [new tag]           release-20261021-1 -> release-20261021-1
+
+exit=0

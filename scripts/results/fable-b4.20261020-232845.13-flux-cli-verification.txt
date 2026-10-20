@@ -1,0 +1,4 @@
+installed_cli_sha256=392a85dd1126875c1ab677e18b6edb73f292c9e9ebcbb2e5402eb98bcfd81974
+flux: v2.9.5
+
+exit=0

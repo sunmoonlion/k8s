@@ -1,0 +1,1340 @@
+2026-10-20T23:32:04+08:00
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/agent.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_agent_action=stop'
+
+PLAY [Install and control the host Jenkins agent] ******************************
+
+TASK [Validate action and settings] ********************************************
+ok: [localhost]
+
+TASK [Show the plan without secrets] *******************************************
+ok: [localhost] => {
+    "msg": {
+        "action": "stop",
+        "jre": "temurin-jre 21.0.12.1+1 -> /opt/sunmoon/jenkins/jre/21.0.12.1_1",
+        "render_check": "job render-check on fable every H/10 * * * *",
+        "repos": "/mnt/sunmoon-data/jenkins/repos: k8s, tpl-app, knowfeed-app, knowbase-app, knowbench-app, knowlab-app, knowmart-app (origins from ~zymun/worktrees/fable)",
+        "unit": "sunmoon-jenkins-agent.service as zymun -> http://127.0.0.1:18080 (node host)"
+    }
+}
+
+TASK [Read controller and agent unit states] ***********************************
+ok: [localhost] => (item=sunmoon-jenkins.service)
+ok: [localhost] => (item=sunmoon-jenkins-agent.service)
+
+TASK [Check capacity for JRE, repos and tools] *********************************
+skipping: [localhost]
+
+TASK [Require the controller to be running] ************************************
+skipping: [localhost]
+
+TASK [Verify the locked JRE package] *******************************************
+skipping: [localhost]
+
+TASK [Require the original JRE bytes] ******************************************
+skipping: [localhost]
+
+TASK [Create runtime directories for the agent] ********************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre/21.0.12.1_1) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/agent) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/repos) 
+skipping: [localhost]
+
+TASK [Extract the verified JRE once] *******************************************
+skipping: [localhost]
+
+TASK [Verify the extracted JRE members against the lock] ***********************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Require exact JRE member bytes] ******************************************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Point the current JRE at the verified version] ***************************
+skipping: [localhost]
+
+TASK [Fetch agent.jar from our own controller (it is served by the controller, no third party)] ***
+skipping: [localhost]
+
+TASK [Read the node secret the controller wrote at start (init.groovy.d/02-agent-node)] ***
+skipping: [localhost]
+
+TASK [Give the agent user its own read-only copy of the node secret] ***********
+skipping: [localhost]
+
+TASK [Let the agent user traverse the secrets directory] ***********************
+skipping: [localhost]
+
+TASK [Prepare the repos the agent works on] ************************************
+skipping: [localhost]
+
+TASK [Preview the unit] ********************************************************
+skipping: [localhost]
+
+TASK [Write the unit] **********************************************************
+skipping: [localhost]
+
+TASK [Reload, enable and (re)start the agent] **********************************
+skipping: [localhost]
+
+TASK [Stop only the agent] *****************************************************
+changed: [localhost]
+
+TASK [Start the agent] *********************************************************
+skipping: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+skipping: [localhost]
+
+TASK [Wait for the agent to be connected] **************************************
+skipping: [localhost]
+
+TASK [Get a CSRF crumb] ********************************************************
+skipping: [localhost]
+
+TASK [Queue the build] *********************************************************
+skipping: [localhost]
+
+TASK [Wait for the queue item to become a build] *******************************
+skipping: [localhost]
+
+TASK [Wait for the build to finish] ********************************************
+skipping: [localhost]
+
+TASK [Create the local directory for build consoles] ***************************
+skipping: [localhost]
+
+TASK [Save the console log beside the other build receipts] ********************
+skipping: [localhost]
+
+TASK [Report the build result] *************************************************
+skipping: [localhost]
+
+TASK [Require the check to pass] ***********************************************
+skipping: [localhost]
+
+TASK [Report the agent unit state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "User=zymun",
+        "Id=sunmoon-jenkins-agent.service",
+        "ActiveState=inactive",
+        "SubState=dead",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=1    unreachable=0    failed=0    skipped=28   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/service.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_action=stop'
+
+PLAY [Configure and control the host Jenkins controller] ***********************
+
+TASK [Validate site and operation] *********************************************
+ok: [localhost]
+
+TASK [Show intended configuration without secrets] *****************************
+ok: [localhost] => {
+    "msg": {
+        "action": "stop",
+        "administrator": "admin (table row 13; preset only at first start)",
+        "agent_port": "127.0.0.1:50000",
+        "directories": {
+            "config": "/etc/sunmoon/jenkins",
+            "data": "/mnt/sunmoon-data/jenkins/home",
+            "runtime": "/opt/sunmoon/jenkins"
+        },
+        "images": [
+            "docker.io/jenkins/jenkins@sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb",
+            "docker.io/library/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272"
+        ],
+        "intranet": "https://jenkins.sunmoonai.com:30443 -> entry SNI -> 127.0.0.1:18443 (TLS by the locked HAProxy) -> jenkins:8080",
+        "loopback_http": "127.0.0.1:18080 (host agent and local checks only)",
+        "public_edge": "not routed (SDD 0013: the edge forwards only knowbench, casdoor, relay)"
+    }
+}
+
+TASK [Inspect current service state] *******************************************
+ok: [localhost]
+
+TASK [Check capacity for the controller home and generated configuration] ******
+skipping: [localhost]
+
+TASK [Require the locked local images] *****************************************
+skipping: [localhost] => (item=jenkins) 
+skipping: [localhost] => (item=haproxy) 
+skipping: [localhost]
+
+TASK [Verify image platform and manifest] **************************************
+skipping: [localhost] => (item=jenkins) 
+skipping: [localhost] => (item=haproxy) 
+skipping: [localhost]
+
+TASK [Verify the Compose binary source] ****************************************
+skipping: [localhost]
+
+TASK [Require locked Compose] **************************************************
+skipping: [localhost]
+
+TASK [Inspect managed root directories] ****************************************
+skipping: [localhost] => (item=/etc/sunmoon/jenkins) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/home) 
+skipping: [localhost]
+
+TASK [Refuse symlink or non-directory roots] ***********************************
+skipping: [localhost] => (item=/etc/sunmoon/jenkins) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/home) 
+skipping: [localhost]
+
+TASK [Create private configuration and runtime directories] ********************
+skipping: [localhost] => (item=/etc/sunmoon/jenkins) 
+skipping: [localhost] => (item=/etc/sunmoon/jenkins/private) 
+skipping: [localhost] => (item=/etc/sunmoon/jenkins/private/presets) 
+skipping: [localhost] => (item=/etc/sunmoon/jenkins/tls) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/secrets) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/tls) 
+skipping: [localhost]
+
+TASK [Install the shared standalone mount guard] *******************************
+skipping: [localhost]
+
+TASK [Set startup storage policy] **********************************************
+skipping: [localhost]
+
+TASK [Create the data directory on the data disk only] *************************
+skipping: [localhost]
+
+TASK [Require Docker to see the actual data disk before creating the home] *****
+skipping: [localhost]
+
+TASK [Create the controller home owned by the container user] ******************
+skipping: [localhost]
+
+TASK [Create and validate the private administrator credential and certificates] ***
+skipping: [localhost]
+
+TASK [Place the locked plugin closure for the container to pick up at start] ***
+skipping: [localhost]
+
+TASK [Preview runtime configuration changes] ***********************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/compose.yaml) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/haproxy.cfg) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy.override) 
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-jenkins.service) 
+skipping: [localhost]
+
+TASK [Require stopping this service before changing its runtime configuration] ***
+skipping: [localhost]
+
+TASK [Write runtime configuration] *********************************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/compose.yaml) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/haproxy.cfg) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy.override) 
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-jenkins.service) 
+skipping: [localhost]
+
+TASK [Remove init scripts written without the .override suffix by earlier deploys (they would be skipped by the image entrypoint anyway)] ***
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy) 
+skipping: [localhost]
+
+TASK [Install verified Compose independent of the worktree] ********************
+skipping: [localhost]
+
+TASK [Validate the generated Compose file without starting anything] ***********
+skipping: [localhost]
+
+TASK [Validate the TLS terminator configuration with the locked HAProxy image] ***
+skipping: [localhost]
+
+TASK [Reload service definitions and join the platform target] *****************
+skipping: [localhost]
+
+TASK [Stop only the controller] ************************************************
+changed: [localhost]
+
+TASK [Start the controller] ****************************************************
+skipping: [localhost]
+
+TASK [Wait for the certificate-verified login page through the TLS backend] ****
+skipping: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+skipping: [localhost]
+
+TASK [Require an authenticated administrator identity] *************************
+skipping: [localhost]
+
+TASK [Require anonymous access to be denied] ***********************************
+skipping: [localhost]
+
+TASK [Require the locked plugins to be loaded and the agent node to exist] *****
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost]
+
+TASK [Report actual service state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "Id=sunmoon-jenkins.service",
+        "ActiveState=inactive",
+        "SubState=dead",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=1    unreachable=0    failed=0    skipped=29   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+Result=success
+ActiveState=inactive
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/service.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_action=deploy'
+
+PLAY [Configure and control the host Jenkins controller] ***********************
+
+TASK [Validate site and operation] *********************************************
+ok: [localhost]
+
+TASK [Show intended configuration without secrets] *****************************
+ok: [localhost] => {
+    "msg": {
+        "action": "deploy",
+        "administrator": "admin (table row 13; preset only at first start)",
+        "agent_port": "127.0.0.1:50000",
+        "directories": {
+            "config": "/etc/sunmoon/jenkins",
+            "data": "/mnt/sunmoon-data/jenkins/home",
+            "runtime": "/opt/sunmoon/jenkins"
+        },
+        "images": [
+            "docker.io/jenkins/jenkins@sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb",
+            "docker.io/library/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272"
+        ],
+        "intranet": "https://jenkins.sunmoonai.com:30443 -> entry SNI -> 127.0.0.1:18443 (TLS by the locked HAProxy) -> jenkins:8080",
+        "loopback_http": "127.0.0.1:18080 (host agent and local checks only)",
+        "public_edge": "not routed (SDD 0013: the edge forwards only knowbench, casdoor, relay)"
+    }
+}
+
+TASK [Inspect current service state] *******************************************
+ok: [localhost]
+
+TASK [Check capacity for the controller home and generated configuration] ******
+included: /home/zymun/worktrees/fable/k8s/infrastructure/host/tasks/capacity.yaml for localhost
+
+TASK [Validate the capacity budget and site floor] *****************************
+ok: [localhost]
+
+TASK [Validate an explicitly approved temporary capacity exception] ************
+skipping: [localhost]
+
+TASK [Report the active temporary exception without changing the site policy] ***
+skipping: [localhost]
+
+TASK [Publish read-only helper to Windows local script directory] **************
+ok: [localhost]
+
+TASK [Install the reviewed capacity helper without changing execution policy] ***
+ok: [localhost]
+
+TASK [Resolve Windows path to read-only capacity helper] ***********************
+ok: [localhost]
+
+TASK [Require Windows growth budget before writing] ****************************
+ok: [localhost]
+
+TASK [Report physical capacity budget] *****************************************
+ok: [localhost] => {
+    "msg": {
+        "c_free_bytes": 120708587520,
+        "checked_at_utc": "2026-10-20T15:32:12.2915266Z",
+        "configured_data_maximum_bytes": 246960619520,
+        "data_vhd_allocated_bytes": 180728365056,
+        "data_vhd_length": 180728365056,
+        "future_data_growth_bytes": 66232254464,
+        "minimum_free_bytes": 10737418240,
+        "passes": true,
+        "planned_bytes": 2147483648,
+        "remaining_after_growth_and_plan_bytes": 52328849408,
+        "scope": "Configured VHD growth plus requested operation; excludes other future system disk growth"
+    }
+}
+
+TASK [Enforce the approved batch ceiling as well as the reserve floor] *********
+skipping: [localhost]
+
+TASK [Require the locked local images] *****************************************
+ok: [localhost] => (item=jenkins)
+ok: [localhost] => (item=haproxy)
+
+TASK [Verify image platform and manifest] **************************************
+ok: [localhost] => (item=jenkins)
+ok: [localhost] => (item=haproxy)
+
+TASK [Verify the Compose binary source] ****************************************
+ok: [localhost]
+
+TASK [Require locked Compose] **************************************************
+ok: [localhost]
+
+TASK [Inspect managed root directories] ****************************************
+ok: [localhost] => (item=/etc/sunmoon/jenkins)
+ok: [localhost] => (item=/opt/sunmoon/jenkins)
+ok: [localhost] => (item=/mnt/sunmoon-data/jenkins)
+ok: [localhost] => (item=/mnt/sunmoon-data/jenkins/home)
+
+TASK [Refuse symlink or non-directory roots] ***********************************
+ok: [localhost] => (item=/etc/sunmoon/jenkins)
+ok: [localhost] => (item=/opt/sunmoon/jenkins)
+ok: [localhost] => (item=/mnt/sunmoon-data/jenkins)
+ok: [localhost] => (item=/mnt/sunmoon-data/jenkins/home)
+
+TASK [Create private configuration and runtime directories] ********************
+ok: [localhost] => (item=/etc/sunmoon/jenkins)
+ok: [localhost] => (item=/etc/sunmoon/jenkins/private)
+ok: [localhost] => (item=/etc/sunmoon/jenkins/private/presets)
+ok: [localhost] => (item=/etc/sunmoon/jenkins/tls)
+ok: [localhost] => (item=/opt/sunmoon/jenkins)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/secrets)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/tls)
+
+TASK [Install the shared standalone mount guard] *******************************
+ok: [localhost]
+
+TASK [Set startup storage policy] **********************************************
+ok: [localhost]
+
+TASK [Create the data directory on the data disk only] *************************
+ok: [localhost]
+
+TASK [Require Docker to see the actual data disk before creating the home] *****
+ok: [localhost]
+
+TASK [Create the controller home owned by the container user] ******************
+ok: [localhost]
+
+TASK [Create and validate the private administrator credential and certificates] ***
+included: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/secrets.yaml for localhost
+
+TASK [Inspect the credential file without reading its value] *******************
+ok: [localhost]
+
+TASK [Reject an unsafe credential file] ****************************************
+ok: [localhost]
+
+TASK [Inspect the independent backup directory and the initialized home] *******
+ok: [localhost] => (item=(censored due to no_log))
+ok: [localhost] => (item=(censored due to no_log))
+ok: [localhost] => (item=(censored due to no_log))
+
+TASK [Refuse a redirected or insecure backup] **********************************
+ok: [localhost]
+
+TASK [Refuse regenerating a lost credential for an initialized controller] *****
+ok: [localhost]
+
+TASK [Restore a missing primary credential only from its exact backup] *********
+skipping: [localhost]
+
+TASK [Read the human admin preset without changing an existing account] ********
+included: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/../../host/tasks/account-preset.yaml for localhost => (item=(censored due to no_log))
+
+TASK [Read or restore the explicitly supplied root-only preset and independent copy] ***
+ok: [localhost]
+
+TASK [Preserve the validated explicit first-install value only in memory] ******
+ok: [localhost]
+
+TASK [Retain the first-install value by its unique owning account object] ******
+ok: [localhost]
+
+TASK [Generate an independent initial credential only when absent and no preset was supplied] ***
+skipping: [localhost]
+
+TASK [Persist the initial credential without overwriting an existing file] *****
+skipping: [localhost]
+
+TASK [Create the independent private credential backup directory] **************
+ok: [localhost]
+
+TASK [Preserve the credential without replacing a prior identity] **************
+ok: [localhost]
+
+TASK [Require exact recoverable credential bytes] ******************************
+ok: [localhost]
+
+TASK [Read the credential only to validate its shape] **************************
+ok: [localhost]
+
+TASK [Require a valid credential value] ****************************************
+ok: [localhost]
+
+TASK [Give the container user its own read-only copy for the first start] ******
+ok: [localhost]
+
+TASK [Inspect the registry CA and the controller certificate pair] *************
+ok: [localhost] => (item=/etc/sunmoon/registry/tls/ca.crt)
+ok: [localhost] => (item=/etc/sunmoon/registry/tls/ca.key)
+ok: [localhost] => (item=/etc/sunmoon/jenkins/tls/server.key)
+ok: [localhost] => (item=/etc/sunmoon/jenkins/tls/server.crt)
+
+TASK [Require the platform CA and refuse symlinks or a partial pair] ***********
+ok: [localhost]
+
+TASK [Create a private server key and CSR once] ********************************
+skipping: [localhost]
+
+TASK [Write server certificate extensions] *************************************
+ok: [localhost]
+
+TASK [Sign the server certificate with the platform CA once, in place] *********
+skipping: [localhost]
+
+TASK [Restrict the private key] ************************************************
+ok: [localhost]
+
+TASK [Verify certificate chain, DNS identity and remaining validity] ***********
+ok: [localhost] => (item=['openssl', 'verify', '-CAfile', '/etc/sunmoon/registry/tls/ca.crt', '-verify_hostname', 'jenkins.sunmoonai.com', '/etc/sunmoon/jenkins/tls/server.crt'])
+ok: [localhost] => (item=['openssl', 'x509', '-checkend', '2592000', '-noout', '-in', '/etc/sunmoon/jenkins/tls/server.crt'])
+
+TASK [Read the certificate pair for the TLS terminator] ************************
+ok: [localhost] => (item=(censored due to no_log))
+ok: [localhost] => (item=(censored due to no_log))
+
+TASK [Assemble the HAProxy certificate bundle readable only by its container user] ***
+ok: [localhost]
+
+TASK [Place the locked plugin closure for the container to pick up at start] ***
+included: /home/zymun/worktrees/fable/k8s/infrastructure/jenkins/tasks/plugins.yaml for localhost
+
+TASK [Select the locked plugin files] ******************************************
+ok: [localhost]
+
+TASK [Require the locked plugin closure] ***************************************
+ok: [localhost]
+
+TASK [Inspect cached plugin files] *********************************************
+ok: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+ok: [localhost] => (item=jenkins-plugin-asm-api)
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+ok: [localhost] => (item=jenkins-plugin-branch-api)
+ok: [localhost] => (item=jenkins-plugin-caffeine-api)
+ok: [localhost] => (item=jenkins-plugin-checks-api)
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api)
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+ok: [localhost] => (item=jenkins-plugin-commons-text-api)
+ok: [localhost] => (item=jenkins-plugin-credentials-binding)
+ok: [localhost] => (item=jenkins-plugin-credentials)
+ok: [localhost] => (item=jenkins-plugin-display-url-api)
+ok: [localhost] => (item=jenkins-plugin-durable-task)
+ok: [localhost] => (item=jenkins-plugin-echarts-api)
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api)
+ok: [localhost] => (item=jenkins-plugin-git-client)
+ok: [localhost] => (item=jenkins-plugin-git)
+ok: [localhost] => (item=jenkins-plugin-gson-api)
+ok: [localhost] => (item=jenkins-plugin-instance-identity)
+ok: [localhost] => (item=jenkins-plugin-ionicons-api)
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson3-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jaxb)
+ok: [localhost] => (item=jenkins-plugin-joda-time-api)
+ok: [localhost] => (item=jenkins-plugin-jquery3-api)
+ok: [localhost] => (item=jenkins-plugin-json-api)
+ok: [localhost] => (item=jenkins-plugin-junit)
+ok: [localhost] => (item=jenkins-plugin-mailer)
+ok: [localhost] => (item=jenkins-plugin-matrix-project)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+ok: [localhost] => (item=jenkins-plugin-plain-credentials)
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api)
+ok: [localhost] => (item=jenkins-plugin-prism-api)
+ok: [localhost] => (item=jenkins-plugin-resource-disposer)
+ok: [localhost] => (item=jenkins-plugin-scm-api)
+ok: [localhost] => (item=jenkins-plugin-script-security)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials)
+ok: [localhost] => (item=jenkins-plugin-structs)
+ok: [localhost] => (item=jenkins-plugin-timestamper)
+ok: [localhost] => (item=jenkins-plugin-variant)
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+ok: [localhost] => (item=jenkins-plugin-workflow-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+ok: [localhost] => (item=jenkins-plugin-workflow-cps)
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-job)
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-support)
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup)
+
+TASK [Require every plugin file to match its lock] *****************************
+ok: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+ok: [localhost] => (item=jenkins-plugin-asm-api)
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+ok: [localhost] => (item=jenkins-plugin-branch-api)
+ok: [localhost] => (item=jenkins-plugin-caffeine-api)
+ok: [localhost] => (item=jenkins-plugin-checks-api)
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api)
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+ok: [localhost] => (item=jenkins-plugin-commons-text-api)
+ok: [localhost] => (item=jenkins-plugin-credentials-binding)
+ok: [localhost] => (item=jenkins-plugin-credentials)
+ok: [localhost] => (item=jenkins-plugin-display-url-api)
+ok: [localhost] => (item=jenkins-plugin-durable-task)
+ok: [localhost] => (item=jenkins-plugin-echarts-api)
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api)
+ok: [localhost] => (item=jenkins-plugin-git-client)
+ok: [localhost] => (item=jenkins-plugin-git)
+ok: [localhost] => (item=jenkins-plugin-gson-api)
+ok: [localhost] => (item=jenkins-plugin-instance-identity)
+ok: [localhost] => (item=jenkins-plugin-ionicons-api)
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson3-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jaxb)
+ok: [localhost] => (item=jenkins-plugin-joda-time-api)
+ok: [localhost] => (item=jenkins-plugin-jquery3-api)
+ok: [localhost] => (item=jenkins-plugin-json-api)
+ok: [localhost] => (item=jenkins-plugin-junit)
+ok: [localhost] => (item=jenkins-plugin-mailer)
+ok: [localhost] => (item=jenkins-plugin-matrix-project)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+ok: [localhost] => (item=jenkins-plugin-plain-credentials)
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api)
+ok: [localhost] => (item=jenkins-plugin-prism-api)
+ok: [localhost] => (item=jenkins-plugin-resource-disposer)
+ok: [localhost] => (item=jenkins-plugin-scm-api)
+ok: [localhost] => (item=jenkins-plugin-script-security)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials)
+ok: [localhost] => (item=jenkins-plugin-structs)
+ok: [localhost] => (item=jenkins-plugin-timestamper)
+ok: [localhost] => (item=jenkins-plugin-variant)
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+ok: [localhost] => (item=jenkins-plugin-workflow-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+ok: [localhost] => (item=jenkins-plugin-workflow-cps)
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-job)
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-support)
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup)
+
+TASK [Create the reference plugin directory for the container user] ************
+ok: [localhost]
+
+TASK [Place each verified plugin as <name>.jpi] ********************************
+ok: [localhost] => (item=jenkins-plugin-antisamy-markup-formatter)
+ok: [localhost] => (item=jenkins-plugin-apache-httpcomponents-client-4-api)
+ok: [localhost] => (item=jenkins-plugin-asm-api)
+ok: [localhost] => (item=jenkins-plugin-bootstrap5-api)
+ok: [localhost] => (item=jenkins-plugin-bouncycastle-api)
+ok: [localhost] => (item=jenkins-plugin-branch-api)
+ok: [localhost] => (item=jenkins-plugin-caffeine-api)
+ok: [localhost] => (item=jenkins-plugin-checks-api)
+ok: [localhost] => (item=jenkins-plugin-cloudbees-folder)
+ok: [localhost] => (item=jenkins-plugin-commons-compress-api)
+ok: [localhost] => (item=jenkins-plugin-commons-lang3-api)
+ok: [localhost] => (item=jenkins-plugin-commons-text-api)
+ok: [localhost] => (item=jenkins-plugin-credentials-binding)
+ok: [localhost] => (item=jenkins-plugin-credentials)
+ok: [localhost] => (item=jenkins-plugin-display-url-api)
+ok: [localhost] => (item=jenkins-plugin-durable-task)
+ok: [localhost] => (item=jenkins-plugin-echarts-api)
+ok: [localhost] => (item=jenkins-plugin-font-awesome-api)
+ok: [localhost] => (item=jenkins-plugin-git-client)
+ok: [localhost] => (item=jenkins-plugin-git)
+ok: [localhost] => (item=jenkins-plugin-gson-api)
+ok: [localhost] => (item=jenkins-plugin-instance-identity)
+ok: [localhost] => (item=jenkins-plugin-ionicons-api)
+ok: [localhost] => (item=jenkins-plugin-jackson-annotations2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson2-api)
+ok: [localhost] => (item=jenkins-plugin-jackson3-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-mail-api)
+ok: [localhost] => (item=jenkins-plugin-jakarta-xml-bind-api)
+ok: [localhost] => (item=jenkins-plugin-javax-activation-api)
+ok: [localhost] => (item=jenkins-plugin-jaxb)
+ok: [localhost] => (item=jenkins-plugin-joda-time-api)
+ok: [localhost] => (item=jenkins-plugin-jquery3-api)
+ok: [localhost] => (item=jenkins-plugin-json-api)
+ok: [localhost] => (item=jenkins-plugin-junit)
+ok: [localhost] => (item=jenkins-plugin-mailer)
+ok: [localhost] => (item=jenkins-plugin-matrix-project)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-common)
+ok: [localhost] => (item=jenkins-plugin-mina-sshd-api-core)
+ok: [localhost] => (item=jenkins-plugin-pipeline-build-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-graph-analysis)
+ok: [localhost] => (item=jenkins-plugin-pipeline-groovy-lib)
+ok: [localhost] => (item=jenkins-plugin-pipeline-input-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-milestone-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-definition)
+ok: [localhost] => (item=jenkins-plugin-pipeline-model-extensions)
+ok: [localhost] => (item=jenkins-plugin-pipeline-rest-api)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-step)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-tags-metadata)
+ok: [localhost] => (item=jenkins-plugin-pipeline-stage-view)
+ok: [localhost] => (item=jenkins-plugin-pipeline-utility-steps)
+ok: [localhost] => (item=jenkins-plugin-plain-credentials)
+ok: [localhost] => (item=jenkins-plugin-plugin-util-api)
+ok: [localhost] => (item=jenkins-plugin-prism-api)
+ok: [localhost] => (item=jenkins-plugin-resource-disposer)
+ok: [localhost] => (item=jenkins-plugin-scm-api)
+ok: [localhost] => (item=jenkins-plugin-script-security)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-api)
+ok: [localhost] => (item=jenkins-plugin-snakeyaml-engine-api)
+ok: [localhost] => (item=jenkins-plugin-ssh-credentials)
+ok: [localhost] => (item=jenkins-plugin-structs)
+ok: [localhost] => (item=jenkins-plugin-timestamper)
+ok: [localhost] => (item=jenkins-plugin-variant)
+ok: [localhost] => (item=jenkins-plugin-woodstox-core-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-aggregator)
+ok: [localhost] => (item=jenkins-plugin-workflow-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-basic-steps)
+ok: [localhost] => (item=jenkins-plugin-workflow-cps)
+ok: [localhost] => (item=jenkins-plugin-workflow-durable-task-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-job)
+ok: [localhost] => (item=jenkins-plugin-workflow-multibranch)
+ok: [localhost] => (item=jenkins-plugin-workflow-scm-step)
+ok: [localhost] => (item=jenkins-plugin-workflow-step-api)
+ok: [localhost] => (item=jenkins-plugin-workflow-support)
+ok: [localhost] => (item=jenkins-plugin-ws-cleanup)
+
+TASK [Find plugin files that are no longer in the lock] ************************
+ok: [localhost]
+
+TASK [Refuse stray plugin files] ***********************************************
+ok: [localhost]
+
+TASK [Preview runtime configuration changes] ***********************************
+[WARNING]: failed to look up group with gid 10001. Create group up to this point in real play
+ok: [localhost] => (item=/opt/sunmoon/jenkins/compose.yaml)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/haproxy.cfg)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy.override)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy.override)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy.override)
+changed: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy.override)
+ok: [localhost] => (item=/etc/systemd/system/sunmoon-jenkins.service)
+
+TASK [Require stopping this service before changing its runtime configuration] ***
+ok: [localhost]
+
+TASK [Write runtime configuration] *********************************************
+ok: [localhost] => (item=/opt/sunmoon/jenkins/compose.yaml)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/haproxy.cfg)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy.override)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy.override)
+ok: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy.override)
+changed: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy.override)
+ok: [localhost] => (item=/etc/systemd/system/sunmoon-jenkins.service)
+
+TASK [Remove init scripts written without the .override suffix by earlier deploys (they would be skipped by the image entrypoint anyway)] ***
+changed: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy)
+changed: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy)
+changed: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy)
+changed: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy)
+
+TASK [Install verified Compose independent of the worktree] ********************
+ok: [localhost]
+
+TASK [Validate the generated Compose file without starting anything] ***********
+ok: [localhost]
+
+TASK [Validate the TLS terminator configuration with the locked HAProxy image] ***
+ok: [localhost]
+
+TASK [Reload service definitions and join the platform target] *****************
+ok: [localhost]
+
+TASK [Stop only the controller] ************************************************
+skipping: [localhost]
+
+TASK [Start the controller] ****************************************************
+changed: [localhost]
+
+TASK [Wait for the certificate-verified login page through the TLS backend] ****
+FAILED - RETRYING: [localhost]: Wait for the certificate-verified login page through the TLS backend (39 retries left).
+ok: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+ok: [localhost]
+
+TASK [Require an authenticated administrator identity] *************************
+ok: [localhost]
+
+TASK [Require anonymous access to be denied] ***********************************
+ok: [localhost]
+
+TASK [Require the locked plugins to be loaded and the agent node to exist] *****
+ok: [localhost] => (item=(censored due to no_log))
+ok: [localhost] => (item=(censored due to no_log))
+
+TASK [Report actual service state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "Id=sunmoon-jenkins.service",
+        "ActiveState=active",
+        "SubState=running",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=70   changed=4    unreachable=0    failed=0    skipped=9    rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/agent.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_agent_action=start'
+
+PLAY [Install and control the host Jenkins agent] ******************************
+
+TASK [Validate action and settings] ********************************************
+ok: [localhost]
+
+TASK [Show the plan without secrets] *******************************************
+ok: [localhost] => {
+    "msg": {
+        "action": "start",
+        "jre": "temurin-jre 21.0.12.1+1 -> /opt/sunmoon/jenkins/jre/21.0.12.1_1",
+        "render_check": "job render-check on fable every H/10 * * * *",
+        "repos": "/mnt/sunmoon-data/jenkins/repos: k8s, tpl-app, knowfeed-app, knowbase-app, knowbench-app, knowlab-app, knowmart-app (origins from ~zymun/worktrees/fable)",
+        "unit": "sunmoon-jenkins-agent.service as zymun -> http://127.0.0.1:18080 (node host)"
+    }
+}
+
+TASK [Read controller and agent unit states] ***********************************
+ok: [localhost] => (item=sunmoon-jenkins.service)
+ok: [localhost] => (item=sunmoon-jenkins-agent.service)
+
+TASK [Check capacity for JRE, repos and tools] *********************************
+skipping: [localhost]
+
+TASK [Require the controller to be running] ************************************
+skipping: [localhost]
+
+TASK [Verify the locked JRE package] *******************************************
+skipping: [localhost]
+
+TASK [Require the original JRE bytes] ******************************************
+skipping: [localhost]
+
+TASK [Create runtime directories for the agent] ********************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre/21.0.12.1_1) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/agent) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/repos) 
+skipping: [localhost]
+
+TASK [Extract the verified JRE once] *******************************************
+skipping: [localhost]
+
+TASK [Verify the extracted JRE members against the lock] ***********************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Require exact JRE member bytes] ******************************************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Point the current JRE at the verified version] ***************************
+skipping: [localhost]
+
+TASK [Fetch agent.jar from our own controller (it is served by the controller, no third party)] ***
+skipping: [localhost]
+
+TASK [Read the node secret the controller wrote at start (init.groovy.d/02-agent-node)] ***
+skipping: [localhost]
+
+TASK [Give the agent user its own read-only copy of the node secret] ***********
+skipping: [localhost]
+
+TASK [Let the agent user traverse the secrets directory] ***********************
+skipping: [localhost]
+
+TASK [Prepare the repos the agent works on] ************************************
+skipping: [localhost]
+
+TASK [Preview the unit] ********************************************************
+skipping: [localhost]
+
+TASK [Write the unit] **********************************************************
+skipping: [localhost]
+
+TASK [Reload, enable and (re)start the agent] **********************************
+skipping: [localhost]
+
+TASK [Stop only the agent] *****************************************************
+skipping: [localhost]
+
+TASK [Start the agent] *********************************************************
+changed: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+ok: [localhost]
+
+TASK [Wait for the agent to be connected] **************************************
+FAILED - RETRYING: [localhost]: Wait for the agent to be connected (35 retries left).
+ok: [localhost]
+
+TASK [Get a CSRF crumb] ********************************************************
+skipping: [localhost]
+
+TASK [Queue the build] *********************************************************
+skipping: [localhost]
+
+TASK [Wait for the queue item to become a build] *******************************
+skipping: [localhost]
+
+TASK [Wait for the build to finish] ********************************************
+skipping: [localhost]
+
+TASK [Create the local directory for build consoles] ***************************
+skipping: [localhost]
+
+TASK [Save the console log beside the other build receipts] ********************
+skipping: [localhost]
+
+TASK [Report the build result] *************************************************
+skipping: [localhost]
+
+TASK [Require the check to pass] ***********************************************
+skipping: [localhost]
+
+TASK [Report the agent unit state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "User=zymun",
+        "Id=sunmoon-jenkins-agent.service",
+        "ActiveState=active",
+        "SubState=running",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=1    unreachable=0    failed=0    skipped=26   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/service.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_action=status'
+
+PLAY [Configure and control the host Jenkins controller] ***********************
+
+TASK [Validate site and operation] *********************************************
+ok: [localhost]
+
+TASK [Show intended configuration without secrets] *****************************
+ok: [localhost] => {
+    "msg": {
+        "action": "status",
+        "administrator": "admin (table row 13; preset only at first start)",
+        "agent_port": "127.0.0.1:50000",
+        "directories": {
+            "config": "/etc/sunmoon/jenkins",
+            "data": "/mnt/sunmoon-data/jenkins/home",
+            "runtime": "/opt/sunmoon/jenkins"
+        },
+        "images": [
+            "docker.io/jenkins/jenkins@sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb",
+            "docker.io/library/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272"
+        ],
+        "intranet": "https://jenkins.sunmoonai.com:30443 -> entry SNI -> 127.0.0.1:18443 (TLS by the locked HAProxy) -> jenkins:8080",
+        "loopback_http": "127.0.0.1:18080 (host agent and local checks only)",
+        "public_edge": "not routed (SDD 0013: the edge forwards only knowbench, casdoor, relay)"
+    }
+}
+
+TASK [Inspect current service state] *******************************************
+ok: [localhost]
+
+TASK [Check capacity for the controller home and generated configuration] ******
+skipping: [localhost]
+
+TASK [Require the locked local images] *****************************************
+skipping: [localhost] => (item=jenkins) 
+skipping: [localhost] => (item=haproxy) 
+skipping: [localhost]
+
+TASK [Verify image platform and manifest] **************************************
+skipping: [localhost] => (item=jenkins) 
+skipping: [localhost] => (item=haproxy) 
+skipping: [localhost]
+
+TASK [Verify the Compose binary source] ****************************************
+skipping: [localhost]
+
+TASK [Require locked Compose] **************************************************
+skipping: [localhost]
+
+TASK [Inspect managed root directories] ****************************************
+skipping: [localhost] => (item=/etc/sunmoon/jenkins) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/home) 
+skipping: [localhost]
+
+TASK [Refuse symlink or non-directory roots] ***********************************
+skipping: [localhost] => (item=/etc/sunmoon/jenkins) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/home) 
+skipping: [localhost]
+
+TASK [Create private configuration and runtime directories] ********************
+skipping: [localhost] => (item=/etc/sunmoon/jenkins) 
+skipping: [localhost] => (item=/etc/sunmoon/jenkins/private) 
+skipping: [localhost] => (item=/etc/sunmoon/jenkins/private/presets) 
+skipping: [localhost] => (item=/etc/sunmoon/jenkins/tls) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/secrets) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/tls) 
+skipping: [localhost]
+
+TASK [Install the shared standalone mount guard] *******************************
+skipping: [localhost]
+
+TASK [Set startup storage policy] **********************************************
+skipping: [localhost]
+
+TASK [Create the data directory on the data disk only] *************************
+skipping: [localhost]
+
+TASK [Require Docker to see the actual data disk before creating the home] *****
+skipping: [localhost]
+
+TASK [Create the controller home owned by the container user] ******************
+skipping: [localhost]
+
+TASK [Create and validate the private administrator credential and certificates] ***
+skipping: [localhost]
+
+TASK [Place the locked plugin closure for the container to pick up at start] ***
+skipping: [localhost]
+
+TASK [Preview runtime configuration changes] ***********************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/compose.yaml) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/haproxy.cfg) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy.override) 
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-jenkins.service) 
+skipping: [localhost]
+
+TASK [Require stopping this service before changing its runtime configuration] ***
+skipping: [localhost]
+
+TASK [Write runtime configuration] *********************************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/compose.yaml) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/haproxy.cfg) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy.override) 
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-jenkins.service) 
+skipping: [localhost]
+
+TASK [Remove init scripts written without the .override suffix by earlier deploys (they would be skipped by the image entrypoint anyway)] ***
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy) 
+skipping: [localhost]
+
+TASK [Install verified Compose independent of the worktree] ********************
+skipping: [localhost]
+
+TASK [Validate the generated Compose file without starting anything] ***********
+skipping: [localhost]
+
+TASK [Validate the TLS terminator configuration with the locked HAProxy image] ***
+skipping: [localhost]
+
+TASK [Reload service definitions and join the platform target] *****************
+skipping: [localhost]
+
+TASK [Stop only the controller] ************************************************
+skipping: [localhost]
+
+TASK [Start the controller] ****************************************************
+skipping: [localhost]
+
+TASK [Wait for the certificate-verified login page through the TLS backend] ****
+skipping: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+skipping: [localhost]
+
+TASK [Require an authenticated administrator identity] *************************
+skipping: [localhost]
+
+TASK [Require anonymous access to be denied] ***********************************
+skipping: [localhost]
+
+TASK [Require the locked plugins to be loaded and the agent node to exist] *****
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost]
+
+TASK [Report actual service state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "Id=sunmoon-jenkins.service",
+        "ActiveState=active",
+        "SubState=running",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=30   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/agent.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_agent_action=status'
+
+PLAY [Install and control the host Jenkins agent] ******************************
+
+TASK [Validate action and settings] ********************************************
+ok: [localhost]
+
+TASK [Show the plan without secrets] *******************************************
+ok: [localhost] => {
+    "msg": {
+        "action": "status",
+        "jre": "temurin-jre 21.0.12.1+1 -> /opt/sunmoon/jenkins/jre/21.0.12.1_1",
+        "render_check": "job render-check on fable every H/10 * * * *",
+        "repos": "/mnt/sunmoon-data/jenkins/repos: k8s, tpl-app, knowfeed-app, knowbase-app, knowbench-app, knowlab-app, knowmart-app (origins from ~zymun/worktrees/fable)",
+        "unit": "sunmoon-jenkins-agent.service as zymun -> http://127.0.0.1:18080 (node host)"
+    }
+}
+
+TASK [Read controller and agent unit states] ***********************************
+ok: [localhost] => (item=sunmoon-jenkins.service)
+ok: [localhost] => (item=sunmoon-jenkins-agent.service)
+
+TASK [Check capacity for JRE, repos and tools] *********************************
+skipping: [localhost]
+
+TASK [Require the controller to be running] ************************************
+skipping: [localhost]
+
+TASK [Verify the locked JRE package] *******************************************
+skipping: [localhost]
+
+TASK [Require the original JRE bytes] ******************************************
+skipping: [localhost]
+
+TASK [Create runtime directories for the agent] ********************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre/21.0.12.1_1) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/agent) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/repos) 
+skipping: [localhost]
+
+TASK [Extract the verified JRE once] *******************************************
+skipping: [localhost]
+
+TASK [Verify the extracted JRE members against the lock] ***********************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Require exact JRE member bytes] ******************************************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Point the current JRE at the verified version] ***************************
+skipping: [localhost]
+
+TASK [Fetch agent.jar from our own controller (it is served by the controller, no third party)] ***
+skipping: [localhost]
+
+TASK [Read the node secret the controller wrote at start (init.groovy.d/02-agent-node)] ***
+skipping: [localhost]
+
+TASK [Give the agent user its own read-only copy of the node secret] ***********
+skipping: [localhost]
+
+TASK [Let the agent user traverse the secrets directory] ***********************
+skipping: [localhost]
+
+TASK [Prepare the repos the agent works on] ************************************
+skipping: [localhost]
+
+TASK [Preview the unit] ********************************************************
+skipping: [localhost]
+
+TASK [Write the unit] **********************************************************
+skipping: [localhost]
+
+TASK [Reload, enable and (re)start the agent] **********************************
+skipping: [localhost]
+
+TASK [Stop only the agent] *****************************************************
+skipping: [localhost]
+
+TASK [Start the agent] *********************************************************
+skipping: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+ok: [localhost]
+
+TASK [Wait for the agent to be connected] **************************************
+ok: [localhost]
+
+TASK [Get a CSRF crumb] ********************************************************
+skipping: [localhost]
+
+TASK [Queue the build] *********************************************************
+skipping: [localhost]
+
+TASK [Wait for the queue item to become a build] *******************************
+skipping: [localhost]
+
+TASK [Wait for the build to finish] ********************************************
+skipping: [localhost]
+
+TASK [Create the local directory for build consoles] ***************************
+skipping: [localhost]
+
+TASK [Save the console log beside the other build receipts] ********************
+skipping: [localhost]
+
+TASK [Report the build result] *************************************************
+skipping: [localhost]
+
+TASK [Require the check to pass] ***********************************************
+skipping: [localhost]
+
+TASK [Report the agent unit state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "User=zymun",
+        "Id=sunmoon-jenkins-agent.service",
+        "ActiveState=active",
+        "SubState=running",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=27   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+01-platform.groovy.override
+02-agent-node.groovy.override
+03-render-check.groovy.override
+04-release.groovy.override
+APPROVAL_TIMEOUT_MINUTES_count=1
+body.main_count=1
+Oct 20 23:32:06 wsl-dev docker-compose[862623]: jenkins-1  | 2026-10-20 15:32:06.406+0000 [id=927]        INFO        j.s.DefaultJnlpSlaveReceiver#channelClosed: IOHub#1: Worker[channel:java.nio.channels.SocketChannel[connected local=/172.19.0.2:50000 remote=172.19.0.1/172.19.0.1:36850]] / Computer.threadPoolForRemoting [#37] for host terminated: java.nio.channels.ClosedChannelException
+Oct 20 23:33:03 wsl-dev docker-compose[1444184]: jenkins-1  | 2026-10-20 15:33:03.587+0000 [id=39]        INFO        j.util.groovy.GroovyHookScript#execute: Executing /var/jenkins_home/init.groovy.d/04-release.groovy
+severe_or_exception_count=1
+Traceback (most recent call last):
+  File "<stdin>", line 15, in <module>
+AssertionError
+
+exit=1

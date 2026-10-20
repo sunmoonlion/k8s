@@ -1,0 +1,16 @@
+2026-10-21T00:05:59+08:00
+From github.com:sunmoonlion/k8s
+ * [new tag]             attempt1/luna      -> attempt1/luna
+ * [new tag]             attempt1/opus      -> attempt1/opus
+ * [new tag]             dev-plan-refact/arbiter-final -> dev-plan-refact/arbiter-final
+ * [new tag]             dev-plan-refact/candidate-kimi -> dev-plan-refact/candidate-kimi
+ * [new tag]             dev-plan-refact/candidate-luna -> dev-plan-refact/candidate-luna
+ * [new tag]             dev-plan-refact/candidate-opus -> dev-plan-refact/candidate-opus
+ * [new tag]             dev-plan-refact/candidate-qwen -> dev-plan-refact/candidate-qwen
+ * [new tag]             refact/cursor      -> refact/cursor
+ * [new tag]             refact/integration -> refact/integration
+ * [new tag]             refact/kimi        -> refact/kimi
+ * [new tag]             refact/luna        -> refact/luna
+ * [new tag]             refact/qwen        -> refact/qwen
+
+exit=0

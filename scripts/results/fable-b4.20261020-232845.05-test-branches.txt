@@ -1,0 +1,4 @@
+ gitops/components/app-platform/tpl-app/tpl-backend/config.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+exit=1

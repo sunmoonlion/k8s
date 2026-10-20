@@ -1,0 +1,16 @@
+13:[Pipeline] { (ci/release.groovy)
+31:[Pipeline] { (1 核对)
+13713:[Pipeline] { (2 改钉)
+13844:[Pipeline] { (3 构建)
+14927:[Pipeline] { (4 暂存)
+16088:[Pipeline] { (5 计划)
+16215:[Pipeline] { (6 提交)
+16228:[Pipeline] { (7 发布)
+16250:fatal: [localhost]: FAILED! => {"assertion": "cli_bytes.stat.isreg | default(false)", "changed": false, "evaluated_to": false, "msg": "Assertion failed"}
+16260:[Pipeline] { (前半段收尾)
+16276:Finished: FAILURE
+b0875e82 deploy(tpl): B4 超时路径（release #4）
+pointer diff against origin/fable:
+pointer-diff-done
+
+exit=0

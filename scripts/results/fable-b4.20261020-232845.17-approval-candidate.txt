@@ -1,0 +1,36 @@
+2-sources.diff:
+3-image-locks.txt:
+(no image lock changed: same pins rebuilt to the same digests)
+4-gitops.stat:
+ .../components/app-platform/tpl-app/tpl-admin-frontend/workload.yaml  | 4 ++++
+ gitops/components/app-platform/tpl-app/tpl-web-frontend/workload.yaml | 4 ++++
+ 2 files changed, 8 insertions(+)
+4-workload.diff:
++++ b/gitops/components/app-platform/tpl-app/tpl-admin-frontend/workload.yaml
+@@ -79,6 +79,10 @@ spec:
++          # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
++          - path: /api/internal
++            pathType: Prefix
++            backend: {service: {name: tpl-admin, port: {number: 3000}}}
++++ b/gitops/components/app-platform/tpl-app/tpl-web-frontend/workload.yaml
+@@ -79,6 +79,10 @@ spec:
++          # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
++          - path: /api/internal
++            pathType: Prefix
++            backend: {service: {name: tpl-web, port: {number: 3000}}}
+6-commit.txt:
+38a5dc48d53683adc0e6a52413fc9c157308c1ae
+38a5dc48d53683adc0e6a52413fc9c157308c1ae sunmoon-ci deploy(tpl): tpl ingress 补 /api/internal 收敛规则（release #6）
+
+ .../components/app-platform/tpl-app/tpl-admin-frontend/workload.yaml  | 4 ++++
+ gitops/components/app-platform/tpl-app/tpl-web-frontend/workload.yaml | 4 ++++
+ 2 files changed, 8 insertions(+)
+7-source-candidate.yaml:
+digest: sha256:6562e99a17b6313de9cff49dcf4433e2e6cf655a02ab86c2ed332676ad3ad7df
+path: ./clusters/kind
+repository: oci://harbor.sunmoonai.com:30443/platform/deployments-kind
+requires_sops: true
+revision: 38a5dc48d53683adc0e6a52413fc9c157308c1ae
+approval_build_url=https://jenkins.sunmoonai.com:30443/job/release/6/
+
+exit=0

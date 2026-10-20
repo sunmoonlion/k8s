@@ -1,0 +1,23 @@
+From https://github.com/sunmoonlion/k8s
+ * [new tag]             release-20261021-1 -> release-20261021-1
+ * [new tag]             attempt1/luna      -> attempt1/luna
+ * [new tag]             attempt1/opus      -> attempt1/opus
+ * [new tag]             dev-plan-refact/arbiter-final -> dev-plan-refact/arbiter-final
+ * [new tag]             dev-plan-refact/candidate-kimi -> dev-plan-refact/candidate-kimi
+ * [new tag]             dev-plan-refact/candidate-luna -> dev-plan-refact/candidate-luna
+ * [new tag]             dev-plan-refact/candidate-opus -> dev-plan-refact/candidate-opus
+ * [new tag]             dev-plan-refact/candidate-qwen -> dev-plan-refact/candidate-qwen
+ * [new tag]             refact/cursor      -> refact/cursor
+ * [new tag]             refact/integration -> refact/integration
+ * [new tag]             refact/kimi        -> refact/kimi
+ * [new tag]             refact/luna        -> refact/luna
+ * [new tag]             refact/qwen        -> refact/qwen
+release tag commit=a7985bffdcb20ba75c00b93102c5bcb836bb328c
+Everything up-to-date
+remote: Powered by [01;33mGITEE.COM [0m[1.1.23]        
+remote: Set trace flag de4e51bb        
+To https://gitee.com/sunmoonlion/k8s.git
+   52b8c527f..48838294b  fable -> fable
+ * [new tag]             release-20261021-1 -> release-20261021-1
+
+exit=0

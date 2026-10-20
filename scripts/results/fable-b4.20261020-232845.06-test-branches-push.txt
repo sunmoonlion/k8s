@@ -1,0 +1,20 @@
+temporary fixture verified: only the expected schema revision changed
+remote: 
+remote: Create a pull request for 'fable-b4-test' on GitHub by visiting:        
+remote:      https://github.com/sunmoonlion/k8s/pull/new/fable-b4-test        
+remote: 
+remote: Powered by [01;33mGITEE.COM [0m[1.1.23]        
+remote: Set trace flag 6442d78c        
+remote: Create a pull request for 'fable-b4-test' on Gitee by visiting:        
+remote: https://gitee.com/sunmoonlion/k8s/pull/new/sunmoonlion:fable-b4-test...sunmoonlion:master        
+remote: 
+remote: Create a pull request for 'fable-b4-test' on GitHub by visiting:        
+remote:      https://github.com/sunmoonlion/tpl-app/pull/new/fable-b4-test        
+remote: 
+remote: Powered by [01;33mGITEE.COM [0m[1.1.23]        
+remote: Set trace flag 3344c9ab        
+remote: Create a pull request for 'fable-b4-test' on Gitee by visiting:        
+remote: https://gitee.com/sunmoonlion/tpl-app/pull/new/sunmoonlion:fable-b4-test...sunmoonlion:master        
+branches-pushed
+
+exit=0

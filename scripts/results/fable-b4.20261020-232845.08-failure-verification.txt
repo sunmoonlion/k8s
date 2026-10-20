@@ -1,0 +1,11 @@
+13:[Pipeline] { (ci/release.groovy)
+31:[Pipeline] { (1 核对)
+13713:[Pipeline] { (2 改钉)
+13808:[ERROR]: Task failed: Action failed: Expected schema differs from pinned backend source. Correct the configuration before rendering or deployment.
+13816:fatal: [localhost]: FAILED! => {"assertion": "cfg.expected_schema_revision == (pinned_schema.stdout | from_json).head", "changed": false, "evaluated_to": false, "msg": "Expected schema differs from pinned backend source. Correct the configuration before rendering or deployment."}
+13826:[Pipeline] { (前半段收尾)
+13844:Finished: FAILURE
+tracked status=''
+abandoned branches=''
+
+exit=0

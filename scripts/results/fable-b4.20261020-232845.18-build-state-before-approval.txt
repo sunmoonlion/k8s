@@ -1,0 +1,30 @@
+2026-10-20T23:59:21
+release #3
+result=FAILURE
+duration=35120
+displayName=#3 fable-b4-test@fda48bce24 tpl
+description=B4 失败路径
+release #4
+result=FAILURE
+duration=169098
+displayName=#4 fable@5acac32895 tpl
+description=B4 超时路径
+release #5
+result=ABORTED
+duration=459159
+displayName=#5 fable@4bbf62ac92 tpl
+description=B4 超时路径 — 第 8 阶段未获批准（拒绝或 2 分钟超时）；提交留在代理克隆 abandoned/release-5，候选留在 Harbor，集群未动
+release #6
+result=None
+duration=0
+displayName=#6 fable@4bbf62ac92 tpl
+description=tpl ingress 补 /api/internal 收敛规则
+[Pipeline] { (4 暂存)
+[Pipeline] { (5 计划)
+[Pipeline] { (6 提交)
+[Pipeline] { (7 发布)
+[Pipeline] { (前半段收尾)
+[Pipeline] { (8 人批)
+Timeout set to expire in 1 day 0 hr
+
+exit=0

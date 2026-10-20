@@ -1,0 +1,40 @@
+15:[Pipeline] { (ci/release.groovy)
+33:[Pipeline] { (1 核对)
+13715:[Pipeline] { (2 改钉)
+13846:[Pipeline] { (3 构建)
+14929:[Pipeline] { (4 暂存)
+16090:[Pipeline] { (5 计划)
+16217:[Pipeline] { (6 提交)
+16230:[Pipeline] { (7 发布)
+16711:[Pipeline] { (前半段收尾)
+16714:total=0
+16726:[Pipeline] { (8 人批)
+16728:Timeout set to expire in 2 min 0 sec
+16743:Cancelling nested steps due to timeout
+16751:Finished: ABORTED
+  abandoned/release-4
+  abandoned/release-5
+7cb54625 deploy(tpl): B4 超时路径（release #5）
+pointer diff=''
+pointer-diff-done
+candidate:
+digest: sha256:6fa234f992570e3fe906f926953facdd3099275fccc479fb36f7b15db8be025f
+path: ./clusters/kind
+repository: oci://harbor.sunmoonai.com:30443/platform/deployments-kind
+requires_sops: true
+revision: 7cb54625874867355a162e36a4b8b42a488485e3
+4-workload.diff:
++++ b/gitops/components/app-platform/tpl-app/tpl-admin-frontend/workload.yaml
+@@ -79,6 +79,10 @@ spec:
++          # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
++          - path: /api/internal
++            pathType: Prefix
++            backend: {service: {name: tpl-admin, port: {number: 3000}}}
++++ b/gitops/components/app-platform/tpl-app/tpl-web-frontend/workload.yaml
+@@ -79,6 +79,10 @@ spec:
++          # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
++          - path: /api/internal
++            pathType: Prefix
++            backend: {service: {name: tpl-web, port: {number: 3000}}}
+
+exit=0
