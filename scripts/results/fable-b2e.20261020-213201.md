@@ -233,4 +233,27 @@ localhost                  : ok=7    changed=0    unreachable=0    failed=0    s
 
 - **没有停点**：一、二、三、四节全过，无非 0 退出（`curl` 的 60 是判据要的）。B2 这一轮的判据（render-check 真跑一次并 SUCCESS、差异阶段跑通、边缘不泄露、总状态干净）都满足；**并发属性仍待 B3**（本卡不含控制器重启，我没重启任何东西）。
 - 一次性产物：`/tmp/b2e-sec1.log`、`b2e-sec1b.log`、`b2e-wait18.log`、`b2e-check.log`、`b2e-sec2.log`、`b2e-sec34.log`、`b2e-jenkins-status.log`、`b2e-agent-status.log`、`b2e-platform-status.log`——关键原文已全抄进本回执，**全部删除**；仓内无 `scripts/tmp-*`、无一次性脚本落盘（命令块直接在 bash 里跑）。
-- 推回按卡第六节：`git pull --ff-only origin fable` → `git add scripts/results/fable-b2e.*.md` → `git mv` 卡到 `done/` → commit → `git push origin fable`。**只提交回执与卡的移动，没改任何代码**（1.2 那处改的是我执行的 grep 命令，不是仓里的文件）。
+- 推回按卡第六节，**卡面命令改了一处（只改「怎么执行」）**：原命令里 `git add scripts/results/fable-b2e.*.md scripts/results/fable-b2e.*.txt`，本轮**没有产生任何 `.txt`**（八份原始输出那种做法我这轮没照搬，全部原文直接抄进了本 `.md`），未匹配的 glob 会被当字面量传给 `git add` 而报 pathspec、把 `&&` 链断在提交之前，故只 add 实际存在的那份 `.md`。判据未改（回执进 `scripts/results/`、卡移 `done/`、只提交这两样）。远程若要保留 `.txt` 那半截，把它写成可选（如 `git add …*.md; git add …*.txt 2>/dev/null || true`）即可。
+- 实际推回原文：
+
+```text
+$ git pull --ff-only origin fable
+Already up to date.
+pull exit=0
+$ git add scripts/results/fable-b2e.20261020-213201.md
+add exit=0
+$ git mv docs/.../inbox/qwen/2026-10-20-fable-b2e-render-check.md docs/.../done/
+mv exit=0
+== 待提交内容 ==
+R  docs/dev-investment-agent/switch-test/inbox/qwen/2026-10-20-fable-b2e-render-check.md -> docs/dev-investment-agent/switch-test/done/2026-10-20-fable-b2e-render-check.md
+A  scripts/results/fable-b2e.20261020-213201.md
+commit exit=0
+$ git push origin fable
+To https://github.com/sunmoonlion/k8s.git
+   4f3dc682..574d9356  fable -> fable
+To https://gitee.com/sunmoonlion/k8s.git
+   4f3dc682..574d9356  fable -> fable
+push exit=0
+```
+
+只有回执新增（`A`）与卡的改名（`R`）两样 ✓；`574d9356 fable-b2e 回执：render-check 真跑、边缘、总状态（qwen）` 已上 `origin/fable`（该仓 origin 配双 URL，GitHub 与 Gitee 同时推到同一号），推后 `git status --short` 空、`origin/fable…HEAD` 计数 `0 0`。本节这两行（glob 改动与推回原文）是推完之后补写的，故还有一笔只动本回执的补写提交。**没改任何代码**（1.2 与本节改的都是我执行的命令，不是仓里的文件）。
