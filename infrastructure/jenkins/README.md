@@ -1,6 +1,6 @@
 # 宿主上的 Jenkins 控制器
 
-设计见 [SDD 0033](../../docs/dev-investment-agent/tree-build/SDD/modules/0033-jenkins-on-host.md)。控制器是官方 LTS 镜像，走物料锁（[上游镜像锁](../artifacts/upstream-images.lock.json)、[宿主归档锁](../artifacts/host-archives.lock.json)，归属 `host/jenkins`），Compose 加 systemd 单元 `sunmoon-jenkins.service`，数据在数据盘，只绑回环。随附一个用已锁 HAProxy 镜像的 TLS 终止器：宿主入口按 SNI 把 `jenkins.sunmoonai.com` 直通到它，所以只在内网 30443 上能开，边缘（SDD 0013）不转发这个域名。控制器里不存任何平台秘密；它不渲染、不部署、不管密文，这些仍是本目录别的程序。
+设计见 [SDD 0033](../../docs/dev-investment-agent/tree-build/SDD/modules/0033-jenkins-on-host.md)；**给所有者看的、从打开页面讲起的用法在 [使用说明](使用说明.md)**，本页是维护者的。控制器是官方 LTS 镜像，走物料锁（[上游镜像锁](../artifacts/upstream-images.lock.json)、[宿主归档锁](../artifacts/host-archives.lock.json)，归属 `host/jenkins`），Compose 加 systemd 单元 `sunmoon-jenkins.service`，数据在数据盘，只绑回环。随附一个用已锁 HAProxy 镜像的 TLS 终止器：宿主入口按 SNI 把 `jenkins.sunmoonai.com` 直通到它，所以只在内网 30443 上能开，边缘（SDD 0013）不转发这个域名。控制器里不存任何平台秘密；它不渲染、不部署、不管密文，这些仍是本目录别的程序。
 
 干活的**代理**是宿主进程（第 2 步起）：inbound agent 作为今天跑发布卡的那个宿主用户（`jenkins_agent_user` = `cluster_operator`）跑在 `sunmoon-jenkins-agent.service` 下，经回环 `jenkins_http_port` 连控制器的节点 `host`；JRE（锁 `temurin-jre`）与 `agent.jar`（从我们自己的控制器取）装在 `jenkins_runtime_dir`，不依赖人的工位；它干活用的仓在数据盘 `jenkins_repos_dir`（k8s 与六个应用仓并列，像 `~/worktrees/<工位>`，从 `jenkins_repo_source_workspace` 工位各仓的 origin 克隆，子仓按 gitlink 走同一把 SSH 钥匙），`.venv`、`.tools` 装在那份 k8s 克隆里。控制器里的 76 个插件从文件锁进 `jenkins_runtime_dir/ref-plugins/`，容器启动时拷进 JENKINS_HOME 并钉住。`release` 流水线是第 3、4 步，不在本页。
 

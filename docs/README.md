@@ -27,6 +27,7 @@
 | 物料/工具/版本来源 | [artifacts](../infrastructure/artifacts/README.md)、[tools](../infrastructure/tools/README.md) | 固定锁与校验 |
 | 理解摘要/声明/发布/晋级整条链 | [运行拓扑](总纲/运行拓扑.md) 第二部分 | 概念与顺序；命令以 Flux 手册为准 |
 | 发布部署声明/晋级/退回 | [Flux](../infrastructure/flux/README.md) | 不可变OCI与显式晋级 |
+| 用 Jenkins：打开、看节点、跑 render-check、读结果 | [使用说明](../infrastructure/jenkins/使用说明.md)（所有者向）、[jenkins](../infrastructure/jenkins/README.md)（维护者向） | 控制器+宿主代理+只读 render-check 已验（2026-10-20）；release 流水线待 B3 |
 | 密钥/Secret生成和恢复 | [secrets](../infrastructure/flux/secrets.md) | SOPS/私有主备；统一轮换待实现 |
 | 组件阶段/依赖（stage.yaml） | [components](../infrastructure/components/README.md) | 图由组件目录汇成 |
 | 平台部署/检查 | [services](../infrastructure/services/README.md) | 平台bootstrap存在 |
