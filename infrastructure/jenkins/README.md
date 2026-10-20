@@ -12,7 +12,7 @@
 
 ## 安装、启停和前提
 
-需要 registry 已部署（本地 CA 在 `registry_config_dir/tls/`，控制器证书由它签）、入口模块、Docker、systemd、非交互 sudo、可见的数据盘；物料与工具按 [artifacts](../artifacts/README.md)、[tools](../tools/README.md)。首次使用：
+需要 registry 已部署（本地 CA 在 `registry_config_dir/tls/`，控制器证书由它签）、入口模块、Docker、systemd、非交互 sudo、可见的数据盘；物料与工具按 [artifacts](../artifacts/README.md)、[tools](../tools/README.md)。代理准备会在自己的 k8s 克隆里通过原生 `install-flux` 安装按锁校验的 Flux CLI，供 release 的候选发布与晋级使用。首次使用：
 
 ```sh
 make -C infrastructure prepare-host-materials          # 拉取并归档已锁的 jenkins、haproxy、skopeo 镜像

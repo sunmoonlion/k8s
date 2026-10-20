@@ -103,7 +103,7 @@
     index_var: sub_index
   changed_when: false
 
-- name: Install the worktree tools in the k8s clone (venv, binaries, sops and age) as the agent user
+- name: Install the worktree tools in the k8s clone (venv, binaries, Flux, sops and age) as the agent user
   become: true
   become_user: '{{ jenkins_agent_user }}'
   ansible.builtin.command:
@@ -111,5 +111,5 @@
   environment:
     HOME: '/home/{{ jenkins_agent_user }}'
     BINARIES: '{{ jenkins_tools_binaries }}'
-  loop: [tools, install-binaries, install-secrets-tools]
+  loop: [tools, install-binaries, install-flux, install-secrets-tools]
   changed_when: true
