@@ -79,6 +79,10 @@ spec:
     - host: tpl-admin.sunmoonai.com
       http:
         paths:
+          # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
+          - path: /api/internal
+            pathType: Prefix
+            backend: {service: {name: tpl-admin, port: {number: 3000}}}
           - path: /api
             pathType: Prefix
             backend: {service: {name: tpl-api, port: {number: 8000}}}
