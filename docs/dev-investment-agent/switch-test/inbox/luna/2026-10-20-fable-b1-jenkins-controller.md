@@ -4,7 +4,7 @@
 > 这一步只把控制器起来、入口加一条路由、管理员口令导入。不碰集群、不发版、不动 Harbor 里的东西、不改任何应用。
 
 ```text
-被测仓：k8s，luna 工作树 ~/worktrees/luna/k8s，分支 luna（远程已把 fable 快进推到 luna；所有者 human-local.sh 拉下来即是）
+被测仓：k8s，fable 工位 ~/worktrees/fable/k8s，分支 fable（luna 在本地机的 fable 工位跑平台线的卡，所有者 2026-10-20）
 改动：infrastructure/jenkins/（新模块）、Makefile（jenkins-* 目标、config 清单）、artifacts 两份锁与 image-archives 选择、entry/config.yaml 加 jenkins 路由、host/accounts.yaml 加 jenkins 账号、host/lifecycle.yaml 停与状态清单加 jenkins
 会停的东西：第四节 entry-stop 到 entry-deploy 之间内网入口 30443 断几十秒（Harbor、各应用的内网域名都走它）。选个没人在用的时候做；边缘不受影响。
 停下的规则：任何一步 exit 不是 0 就停，输出原样进回执，不重试、不退回；带管道的命令包进 bash <<'SH' … SH 里跑
@@ -14,7 +14,7 @@
 ## 一、核对（只读）
 
 ```bash
-cd ~/worktrees/luna/k8s && git pull --ff-only origin luna && git log --oneline -1 && git status --short | head -3
+cd ~/worktrees/fable/k8s && git pull --ff-only origin fable && git log --oneline -1 && git status --short | head -3
 ls infrastructure/jenkins/ && grep -n "jenkins" infrastructure/Makefile | head -3
 make -C infrastructure platform-status; echo "status exit=$?"
 ```
