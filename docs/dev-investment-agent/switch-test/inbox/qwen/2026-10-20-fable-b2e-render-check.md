@@ -1,4 +1,4 @@
-# luna 卡 fable-b2e：接续第 2 步——再跑 render-check、边缘、总状态（从 b2d 第三节起）
+# qwen 卡 fable-b2e：接续第 2 步——再跑 render-check、边缘、总状态（从 b2d 第三节起）
 
 > 状态：**可执行**（远程 Fable 2026-10-20 夜写，第五版）。b2d 回执 `scripts/results/fable-b2d.20261020-192854.md`：手动触发已通（400 没再出现），强制 #7 把六个应用的迁移头核对和渲染都走完（12 份 recap failed=0），停在最后的差异阶段——**两处都是我 `ci/render-check.groovy` 的错**：（1）sh 步默认 /bin/sh，本机是 dash，不认 `set -o pipefail`；现在脚本第一行点名 `#!/bin/bash`。（2）候选路径写成了仓根的 `.build/`，实际渲染器写在 `infrastructure/.build/components/`（和 `gitops/components/` 同形）；已改，产物也放 `infrastructure/.build/render-check/diff.txt`。远程这边把这段 shell 在假目录上排练过：dash 下复现原错，bash 下出差异与 NEW 行。
 >
@@ -76,7 +76,7 @@ make -C infrastructure platform-status; echo "status exit=$?"
 `scripts/results/fable-b2e.<时间>.md`：每节命令与 exit、第二节的构建号、结果、耗时（ms）、diff.txt 行数与前 30 行、第三节三行、第四节清单里 Jenkins 的两行、停在哪（若有）。不拍、不抄任何口令与 crumb。
 
 ```bash
-cd ~/worktrees/fable/k8s && git pull --ff-only origin fable && git add scripts/results/fable-b2e.*.md scripts/results/fable-b2e.*.txt && git mv docs/dev-investment-agent/switch-test/inbox/luna/2026-10-20-fable-b2e-render-check.md docs/dev-investment-agent/switch-test/done/ && git commit -m "fable-b2e 回执：render-check 真跑、边缘、总状态（luna）" && git push origin fable; echo "push exit=$?"
+cd ~/worktrees/fable/k8s && git pull --ff-only origin fable && git add scripts/results/fable-b2e.*.md scripts/results/fable-b2e.*.txt && git mv docs/dev-investment-agent/switch-test/inbox/qwen/2026-10-20-fable-b2e-render-check.md docs/dev-investment-agent/switch-test/done/ && git commit -m "fable-b2e 回执：render-check 真跑、边缘、总状态（qwen）" && git push origin fable; echo "push exit=$?"
 ```
 
 拉不下来（非快进）或推不上去就停下，把输出告诉所有者，不强推。
