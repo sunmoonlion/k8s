@@ -15,7 +15,7 @@
 ## 1. 权威排序
 
 ```
-源代码（各仓） > 规则（../dev-investment-agent/tree-build/rules/constraints.md） > 本文档集其余部分
+源代码（各仓） > 规则（../dev-investment-agent/tree-build/rules/constraints.md） > 架构总纲（../架构总纲.md：层次与归属） > 本文档集其余部分
 ```
 
 - **代码是现状的唯一真相。**本文档集是帮助理解代码的缓存，与代码冲突时以代码为准。

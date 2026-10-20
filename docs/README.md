@@ -2,14 +2,13 @@
 
 本导航适用新体系`infrastructure/`、`gitops/`与`docs/`。从五仓并列的platform-kind-v1/k8s根目录执行手册命令；新开发集群是sunmoon-kind，原始kind属于受保护旧环境。
 
-## 先读这四页（所有者面向的概念页，都在本目录根下）
+## 先读这三页（所有者面向的概念页，都在本目录根下；每页开头写明它是全图的哪一块）
 
 | 页 | 讲什么 |
 | --- | --- |
 | [架构总纲](架构总纲.md) | 七层加三横切：每样东西归哪一层、层间只有哪几种关系、新东西往哪放、目录与文档怎么跟上（2026-10-20 定） |
 | [运行拓扑](运行拓扑.md) | 东西在哪、谁连谁；版本怎么进集群 |
 | [数据拓扑](数据拓扑.md) | 数据归属与三区 |
-| [账号-电脑-link-会合点](账号-电脑-link-会合点.md) | 用户、电脑、本地 link、会合点的关系 |
 
 动结构之前再看 [平台代码地图](dev-investment-agent/tree-build/平台代码地图.md)（代码事实，活页）。
 
@@ -34,6 +33,7 @@
 | 应用构建/发布/部署/真实检查 | [applications](../infrastructure/applications/README.md) | 4应用共享原生入口 |
 | 理解职责/适用边界 | [规则](dev-investment-agent/tree-build/rules/constraints.md#发布)「发布」`C-R*`、[项目总览](project-guide/overall-architecture.md) | 稳定设计 |
 | 看用户、本地 link、沙箱、会合点、供给器怎么连 | [运行拓扑](运行拓扑.md) 第一部分 | 图与各自职责 |
+| 账号、电脑、本地 link、会合点四个词怎么对应 | [账号-电脑-link-会合点](账号-电脑-link-会合点.md) | 说明文档，不是地图；位置以后另定 |
 | 看还没完成的 | [待办账](dev-investment-agent/tree-build/pending-after-migration.md) 104–109 | 计划，不是实时状态 |
 
 ## 日常规则

@@ -2,6 +2,8 @@
 
 > 最后更新：2026-10-17 ｜ 由 runtime 改名 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
+**层**：第 2 层站点层里「用户电脑」上唯一的东西；连的是平台层的会合点。
+
 用户电脑上唯一要装的东西。中文叫**本地代理**，英文 2026-10-16 定为 **sunmoon-link**（命令、安装包、Windows 计划任务现在还叫 `sunmoon-agent` / `SunMoonAgent-*`，下次发 Windows 版时顺带改；协议字段、代码内部命名不改；仓名 2026-10-17 由 `runtime` 改为 `sunmoon-link`，[决策](../../dev-investment-agent/tree-build/decisions.md)、[0028](../../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)）。它**只做转发与本机把关**：包着钉版的 `codex exec-server`，出站连会合点，让云端沙箱里的 Codex 能在用户允许的范围内读写本机文件；不跑模型循环，不接触模型 key。不参与集群部署，不要求与平台仓并列。
 
 ## 结构

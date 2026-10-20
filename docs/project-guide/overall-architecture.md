@@ -3,6 +3,8 @@
 > 最后更新：2026-10-17 ｜ 工作台 investment 改名 knowbench、本地代理仓 runtime 改名 sunmoon-link（[0028](../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)：仓、代码、检出已改，**集群里跑的还是改名前的 investment**，随 0027 P6 按新名部署）；专家线 0027 P1–P5 代码已写未部署。2026-10-16 按 knowlab 定位重写的结构不变。
 >
 > **本文件是进入这个项目的入口。**读完它，你应当知道：这个产品是什么、改动落在哪个仓、东西跑在哪里、怎么发布、去哪里查更细的。细节都在指路的文档里；本文不写易腐的值（提交号、镜像摘要、迁移头、版本号、副本数）。与代码冲突时**永远以代码为准**，并请指出本文件需要更新。
+>
+> **地图位置**（2026-10-20 按 [架构总纲](../架构总纲.md) 标注）：本页以**第 6 层应用层与第 7 层产品线**为主，是部分地图；第 3 节只给站点与现网的概貌（全图在 [运行拓扑](../运行拓扑.md)），第 6 节只给交付链的入口（宿主层、集群层、平台层的目录在 [`repos/k8s.md`](repos/k8s.md)，代码事实在 [平台代码地图](../dev-investment-agent/tree-build/平台代码地图.md)）。层次与归属以总纲为准，本页只写现状。
 
 ---
 
@@ -44,7 +46,9 @@
 
 工位与同步：主目录 `~/master/<仓>`，工位 `~/worktrees/<工位>/<仓>`（`mb` 管理）；两台机器（远程机写、本地机跑）之间只经 Git origin 往来，所有者用 `~/switch-test/human-local.sh`、`human-remote.sh` 同步；派活卡与回执在 [`switch-test/`](../dev-investment-agent/switch-test/README.md)。
 
-## 3. 东西跑在哪里
+## 3. 东西跑在哪里（站点层与宿主层的概貌）
+
+按总纲：站点层三个地方；宿主层是集群外、站点内的服务（数据盘与开机、Harbor、入口、Jenkins、边缘机上的 Traefik 与 frps）；集群层是一个 Kubernetes 集群，建法可换（开发 kind，生产 kubeadm 或云托管）；平台层是集群内共享能力；应用层是六个应用加 Casdoor。下面只画站点与现网，各层的目录与组件清单在 [`repos/k8s.md`](repos/k8s.md)。
 
 ### 3.1 正式拓扑（所有者 2026-09-26 定，开发期与服务用户都这样）
 
@@ -118,9 +122,9 @@ knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/
 - **前端**：Next.js + React + Tailwind + shadcn + next-intl，`output: 'standalone'`，源码在内层 `app/`；请求只走同源 `/api/`；会话由后端的 cookie 承载。
 - 各仓还留着旧体系的部署材料（应用父仓的 `dev-to-prod-deploy/`、后端的 `db-provisioner/` 与 `*-access-bootstrap/`、tpl-app 的 `k8s-deployment/`）：**现行部署不用它们**，部署只在 `k8s` 仓。
 
-## 6. 部署与发布（`k8s` 仓）
+## 6. 部署与发布（横切 A 交付链，`k8s` 仓）
 
-单机 WSL 里的 KIND 是第一期；同一套组件声明以后用于云端建群。Make 是公开入口，Ansible 编排，Flux 拥有集群声明。部署相关的规矩（入口与编排、配置归属、分层、镜像来源、升级、操作副作用、清理）在 [`constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md)「发布」`C-R*`，还没做完的平台目标在 [待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 104–109，目录见 [`repos/k8s.md`](repos/k8s.md)。
+交付链横切各层：源码在应用层，镜像进物料层的 Harbor，声明在平台层与应用层的组件目录，调和在集群里。单机 WSL 里的 KIND 是第一期；同一套组件声明以后用于云端建群。Make 是公开入口，Ansible 编排，Flux 拥有集群声明。部署相关的规矩（入口与编排、配置归属、分层、镜像来源、升级、操作副作用、清理）在 [`constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md)「发布」`C-R*`，还没做完的平台目标在 [待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 104–109，目录见 [`repos/k8s.md`](repos/k8s.md)。
 
 **发布链**（一张发布卡的标准动作，样板见 `switch-test/done/` 里的卡）：
 
@@ -136,7 +140,7 @@ knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/
   → make application-check APP=…
 ```
 
-现在由人照发布卡跑；后期改由流水线触发，约束不变。要点：秘密在宿主私有目录里主备两份、逐字节一致，已有身份丢失就停、不重新生成；Flux 根与各阶段都是 **`prune: false`**，删掉的声明不会自动删集群对象，下线旧对象要专门清理（样板：改名时的清理工具，Git 历史 `3951246c:docs/rename-tools/r6_cleanup.py`）。组件 prepare 的先后顺序有一个已知隐患，修好前别跑 `platform-stage OBJECT=all`（[待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 97）。
+现在由人照发布卡跑；2026-10-20 起平台线 B 段把这串入口交给宿主上的 Jenkins（[0033](../dev-investment-agent/tree-build/SDD/modules/0033-jenkins-on-host.md)），D 段换 Argo CD 调和，约束不变。要点：秘密在宿主私有目录里主备两份、逐字节一致，已有身份丢失就停、不重新生成；Flux 根与各阶段都是 **`prune: false`**，删掉的声明不会自动删集群对象，下线旧对象要专门清理（样板：改名时的清理工具，Git 历史 `3951246c:docs/rename-tools/r6_cleanup.py`）。组件 prepare 的先后顺序有一个已知隐患，修好前别跑 `platform-stage OBJECT=all`（[待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 97）。
 
 ## 7. 身份
 

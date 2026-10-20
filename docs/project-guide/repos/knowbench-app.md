@@ -2,6 +2,8 @@
 
 > 最后更新：2026-10-17 ｜ 由 investment-app 改名（[0028](../../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)） ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
+**层与线**：第 6 层应用层；专家线的「使用」一环（knowlab → knowmart → knowbench）；它的 runner 是平台层沙箱与会合点的唯一客户。
+
 用户在网页里用自己的 Codex 做研究、请自己的专家的地方。按 2026-10-16 的定位，它是**专家线**上「使用」的那一环：专家由 knowlab 创建、存在 knowmart，用户在这里「请」来用自己的数据跑（[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)）。knowlab、knowmart 已建成空应用，专家线代码已写未部署；过渡期内专家还以「专家包」的形式内置在本仓。仓与代码 2026-10-17 由 investment 改名为 knowbench，集群里现在跑的还是改名前那一版（`investment.sunmoonai.com`），随 0027 P6 按新名部署。
 
 ## 后端（`knowbench-backend/app/app/`）
