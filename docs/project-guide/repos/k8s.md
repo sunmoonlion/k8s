@@ -56,7 +56,7 @@ k8s/
 | [`dev-investment-agent/`](../../dev-investment-agent/pipeline.md) | 流水线、`turn/`（通用开发规范）、`tree-build/`（需求、设计、规则、决策）、`switch-test/`（派活卡与两台机器同步）、`tools/`（文档门禁） |
 | [`project-guide/`](../README.md) | 本目录：项目现在是什么样 |
 | [`reference/`](../../reference/) | 通用参考资料（行业、采集与数据、技术笔记、运维笔记） |
-| `README.md`、`发布链.md`、`拓扑.md` | 维护导航、发布路径、拓扑 |
+| `README.md`、`运行拓扑.md` | 维护导航；拓扑与发布路径 |
 | （已删）改名手册、回执与工具 | 2026-10-16 删除，按 Git 历史 `3951246c` 取；遗留事项已移进待办账 97–101，对齐工具移到 `dev-investment-agent/switch-test/align_workstations.sh` |
 
 ## 门禁与钩子

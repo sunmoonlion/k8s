@@ -15,14 +15,14 @@
 | 域名/公共30443切换 | [entry](../infrastructure/entry/README.md) | 原生预览/启停/配置部署 |
 | KIND建群/节点拉取 | [cluster](../infrastructure/cluster/README.md) | 拥有的集群原生引导；整体重建持久化待验 |
 | 物料/工具/版本来源 | [artifacts](../infrastructure/artifacts/README.md)、[tools](../infrastructure/tools/README.md) | 固定锁与校验 |
-| 理解摘要/声明/发布/晋级整条链 | [发布链](发布链.md) | 概念与顺序；命令以 Flux 手册为准 |
+| 理解摘要/声明/发布/晋级整条链 | [运行拓扑](运行拓扑.md) 第二部分 | 概念与顺序；命令以 Flux 手册为准 |
 | 发布部署声明/晋级/退回 | [Flux](../infrastructure/flux/README.md) | 不可变OCI与显式晋级 |
 | 密钥/Secret生成和恢复 | [secrets](../infrastructure/flux/secrets.md) | SOPS/私有主备；统一轮换待实现 |
 | 组件阶段/依赖（stage.yaml） | [components](../infrastructure/components/README.md) | 图由组件目录汇成 |
 | 平台部署/检查 | [services](../infrastructure/services/README.md) | 平台bootstrap存在 |
 | 应用构建/发布/部署/真实检查 | [applications](../infrastructure/applications/README.md) | 4应用共享原生入口 |
 | 理解职责/适用边界 | [规则](dev-investment-agent/tree-build/rules/constraints.md#发布)「发布」`C-R*`、[项目总览](project-guide/overall-architecture.md) | 稳定设计 |
-| 看用户、本地代理、沙箱、会合点、供给器怎么连 | [拓扑](拓扑.md) | 图与各自职责 |
+| 看用户、本地 link、沙箱、会合点、供给器怎么连 | [运行拓扑](运行拓扑.md) 第一部分 | 图与各自职责 |
 | 看还没完成的 | [待办账](dev-investment-agent/tree-build/pending-after-migration.md) 104–109 | 计划，不是实时状态 |
 
 ## 日常规则
