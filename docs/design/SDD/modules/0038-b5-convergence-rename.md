@@ -114,6 +114,8 @@
 3. **本地机**（luna 按卡做，卡头带就地修授权）：同样的目录改名与 `worktree repair`；Jenkins：`jenkins-agent-stop` → 代理克隆 `/mnt/sunmoon-data/jenkins/repos/k8s` 改名 `sunmoonun`（连 `k8s@tmp` 删掉）→ `jenkins-agent-deploy`（按新 `jenkins_root_repo` 核对、装工具）→ 控制器 `jenkins-stop`/`jenkins-deploy`（两份引导的目录变了）→ `jenkins-agent-start` → `jenkins-agent-check` 跑一次 render-check 到 SUCCESS；所有者的 `~/switch-test` 转发重装。
 4. 其它工位的助手（Opus 在 qwen 工位、luna 自己的 luna 工位）下次开工前告知：目录名变了，分支不变。
 
+**5.2 做成（2026-10-21 凌晨）**：所有者 `gh repo rename` 改 GitHub、用 Gitee 接口改 Gitee；远程机 Fable 自己做（主仓 `set-url`、六个目录、`worktree repair`、独立 `gitee` 远程一并改）；本地机 Qwen 按卡做（回执 `scripts/results/fable-b5-4.20261021-0226.md`）：七节全过，六目录改名、十处 gitdir 修好、代理克隆改名、控制器与代理重装、两份任务配置里都是 `repos/sunmoonun`、render-check #51 在新路径 SUCCESS 423 秒、转发器重写。实施时的三处「怎么执行」：GitHub 核验与拉取改走 SSH（本机 https 到 GitHub 握手被掐），工位与代理克隆的 `origin` 都设 SSH，推送地址「GitHub SSH 在前、Gitee https 在后」（代理准备按第二个设 `mirror`）。**遗留两处（都在仓外）**：本地机主仓独立的 `gitee` 远程仍指 `k8s.git`（Gitee 旧路径有重定向，先能用）；所有者自己的 `~/five-repos-sync/config.sh` 第 20 行 `REPOS` 里还是 `"k8s"`，要改成 `"sunmoonun"`。工作树内部名 `.git/worktrees/k8s1` 之类不改，无影响。**停点 4 闭合，B5 闭合。**
+
 ### 5.3 不变的
 
 应用仓的名字和路径（`<app>-app/`）不变；`sunmoon-link` 不变；分支名不变；`infrastructure/`、`gitops/` 内部相对路径不变（构建链找应用仓是 `../../../<app>-app`，与根仓名无关）。

@@ -1,6 +1,6 @@
 # SunMoonAI维护导航
 
-本导航适用新体系`infrastructure/`、`gitops/`与`docs/`。从五仓并列的platform-kind-v1/k8s根目录执行手册命令；新开发集群是sunmoon-kind，原始kind属于受保护旧环境。
+本导航适用新体系`infrastructure/`、`gitops/`与`docs/`。从七仓并列的根仓 `sunmoonun`（2026-10-21 前叫 k8s）执行手册命令；新开发集群是sunmoon-kind，原始kind属于受保护旧环境。
 
 ## 先读这三页（[`总纲/`](总纲)：架构总纲是全图，另两页各是一块，每页开头写明自己的位置）
 
