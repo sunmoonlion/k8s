@@ -73,29 +73,34 @@
   changed_when: false
   failed_when: submodule_lists.rc not in [0, 1]
 
-# 每个子仓单独 update：--reference 指到工位里该子仓的对象库 <common>/modules/<名>（没有就只从 GitHub 拉），拷完 --dissociate。
-- name: Check out each submodule over SSH, objects copied from the source workspace
+# 每个子仓单独 update。对象库从哪拷：问源工位里该子仓自己的 git-common-dir（工位是 linked worktree 时在
+# <common>/worktrees/<名>/modules/<子仓>，不能按父仓的 modules/ 推导——2026-10-20 回执 fable-b2b 第 08 份证据）；
+# 源工位没检出这个子仓就不给 --reference，只从 GitHub 拉。拷完 --dissociate。
+- name: Locate the object store of each submodule in the source workspace
   become: true
   become_user: '{{ jenkins_agent_user }}'
   ansible.builtin.command:
-    argv:
-      - git
-      - -C
-      - '{{ jenkins_repos_dir }}/{{ item.0.item }}'
-      - -c
-      - 'url.git@github.com:.insteadOf=https://github.com/'
-      - submodule
-      - update
-      - --init
-      - --quiet
-      - --reference
-      - '{{ repo_common_dirs.results[jenkins_repos.index(item.0.item)].stdout }}/modules/{{ item.1.split(" ")[0] | regex_replace("^submodule\\.(.*)\\.path$", "\\1") }}'
-      - --dissociate
-      - --
-      - '{{ item.1.split(" ")[1] }}'
+    argv: [git, -C, '/home/{{ jenkins_agent_user }}/worktrees/{{ jenkins_repo_source_workspace }}/{{ item.0.item }}/{{ item.1.split(" ")[1] }}', rev-parse, --path-format=absolute, --git-common-dir]
   loop: '{{ submodule_lists.results | subelements("stdout_lines") }}'
   loop_control:
     label: '{{ item.0.item }}/{{ item.1.split(" ")[1] }}'
+  register: submodule_common_dirs
+  changed_when: false
+  failed_when: false
+
+- name: Check out each submodule over SSH, objects copied from the source workspace when it has them
+  become: true
+  become_user: '{{ jenkins_agent_user }}'
+  ansible.builtin.command:
+    argv: >-
+      {{ ['git', '-C', jenkins_repos_dir ~ '/' ~ item.0.item, '-c', 'url.git@github.com:.insteadOf=https://github.com/',
+          'submodule', 'update', '--init', '--quiet']
+         + (['--reference', submodule_common_dirs.results[sub_index].stdout, '--dissociate'] if submodule_common_dirs.results[sub_index].rc == 0 else [])
+         + ['--', item.1.split(" ")[1]] }}
+  loop: '{{ submodule_lists.results | subelements("stdout_lines") }}'
+  loop_control:
+    label: '{{ item.0.item }}/{{ item.1.split(" ")[1] }}{{ "" if submodule_common_dirs.results[sub_index].rc == 0 else " (no source objects, GitHub only)" }}'
+    index_var: sub_index
   changed_when: false
 
 - name: Install the worktree tools in the k8s clone (venv, binaries, sops and age) as the agent user
