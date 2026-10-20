@@ -1,0 +1,12 @@
+previous cards in done=2
+# 部署与维护入口
+
+> 地图位置：本目录装着总纲第 1 到 4 层（物料、站点、宿主、集群）和横切「交付链」在宿主上跑的那部分；集群内的声明在 `../gitops/`。目录名保留（所有者 2026-10-20 定），内部先按层标注、不搬目录——下面「暂住」的几个 D 段随渲染层重写时一起挪（SDD 0038 第四节）。
+pre-move existing reference: docs/reference/技术笔记/Flower使用文档.md ../../../sunmoonai/app-platform/docs/Celery监控机制说明.md present=True
+target exists now=False
+pre-move existing reference: docs/reference/技术笔记/Flower使用文档.md ../../../sunmoonai/messaging-platform/rabbitmq/README.md present=True
+target exists now=False
+pre-move existing reference: infrastructure/services/README.md layout.yaml present=True
+target exists now=False
+
+exit=0

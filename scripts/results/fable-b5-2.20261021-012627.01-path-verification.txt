@@ -1,0 +1,41 @@
+2026-10-21T01:27:00
+46b400c03 0038：停点 3 记实施；卡 fable-b5-2（luna）验新路径、重写所有者的转发器
+docs:
+README.md
+design
+ops
+process
+project-guide
+reference
+总纲
+docs/process:
+README.md
+pipeline.md
+rename-2026-10-15
+switch-test
+tools
+turn
+docs/ops:
+README.md
+jenkins-使用说明.md
+ls: cannot access 'docs/dev-investment-agent': No such file or directory
+old path ls exit=2
+check-links: 12 broken link(s)
+  docs/process/switch-test/done/2026-10-20-fable-b3-init-ref-copy.md: ../../../../../scripts/results/fable-b3.20261020-221234.md
+  docs/process/switch-test/done/2026-10-20-fable-b3-v2-two-faults.md: ../../../../../scripts/results/fable-b3.20261020-2250.md
+  docs/process/switch-test/done/2026-10-20-fable-b2b-submodule-reference.md: ../../../../../scripts/results/fable-b2b.20261020-184120.md
+  docs/process/switch-test/done/2026-10-20-fable-b2-agent-render-check.md: ../../../../../infrastructure/jenkins/README.md
+  docs/process/switch-test/done/2026-10-20-fable-b1-jenkins-controller.md: ../../../../../infrastructure/jenkins/README.md
+  docs/process/switch-test/done/2026-10-20-fable-b2d-diff-shell.md: ../../../../../scripts/results/fable-b2d.20261020-192854.md
+  docs/process/switch-test/done/2026-10-20-jenkins-windows-hosts.md: ../../../../../scripts/results/fable-b1.20261020-180743.md
+  docs/process/switch-test/done/2026-10-20-fable-b2c-trigger-400.md: ../../../../../scripts/results/fable-b2c.20261020-191232.md
+  docs/process/switch-test/done/2026-10-20-fable-b2-clone-loop.md: ../../../../../scripts/results/fable-b2.20261020-182305.md
+  docs/reference/技术笔记/Flower使用文档.md: ../../../sunmoonai/app-platform/docs/Celery监控机制说明.md
+  docs/reference/技术笔记/Flower使用文档.md: ../../../sunmoonai/messaging-platform/rabbitmq/README.md
+  infrastructure/services/README.md: layout.yaml
+check-links exit=1
+Traceback (most recent call last):
+  File "<stdin>", line 14, in <module>
+AssertionError
+
+exit=1

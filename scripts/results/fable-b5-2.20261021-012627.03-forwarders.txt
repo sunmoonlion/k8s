@@ -1,0 +1,5 @@
+/home/zymun/switch-test/human-local.sh:4:exec bash "$HOME/worktrees/$WS/k8s/docs/process/switch-test/human-local.sh" "$@"
+/home/zymun/switch-test/human-remote.sh:4:exec bash "$HOME/worktrees/$WS/k8s/docs/process/switch-test/human-remote.sh" "$@"
+-rwxr-xr-x 1 zymun zymun 7205 Oct 21 01:26 /home/zymun/worktrees/fable/k8s/docs/process/switch-test/human-local.sh
+
+exit=0

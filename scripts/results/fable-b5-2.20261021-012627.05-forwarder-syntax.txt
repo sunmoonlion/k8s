@@ -1,0 +1,4 @@
+human-local.sh: bash -n exit=0; new target exists; no synchronization executed
+human-remote.sh: bash -n exit=0; new target exists; no synchronization executed
+
+exit=0

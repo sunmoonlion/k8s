@@ -1,0 +1,7 @@
+initial core.hooksPath exit=1 value=''
+install documented repository hooks: git config --local core.hooksPath .githooks
+.githooks
+doc-gate: 活文档 2 份检查通过
+anchor-gate: 钉 commit 锚 2 通过；裸路径行号锚 0 通过；章节号引用 0 处（软判，交人）
+
+exit=0
