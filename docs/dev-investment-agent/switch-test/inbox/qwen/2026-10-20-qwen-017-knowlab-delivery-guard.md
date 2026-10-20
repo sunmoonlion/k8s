@@ -1,6 +1,6 @@
 # Qwen 发布卡 qwen-017：knowlab 后端——测试通过不再随刷新自动交付（暂停前收口，只发后端）
 
-> 状态：**等前置**（Opus 2026-10-20 写；所有者「好像一切正常你可以为让fable接手做准备了」）。**qwen-012 回执 Opus 审完之后才做**：发 knowlab 后端会重启 knowlab-api，请来的专家读数据要经过它。
+> 状态：**可执行**（Opus 2026-10-20 写；所有者「好像一切正常你可以为让fable接手做准备了」；qwen-012 已结，回执免）。**等所有者在工作台那次请专家跑完（交回那一行出来）再开始**：发 knowlab 后端会重启 knowlab-api，请来的专家读数据要经过它。和 Fable 的 B（宿主 Jenkins）并行，不互相等。
 > 为什么现在发：线上 knowlab 后端 `7c9731cd…` 还是「刷新结果时通过就自动交 knowmart」（分身 1.3 就是这样被交出去的，待办账 146）；接下来暂停几周、Fable 做平台线，这期间谁点一下「刷新结果」，通过的就又被交出去。
 
 ```text
@@ -43,7 +43,7 @@ make -C infrastructure platform-status; echo "status exit=$?"
 select id, status, run_id, updated_at from knowbot_draft where status = 'testing';
 ```
 
-要看到 **0 行**（没有在测的分身）。有任何一行就停，贴给所有者定。另确认 qwen-012 已走完（所有者说过「跑完了」、工作台里那次请专家已交回）。
+要看到 **0 行**（没有在测的分身）。有任何一行就停，贴给所有者定。另确认工作台里那次请专家已交回（所有者说一声）。
 
 ## 三、knowlab 后端
 
