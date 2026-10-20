@@ -1,0 +1,49 @@
+2026-10-21T01:14:49
+50364e31b fable-b4b 回执：镜像站 remote 与推送干跑通过（luna）
+platform-plan                    ok exit=0
+platform-config                  ok exit=0
+platform-status                  ok exit=0
+platform-stage                   ok exit=0
+platform-build                   ok exit=0
+platform-deploy                  ok exit=0
+platform-check                   ok exit=0
+platform-start                   ok exit=0
+platform-stop                    ok exit=0
+components-render                ok exit=0
+components-stage                 ok exit=0
+components-validate-release      ok exit=0
+application-deployment-plan      ok exit=0
+application-check                ok exit=0
+application-check-public         ok exit=0
+application-bootstrap            ok exit=0
+services-bootstrap               ok exit=0
+flux-release                     ok exit=0
+flux-source-apply                ok exit=0
+flux-source-status               ok exit=0
+jenkins-agent-check              ok exit=0
+jenkins-release-run              ok exit=0
+topology-render                  ok exit=0
+application-render               gone exit=2
+application-stage                gone exit=2
+application-validate-release     gone exit=2
+services-render                  gone exit=2
+services-stage                   gone exit=2
+services-validate-release        gone exit=2
+make help:
+== 公开入口（按总纲的层；各模块底层入口见对应 README）==
+[物料]   material-inventory / plan-artifacts fetch-artifacts check-artifacts / prepare-host-materials check-host-materials / tools install-binaries
+[站点]   edge-plan/deploy/start/stop/status/firewall/smoke（公网边缘）；config 查看全部配置来源与站点文件
+[宿主]   registry-* entry-* jenkins-* jenkins-agent-*（各 plan/deploy/start/stop/status）；platform-install-lifecycle/enable-boot/start/stop
+         platform-account-plan/view/import/check/stage/rotate/recover OBJECT=...（账号，见 host/accounts.md）
+[集群]   cluster-plan/deploy/status/dns-check/pull-check
+[交付链] platform-plan/config/status OBJECT=<平台/应用/组件> 查看依赖、配置和运行状态
+         platform-build OBJECT=app-platform/<app>-app 在线构建并发布固定摘要
+         platform-stage OBJECT=... 生成选中对象的声明候选进 gitops/（内部 components-stage + topology-stage）；components-render 只渲染到 .build/
+         application-deployment-plan APP=... 核迁移头；application-check(-public) APP=... 真实检查
+         flux-release 发布已提交的声明为候选；flux-source-apply 协调已晋级的指针；flux-source-status
+         jenkins-release-run APPS= PIN= NOTE= 由 Jenkins 跑整张发布卡（含人批）；jenkins-agent-check 跑一次只读 render-check
+         platform-deploy/check OBJECT=all|... 原生整套或选中对象部署/真实检查
+[其它]   agent-release-verify/upload AGENT_ZIP=... 校验/条件上传 Windows 安装包；agent-release-linux-verify/upload AGENT_LINUX_TGZ=...
+new_ok=23 old_gone=6
+
+exit=0
