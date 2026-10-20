@@ -1,0 +1,9 @@
+2026-10-20T18:08:10.2703338+08:00
+Windows system resolver (hosts included):
+127.0.0.1
+Windows HTTPS request: default certificate validation; no resolve override
+curl: (35) schannel: next InitializeSecurityContext failed: CRYPT_E_NO_REVOCATION_CHECK (0x80092012) - 吊销功能无法检查证书是否吊销。
+windows login 000
+curl exit=35
+
+exit=35

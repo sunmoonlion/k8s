@@ -1,0 +1,7 @@
+2026-10-20T18:08:25.1006846+08:00
+Windows Invoke-WebRequest using default certificate validation; no certificate callback or TLS override
+StatusCode=200
+JenkinsVersion=2.580.1
+LoginForm=True
+
+exit=0

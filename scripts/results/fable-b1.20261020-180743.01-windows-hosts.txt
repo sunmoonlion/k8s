@@ -1,0 +1,15 @@
+2026-10-20T18:07:52.0911475+08:00
+hosts script exit=0
+OK backup C:\Windows\System32\drivers\etc\hosts.bak-add-20261020-180754
+added: jenkins.sunmoonai.com
+active sunmoonai lines now:
+127.0.0.1 harbor.sunmoonai.com
+127.0.0.1 harbor.sunmoonai.com www.sunmoonai.com casdoor.sunmoonai.com investment.sunmoonai.com investment-admin.sunmoonai.com investment-api.sunmoonai.com investment-admin-api.sunmoonai.com
+127.0.0.1 relay.sunmoonai.com knowfeed.sunmoonai.com knowfeed-admin.sunmoonai.com knowbase.sunmoonai.com knowbase-admin.sunmoonai.com
+127.0.0.1 ragflow.sunmoonai.com research.sunmoonai.com ragflow-api.sunmoonai.com research-api.sunmoonai.com tools.sunmoonai.com tools-api.sunmoonai.com research-admin.sunmoonai.com ragflow-admin.sunmoonai.com tools-admin.sunmoonai.com
+101.126.151.0 harbor-c1.sunmoonai.com
+127.0.0.1 knowlab.sunmoonai.com knowlab-admin.sunmoonai.com knowmart.sunmoonai.com knowmart-admin.sunmoonai.com
+127.0.0.1 knowbench.sunmoonai.com knowbench-admin.sunmoonai.com
+127.0.0.1 jenkins.sunmoonai.com
+
+exit=0
