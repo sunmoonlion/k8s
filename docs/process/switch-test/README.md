@@ -46,12 +46,12 @@ Qwen 跑卡时 Opus 的提交只留在本地，等 Qwen 停下再推。下面 10
 | 谁 | 工位 | 只做什么 |
 | --- | --- | --- |
 | 远程助手 | 远程机 `~/worktrees/fable/*` | 写代码、文档、设计、发布卡、任务页；审读 |
-| **Cursor** | 本地机 `~/worktrees/fable/k8s` | 只跑 `inbox/cursor/` 里的卡；不看 astra 的箱子，不从账本领活 |
+| **Cursor** | 本地机 `~/worktrees/fable/sunmoonun` | 只跑 `inbox/cursor/` 里的卡；不看 astra 的箱子，不从账本领活 |
 | **astra** | 本地机 `~/worktrees/fable/sunmoon-link` | 只改 `sunmoon-link/agent`，只按 `inbox/astra/` 里的 `astra-NNN.md` 做；箱子空就没有任务 |
 | 所有者 | 两边 | 两个脚本都带 `WS=<工位>`（不猜，哪个工位都不特殊）；传话；真机验收 |
 
 本目录：`README.md`（本文，约定）、`human-local.sh`（**所有者在本地机上跑，拉：同步仓与副本，列出待办**）、`human-remote.sh`（**所有者在本地机上跑，推：把本地助手已提交的结果推回远程，顺带补提交漏掉的改动与父仓 gitlink**）、`inbox/<助手名>/`（每个助手一个收件箱：`cursor`、`astra`、`kimi`、`luna`、`qwen` 是本地助手的，远程写、各自做、互不看；`opus` 是在 qwen 工位做设计与审读的 Opus 的，它再给 `qwen` 写任务页；`fable` 是远程助手的，所有者或别的工位要派活给远程时放这里）、`done/`（已办与归档）、`hold/`（写好但暂缓的卡，不是待办）、`review-log.md`（远程的审读与交接记录，只追加）、做完的都归 `done/`。测试脚本不放这里，放被测仓。
-`~/switch-test/` 里只有两个**转发器**（`human-local.sh` 跑一次就生成），永远执行仓里 `WS` 工位的最新版，没有会过期的副本；**`WS` 必须显式给**（`WS=fable` / `WS=qwen` …），不猜、没有默认，哪个工位都不特殊。待办与说明都直接看仓里的 `switch-test/`。第一次或转发器还没生成时直接跑仓里那份：`WS=fable bash ~/worktrees/fable/k8s/docs/process/switch-test/human-local.sh`。本地机要装什么见「六、固定事实」。
+`~/switch-test/` 里只有两个**转发器**（`human-local.sh` 跑一次就生成），永远执行仓里 `WS` 工位的最新版，没有会过期的副本；**`WS` 必须显式给**（`WS=fable` / `WS=qwen` …），不猜、没有默认，哪个工位都不特殊。待办与说明都直接看仓里的 `switch-test/`。第一次或转发器还没生成时直接跑仓里那份：`WS=fable bash ~/worktrees/fable/sunmoonun/docs/process/switch-test/human-local.sh`。本地机要装什么见「六、固定事实」。
 
 ## 一、每一轮怎么走：所有者拉、本地助手跑、所有者推
 
@@ -65,7 +65,7 @@ Qwen 跑卡时 Opus 的提交只留在本地，等 Qwen 停下再推。下面 10
 | 4 | **所有者** | 在本地机跑 `WS=<工位> bash ~/switch-test/human-remote.sh`（推）：推送子仓与 runtime（还有没提交的改动会先补提交），再提交父仓的 gitlink 并 `to-remote`。把它最后打印的那一句「本地回来了；仓 提交号…」告诉远程助手 |
 | 5 | 远程助手 | `pull`，读 `results/`，把待办移到 `done/` |
 
-副本还没有的第一次，所有者用仓里的那份：`bash ~/worktrees/fable/k8s/docs/process/switch-test/human-local.sh`。
+副本还没有的第一次，所有者用仓里的那份：`bash ~/worktrees/fable/sunmoonun/docs/process/switch-test/human-local.sh`。
 
 `human-remote.sh` 推之前每个仓先 fetch：远程助手这期间推了新提交的话，本地提交 rebase 到它上面再推，冲突就停；所以回传前不必再跑一次 `human-local.sh`。
 子仓同步后由 `human-local.sh` 接回本地 `<工位>` 分支（2026-10-13 起，不再游离）；回传仍按 `HEAD:refs/heads/$WS` 推，即使哪个子仓游离也不会丢。
@@ -75,7 +75,7 @@ Qwen 跑卡时 Opus 的提交只留在本地，等 Qwen 停下再推。下面 10
 
 ```bash
 # 1 + 2. 看待办：一个文件一条，没有文件就没有待办
-ls ~/worktrees/fable/k8s/docs/process/switch-test/inbox/<自己的名字>/   # 只看自己的箱子，直接看仓里的
+ls ~/worktrees/fable/sunmoonun/docs/process/switch-test/inbox/<自己的名字>/   # 只看自己的箱子，直接看仓里的
 
 # 3. 逐条做（每条文件里写了 被测仓 / 跑什么 / 仓与提交 / 预计 / 看什么 / 前提 / 回传）
 #    3a 进被测仓，核提交号，对不上就停，贴出来

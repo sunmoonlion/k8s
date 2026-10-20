@@ -2,7 +2,7 @@
 // 第 4 步（2026-10-20）：十二个阶段全接上。前半段（1–7）在一段 node 里，人批（8）在 node 外面不占执行器，
 // 后半段（9–12）另一段 node。入口只认 make 的公开目标，不认内部剧本名。D 段换 Argo 时第 7–10 阶段整段替换。
 
-def main(params, reposDir, approver, rootRepo = 'k8s') {
+def main(params, reposDir, approver, rootRepo = 'sunmoonun') {
     def apps = (params.APPS ?: '').trim() ? params.APPS.trim().split(/\s+/) as List : ['tpl', 'knowfeed', 'knowbase', 'knowbench', 'knowlab', 'knowmart']
     def branch = params.BRANCH.trim()
     def note = (params.NOTE ?: '').trim()

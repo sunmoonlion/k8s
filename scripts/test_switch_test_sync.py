@@ -9,7 +9,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "docs/process/switch-test/human-remote.sh"
-ROOT_REPO = "k8s"  # 根仓目录名，与 human-*.sh 的 ROOT_REPO 同步
+ROOT_REPO = "sunmoonun"  # 根仓目录名，与 human-*.sh 的 ROOT_REPO 同步
 PARENTS = (ROOT_REPO, "knowfeed-app", "knowbench-app", "knowbase-app", "tpl-app")
 CHILDREN = ("knowbench-app/knowbench-backend", "knowbase-app/knowbase-backend")
 

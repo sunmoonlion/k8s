@@ -1,4 +1,4 @@
-# k8s：部署与项目文档
+# sunmoonun（根仓，2026-10-21 前叫 k8s）：部署与项目文档
 
 > 最后更新：2026-10-16 ｜ 按 `k8s/sunmoonai/` 移出后的现状重写 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 

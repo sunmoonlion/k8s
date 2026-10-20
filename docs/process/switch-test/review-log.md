@@ -7,7 +7,7 @@
 | 谁 | 在哪 | 只做什么 |
 | --- | --- | --- |
 | 远程助手（Fable） | 远程机 `~/worktrees/fable/*`，分支 `fable` | 写代码、文档、设计；写 `inbox/cursor/` 的发布卡与 `inbox/astra/` 的任务页；审读本地提交 |
-| Cursor（本地） | 本地机 `~/worktrees/fable/k8s`，分支 `fable` | **只跑 `inbox/cursor/` 里的卡**，回执写 `k8s/scripts/results/`，本地提交；不从账本领活，不改产品代码 |
+| Cursor（本地） | 本地机 `~/worktrees/fable/sunmoonun`，分支 `fable` | **只跑 `inbox/cursor/` 里的卡**，回执写 `k8s/scripts/results/`，本地提交；不从账本领活，不改产品代码 |
 | astra（本地） | 本地机 `~/worktrees/fable/runtime`，分支 `fable` | **只改 `runtime/agent`**，而且只按 `inbox/astra/` 里的 `astra-NNN.md` 做；箱子空就没有任务；不碰别的仓 |
 | 所有者 | 两边 | `WS=<工位> human-local.sh` 拉、`WS=<工位> human-remote.sh` 推（工位必须给，不猜）；传话；真机验收；决定合并 |
 
@@ -31,7 +31,7 @@
 
 **六仓对齐（15:20）**：按 10-11 夜的约定，审读过后把 luna 与 fable 对齐——runtime fable 快进到 `5ccca65`；其余九个仓（三个 app 父仓、三个后端、投资后端/网页/父仓）各做一次「树取 fable、两个父」的合并提交推到 luna 与 fable，内容一行不变，只是把 luna 上多出的提交（U2 摘抄、设置页第 1 步的 `-s ours`、以及 15:10 同步脚本自动提交的 `592fe03`——它把投资父仓指针指回了被弃用的 `7afe64b`/`ea8d6d3`）收进历史。k8s 本来就相同。现在十一个仓 luna == fable：runtime `5ccca65`、投资父仓 `0bb0b72`、后端 `3a70280`（树 = `30a89d2`）、网页 `80d6833`（树 = `a972023`）、knowfeed `dc02a53`、knowbase `f79b43b`、tpl `631316b`、k8s `6f488ddf`。
 
-**工位切换**：从现在起所有者两个同步脚本不带 `WS=`（默认就是 fable）；Cursor 在 `~/worktrees/fable/k8s` 跑卡；astra 在 runtime 的 fable 分支上做；五个工位一样，每次推五个分支。发布卡 41（应用批 3 + 代理 0.3.1）已写在 inbox，按 fable 工作树写的。
+**工位切换**：从现在起所有者两个同步脚本不带 `WS=`（默认就是 fable）；Cursor 在 `~/worktrees/fable/sunmoonun` 跑卡；astra 在 runtime 的 fable 分支上做；五个工位一样，每次推五个分支。发布卡 41（应用批 3 + 代理 0.3.1）已写在 inbox，按 fable 工作树写的。
 
 ## 2026-10-12 · 两个本地助手各一个收件箱（所有者定「给它们各自的 inbox，否则容易乱」）
 

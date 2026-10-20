@@ -103,6 +103,8 @@
 
 **5.1 已做（2026-10-21，所有者「先把仓内准备做了」）**：`jenkins_root_repo`（config.yaml，今天 `k8s`）进了 `agent.yaml`、`workspace.yaml`、两份引导、`ci/release.groovy`（`main` 多一个 `rootRepo` 参数，引导传入）；三个同步脚本和 `scripts/test_switch_test_sync.py` 改读 `ROOT_REPO`（默认 `k8s`）。改名那天：`jenkins_root_repo: sunmoonun`、三处 `ROOT_REPO` 默认值、活文档里的 `~/worktrees/<ws>/k8s` 与 `repos/k8s`，一笔提交。
 
+**仓内那一笔也做了（2026-10-21，所有者「现在就可改仓名，不过我让 qwen 改」）**：`jenkins_root_repo: sunmoonun`、三个脚本与测试的默认值、`release.groovy` 的默认参数、17 份活文档里的路径（`worktrees/<ws>/k8s`、`master/k8s`、`repos/k8s`、`sunmoonlion/k8s`），`project-guide/repos/k8s.md` 改名 `sunmoonun.md`。历史文档与回执不改。机器侧：远程 Fable 自己做，**本地机由 Qwen 做**（卡 fable-b5-4，代替 luna；luna 的 b5-2 并入该卡）。
+
 ### 5.2 两台机器上要做的（一次坐下来做完，所有者在场）
 
 顺序固定，先远程后本地，每步可回退（改回去就是）：

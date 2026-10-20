@@ -4,7 +4,7 @@
 >
 > **本文件是进入这个项目的入口。**读完它，你应当知道：这个产品是什么、改动落在哪个仓、东西跑在哪里、怎么发布、去哪里查更细的。细节都在指路的文档里；本文不写易腐的值（提交号、镜像摘要、迁移头、版本号、副本数）。与代码冲突时**永远以代码为准**，并请指出本文件需要更新。
 >
-> **地图位置**（2026-10-20 按 [架构总纲](../总纲/架构总纲.md) 标注）：本页以**第 6 层应用层与第 7 层产品线**为主，是部分地图；第 3 节只给站点与现网的概貌（全图在 [运行拓扑](../总纲/运行拓扑.md)），第 6 节只给交付链的入口（宿主层、集群层、平台层的目录在 [`repos/k8s.md`](repos/k8s.md)，代码事实在 [平台代码地图](../design/平台代码地图.md)）。层次与归属以总纲为准，本页只写现状。
+> **地图位置**（2026-10-20 按 [架构总纲](../总纲/架构总纲.md) 标注）：本页以**第 6 层应用层与第 7 层产品线**为主，是部分地图；第 3 节只给站点与现网的概貌（全图在 [运行拓扑](../总纲/运行拓扑.md)），第 6 节只给交付链的入口（宿主层、集群层、平台层的目录在 [`repos/sunmoonun.md`](repos/sunmoonun.md)，代码事实在 [平台代码地图](../design/平台代码地图.md)）。层次与归属以总纲为准，本页只写现状。
 
 ---
 
@@ -39,7 +39,7 @@
 | [`knowbench-app`](repos/knowbench-app.md) | 工作台：网页、工作台后端（对话、项目、专家运行、账、验收、交付）、给沙箱的记录 MCP、本地代理安装包的发放 | 同上 |
 | `knowlab-app` | 创建专家：受理、工程化、测试、交付（[0026](../design/SDD/modules/0026-knowlab.md)、[0027](../design/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
 | `knowmart-app` | 存放专家与「请」（先做私有模式，[0018](../design/SDD/modules/0018-advisor-market.md)、[0027](../design/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
-| [`k8s`](repos/k8s.md) | 部署与项目文档：宿主、仓库、入口、建群、Flux、全部平台组件与应用的部署声明；本目录也在此 | 无业务源码（自研的会合点、沙箱、供给器源码除外） |
+| [`k8s`](repos/sunmoonun.md) | 部署与项目文档：宿主、仓库、入口、建群、Flux、全部平台组件与应用的部署声明；本目录也在此 | 无业务源码（自研的会合点、沙箱、供给器源码除外） |
 | [`sunmoon-link`](repos/sunmoon-link.md) | 本地代理（英文 sunmoon-link，命令现在还叫 `sunmoon-agent`，0028 R5 发新 Windows 包时改），装在用户电脑上 | 不参与集群部署 |
 
 2026-10-17 起，GitHub 与 gitee 上的 `investment-app`（连同三个子仓）改名为 `knowbench-*`，`runtime` 改名为 `sunmoon-link`，GitHub 的旧地址自动转到新仓；两台机器的检出已换名（[0028](../design/SDD/modules/0028-knowbench-rename.md)）。
@@ -48,7 +48,7 @@
 
 ## 3. 东西跑在哪里（站点层与宿主层的概貌）
 
-按总纲：站点层三个地方；宿主层是集群外、站点内的服务（数据盘与开机、Harbor、入口、Jenkins、边缘机上的 Traefik 与 frps）；集群层是一个 Kubernetes 集群，建法可换（开发 kind，生产 kubeadm 或云托管）；平台层是集群内共享能力；应用层是六个应用加 Casdoor。下面只画站点与现网，各层的目录与组件清单在 [`repos/k8s.md`](repos/k8s.md)。
+按总纲：站点层三个地方；宿主层是集群外、站点内的服务（数据盘与开机、Harbor、入口、Jenkins、边缘机上的 Traefik 与 frps）；集群层是一个 Kubernetes 集群，建法可换（开发 kind，生产 kubeadm 或云托管）；平台层是集群内共享能力；应用层是六个应用加 Casdoor。下面只画站点与现网，各层的目录与组件清单在 [`repos/sunmoonun.md`](repos/sunmoonun.md)。
 
 ### 3.1 正式拓扑（所有者 2026-09-26 定，开发期与服务用户都这样）
 
@@ -124,7 +124,7 @@ knowbench 内部：三种对话（[0017](../design/SDD/modules/0017-three-kinds-
 
 ## 6. 部署与发布（横切 A 交付链，`k8s` 仓）
 
-交付链横切各层：源码在应用层，镜像进物料层的 Harbor，声明在平台层与应用层的组件目录，调和在集群里。单机 WSL 里的 KIND 是第一期；同一套组件声明以后用于云端建群。Make 是公开入口，Ansible 编排，Flux 拥有集群声明。部署相关的规矩（入口与编排、配置归属、分层、镜像来源、升级、操作副作用、清理）在 [`constraints.md`](../design/rules/constraints.md)「发布」`C-R*`，还没做完的平台目标在 [待办账](../design/pending-after-migration.md) 104–109，目录见 [`repos/k8s.md`](repos/k8s.md)。
+交付链横切各层：源码在应用层，镜像进物料层的 Harbor，声明在平台层与应用层的组件目录，调和在集群里。单机 WSL 里的 KIND 是第一期；同一套组件声明以后用于云端建群。Make 是公开入口，Ansible 编排，Flux 拥有集群声明。部署相关的规矩（入口与编排、配置归属、分层、镜像来源、升级、操作副作用、清理）在 [`constraints.md`](../design/rules/constraints.md)「发布」`C-R*`，还没做完的平台目标在 [待办账](../design/pending-after-migration.md) 104–109，目录见 [`repos/sunmoonun.md`](repos/sunmoonun.md)。
 
 **发布链**（一张发布卡的标准动作，样板见 `switch-test/done/` 里的卡）：
 

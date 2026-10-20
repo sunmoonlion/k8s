@@ -55,7 +55,7 @@ Jenkins 是跑流水线的机器。我们把它装在本地机宿主上，分两
 3. 点 **Build**。左边 Build History 里出现新的一行，先是闪烁的球（在跑），6 到 7 分钟后定下来。
 4. 等的时候可以点那一行的号，再点左边 **Console Output** 看它在干什么（滚动的命令输出，就是 Ansible 的那些 TASK 行）。
 
-命令行也能跑同一件事，由维护者在本地机 `~/worktrees/fable/k8s` 下执行：`make -C infrastructure jenkins-agent-check`。它强制跑一次、等结束、把控制台存到 `infrastructure/.build/jenkins/render-check-<号>.log`，SUCCESS 或 NOT_BUILT 才退出 0。
+命令行也能跑同一件事，由维护者在本地机 `~/worktrees/fable/sunmoonun` 下执行：`make -C infrastructure jenkins-agent-check`。它强制跑一次、等结束、把控制台存到 `infrastructure/.build/jenkins/render-check-<号>.log`，SUCCESS 或 NOT_BUILT 才退出 0。
 
 ## 五、读结果
 
@@ -138,7 +138,7 @@ Jenkins 是跑流水线的机器。我们把它装在本地机宿主上，分两
 - 不要在页面上建新任务、建凭据。将来的 `release` 任务也由首启脚本建。
 - 看到 `diff.txt` 有差异，不要自己去点什么「发布」——现在也没有这个按钮；发布是 B3 以后的 `release` 任务，带人批。
 
-## 八、维护者命令对照（本地机 `~/worktrees/fable/k8s`）
+## 八、维护者命令对照（本地机 `~/worktrees/fable/sunmoonun`）
 
 | 要干什么 | 命令 |
 |---|---|
@@ -148,5 +148,5 @@ Jenkins 是跑流水线的机器。我们把它装在本地机宿主上，分两
 | 跑一次 release 并等结果（人批仍在页面点） | `make -C infrastructure jenkins-release-run APPS="tpl" PIN=keep NOTE="一句话" APPROVAL_TIMEOUT_MINUTES=1440` |
 | 全平台状态 | `make -C infrastructure platform-status` |
 | 控制台日志 | `infrastructure/.build/jenkins/render-check-<号>.log`（不进 git） |
-| 产物原件 | `/mnt/sunmoon-data/jenkins/repos/k8s/infrastructure/.build/render-check/diff.txt` |
+| 产物原件 | `/mnt/sunmoon-data/jenkins/repos/sunmoonun/infrastructure/.build/render-check/diff.txt` |
 | 回执 | `scripts/results/fable-b1*.md`、`fable-b2*.md` |

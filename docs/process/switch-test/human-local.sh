@@ -3,14 +3,14 @@
 # 跑完后对 Cursor 说「请看 inbox/cursor」、对 astra 说「请看 inbox/astra」。本地助手不同步、不推；每条做完自己在被测仓本地提交（README「3c」）。
 # 用法：WS=<工位> bash ~/switch-test/human-local.sh    （工位必须给，不猜；同步该工位的五仓 + 子仓 + sunmoon-link）
 # ~/switch-test 里的两个脚本只是转发器（本脚本生成），永远跑仓里当前工位的最新版；第一次或转发器还没生成时，
-# 直接跑仓里这份：WS=fable bash ~/worktrees/fable/k8s/docs/process/switch-test/human-local.sh
+# 直接跑仓里这份：WS=fable bash ~/worktrees/fable/sunmoonun/docs/process/switch-test/human-local.sh
 set -uo pipefail
 if [ -z "${WS:-}" ]; then
   echo "✗ 要指定工位：WS=<fable|cursor|kimi|luna|qwen> bash ~/switch-test/$(basename "$0")   （不猜，和 five-repos-sync 一样）" >&2
   exit 2
 fi
 WS="$WS"
-ROOT_REPO="${ROOT_REPO:-k8s}"   # 根仓目录名；改名 sunmoonun 时改这里（与 infrastructure/jenkins/config.yaml 的 jenkins_root_repo 同步）
+ROOT_REPO="${ROOT_REPO:-sunmoonun}"   # 根仓目录名；改名 sunmoonun 时改这里（与 infrastructure/jenkins/config.yaml 的 jenkins_root_repo 同步）
 K8S="$HOME/worktrees/$WS/$ROOT_REPO"; ST="$K8S/docs/process/switch-test"
 FIVE="$ROOT_REPO knowfeed-app knowbench-app knowbase-app tpl-app knowlab-app knowmart-app"
 # 父仓下的全部子仓（与 human-remote.sh 同一份）

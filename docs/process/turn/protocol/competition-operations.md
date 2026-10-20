@@ -90,7 +90,7 @@ git log --oneline <基座commit>..<整合commit>
 看一下 <主线>/sunmoonai/docs/turn/protocol/GO.md，照做。
 ```
 
-- **`<主线>` 换成本机的主线检出绝对路径**（见 [`competition-protocol.md`](competition-protocol.md)「产物、路径与命名」的 `M`；本机是 `~/master/k8s`）。**必须是绝对路径**：参赛方的分支从 ① 起不再跟进主线，写成相对路径，对方会读到自己 worktree 里的旧 `GO.md`。
+- **`<主线>` 换成本机的主线检出绝对路径**（见 [`competition-protocol.md`](competition-protocol.md)「产物、路径与命名」的 `M`；本机是 `~/master/sunmoonun`）。**必须是绝对路径**：参赛方的分支从 ① 起不再跟进主线，写成相对路径，对方会读到自己 worktree 里的旧 `GO.md`。
 - **说完不用再交代别的。**对方读 `GO.md` 后，按 `competition-protocol.md`「收到『继续』时怎么办」自己定位当前环节，再去读该环节的通知，通知里写了交什么、交到哪。
 - **看谁交了**：按协议「环节判定」一节的判据查各家已提交的产物。以产物出现为准，不以对方说「做完了」为准。
 - **对方报「缺东西 / 字段是空的 / 没有这个文件」**：是供给出了错，交给组织者去修，不要让对方自己想办法。

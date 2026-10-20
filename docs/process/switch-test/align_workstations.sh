@@ -2,17 +2,17 @@
 # 两台机器的全面对齐：一台机器上的 ~/master 与五个工位 × 各组仓（含子仓）对齐到 origin/master。所有者要求每个大阶段结束做一次
 # （2026-10-16 改名收尾时写成，原在 docs/process/rename-2026-10-15/tools/）。
 # 两台机器各跑各的（Opus 跑远程机、Qwen 跑本地机），不经 SSH、不要所有者动手（所有者 2026-10-16 交 Opus 定）。必须用 bash：
-#   bash ~/worktrees/qwen/k8s/docs/process/switch-test/align_workstations.sh list             # 只读：每个检出的状态
-#   bash ~/worktrees/qwen/k8s/docs/process/switch-test/align_workstations.sh align            # 预演：逐个说要做什么，不改
-#   bash ~/worktrees/qwen/k8s/docs/process/switch-test/align_workstations.sh align --apply    # 执行
-#   bash ~/worktrees/qwen/k8s/docs/process/switch-test/align_workstations.sh push-branches [--apply]   # 只在一台机器跑一次：origin/<工位> 快进到 master
+#   bash ~/worktrees/qwen/sunmoonun/docs/process/switch-test/align_workstations.sh list             # 只读：每个检出的状态
+#   bash ~/worktrees/qwen/sunmoonun/docs/process/switch-test/align_workstations.sh align            # 预演：逐个说要做什么，不改
+#   bash ~/worktrees/qwen/sunmoonun/docs/process/switch-test/align_workstations.sh align --apply    # 执行
+#   bash ~/worktrees/qwen/sunmoonun/docs/process/switch-test/align_workstations.sh push-branches [--apply]   # 只在一台机器跑一次：origin/<工位> 快进到 master
 # 只做快进：父仓 merge --ff-only origin/master，子仓按新的 .gitmodules 初始化并接回工位分支，旧名子仓目录挪进
 # ~/rename-backup/<时间>-old-subrepos/（不删），新建的子仓照 qwen 工位同名子仓配推送地址（GitHub + gitee）。
 # 不重置、不强推。哪个父仓（连同它的子仓）有未提交改动、有既不在 origin/<分支> 也不在 master 里的提交、分支不对，整个父仓跳过并报 HOLD。
 # 只 git fetch 与本地检出；push-branches 之外不推任何东西。
 set -uo pipefail
 WS_LIST=(master cursor fable kimi luna qwen)
-ROOT_REPO="${ROOT_REPO:-k8s}"
+ROOT_REPO="${ROOT_REPO:-sunmoonun}"
 REPOS=("$ROOT_REPO" sunmoon-link knowfeed-app knowbase-app knowbench-app tpl-app knowlab-app knowmart-app)
 MODE=${1:-}; APPLY=${2:-}
 case "$MODE:$APPLY" in list:|align:|align:--apply|push-branches:|push-branches:--apply) ;; *) echo "用法: bash $0 list | align [--apply] | push-branches [--apply]"; exit 2 ;; esac

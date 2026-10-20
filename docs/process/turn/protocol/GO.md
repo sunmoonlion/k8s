@@ -10,7 +10,7 @@
 **先把两个位置取到变量里**，下面的命令都用它们（本机取值见 `competition-protocol.md`「产物、路径与命名」；换了机器问所有者要）：
 
 ```bash
-M=~/master/k8s              # 主线检出，只读
+M=~/master/sunmoonun              # 主线检出，只读
 W=~/worktrees/<你的名>/k8s   # 你的工作目录，只有这里你能写
 ```
 
