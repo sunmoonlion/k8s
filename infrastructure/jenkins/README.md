@@ -71,10 +71,11 @@ make -C infrastructure jenkins-status
 ## 怎么验
 
 - `jenkins-status` 退出 0，`ActiveState=active`。
-- 内网：浏览器开 `https://jenkins.sunmoonai.com:30443/`，证书由平台 CA 签（和 Harbor 一样），用第 13 项登录。
+- 内网：浏览器开 `https://jenkins.sunmoonai.com:30443/`，证书由平台 CA 签（和 Harbor 一样），用第 13 项登录。**前置**：本机 Windows 的 hosts 要有 `127.0.0.1 jenkins.sunmoonai.com`（和别的内网域名一样，用 `switch-test/windows_hosts_add.ps1` 加；2026-10-20 第一次走查就是缺这一行报 `DNS_PROBE_FINISHED_NXDOMAIN`）；剧本里的 `curl --resolve` 只验入口路由，验不了这一步。
 - 边缘：从东京边缘访问同一域名得 404（0013 未列出的域名）。
 - 宿主：`sudo curl --cacert /etc/sunmoon/registry/tls/ca.crt https://127.0.0.1:18443/login` 200（CA 在 root 0700 的目录里，要 sudo）；`http://127.0.0.1:18080/login` 200（代理用）；`ss -ltn` 里三个端口都只在 127.0.0.1。
 - 代理：`jenkins-agent-status` 退出 0（节点在线）；`systemctl show sunmoon-jenkins-agent.service` 里 `User=` 是宿主用户、`UnitFileState=enabled`；Jenkins 页面「节点」里 `host` 在线、执行器 1。
 - render-check：`jenkins-agent-check` 退出 0，结果 `SUCCESS`（或 `NOT_BUILT` 表示分支头没变），控制台日志在 `infrastructure/.build/jenkins/render-check-<n>.log`；产物 `diff.txt` 在任务页。
-- 边缘：从公网 IP 访问 `jenkins.sunmoonai.com` 得 404。
+- 边缘：不关证书校验地验「边缘没有这个域名」：`openssl s_client -servername jenkins.sunmoonai.com -connect <边缘IP>:30443` 回的是 Traefik 的默认自签证书（主题不是 jenkins.sunmoonai.com），`curl`（不加 `-k`）退出 60。有合法证书且回 200 才算泄露。
+- 已知小毛病：`jenkins-stop` 后 systemd 把控制器单元标 `failed`（Compose 收到 SIGTERM 退 143，单元只认 130）；不影响再启动，B 段第 3 步改单元时把 143 加进 `SuccessExitStatus`（代理单元一开始就有）。
 - 开机：`wsl --shutdown` 后随 `sunmoon-platform.target` 自己起来（0033 第七节第 4 条，账 104 的一部分）。

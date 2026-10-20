@@ -17,6 +17,8 @@ Environment=LANG=C.UTF-8
 WorkingDirectory={{ jenkins_agent_dir }}
 UMask=0022
 ExecStart={{ jenkins_runtime_dir }}/jre/current/bin/java -jar {{ jenkins_runtime_dir }}/agent.jar -url http://127.0.0.1:{{ jenkins_http_port }}/ -name {{ jenkins_agent_name }} -secret @{{ jenkins_runtime_dir }}/secrets/agent-{{ jenkins_agent_name }}.secret -workDir {{ jenkins_agent_dir }} -noReconnectAfter 1d
+# java 收到 SIGTERM 退 143：停机不算失败
+SuccessExitStatus=143
 Restart=always
 RestartSec=15
 TimeoutStopSec=120

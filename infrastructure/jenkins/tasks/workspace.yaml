@@ -26,14 +26,16 @@
   loop: '{{ jenkins_repos }}'
   register: clones
 
-- name: Clone missing repos as the agent user
+# 本地机各仓的 origin 是 https://github.com/…；私有仓的 https 要凭据助手，systemd 下没有。宿主用户的 GitHub SSH 钥匙
+# 是通的（卡第一节先探），所以克隆与取回都按命令级 insteadOf 改走 SSH，不改用户的全局 git 配置。
+- name: Clone missing repos as the agent user (GitHub https rewritten to SSH for this command)
   become: true
   become_user: '{{ jenkins_agent_user }}'
   ansible.builtin.command:
-    argv: [git, clone, --quiet, --branch, '{{ jenkins_render_check_branch }}', '{{ item.item.stdout }}', '{{ jenkins_repos_dir }}/{{ item.item.item }}']
+    argv: [git, -c, 'url.git@github.com:.insteadOf=https://github.com/', clone, --quiet, --branch, '{{ jenkins_render_check_branch }}', '{{ item.stdout }}', '{{ jenkins_repos_dir }}/{{ item.item }}']
   loop: '{{ repo_origins.results }}'
   loop_control:
-    label: '{{ item.item.item }}'
+    label: '{{ item.item }}'
     index_var: repo_index
   when: not clones.results[repo_index].stat.exists
   changed_when: true
@@ -42,7 +44,7 @@
   become: true
   become_user: '{{ jenkins_agent_user }}'
   ansible.builtin.command:
-    argv: [git, -C, '{{ jenkins_repos_dir }}/{{ item.item }}', fetch, --quiet, origin, '+refs/heads/*:refs/remotes/origin/*']
+    argv: [git, -C, '{{ jenkins_repos_dir }}/{{ item.item }}', -c, 'url.git@github.com:.insteadOf=https://github.com/', fetch, --quiet, origin, '+refs/heads/*:refs/remotes/origin/*']
   loop: '{{ clones.results }}'
   loop_control:
     label: '{{ item.item }}'
