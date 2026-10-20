@@ -220,10 +220,18 @@ r='${receipt}'
 } > "\$r"
 git add "\$r"
 git -c user.name=sunmoon-ci -c user.email=ci@sunmoonai.com commit -q -m "release(kind): 回执 #${n}"
+cp "\$r" '${out}/'
 git -c url.git@github.com:.insteadOf=https://github.com/ push origin "HEAD:refs/heads/${branch}" "refs/tags/${state.tag}" 2>&1 | tee '${out}/12-push.txt'
+# 镜像站（代理准备时按源工位的第二个 push 地址加的 remote mirror）：尽力推，推不上只记下，不算发布失败——GitHub 是真相所在
+if git remote get-url mirror >/dev/null 2>&1; then
+  git push mirror "HEAD:refs/heads/${branch}" "refs/tags/${state.tag}" 2>&1 | tee -a '${out}/12-push.txt' || echo "MIRROR PUSH FAILED (push by hand: git push mirror ${branch} ${state.tag})" | tee -a '${out}/12-push.txt'
+else
+  echo "(no mirror remote)" | tee -a '${out}/12-push.txt'
+fi
 """
                 state.pushed = true
-                currentBuild.description = "${note ? note + ' — ' : ''}已发布：${state.tag}，指针 ${state.pointerCommit.take(10)}，回执 ${receipt}"
+                def mirrorNote = sh(script: "grep -c 'MIRROR PUSH FAILED' '${out}/12-push.txt' || true", returnStdout: true).trim() == '0' ? '' : '；镜像站没推上，见 12-push.txt'
+                currentBuild.description = "${note ? note + ' — ' : ''}已发布：${state.tag}，指针 ${state.pointerCommit.take(10)}，回执 ${receipt}${mirrorNote}"
             }
         } finally {
             stage('后半段收尾') {
@@ -231,7 +239,9 @@ git -c url.git@github.com:.insteadOf=https://github.com/ push origin "HEAD:refs/
                 archive()
                 if (!state.pushed) {
                     def where = state.pointerCommit ? '集群可能已是新版而 Git 还没推' : '集群未动'
-                    currentBuild.description = "${note ? note + ' — ' : ''}后半段停下：${where}；提交留在代理克隆 abandoned/release-${n}（${(state.pointerCommit ?: state.commit).take(10)}）"
+                    // 用工作区的 HEAD，不用 state：第 9 阶段的 shell 块中途失败时 pointerCommit 还没赋值（b4 回执 #6）
+                    def headNow = sh(script: 'git rev-parse --short=10 HEAD', returnStdout: true).trim()
+                    currentBuild.description = "${note ? note + ' — ' : ''}后半段停下：${where}；提交留在代理克隆 abandoned/release-${n}（${headNow}）"
                     sh "git branch -f 'abandoned/release-${n}' HEAD"
                 }
                 if (hit) { error "秘密样子核查命中：${hit}" }

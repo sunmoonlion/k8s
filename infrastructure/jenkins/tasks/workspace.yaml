@@ -52,6 +52,37 @@
   when: not clones.results[repo_index].stat.exists
   changed_when: true
 
+# 源工位的 origin 可能配了第二个 push 地址（镜像站 Gitee）。克隆只继承第一个，所以 k8s 克隆上另加一个 remote mirror，
+# 流水线推完 GitHub 再尽力推它（2026-10-21 回执 fable-b4）。只对 k8s：应用仓流水线不推。
+- name: Read the push URLs of the k8s origin in the source workspace
+  become: true
+  become_user: '{{ jenkins_agent_user }}'
+  ansible.builtin.command:
+    argv: [git, -C, '/home/{{ jenkins_agent_user }}/worktrees/{{ jenkins_repo_source_workspace }}/k8s', remote, get-url, --push, --all, origin]
+  register: k8s_push_urls
+  changed_when: false
+
+- name: Require plain push URLs without embedded credentials
+  ansible.builtin.assert:
+    quiet: true
+    that: item is match('^(git@[a-zA-Z0-9.-]+:[a-zA-Z0-9_./-]+|https://[a-zA-Z0-9.-]+/[a-zA-Z0-9_./-]+)$')
+  loop: '{{ k8s_push_urls.stdout_lines }}'
+
+- name: Point the mirror remote of the k8s clone at the second push URL (or drop it when there is none)
+  become: true
+  become_user: '{{ jenkins_agent_user }}'
+  ansible.builtin.shell:
+    cmd: >-
+      cd '{{ jenkins_repos_dir }}/k8s' &&
+      if [ -n '{{ mirror_url }}' ]; then
+        (git remote get-url mirror >/dev/null 2>&1 && git remote set-url mirror '{{ mirror_url }}' || git remote add mirror '{{ mirror_url }}') && git remote get-url mirror;
+      else
+        git remote remove mirror 2>/dev/null; echo '(no mirror)';
+      fi
+  vars:
+    mirror_url: "{{ (k8s_push_urls.stdout_lines | reject('equalto', k8s_push_urls.stdout_lines[0]) | list | first) | default('') }}"
+  changed_when: true
+
 - name: Fetch all branches of existing clones
   become: true
   become_user: '{{ jenkins_agent_user }}'
