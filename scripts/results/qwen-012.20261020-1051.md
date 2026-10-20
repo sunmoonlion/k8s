@@ -68,12 +68,12 @@ from workbench_agent_pairings p left join auth_user u on u.id=p.owner_actor_id o
 | # | 谁 | 做什么 | 结果 |
 | --- | --- | --- | --- |
 | 5 | 所有者 | 工作台（sig-am）新建项目 →「专家」→「去 knowmart 选专家」→ knowmart 上方写「从工作台来」→「财务分析与预测」点「请这位」→ 回工作台 | 待填（「请哪一位」里能否选到） |
-| 6 | 所有者 | 问：「贵州茅台近三年的营业收入和归母净利润走势如何？预测下两个季度。」（与第 3 稿 c1 同问） | 待填（开跑时刻、中途问题由所有者自答） |
-| 7 | Qwen | 开跑后每半小时 runner 日志核 | 见第三节 |
+| 6 | 所有者 | 问：「贵州茅台近三年的营业收入和归母净利润走势如何？预测下两个季度。」（与第 3 稿 c1 同问） | 所有者已问出去。Qwen 侧地面真相：任务 `0d1b7cd2-ff15-488b-8eca-6f819c025f03` created_at `2026-10-20 05:48:58.858917+00`，05:48:59Z runner `took over sandbox=c678ec57-a068-4365-9aac-999ab276cb7e`（即库里 sig-am 那个云端沙箱）、`sandbox link up ws://sandbox-u-9d82c9f91895.sandbox-platform-dev…:47800`；「请哪一位」能否选到仍待所有者回报 |
+| 7 | Qwen | 开跑后每半小时 runner 日志核 | 见第三节（首核 05:50Z/05:53Z：在跑） |
 | 8 | 所有者 | 跑完看交回那一行 →「打开工作底稿」 | 待填（成稿实际路径、各分节实际标题、有无「目标价/评级/建议买入」字样） |
 | 9 | 所有者 + Qwen | 成稿与第三节参照值逐项对 | 见第四节 |
 
-## 三、第 7 行日志核（Qwen，开跑后每半小时）——待开跑
+## 三、第 7 行日志核（Qwen，开跑后每半小时）——首核已做，在跑
 
 命令（卡面原文）：
 
@@ -82,6 +82,58 @@ $K -n app-platform-dev logs deploy/knowbench-runner --since=40m | grep -E "advis
 ```
 
 判据：没有 `advisor crashed`、没有 `workbench_mcp_result_too_large`；跑完有 `advisor stopped task=… state=SUCCEEDED`。若问出去 10 分钟还没开始第一步、runner 也没有这次的日志：多半是代理卡在半开连接（待办账 136），告知所有者由其在托盘重启代理，**不动集群**。
+
+### 首核 #1（05:50:41Z，问出去约 1 分半后）
+
+卡面命令 `--since=40m` 结果：**零命中**（三条坏判据都没出现，也还没有 `advisor stopped`）。runner 近 15 分钟原始尾（截断到工具描述前）：
+
+```text
+2026-10-20 05:48:59 - app.application.workbench.runner - INFO - took over sandbox=c678ec57-a068-4365-9aac-999ab276cb7e expired_approvals=0
+2026-10-20 05:48:59 - app.application.workbench.runner - INFO - sandbox link up sandbox=c678ec57-a068-4365-9aac-999ab276cb7e url=ws://sandbox-u-9d82c9f91895.sandbox-platform-dev.svc.cluster.local:47800
+2026-10-20 05:49:06 - … - INFO - mcp elicitation sandbox=c678ec57-… mode=form message=Allow the sunmoon_workbench MCP server to run tool "list_my_data"? meta={… "tool_params": {"task": "0d1b7cd2-ff15-488b-8eca-6f819c025f03"} …}
+2026-10-20 05:49:13 / 05:49:35 / 05:50:25 - … - mcp elicitation … tool "read_my_table"?
+2026-10-20 05:49:54 - … - mcp elicitation … tool "compute"?
+```
+
+runner/api Pod 均 1/1 Running、0 重启（16h）。
+
+审批询问行按纪律不单独当「在跑」的证据，故补只读库活体信号：
+
+```text
+T1 05:51:13Z  workbench_tasks id=0d1b7cd2-…  state=RUNNING state_version=10 current_step=1 waiting_reason=(空) created_at=2026-10-20 05:48:58.858917+00 updated_at=2026-10-20 05:50:10.773573+00
+T1  workbench_sandbox_leases  sandbox_id=c678ec57-… runner_id=sunmoon-kind-r1 acquired_at=2026-10-18 01:51:07.16302+00 expires_at=2026-10-20 05:51:43.321403+00
+T1  最近事件（新→旧，8 条）
+  05:50:31.196250  item/reasoning/summaryPartAdded
+  05:50:31.190241  item/started
+  05:50:25.498782  thread/tokenUsage/updated
+  05:50:25.481878  item/completed
+  05:50:25.435170  thread/status/changed
+  05:50:25.407276  records/read
+  05:50:25.392917  serverRequest/resolved
+  05:50:25.386501  thread/status/changed
+T2 05:52:28Z  state=RUNNING state_version=10 current_step=1 updated_at=2026-10-20 05:50:10.773573+00
+```
+
+（`workbench_sessions` 无 `state` 列，该查询报 `ERROR: column s.state does not exist`，未改口径，改以事件流与租约判活体。）
+
+### 首核 #2（05:53:14Z）
+
+```text
+最近 6 条事件（新→旧）
+  05:53:05.190441  item/completed
+  05:53:03.975875  item/started
+  05:53:03.968604  item/completed
+  05:52:52.846458  item/reasoning/summaryPartAdded
+  05:52:52.840306  item/started
+  05:52:47.193550  item/completed
+近 3 分钟事件计数 last3m=49
+租约 runner_id=sunmoon-kind-r1 expires_at=2026-10-20 05:53:44.775257+00 updated_at=2026-10-20 05:53:14.775257+00（每约 30 秒续一次）
+runner --since=3m 尾：05:50:25 之后无新的 elicitation 行（审批已解决、工具结果在回填），无坏判据
+```
+
+判定：**在跑**（有执行类条目 + 事件流活跃 + 租约在续），未终态。`state_version`/`current_step` 在步内取数期间不动，属正常；活体以事件流与租约续期为准。
+
+后续：`/tmp/q012-line7-poll.sh`（pid 1989631）每 1800 秒记一轮到 `/tmp/q012-line7.log`，命中 `advisor stopped` 自停，最多 8 轮；用完删除。轮询只在本地记日志，Qwen 不能主动说话，故跑完由所有者叫一声后 Qwen 补写终态——这一点在上一张卡（qwen-015）上是 Qwen 的漏，已按同一坦白口径写在这里。
 
 ## 四、第 9 行：成稿与参照值逐项对照——待成稿
 
