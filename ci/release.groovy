@@ -7,9 +7,9 @@ def run(params, reposDir) {
     def branch = params.BRANCH.trim()
     def note = (params.NOTE ?: '').trim()
     if (!(branch ==~ /[A-Za-z0-9._\/-]{1,80}/) || branch.contains('..')) { error "BRANCH 不合法: ${branch}" }
-    apps.each { if (!(it ==~ /[a-z][a-z0-9]{1,20}/)) { error "APPS 里有不合法的名字: ${it}" } }
+    for (a in apps) { if (!(a ==~ /[a-z][a-z0-9]{1,20}/)) { error "APPS 里有不合法的名字: ${a}" } }
     if (!(params.PIN in ['heads', 'keep'])) { error "PIN 只能是 heads 或 keep" }
-    if (note && !(note ==~ /[^\r\n\t"'`$\\]{1,120}/)) { error 'NOTE 只能是一行，不含引号、反引号、$ 和反斜杠' }
+    if (note && !(note ==~ '[^\\r\\n\\t"\'`$\\\\]{1,120}')) { error 'NOTE 只能是一行，不含引号、反引号、$ 和反斜杠' }
 
     def head = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
     def out = "infrastructure/.build/release/${env.BUILD_NUMBER}"
