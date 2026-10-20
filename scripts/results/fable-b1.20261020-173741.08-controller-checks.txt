@@ -1,0 +1,12 @@
+2026-10-20T17:42:10+08:00
+$ sudo ss -ltnp | grep -E ":18443|:18080|:50000"
+LISTEN 0      4096        127.0.0.1:50000      0.0.0.0:*    users:(("docker-proxy",pid=3132619,fd=8))
+LISTEN 0      4096        127.0.0.1:18443      0.0.0.0:*    users:(("docker-proxy",pid=3133399,fd=8))
+LISTEN 0      4096        127.0.0.1:18080      0.0.0.0:*    users:(("docker-proxy",pid=3132590,fd=8))
+ports listed above must all be 127.0.0.1
+$ curl: TLS login
+curl: (77) error setting certificate file: /etc/sunmoon/registry/tls/ca.crt
+tls login 000
+
+checks exit=77
+exit=77

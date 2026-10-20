@@ -1,0 +1,123 @@
+2026-10-20T17:40:31+08:00
+$ make -C infrastructure platform-account-plan OBJECT=jenkins
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml host/accounts.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'account_action=plan account_operation= account_maintenance_deadline=0'
+
+PLAY [Read-only KIND host preflight] *******************************************
+
+TASK [Check tool version and required site settings] ***************************
+skipping: [localhost]
+
+TASK [Read filesystem identity for each required mount] ************************
+skipping: [localhost] => (item=/mnt/sunmoon-data) 
+skipping: [localhost] => (item=/data/kind-clusters) 
+skipping: [localhost] => (item=/data/harbor) 
+skipping: [localhost]
+
+TASK [Require exact mountpoint, filesystem UUID and bind root] *****************
+skipping: [localhost] => (item=/mnt/sunmoon-data) 
+skipping: [localhost] => (item=/data/kind-clusters) 
+skipping: [localhost] => (item=/data/harbor) 
+skipping: [localhost]
+
+TASK [Read data filesystem capacity] *******************************************
+skipping: [localhost]
+
+TASK [Report the scope of this preflight] **************************************
+skipping: [localhost]
+
+PLAY [Select canonical objects and native deployment modules] ******************
+
+TASK [Require the owned site and a bounded native action] **********************
+ok: [localhost]
+
+TASK [Collect the component stage graph from the declaration tree] *************
+ok: [localhost]
+
+TASK [Load the stage graph as templated facts] *********************************
+ok: [localhost]
+
+TASK [Compute selection and dependency closure from the unique phase graph] ****
+ok: [localhost]
+
+TASK [Preserve the selected public object contract] ****************************
+ok: [localhost]
+
+TASK [Show the selected objects, configuration and dependency plan] ************
+skipping: [localhost]
+
+TASK [List authoritative configuration files beside the selected objects] ******
+skipping: [localhost]
+
+TASK [Read actual selected Flux stages without repairing or starting anything] ***
+skipping: [localhost]
+
+TASK [Report actual stage identities and readiness without credentials] ********
+skipping: [localhost]
+
+TASK [Create the nonsecret native Make selection directory] ********************
+skipping: [localhost]
+
+TASK [Save only validated selection facts, never commands or credentials] ******
+skipping: [localhost]
+
+TASK [Render native Make switches from authoritative configuration] ************
+skipping: [localhost]
+
+PLAY [Maintain explicitly selected owner and platform administrator accounts] ***
+
+TASK [Require explicit account scope and a supported native action] ************
+ok: [localhost]
+
+TASK [Require capacity before private candidate or rotation writes] ************
+skipping: [localhost]
+
+TASK [Inspect or import private inputs without outputting password values] *****
+ok: [localhost]
+
+TASK [Report only account mapping, private paths and pending changes] **********
+ok: [localhost] => {
+    "msg": [
+        {
+            "adapter": "jenkins",
+            "backup_file": "/mnt/sunmoon-data/backups/jenkins/credentials/admin-password",
+            "backup_present": false,
+            "capabilities": {
+                "initial_preset": true,
+                "protocol_check": false,
+                "rotation": false,
+                "table_import": true,
+                "view": true
+            },
+            "current_field": "",
+            "current_file": "/etc/sunmoon/jenkins/private/admin-password",
+            "current_present": false,
+            "id": "admin",
+            "initial_backup_file": "/mnt/sunmoon-data/backups/jenkins/credentials/presets/admin-password",
+            "initial_file": "/etc/sunmoon/jenkins/private/presets/admin-password",
+            "initial_present": false,
+            "maximum_length": 128,
+            "minimum_length": 8,
+            "object": "jenkins",
+            "primary_backup_equal": null,
+            "protocol_check_supported": false,
+            "rotation_pending": false,
+            "rotation_supported": false,
+            "table_import": true,
+            "table_row": "13",
+            "username": "admin"
+        }
+    ]
+}
+
+TASK [Execute the selected component protocol rotation] ************************
+skipping: [localhost] => (item=jenkins) 
+skipping: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=14   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+
+plan exit=0
+exit=0

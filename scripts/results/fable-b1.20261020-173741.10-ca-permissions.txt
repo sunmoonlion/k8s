@@ -1,0 +1,18 @@
+2026-10-20T17:42:53+08:00
+Read-only diagnosis after curl exit 77; no curl retry, no permission changes.
+$ id -un
+zymun
+$ sudo -n namei -l /etc/sunmoon/registry/tls/ca.crt
+f: /etc/sunmoon/registry/tls/ca.crt
+drwxr-xr-x root root /
+drwxr-xr-x root root etc
+drwxr-xr-x root root sunmoon
+drwx------ root root registry
+drwx------ root root tls
+-rw-r--r-- root root ca.crt
+$ sudo -n stat -c "%F %a %U:%G %s %n" /etc/sunmoon/registry /etc/sunmoon/registry/tls /etc/sunmoon/registry/tls/ca.crt
+directory 700 root:root 4096 /etc/sunmoon/registry
+directory 700 root:root 4096 /etc/sunmoon/registry/tls
+regular file 644 root:root 1529 /etc/sunmoon/registry/tls/ca.crt
+
+exit=0

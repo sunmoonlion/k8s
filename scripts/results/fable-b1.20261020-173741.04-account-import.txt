@@ -1,0 +1,149 @@
+2026-10-20T17:40:33+08:00
+$ make -C infrastructure platform-account-import OBJECT=jenkins
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml host/accounts.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'account_action=import account_operation= account_maintenance_deadline=0'
+
+PLAY [Read-only KIND host preflight] *******************************************
+
+TASK [Check tool version and required site settings] ***************************
+ok: [localhost]
+
+TASK [Read filesystem identity for each required mount] ************************
+ok: [localhost] => (item=/mnt/sunmoon-data)
+ok: [localhost] => (item=/data/kind-clusters)
+ok: [localhost] => (item=/data/harbor)
+
+TASK [Require exact mountpoint, filesystem UUID and bind root] *****************
+ok: [localhost] => (item=/mnt/sunmoon-data)
+ok: [localhost] => (item=/data/kind-clusters)
+ok: [localhost] => (item=/data/harbor)
+
+TASK [Read data filesystem capacity] *******************************************
+ok: [localhost]
+
+TASK [Report the scope of this preflight] **************************************
+ok: [localhost] => {
+    "msg": [
+        [
+            "   1B-blocks        Used        Avail Use% Mounted on",
+            "242486140928 29057138688 210942619648  13% /mnt/sunmoon-data"
+        ],
+        "Host mount identity checked; no services started or changed.",
+        "Docker mount visibility, Windows free space and full offline closure remain separate deployment prerequisites."
+    ]
+}
+
+PLAY [Select canonical objects and native deployment modules] ******************
+
+TASK [Require the owned site and a bounded native action] **********************
+ok: [localhost]
+
+TASK [Collect the component stage graph from the declaration tree] *************
+ok: [localhost]
+
+TASK [Load the stage graph as templated facts] *********************************
+ok: [localhost]
+
+TASK [Compute selection and dependency closure from the unique phase graph] ****
+ok: [localhost]
+
+TASK [Preserve the selected public object contract] ****************************
+ok: [localhost]
+
+TASK [Show the selected objects, configuration and dependency plan] ************
+skipping: [localhost]
+
+TASK [List authoritative configuration files beside the selected objects] ******
+skipping: [localhost]
+
+TASK [Read actual selected Flux stages without repairing or starting anything] ***
+skipping: [localhost]
+
+TASK [Report actual stage identities and readiness without credentials] ********
+skipping: [localhost]
+
+TASK [Create the nonsecret native Make selection directory] ********************
+skipping: [localhost]
+
+TASK [Save only validated selection facts, never commands or credentials] ******
+skipping: [localhost]
+
+TASK [Render native Make switches from authoritative configuration] ************
+skipping: [localhost]
+
+PLAY [Maintain explicitly selected owner and platform administrator accounts] ***
+
+TASK [Require explicit account scope and a supported native action] ************
+ok: [localhost]
+
+TASK [Require capacity before private candidate or rotation writes] ************
+included: /home/zymun/worktrees/fable/k8s/infrastructure/host/tasks/capacity.yaml for localhost
+
+TASK [Validate the capacity budget and site floor] *****************************
+ok: [localhost]
+
+TASK [Validate an explicitly approved temporary capacity exception] ************
+skipping: [localhost]
+
+TASK [Report the active temporary exception without changing the site policy] ***
+skipping: [localhost]
+
+TASK [Publish read-only helper to Windows local script directory] **************
+ok: [localhost]
+
+TASK [Install the reviewed capacity helper without changing execution policy] ***
+ok: [localhost]
+
+TASK [Resolve Windows path to read-only capacity helper] ***********************
+ok: [localhost]
+
+TASK [Require Windows growth budget before writing] ****************************
+ok: [localhost]
+
+TASK [Report physical capacity budget] *****************************************
+ok: [localhost] => {
+    "msg": {
+        "c_free_bytes": 125165187072,
+        "checked_at_utc": "2026-10-20T09:40:37.3499410Z",
+        "configured_data_maximum_bytes": 246960619520,
+        "data_vhd_allocated_bytes": 180728365056,
+        "data_vhd_length": 180728365056,
+        "future_data_growth_bytes": 66232254464,
+        "minimum_free_bytes": 10737418240,
+        "passes": true,
+        "planned_bytes": 67108864,
+        "remaining_after_growth_and_plan_bytes": 58865823744,
+        "scope": "Configured VHD growth plus requested operation; excludes other future system disk growth"
+    }
+}
+
+TASK [Enforce the approved batch ceiling as well as the reserve floor] *********
+skipping: [localhost]
+
+TASK [Inspect or import private inputs without outputting password values] *****
+changed: [localhost]
+
+TASK [Report only account mapping, private paths and pending changes] **********
+ok: [localhost] => {
+    "msg": [
+        {
+            "live_account_changed": false,
+            "object": "jenkins",
+            "preset_changed": true,
+            "table_row": "13",
+            "username": "admin"
+        }
+    ]
+}
+
+TASK [Execute the selected component protocol rotation] ************************
+skipping: [localhost] => (item=jenkins) 
+skipping: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=20   changed=1    unreachable=0    failed=0    skipped=11   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+
+import exit=0
+exit=0

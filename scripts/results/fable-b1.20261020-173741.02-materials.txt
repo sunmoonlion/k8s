@@ -1,0 +1,419 @@
+2026-10-20T17:38:25+08:00
+$ make -C infrastructure prepare-host-materials
+make: Entering directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml artifacts/image-archives.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'image_group=host image_action=fetch'
+
+PLAY [Prepare or verify locked offline image archives] *************************
+
+TASK [Validate image preparation mode and complete selection] ******************
+ok: [localhost]
+
+TASK [Validate immutable image descriptors] ************************************
+ok: [localhost] => (item=haproxy)
+ok: [localhost] => (item=skopeo)
+ok: [localhost] => (item=jenkins)
+
+TASK [Inspect the cache and image directory] ***********************************
+ok: [localhost] => (item=/home/zymun/k8s-packages)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images)
+
+TASK [Reject symlink or non-directory archive paths] ***************************
+ok: [localhost] => (item=/home/zymun/k8s-packages)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images)
+
+TASK [Prepare each archive through the same native path] ***********************
+included: /home/zymun/worktrees/fable/k8s/infrastructure/artifacts/tasks/image-archive.yaml for localhost => (item=haproxy)
+included: /home/zymun/worktrees/fable/k8s/infrastructure/artifacts/tasks/image-archive.yaml for localhost => (item=skopeo)
+included: /home/zymun/worktrees/fable/k8s/infrastructure/artifacts/tasks/image-archive.yaml for localhost => (item=jenkins)
+
+TASK [Set deterministic archive paths] *****************************************
+ok: [localhost]
+
+TASK [Inspect existing archive and receipt] ************************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images/haproxy-5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images/haproxy-5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272.tar.json)
+
+TASK [Refuse incomplete or unsafe existing output] *****************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images/haproxy-5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/entry/images/haproxy-5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272.tar.json)
+
+TASK [Show archive plan] *******************************************************
+ok: [localhost] => {
+    "msg": {
+        "destination": "/home/zymun/k8s-packages/host/entry/images/haproxy-5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272.tar",
+        "id": "haproxy",
+        "origin": "registry",
+        "present": true,
+        "source": "docker.io/library/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272"
+    }
+}
+
+TASK [Require archive for offline verification] ********************************
+skipping: [localhost]
+
+TASK [Budget pull, unpack, export and temporary files] *************************
+skipping: [localhost]
+
+TASK [Locate Docker storage before pulling or exporting] ***********************
+skipping: [localhost]
+
+TASK [Read cache and Docker filesystem space] **********************************
+skipping: [localhost]
+
+TASK [Require capacity on both filesystems] ************************************
+skipping: [localhost]
+
+TASK [Pull upstream by locked manifest digest] *********************************
+skipping: [localhost]
+
+TASK [Inspect exact local image identity] **************************************
+skipping: [localhost]
+
+TASK [Require the requested amd64 manifest] ************************************
+skipping: [localhost]
+
+TASK [Create typed archive directory] ******************************************
+skipping: [localhost]
+
+TASK [Allocate a private export file] ******************************************
+skipping: [localhost]
+
+TASK [Save the immutable local image ID with native Docker] ********************
+skipping: [localhost]
+
+TASK [Verify OCI blob hashes and descriptor closure] ***************************
+skipping: [localhost]
+
+TASK [Compute archive file identity] *******************************************
+skipping: [localhost]
+
+TASK [Require the frozen archive identity before publication] ******************
+skipping: [localhost]
+
+TASK [Publish verified archive atomically within its filesystem] ***************
+skipping: [localhost]
+
+TASK [Record file and manifest identities separately] **************************
+skipping: [localhost]
+
+TASK [Remove only this invocation temporary export file] ***********************
+skipping: [localhost]
+
+TASK [Read receipt] ************************************************************
+ok: [localhost]
+
+TASK [Read complete archive SHA256] ********************************************
+ok: [localhost]
+
+TASK [Require original file identity and requested source] *********************
+ok: [localhost]
+
+TASK [Independently verify every blob without Docker or a registry] ************
+ok: [localhost]
+
+TASK [Make verified public upstream archives readable by restricted tool containers] ***
+ok: [localhost]
+
+TASK [Report verified archive] *************************************************
+ok: [localhost] => {
+    "msg": {
+        "format": "oci",
+        "image": {
+            "config_digest": "sha256:c6f9accb39104d084a2e8012cdfc52f2a69db18790bf04e981cd6bbc8ea7c624",
+            "layers": 6,
+            "manifest_digest": "sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272"
+        },
+        "verified_blobs": 8
+    }
+}
+
+TASK [Set deterministic archive paths] *****************************************
+ok: [localhost]
+
+TASK [Inspect existing archive and receipt] ************************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images/skopeo-9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images/skopeo-9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99.tar.json)
+
+TASK [Refuse incomplete or unsafe existing output] *****************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images/skopeo-9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/shared/tools/images/skopeo-9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99.tar.json)
+
+TASK [Show archive plan] *******************************************************
+ok: [localhost] => {
+    "msg": {
+        "destination": "/home/zymun/k8s-packages/shared/tools/images/skopeo-9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99.tar",
+        "id": "skopeo",
+        "origin": "registry",
+        "present": true,
+        "source": "quay.io/skopeo/stable@sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99"
+    }
+}
+
+TASK [Require archive for offline verification] ********************************
+skipping: [localhost]
+
+TASK [Budget pull, unpack, export and temporary files] *************************
+skipping: [localhost]
+
+TASK [Locate Docker storage before pulling or exporting] ***********************
+skipping: [localhost]
+
+TASK [Read cache and Docker filesystem space] **********************************
+skipping: [localhost]
+
+TASK [Require capacity on both filesystems] ************************************
+skipping: [localhost]
+
+TASK [Pull upstream by locked manifest digest] *********************************
+skipping: [localhost]
+
+TASK [Inspect exact local image identity] **************************************
+skipping: [localhost]
+
+TASK [Require the requested amd64 manifest] ************************************
+skipping: [localhost]
+
+TASK [Create typed archive directory] ******************************************
+skipping: [localhost]
+
+TASK [Allocate a private export file] ******************************************
+skipping: [localhost]
+
+TASK [Save the immutable local image ID with native Docker] ********************
+skipping: [localhost]
+
+TASK [Verify OCI blob hashes and descriptor closure] ***************************
+skipping: [localhost]
+
+TASK [Compute archive file identity] *******************************************
+skipping: [localhost]
+
+TASK [Require the frozen archive identity before publication] ******************
+skipping: [localhost]
+
+TASK [Publish verified archive atomically within its filesystem] ***************
+skipping: [localhost]
+
+TASK [Record file and manifest identities separately] **************************
+skipping: [localhost]
+
+TASK [Remove only this invocation temporary export file] ***********************
+skipping: [localhost]
+
+TASK [Read receipt] ************************************************************
+ok: [localhost]
+
+TASK [Read complete archive SHA256] ********************************************
+ok: [localhost]
+
+TASK [Require original file identity and requested source] *********************
+ok: [localhost]
+
+TASK [Independently verify every blob without Docker or a registry] ************
+ok: [localhost]
+
+TASK [Make verified public upstream archives readable by restricted tool containers] ***
+ok: [localhost]
+
+TASK [Report verified archive] *************************************************
+ok: [localhost] => {
+    "msg": {
+        "format": "oci",
+        "image": {
+            "config_digest": "sha256:5ef1074715887af7ae6fc9c61dd266b1dbcc574a102afe0f3293efa0e1cd579a",
+            "layers": 6,
+            "manifest_digest": "sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99"
+        },
+        "verified_blobs": 8
+    }
+}
+
+TASK [Set deterministic archive paths] *****************************************
+ok: [localhost]
+
+TASK [Inspect existing archive and receipt] ************************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images/jenkins-5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images/jenkins-5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb.tar.json)
+
+TASK [Refuse incomplete or unsafe existing output] *****************************
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images/jenkins-5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb.tar)
+ok: [localhost] => (item=/home/zymun/k8s-packages/host/jenkins/images/jenkins-5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb.tar.json)
+
+TASK [Show archive plan] *******************************************************
+ok: [localhost] => {
+    "msg": {
+        "destination": "/home/zymun/k8s-packages/host/jenkins/images/jenkins-5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb.tar",
+        "id": "jenkins",
+        "origin": "registry",
+        "present": false,
+        "source": "docker.io/jenkins/jenkins@sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb"
+    }
+}
+
+TASK [Require archive for offline verification] ********************************
+skipping: [localhost]
+
+TASK [Budget pull, unpack, export and temporary files] *************************
+included: /home/zymun/worktrees/fable/k8s/infrastructure/artifacts/tasks/../../host/tasks/capacity.yaml for localhost
+
+TASK [Validate the capacity budget and site floor] *****************************
+ok: [localhost]
+
+TASK [Validate an explicitly approved temporary capacity exception] ************
+skipping: [localhost]
+
+TASK [Report the active temporary exception without changing the site policy] ***
+skipping: [localhost]
+
+TASK [Publish read-only helper to Windows local script directory] **************
+ok: [localhost]
+
+TASK [Install the reviewed capacity helper without changing execution policy] ***
+ok: [localhost]
+
+TASK [Resolve Windows path to read-only capacity helper] ***********************
+ok: [localhost]
+
+TASK [Require Windows growth budget before writing] ****************************
+ok: [localhost]
+
+TASK [Report physical capacity budget] *****************************************
+ok: [localhost] => {
+    "msg": {
+        "c_free_bytes": 114484944896,
+        "checked_at_utc": "2026-10-20T09:38:34.1946183Z",
+        "configured_data_maximum_bytes": 246960619520,
+        "data_vhd_allocated_bytes": 180728365056,
+        "data_vhd_length": 180728365056,
+        "future_data_growth_bytes": 66232254464,
+        "minimum_free_bytes": 10737418240,
+        "passes": true,
+        "planned_bytes": 2506011768,
+        "remaining_after_growth_and_plan_bytes": 45746678664,
+        "scope": "Configured VHD growth plus requested operation; excludes other future system disk growth"
+    }
+}
+
+TASK [Enforce the approved batch ceiling as well as the reserve floor] *********
+skipping: [localhost]
+
+TASK [Locate Docker storage before pulling or exporting] ***********************
+ok: [localhost]
+
+TASK [Read cache and Docker filesystem space] **********************************
+ok: [localhost] => (item=/home/zymun/k8s-packages)
+ok: [localhost] => (item=/var/lib/docker)
+
+TASK [Require capacity on both filesystems] ************************************
+ok: [localhost] => (item=/home/zymun/k8s-packages)
+ok: [localhost] => (item=/var/lib/docker)
+
+TASK [Pull upstream by locked manifest digest] *********************************
+changed: [localhost]
+
+TASK [Inspect exact local image identity] **************************************
+ok: [localhost]
+
+TASK [Require the requested amd64 manifest] ************************************
+ok: [localhost]
+
+TASK [Create typed archive directory] ******************************************
+changed: [localhost]
+
+TASK [Allocate a private export file] ******************************************
+changed: [localhost]
+
+TASK [Save the immutable local image ID with native Docker] ********************
+changed: [localhost]
+
+TASK [Verify OCI blob hashes and descriptor closure] ***************************
+ok: [localhost]
+
+TASK [Compute archive file identity] *******************************************
+ok: [localhost]
+
+TASK [Require the frozen archive identity before publication] ******************
+ok: [localhost]
+
+TASK [Publish verified archive atomically within its filesystem] ***************
+changed: [localhost]
+
+TASK [Record file and manifest identities separately] **************************
+changed: [localhost]
+
+TASK [Remove only this invocation temporary export file] ***********************
+changed: [localhost]
+
+TASK [Read receipt] ************************************************************
+ok: [localhost]
+
+TASK [Read complete archive SHA256] ********************************************
+ok: [localhost]
+
+TASK [Require original file identity and requested source] *********************
+ok: [localhost]
+
+TASK [Independently verify every blob without Docker or a registry] ************
+ok: [localhost]
+
+TASK [Make verified public upstream archives readable by restricted tool containers] ***
+changed: [localhost]
+
+TASK [Report verified archive] *************************************************
+ok: [localhost] => {
+    "msg": {
+        "format": "oci",
+        "image": {
+            "config_digest": "sha256:82becee636459f5f9d5195b47b76c891b49cb8c6cf0913986b63e0b3e4b3328b",
+            "layers": 12,
+            "manifest_digest": "sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb"
+        },
+        "verified_blobs": 14
+    }
+}
+
+TASK [Inspect local host tool images after archive verification] ***************
+ok: [localhost] => (item=haproxy)
+ok: [localhost] => (item=skopeo)
+ok: [localhost] => (item=jenkins)
+
+TASK [Budget loading missing host images from cached archives] *****************
+skipping: [localhost]
+
+TASK [Load missing host tool images from verified archives] ********************
+skipping: [localhost] => (item=haproxy) 
+skipping: [localhost] => (item=skopeo) 
+skipping: [localhost] => (item=jenkins) 
+skipping: [localhost]
+
+TASK [Confirm host tools are present by the pinned manifest] *******************
+ok: [localhost] => (item=haproxy)
+ok: [localhost] => (item=skopeo)
+ok: [localhost] => (item=jenkins)
+
+TASK [Require each loaded host tool identity] **********************************
+ok: [localhost] => (item=haproxy)
+ok: [localhost] => (item=skopeo)
+ok: [localhost] => (item=jenkins)
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=62   changed=8    unreachable=0    failed=0    skipped=40   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/k8s/infrastructure'
+
+materials exit=0
+exit=0
