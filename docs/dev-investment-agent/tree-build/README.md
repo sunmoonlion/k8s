@@ -16,6 +16,7 @@
 | [`PRD/acceptance.md`](PRD/acceptance.md) | 产品验收矩阵 `AT-01`–`AT-28` |
 | [`decisions.md`](decisions.md) | 待定决策 `D1`–`D16` 与未验证事项 |
 | [`rules/constraints.md`](rules/constraints.md) | 动代码前必读的规则 `C-*` |
+| [`平台代码地图.md`](平台代码地图.md) | **平台线动刀前先看**（2026-10-20）：k8s 两层、`infrastructure/` 13 个模块、发布链对到文件、对象选择、D/E 必须搬的身份与数据、`gitops/` 约定与清单、六个应用仓怎么进集群、运行拓扑与运维脚本、乱在哪往哪收 |
 | [`SDD/architecture/`](SDD/architecture/README.md) | 模块之间怎么连：组成、拓扑、通道、对象、方向盘、契约、状态机、审批、工作区、安全、方法、Profile、不变量、责任、工程 |
 | [`SDD/modules/`](SDD/modules/) | 七块各自是什么：`0001-workbench`、`0002-web`、`0003-sandbox`、`0004-relay`、`0005-agent`、`0006-knowledge`、`0007-eval` |
 | `human-ai-turn/`（已删，Git 历史 `90b01d01:docs/dev-investment-agent/tree-build/human-ai-turn/prd/discussion-final.md`） | 值得留档的讨论：合并稿、四家评审、luna 本地环境 |
