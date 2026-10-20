@@ -1,0 +1,33 @@
+2026-10-20T19:04:50+08:00
+Read-only stop diagnostics after f15a3e9f deploy exit=2.
+Git process list for this user (requested by continuation card):
+3573185       00:00 /usr/bin/bash -c set -o pipefail bash <<'SH' 2>&1 | tee scripts/results/fable-b2b.20261020-184120.07-stop-diagnostics.txt set -e set -o pipefail date -Iseconds printf 'Read-only stop diagnostics after f15a3e9f deploy exit=2.\n' printf 'Git process list for this user (requested by continuation card):\n' ps -o pid,etime,args -u zymun | grep '[g]it ' || true printf 'Agent journal (complete output):\n' sudo -n journalctl -u sunmoon-jenkins-agent.service --since '20 min ago' --no-pager systemctl show sunmoon-jenkins.service --property=Id,ActiveState,UnitFileState,WantedBy systemctl show sunmoon-jenkins-agent.service --property=Id,LoadState,ActiveState,UnitFileState printf 'Actual source child object stores (read-only):\n' git -C /home/zymun/worktrees/fable/tpl-app/tpl-web-frontend rev-parse --path-format=absolute --git-common-dir git -C /home/zymun/worktrees/fable/knowbench-app/knowbench-backend rev-parse --path-format=absolute --git-common-dir printf 'Agent parent clone states, no alternates dependency expected:\n' python3 - <<'PY' from pathlib import Path import subprocess for name in ('k8s','tpl-app','knowfeed-app','knowbase-app','knowbench-app','knowlab-app','knowmart-app'):     p=Path('/mnt/sunmoon-data/jenkins/repos')/name     head=subprocess.check_output(['git','-C',str(p),'rev-parse','HEAD'],text=True).strip()     gitdir=Path(subprocess.check_output(['git','-C',str(p),'rev-parse','--path-format=absolute','--git-common-dir'],text=True).strip())     print(name,head,'alternates_exists='+str((gitdir/'objects/info/alternates').exists())) print('agent .venv exists='+str(Path('/mnt/sunmoon-data/jenkins/repos/k8s/infrastructure/.venv').exists())) print('agent tools exists='+str(Path('/mnt/sunmoon-data/jenkins/repos/k8s/infrastructure/.tools/bin').exists())) print('agent unit exists='+str(Path('/etc/systemd/system/sunmoon-jenkins-agent.service').exists())) PY printf 'Entry checks with certificate validation:\n' sudo -n curl --connect-timeout 10 --max-time 30 -sS -o /dev/null -w 'jenkins login %{http_code}\n' --cacert /etc/sunmoon/registry/tls/ca.crt --resolve jenkins.sunmoonai.com:30443:127.0.0.1 https://jenkins.sunmoonai.com:30443/login sudo -n curl --connect-timeout 10 --max-time 30 -sS -o /dev/null -w 'harbor health %{http_code}\n' --cacert /etc/sunmoon/registry/tls/ca.crt --resolve harbor.sunmoonai.com:30443:127.0.0.1 https://harbor.sunmoonai.com:30443/api/v2.0/health SH rc=${PIPESTATUS[0]} printf '\nexit=%s\n' "$rc" | tee -a scripts/results/fable-b2b.20261020-184120.07-stop-diagnostics.txt exit "$rc"
+Agent journal (complete output):
+-- No entries --
+Id=sunmoon-jenkins.service
+WantedBy=sunmoon-platform.target
+ActiveState=active
+UnitFileState=enabled
+Id=sunmoon-jenkins-agent.service
+LoadState=not-found
+ActiveState=inactive
+UnitFileState=
+Actual source child object stores (read-only):
+/home/zymun/master/tpl-app/.git/worktrees/tpl-app1/modules/tpl-web-frontend
+/home/zymun/master/knowbench-app/.git/worktrees/knowbench-app1/modules/knowbench-backend
+Agent parent clone states, no alternates dependency expected:
+k8s f15a3e9f59aec241ded5ebb3bb20e9f42766cdc5 alternates_exists=False
+tpl-app 2100a56869edcf0cc8e39c2d56652bf49ec1e5bf alternates_exists=False
+knowfeed-app 808b7e1de97272f4376674f58907e94896e29d0e alternates_exists=False
+knowbase-app a5051faf4c086e4d282217ce0e8225b4ec39bf8d alternates_exists=False
+knowbench-app c38dca6c913eaceef23f5fac6a7d611c42cb0246 alternates_exists=False
+knowlab-app 43cd00fc7c930419474a86cee0317dfe54dad2f4 alternates_exists=False
+knowmart-app a7f68471d5013ee972d4aeafdc6efb19a34ec228 alternates_exists=False
+agent .venv exists=False
+agent tools exists=False
+agent unit exists=False
+Entry checks with certificate validation:
+jenkins login 200
+harbor health 200
+
+exit=0

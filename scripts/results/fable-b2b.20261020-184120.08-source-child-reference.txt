@@ -1,0 +1,125 @@
+2026-10-20T19:05:15.610559+08:00
+Read-only reference path verification; no submodule update or clone.
+$ git -C /home/zymun/worktrees/fable/tpl-app rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/tpl-app/.git
+command exit=0
+$ git -C /mnt/sunmoon-data/jenkins/repos/tpl-app config -f .gitmodules --get-regexp '^submodule\..*\.path$'
+submodule.tpl-web-frontend.path tpl-web-frontend
+submodule.tpl-backend.path tpl-backend
+submodule.tpl-admin-frontend.path tpl-admin-frontend
+command exit=0
+$ git -C /home/zymun/worktrees/fable/tpl-app/tpl-web-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/tpl-app/.git/worktrees/tpl-app1/modules/tpl-web-frontend
+command exit=0
+tpl-app/tpl-web-frontend: parent-common-derived=/home/zymun/master/tpl-app/.git/modules/tpl-web-frontend; exists=True; actual-child-common=/home/zymun/master/tpl-app/.git/worktrees/tpl-app1/modules/tpl-web-frontend
+$ git -C /home/zymun/worktrees/fable/tpl-app/tpl-backend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/tpl-app/.git/worktrees/tpl-app1/modules/tpl-backend
+command exit=0
+tpl-app/tpl-backend: parent-common-derived=/home/zymun/master/tpl-app/.git/modules/tpl-backend; exists=False; actual-child-common=/home/zymun/master/tpl-app/.git/worktrees/tpl-app1/modules/tpl-backend
+$ git -C /home/zymun/worktrees/fable/tpl-app/tpl-admin-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/tpl-app/.git/worktrees/tpl-app1/modules/tpl-admin-frontend
+command exit=0
+tpl-app/tpl-admin-frontend: parent-common-derived=/home/zymun/master/tpl-app/.git/modules/tpl-admin-frontend; exists=False; actual-child-common=/home/zymun/master/tpl-app/.git/worktrees/tpl-app1/modules/tpl-admin-frontend
+$ git -C /home/zymun/worktrees/fable/knowfeed-app rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowfeed-app/.git
+command exit=0
+$ git -C /mnt/sunmoon-data/jenkins/repos/knowfeed-app config -f .gitmodules --get-regexp '^submodule\..*\.path$'
+submodule.knowfeed-admin-frontend.path knowfeed-admin-frontend
+submodule.knowfeed-web-frontend.path knowfeed-web-frontend
+submodule.knowfeed-backend.path knowfeed-backend
+command exit=0
+$ git -C /home/zymun/worktrees/fable/knowfeed-app/knowfeed-admin-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowfeed-app/.git/worktrees/knowfeed-app1/modules/knowfeed-admin-frontend
+command exit=0
+knowfeed-app/knowfeed-admin-frontend: parent-common-derived=/home/zymun/master/knowfeed-app/.git/modules/knowfeed-admin-frontend; exists=True; actual-child-common=/home/zymun/master/knowfeed-app/.git/worktrees/knowfeed-app1/modules/knowfeed-admin-frontend
+$ git -C /home/zymun/worktrees/fable/knowfeed-app/knowfeed-web-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowfeed-app/.git/worktrees/knowfeed-app1/modules/knowfeed-web-frontend
+command exit=0
+knowfeed-app/knowfeed-web-frontend: parent-common-derived=/home/zymun/master/knowfeed-app/.git/modules/knowfeed-web-frontend; exists=True; actual-child-common=/home/zymun/master/knowfeed-app/.git/worktrees/knowfeed-app1/modules/knowfeed-web-frontend
+$ git -C /home/zymun/worktrees/fable/knowfeed-app/knowfeed-backend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowfeed-app/.git/worktrees/knowfeed-app1/modules/knowfeed-backend
+command exit=0
+knowfeed-app/knowfeed-backend: parent-common-derived=/home/zymun/master/knowfeed-app/.git/modules/knowfeed-backend; exists=True; actual-child-common=/home/zymun/master/knowfeed-app/.git/worktrees/knowfeed-app1/modules/knowfeed-backend
+$ git -C /home/zymun/worktrees/fable/knowbase-app rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowbase-app/.git
+command exit=0
+$ git -C /mnt/sunmoon-data/jenkins/repos/knowbase-app config -f .gitmodules --get-regexp '^submodule\..*\.path$'
+submodule.knowbase-admin-frontend.path knowbase-admin-frontend
+submodule.knowbase-web-frontend.path knowbase-web-frontend
+submodule.knowbase-backend.path knowbase-backend
+command exit=0
+$ git -C /home/zymun/worktrees/fable/knowbase-app/knowbase-admin-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowbase-app/.git/worktrees/knowbase-app1/modules/knowbase-admin-frontend
+command exit=0
+knowbase-app/knowbase-admin-frontend: parent-common-derived=/home/zymun/master/knowbase-app/.git/modules/knowbase-admin-frontend; exists=True; actual-child-common=/home/zymun/master/knowbase-app/.git/worktrees/knowbase-app1/modules/knowbase-admin-frontend
+$ git -C /home/zymun/worktrees/fable/knowbase-app/knowbase-web-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowbase-app/.git/worktrees/knowbase-app1/modules/knowbase-web-frontend
+command exit=0
+knowbase-app/knowbase-web-frontend: parent-common-derived=/home/zymun/master/knowbase-app/.git/modules/knowbase-web-frontend; exists=True; actual-child-common=/home/zymun/master/knowbase-app/.git/worktrees/knowbase-app1/modules/knowbase-web-frontend
+$ git -C /home/zymun/worktrees/fable/knowbase-app/knowbase-backend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowbase-app/.git/worktrees/knowbase-app1/modules/knowbase-backend
+command exit=0
+knowbase-app/knowbase-backend: parent-common-derived=/home/zymun/master/knowbase-app/.git/modules/knowbase-backend; exists=True; actual-child-common=/home/zymun/master/knowbase-app/.git/worktrees/knowbase-app1/modules/knowbase-backend
+$ git -C /home/zymun/worktrees/fable/knowbench-app rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowbench-app/.git
+command exit=0
+$ git -C /mnt/sunmoon-data/jenkins/repos/knowbench-app config -f .gitmodules --get-regexp '^submodule\..*\.path$'
+submodule.knowbench-backend.path knowbench-backend
+submodule.knowbench-admin-frontend.path knowbench-admin-frontend
+submodule.knowbench-web-frontend.path knowbench-web-frontend
+command exit=0
+$ git -C /home/zymun/worktrees/fable/knowbench-app/knowbench-backend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowbench-app/.git/worktrees/knowbench-app1/modules/knowbench-backend
+command exit=0
+knowbench-app/knowbench-backend: parent-common-derived=/home/zymun/master/knowbench-app/.git/modules/knowbench-backend; exists=True; actual-child-common=/home/zymun/master/knowbench-app/.git/worktrees/knowbench-app1/modules/knowbench-backend
+$ git -C /home/zymun/worktrees/fable/knowbench-app/knowbench-admin-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowbench-app/.git/worktrees/knowbench-app1/modules/knowbench-admin-frontend
+command exit=0
+knowbench-app/knowbench-admin-frontend: parent-common-derived=/home/zymun/master/knowbench-app/.git/modules/knowbench-admin-frontend; exists=True; actual-child-common=/home/zymun/master/knowbench-app/.git/worktrees/knowbench-app1/modules/knowbench-admin-frontend
+$ git -C /home/zymun/worktrees/fable/knowbench-app/knowbench-web-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowbench-app/.git/worktrees/knowbench-app1/modules/knowbench-web-frontend
+command exit=0
+knowbench-app/knowbench-web-frontend: parent-common-derived=/home/zymun/master/knowbench-app/.git/modules/knowbench-web-frontend; exists=True; actual-child-common=/home/zymun/master/knowbench-app/.git/worktrees/knowbench-app1/modules/knowbench-web-frontend
+$ git -C /home/zymun/worktrees/fable/knowlab-app rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowlab-app/.git
+command exit=0
+$ git -C /mnt/sunmoon-data/jenkins/repos/knowlab-app config -f .gitmodules --get-regexp '^submodule\..*\.path$'
+submodule.knowlab-backend.path knowlab-backend
+submodule.knowlab-admin-frontend.path knowlab-admin-frontend
+submodule.knowlab-web-frontend.path knowlab-web-frontend
+command exit=0
+$ git -C /home/zymun/worktrees/fable/knowlab-app/knowlab-backend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowlab-app/.git/worktrees/knowlab-app1/modules/knowlab-backend
+command exit=0
+knowlab-app/knowlab-backend: parent-common-derived=/home/zymun/master/knowlab-app/.git/modules/knowlab-backend; exists=True; actual-child-common=/home/zymun/master/knowlab-app/.git/worktrees/knowlab-app1/modules/knowlab-backend
+$ git -C /home/zymun/worktrees/fable/knowlab-app/knowlab-admin-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowlab-app/.git/worktrees/knowlab-app1/modules/knowlab-admin-frontend
+command exit=0
+knowlab-app/knowlab-admin-frontend: parent-common-derived=/home/zymun/master/knowlab-app/.git/modules/knowlab-admin-frontend; exists=True; actual-child-common=/home/zymun/master/knowlab-app/.git/worktrees/knowlab-app1/modules/knowlab-admin-frontend
+$ git -C /home/zymun/worktrees/fable/knowlab-app/knowlab-web-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowlab-app/.git/worktrees/knowlab-app1/modules/knowlab-web-frontend
+command exit=0
+knowlab-app/knowlab-web-frontend: parent-common-derived=/home/zymun/master/knowlab-app/.git/modules/knowlab-web-frontend; exists=True; actual-child-common=/home/zymun/master/knowlab-app/.git/worktrees/knowlab-app1/modules/knowlab-web-frontend
+$ git -C /home/zymun/worktrees/fable/knowmart-app rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowmart-app/.git
+command exit=0
+$ git -C /mnt/sunmoon-data/jenkins/repos/knowmart-app config -f .gitmodules --get-regexp '^submodule\..*\.path$'
+submodule.knowmart-backend.path knowmart-backend
+submodule.knowmart-admin-frontend.path knowmart-admin-frontend
+submodule.knowmart-web-frontend.path knowmart-web-frontend
+command exit=0
+$ git -C /home/zymun/worktrees/fable/knowmart-app/knowmart-backend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowmart-app/.git/worktrees/knowmart-app1/modules/knowmart-backend
+command exit=0
+knowmart-app/knowmart-backend: parent-common-derived=/home/zymun/master/knowmart-app/.git/modules/knowmart-backend; exists=True; actual-child-common=/home/zymun/master/knowmart-app/.git/worktrees/knowmart-app1/modules/knowmart-backend
+$ git -C /home/zymun/worktrees/fable/knowmart-app/knowmart-admin-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowmart-app/.git/worktrees/knowmart-app1/modules/knowmart-admin-frontend
+command exit=0
+knowmart-app/knowmart-admin-frontend: parent-common-derived=/home/zymun/master/knowmart-app/.git/modules/knowmart-admin-frontend; exists=True; actual-child-common=/home/zymun/master/knowmart-app/.git/worktrees/knowmart-app1/modules/knowmart-admin-frontend
+$ git -C /home/zymun/worktrees/fable/knowmart-app/knowmart-web-frontend rev-parse --path-format=absolute --git-common-dir
+/home/zymun/master/knowmart-app/.git/worktrees/knowmart-app1/modules/knowmart-web-frontend
+command exit=0
+knowmart-app/knowmart-web-frontend: parent-common-derived=/home/zymun/master/knowmart-app/.git/modules/knowmart-web-frontend; exists=True; actual-child-common=/home/zymun/master/knowmart-app/.git/worktrees/knowmart-app1/modules/knowmart-web-frontend
+submodule total=18
+Remaining Git/SSH/Make/Ansible commands (exact executable name, excluding diagnostic shell text):
+exit=0
