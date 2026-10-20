@@ -88,7 +88,7 @@ Jenkins 要做的只有一件事：**把这串固定的 `make` 目标按固定�
 
 ## 八、顺序
 
-1. 宿主模块 `infrastructure/jenkins/`：控制器起来、入口路由、账号导入（不碰现网集群）。**代码已写（2026-10-20），等 luna 跑卡 fable-b1。**
+1. 宿主模块 `infrastructure/jenkins/`：控制器起来、入口路由、账号导入（不碰现网集群）。**2026-10-20 已在本地机做成**（卡 fable-b1，回执 `scripts/results/fable-b1.20261020-173741.md`、`…175616.md`）：归档 sha256 与锁一致；第 13 项预设导入；控制器 active/enabled、只绑回环；首启脚本建了管理员、关了匿名读；入口加路由后经 `jenkins.sunmoonai.com:30443` 登录页 200、Harbor 仍 200；`platform-status` 列出 Jenkins。还差第七节第 5 条所有者浏览器走查与边缘 404 核对。
 2. 代理单元加 `render-check`（只读），先在 render 上验代理的 sudo、命名空间、并列仓。
 3. `release` 流水线跑到第 5 步为止（在 `sources.yaml` 副本上，不提交）。
 4. 全程一次，含人批（第七节第 6 条）。
