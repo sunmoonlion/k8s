@@ -1,7 +1,7 @@
 # 会合点镜像源码（0004-relay）
 
 边缘上唯一的自研组件：三类出站客户（本地代理、沙箱、内网站点）的认证、配对、透传。无状态。
-设计见 [`docs/dev-investment-agent/tree-build/SDD/modules/0004-relay.md`](../../../../docs/dev-investment-agent/tree-build/SDD/modules/0004-relay.md)。
+设计见 [`docs/design/SDD/modules/0004-relay.md`](../../../../docs/design/SDD/modules/0004-relay.md)。
 
 | 文件 | 内容 |
 | --- | --- |
@@ -44,7 +44,7 @@
 
 ## 构建、部署与测
 
-构建：`make -C infrastructure platform-build OBJECT=relay-platform/relay`（配置见上一级 [component-images.yaml](../../component-images.yaml)）；部署声明在 [`gitops/components/relay-platform/relay/`](../../../../gitops/components/relay-platform/relay/)。本机跑与单测：
+构建：`make -C infrastructure platform-build OBJECT=relay-platform/relay`（配置见上一级 [component-images.yaml](../../component-images.yaml)）；部署声明在 [`gitops/components/relay-platform/relay/`](../../../../gitops/components/relay-platform/relay)。本机跑与单测：
 
 ```bash
 cd infrastructure/applications/component-images/relay

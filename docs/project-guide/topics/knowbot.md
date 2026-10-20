@@ -2,9 +2,9 @@
 
 > **地图位置**：第 7 层产品线里的**专家线**（knowlab → knowmart → knowbench）的现状。
 >
-> 最后更新：2026-10-17 ｜ 设计真源 [0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)（第一条通路）、[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)（定位与合规） ｜ 规则 [`C-L1`–`C-L5`](../../dev-investment-agent/tree-build/rules/constraints.md#合规)
+> 最后更新：2026-10-17 ｜ 设计真源 [0027](../../design/SDD/modules/0027-knowbot-first-path.md)（第一条通路）、[0026](../../design/SDD/modules/0026-knowlab.md)（定位与合规） ｜ 规则 [`C-L1`–`C-L5`](../../design/rules/constraints.md#合规)
 >
-> **现状**：0027 P1–P5 的代码都已写、已测、已推送，**未部署**，随 0027 P6 与改名的集群切换（0028 R5）一起发布：服务身份与内部入口（P1）、单点登录（P1b）、knowmart（P2）、knowlab 的受理、草稿、测试、交付与「我的数据」（P3、P5）、knowbench 的「请专家」（P4 第一部分）、作为运行方有人值守地跑测试（P4 第二部分，0027 §3.4）、专家运行时读用户数据（P5，0027 §3.5）。**不做**：knowlab 后端调模型起草清单（所有者定「暂时不用」，运营照用户的方法手工写清单）。集群里的 knowlab、knowmart 现在还是空应用；运行方只有工作台 knowbench（2026-10-17 由 investment 改名，[0028](../../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)）。
+> **现状**：0027 P1–P5 的代码都已写、已测、已推送，**未部署**，随 0027 P6 与改名的集群切换（0028 R5）一起发布：服务身份与内部入口（P1）、单点登录（P1b）、knowmart（P2）、knowlab 的受理、草稿、测试、交付与「我的数据」（P3、P5）、knowbench 的「请专家」（P4 第一部分）、作为运行方有人值守地跑测试（P4 第二部分，0027 §3.4）、专家运行时读用户数据（P5，0027 §3.5）。**不做**：knowlab 后端调模型起草清单（所有者定「暂时不用」，运营照用户的方法手工写清单）。集群里的 knowlab、knowmart 现在还是空应用；运行方只有工作台 knowbench（2026-10-17 由 investment 改名，[0028](../../design/SDD/modules/0028-knowbench-rename.md)）。
 
 ## 1. 是什么，谁做什么
 

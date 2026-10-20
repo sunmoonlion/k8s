@@ -2,7 +2,7 @@
 
 本导航适用新体系`infrastructure/`、`gitops/`与`docs/`。从五仓并列的platform-kind-v1/k8s根目录执行手册命令；新开发集群是sunmoon-kind，原始kind属于受保护旧环境。
 
-## 先读这三页（[`总纲/`](总纲/)：架构总纲是全图，另两页各是一块，每页开头写明自己的位置）
+## 先读这三页（[`总纲/`](总纲)：架构总纲是全图，另两页各是一块，每页开头写明自己的位置）
 
 | 页 | 讲什么 |
 | --- | --- |
@@ -10,7 +10,7 @@
 | [运行拓扑](总纲/运行拓扑.md) | 东西在哪、谁连谁；版本怎么进集群 |
 | [数据拓扑](总纲/数据拓扑.md) | 数据归属与三区 |
 
-动结构之前再看 [平台代码地图](dev-investment-agent/tree-build/平台代码地图.md)（代码事实，活页）。
+动结构之前再看 [平台代码地图](design/平台代码地图.md)（代码事实，活页）。
 
 ## 按任务进入
 
@@ -27,15 +27,16 @@
 | 物料/工具/版本来源 | [artifacts](../infrastructure/artifacts/README.md)、[tools](../infrastructure/tools/README.md) | 固定锁与校验 |
 | 理解摘要/声明/发布/晋级整条链 | [运行拓扑](总纲/运行拓扑.md) 第二部分 | 概念与顺序；命令以 Flux 手册为准 |
 | 发布部署声明/晋级/退回 | [Flux](../infrastructure/flux/README.md) | 不可变OCI与显式晋级 |
-| 用 Jenkins：打开、看节点、跑 render-check、读结果 | [使用说明](../infrastructure/jenkins/使用说明.md)（所有者向）、[jenkins](../infrastructure/jenkins/README.md)（维护者向） | 控制器+宿主代理+只读 render-check 已验（2026-10-20）；release 流水线待 B3 |
+| 用 Jenkins：打开、跑 render-check、跑 release 并点批、读结果 | [使用说明](ops/jenkins-使用说明.md)（所有者向，`ops/`）、[jenkins](../infrastructure/jenkins/README.md)（维护者向） | 控制器+宿主代理+render-check+完整 release 含人批已验（2026-10-21 release #7） |
 | 密钥/Secret生成和恢复 | [secrets](../infrastructure/flux/secrets.md) | SOPS/私有主备；统一轮换待实现 |
 | 组件阶段/依赖（stage.yaml） | [components](../infrastructure/components/README.md) | 图由组件目录汇成 |
 | 平台部署/检查 | [services](../infrastructure/services/README.md) | 平台bootstrap存在 |
 | 应用构建/发布/部署/真实检查 | [applications](../infrastructure/applications/README.md) | 4应用共享原生入口 |
-| 理解职责/适用边界 | [规则](dev-investment-agent/tree-build/rules/constraints.md#发布)「发布」`C-R*`、[项目总览](project-guide/overall-architecture.md) | 稳定设计 |
+| 理解职责/适用边界 | [规则](design/rules/constraints.md#发布)「发布」`C-R*`、[项目总览](project-guide/overall-architecture.md) | 稳定设计 |
 | 看用户、本地 link、沙箱、会合点、供给器怎么连 | [运行拓扑](总纲/运行拓扑.md) 第一部分 | 图与各自职责 |
-| 账号、电脑、本地 link、会合点四个词怎么对应 | [账号-电脑-link-会合点](账号-电脑-link-会合点.md) | 说明文档，不是地图；位置以后另定 |
-| 看还没完成的 | [待办账](dev-investment-agent/tree-build/pending-after-migration.md) 104–109 | 计划，不是实时状态 |
+| 账号、电脑、本地 link、会合点四个词怎么对应 | [账号-电脑-link-会合点](project-guide/账号-电脑-link-会合点.md) | 说明文档，不是地图 |
+| 看还没完成的 | [待办账](design/pending-after-migration.md) 104–109 | 计划，不是实时状态 |
+| 找设计、过程、运维说明 | [design/](design/README.md) 需求与设计、[process/](process/README.md) 流水线与派活卡、[ops/](ops/README.md) 运维说明 | 2026-10-21 起按内容分；之前回执里的 `docs/dev-investment-agent/tree-build` 读作 `docs/design`，其余读作 `docs/process` |
 
 ## 日常规则
 
@@ -43,7 +44,7 @@
 
 先计划/准备、审阅差异、提交与显式晋级，再原生部署和检查。render/stage/check可能有文件/API/探针写入；关闭enabled不等于停服。当前维护窗口2小时、容量底线10GiB，仍做VHDX未来增长和峰值检查，删除策略需独立批准。
 
-整套一键部署已实际重复部署通过；[统一启停/开机恢复](../infrastructure/host/lifecycle.md)候选、Harbor重启/删群持久化和长期空间管理尚待实际完成，具体出口在[未完成项](dev-investment-agent/tree-build/pending-after-migration.md)（104–109）。
+整套一键部署已实际重复部署通过；[统一启停/开机恢复](../infrastructure/host/lifecycle.md)候选、Harbor重启/删群持久化和长期空间管理尚待实际完成，具体出口在[未完成项](design/pending-after-migration.md)（104–109）。
 
 ## 正式文档怎么写（所有者确认，2026-10-04；2026-10-16 从仓根 AGENTS.md 移来）
 

@@ -4,7 +4,7 @@
 
 **层与线**：第 6 层应用层；数据线的终点，也是 [数据拓扑](../../总纲/数据拓扑.md) 定的来源数据唯一权威（三区）。
 
-把 knowfeed 登记来的数据集与文档加工成可查询的形态：数据集目录、口径、语义层，文档入库与检索。属于**数据线**：是我们自己的内部工具，**不作为用户专家的数据源**（`C-L2`）——现在沙箱仍经 MCP 接它，工作台对用户开放前改为默认不接（[0026](../../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「四」）。2026-10-15 由 `knowledge-app` 改名而来，数据从空库开始。路由与表名里的 `knowledge` 是「知识」这个领域词，不是旧应用名，保留。
+把 knowfeed 登记来的数据集与文档加工成可查询的形态：数据集目录、口径、语义层，文档入库与检索。属于**数据线**：是我们自己的内部工具，**不作为用户专家的数据源**（`C-L2`）——现在沙箱仍经 MCP 接它，工作台对用户开放前改为默认不接（[0026](../../design/SDD/modules/0026-knowlab.md)「四」）。2026-10-15 由 `knowledge-app` 改名而来，数据从空库开始。路由与表名里的 `knowledge` 是「知识」这个领域词，不是旧应用名，保留。
 
 ## 领域
 
@@ -16,7 +16,7 @@
 | 检索与 RAGFlow | 服务 `knowledge_retrieval_service`、`provider_delivery` | `knowledge_provider_operation` |
 | 投递 | Outbox / Inbox | `outbox_message`、`inbox_message` |
 
-设计：[0006](../../dev-investment-agent/tree-build/SDD/modules/0006-knowledge.md)、[语义层 0009](../../dev-investment-agent/tree-build/SDD/modules/0009-semantic.md)；后端说明在 `knowbase-backend/docs/`（`dataset-registry.md`、`semantic-layer.md`、`knowbase-provider.md`、`ingestion-polling.md` 等）。
+设计：[0006](../../design/SDD/modules/0006-knowledge.md)、[语义层 0009](../../design/SDD/modules/0009-semantic.md)；后端说明在 `knowbase-backend/docs/`（`dataset-registry.md`、`semantic-layer.md`、`knowbase-provider.md`、`ingestion-polling.md` 等）。
 
 ## 对外提供什么
 

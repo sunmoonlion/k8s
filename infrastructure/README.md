@@ -20,7 +20,7 @@ make -C infrastructure platform-check OBJECT=data-platform/postgresql
 本轮公开对象入口是候选，阶段所有权交接与真实轮换待维护单元（已删，Git 历史 `53767f6a:docs/platform/component-account-maintenance.md`）实施验收，已有服务仍由原运行源协调；原始启停已验证的边界见正式验收说明。
 
 
-日常任务从[维护导航](../docs/README.md)选择；架构见[职责与约束](../docs/dev-investment-agent/tree-build/rules/constraints.md#发布)，已验证范围与缺项见验收边界（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。
+日常任务从[维护导航](../docs/README.md)选择；架构见[职责与约束](../docs/design/rules/constraints.md#发布)，已验证范围与缺项见验收边界（已删，Git 历史 `53767f6a:docs/platform/verification.md`）。
 
 物料按组件归属查看与准备见[artifacts](artifacts/README.md)，应用构建/部署见[applications](applications/README.md)；日常可先运行`make -C infrastructure material-inventory`定位所需文件与Harbor目标。
 

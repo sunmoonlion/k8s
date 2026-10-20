@@ -27,4 +27,4 @@ TLS私钥/CA、数据库/Redis/Rabbit口令、关系服务token、AIStor许可�
 
 CA、age或业务口令轮换需保留旧解密能力/数据恢复、重新加密、服务端与客户端同步、验证、更新主备；当前没有一键轮换入口。编辑一个输入文件或提高Job代次不等于完成轮换。
 
-数据盘和系统盘同物理C盘；独立目录副本防误删而非硬件故障。机器外身份备份待定。整机/集群重建后SOPS恢复与业务持久化仍须[实际验收](../../docs/dev-investment-agent/tree-build/pending-after-migration.md)（104–109）。
+数据盘和系统盘同物理C盘；独立目录副本防误删而非硬件故障。机器外身份备份待定。整机/集群重建后SOPS恢复与业务持久化仍须[实际验收](../../docs/design/pending-after-migration.md)（104–109）。

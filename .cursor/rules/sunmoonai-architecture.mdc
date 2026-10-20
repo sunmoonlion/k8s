@@ -3,11 +3,11 @@ description: SunMoonAI 项目入口指针（改代码前先读 constraints，了
 alwaysApply: true
 ---
 
-**改代码前 → 先读 `docs/dev-investment-agent/tree-build/rules/constraints.md`**（按主题分组；违反者不进入讨论）。
+**改代码前 → 先读 `docs/design/rules/constraints.md`**（按主题分组；违反者不进入讨论）。
 
 要了解项目长什么样 → 读 `docs/project-guide/overall-architecture.md`（项目总览），
 再按其指路进入 `docs/project-guide/` 下的细节层；不复述其中规则。
 
-我们在建什么、做到哪了 → `docs/dev-investment-agent/pipeline.md`；要建什么 → `docs/dev-investment-agent/tree-build/PRD/requirement.md`。
+我们在建什么、做到哪了 → `docs/process/pipeline.md`；要建什么 → `docs/design/PRD/requirement.md`。
 
 五仓（tpl-app / knowfeed-app / knowbase-app / knowbench-app / k8s）必须并列放置。

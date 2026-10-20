@@ -1,6 +1,6 @@
 # 工作台服务流（service-v1）
 
-设计真源：`docs/dev-investment-agent/tree-build/SDD/modules/0022-agent-service-channel.md`（账 87）。
+设计真源：`docs/design/SDD/modules/0022-agent-service-channel.md`（账 87）。
 会合点这一侧 2026-10-12 做完（`relay.py` 的 `/service`、`open.kind`、`capabilities`），代理侧（0.4.0）与工作台侧随后；现网会合点镜像未换，不能据此判断现网已支持。
 
 ## 会合点做什么

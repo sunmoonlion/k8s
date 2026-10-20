@@ -1,7 +1,7 @@
 # 沙箱与供给器镜像源码（0003-sandbox）
 
 每用户一个 pod：钉版 `codex app-server`（模型循环，BYOK）+ 沙箱侧出站桥（到会合点）。设计见
-[`docs/dev-investment-agent/tree-build/SDD/modules/0003-sandbox.md`](../../../../docs/dev-investment-agent/tree-build/SDD/modules/0003-sandbox.md)。
+[`docs/design/SDD/modules/0003-sandbox.md`](../../../../docs/design/SDD/modules/0003-sandbox.md)。
 
 | 目录 | 内容 |
 | --- | --- |
@@ -26,7 +26,7 @@ pod
 
 ## 构建与部署
 
-构建：`make -C infrastructure platform-build OBJECT=sandbox-platform/sandbox`、`OBJECT=sandbox-platform/provisioner`（配置见上一级 [component-images.yaml](../../component-images.yaml)，产物发到 Harbor `platform/`，锁写进 `gitops/components/sandbox-platform/<对象>/image.lock.yaml`）。部署：供给器由 [`gitops/components/sandbox-platform/provisioner/`](../../../../gitops/components/sandbox-platform/provisioner/) 声明；沙箱不单独部署，由供给器按用户拉起。
+构建：`make -C infrastructure platform-build OBJECT=sandbox-platform/sandbox`、`OBJECT=sandbox-platform/provisioner`（配置见上一级 [component-images.yaml](../../component-images.yaml)，产物发到 Harbor `platform/`，锁写进 `gitops/components/sandbox-platform/<对象>/image.lock.yaml`）。部署：供给器由 [`gitops/components/sandbox-platform/provisioner/`](../../../../gitops/components/sandbox-platform/provisioner) 声明；沙箱不单独部署，由供给器按用户拉起。
 
 ## 按需拉起（供给器）
 

@@ -2,7 +2,7 @@
 
 > 最后更新：2026-10-16 ｜ 按 `k8s/sunmoonai/` 移出后的现状重写 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
-宿主、Harbor、入口、Jenkins、建群、Flux 与全部平台组件、应用的部署声明都在这里；项目的设计、规则、派活卡与本目录也在这里。没有应用业务源码，只有三个自研组件镜像（会合点、沙箱、供给器）的源码。**地图位置**：按 [架构总纲](../../总纲/架构总纲.md)，本仓装着第 1 层物料、第 3 层宿主、第 4 层集群、第 5 层平台的全部，第 6 层应用的部署声明，和横切 A、B、C 的实现；下面两张表按层分组。逐文件的代码事实在 [平台代码地图](../../dev-investment-agent/tree-build/平台代码地图.md)。
+宿主、Harbor、入口、Jenkins、建群、Flux 与全部平台组件、应用的部署声明都在这里；项目的设计、规则、派活卡与本目录也在这里。没有应用业务源码，只有三个自研组件镜像（会合点、沙箱、供给器）的源码。**地图位置**：按 [架构总纲](../../总纲/架构总纲.md)，本仓装着第 1 层物料、第 3 层宿主、第 4 层集群、第 5 层平台的全部，第 6 层应用的部署声明，和横切 A、B、C 的实现；下面两张表按层分组。逐文件的代码事实在 [平台代码地图](../../design/平台代码地图.md)。
 
 ## 结构
 
@@ -25,7 +25,7 @@ k8s/
 | 宿主层 | `host/` | WSL 宿主：数据盘与挂载、容量、开机恢复、维护账号；还装着整个平台的对象选择（`deployment.yaml`，B 段第 5 步挪出） |
 | 宿主层 | `registry/` | 宿主上的 Harbor（集群外独立持久化）；平台 CA 在这里 |
 | 宿主层 | `entry/` | 入口 HAProxy（`30443`，只看 SNI 分流，不持私钥）；没登记的域名默认仍转到原来的旧 kind 集群——旧集群受保护，新流程不接管它 |
-| 宿主层 | `jenkins/` | 宿主上的 Jenkins 控制器（交付链的 CI，2026-10-20 起，[0033](../../dev-investment-agent/tree-build/SDD/modules/0033-jenkins-on-host.md)） |
+| 宿主层 | `jenkins/` | 宿主上的 Jenkins 控制器（交付链的 CI，2026-10-20 起，[0033](../../design/SDD/modules/0033-jenkins-on-host.md)） |
 | 宿主层（边缘机） | `edge/` | 公网边缘（只在东京云 VM 上跑：Traefik + frps） |
 | 集群层 | `cluster/` | KIND 建群（三节点，节点挂载在数据盘）；生产集群的建法将是旁边的另一个模块 |
 | 交付链 | `flux/` | Flux 安装、发布 OCI 候选、晋级与退回（D 段变 `argocd/`） |
@@ -54,9 +54,9 @@ k8s/
 
 | 目录 / 文件 | 内容 |
 | --- | --- |
-| [`dev-investment-agent/`](../../dev-investment-agent/pipeline.md) | 流水线、`turn/`（通用开发规范）、`tree-build/`（需求、设计、规则、决策）、`switch-test/`（派活卡与两台机器同步）、`tools/`（文档门禁） |
+| [`design/`](../../design/README.md)、[`process/`](../../process/README.md)、[`ops/`](../../ops/README.md) | 2026-10-21 起按内容分：设计（需求、设计、规则、决策、账）、过程（流水线、`turn/`、`switch-test/` 派活卡与同步、`tools/` 门禁）、运维说明（所有者向） |
 | [`project-guide/`](../README.md) | 本目录：项目现在是什么样 |
-| [`reference/`](../../reference/) | 通用参考资料（行业、采集与数据、技术笔记、运维笔记） |
+| [`reference/`](../../reference) | 通用参考资料（行业、采集与数据、技术笔记、运维笔记） |
 | `README.md`、`总纲/运行拓扑.md` | 维护导航；拓扑与发布路径 |
 | （已删）改名手册、回执与工具 | 2026-10-16 删除，按 Git 历史 `3951246c` 取；遗留事项已移进待办账 97–101，对齐工具移到 `dev-investment-agent/switch-test/align_workstations.sh` |
 

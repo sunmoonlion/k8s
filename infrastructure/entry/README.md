@@ -66,4 +66,4 @@ systemctl status sunmoon-entry.service --no-pager
 sudo docker logs --tail 100 sunmoon-entry-proxy-1
 ```
 
-unit未启用boot；自动开机恢复、旧控制面抢端口及DNS变化仍需[独立交付](../../docs/dev-investment-agent/tree-build/pending-after-migration.md)（104–109）。
+unit未启用boot；自动开机恢复、旧控制面抢端口及DNS变化仍需[独立交付](../../docs/design/pending-after-migration.md)（104–109）。

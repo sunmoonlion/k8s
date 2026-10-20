@@ -2,7 +2,7 @@
 
 > **地图位置**：第 6 层应用层之间唯一允许的关系（[架构总纲](../../总纲/架构总纲.md) 第三节「应用 ↔ 应用」）。
 >
-> 最后更新：2026-10-16 ｜ 按代码现状重写 ｜ 相关规则见 [`constraints.md`](../../dev-investment-agent/tree-build/rules/constraints.md)「契约」`C-C1`–`C-C11`
+> 最后更新：2026-10-16 ｜ 按代码现状重写 ｜ 相关规则见 [`constraints.md`](../../design/rules/constraints.md)「契约」`C-C1`–`C-C11`
 
 ## 1. 有哪些
 
@@ -12,13 +12,13 @@
 | **retrieval v1**：检索与引用 | `knowbase-app/contracts/retrieval/v1/`（request、response、citation） | knowbench（锁 `knowbench-app/contracts/knowbase-retrieval-provider-lock.json`），服务身份 `knowbase:retrieve` | 提供方在；**knowbench 后端现在没有调用它的代码，只剩锁文件**——knowbench 取数据走的是沙箱里的 MCP（下一行） |
 | **knowbase MCP**：`/api/mcp/knowledge`（服务名 `sunmoon_knowbase`） | knowbase `interfaces/mcp/knowbase_mcp.py` | 沙箱里的 Codex，带 knowbench 签发的短期令牌 | 在用；工作台对用户开放前改为默认不接（`C-L2`） |
 | **knowbot-manifest v1**：分身清单外层 | `knowmart-app/contracts/knowbot/v1/`（由 knowmart 后端模型生成） | knowlab（交付，服务身份 `knowmart:deliver`；锁 `knowlab-app/contracts/knowmart-knowbot-manifest-lock.json`）、运行方（取清单，`knowmart:summon`；knowbench 锁 `knowbench-app/contracts/knowmart-knowbot-manifest-lock.json`） | 已写，未部署（[分身](knowbot.md)） |
-| **knowbot-test-run v1**：运行方跑测试 | `knowlab-app/contracts/knowbot-test-run/v1/`（由 knowlab 后端模型生成） | 运行方实现，knowlab 调用（`<运行方>:testrun`） | 两端已写，未部署（knowbench 持锁 `knowbench-app/contracts/knowlab-test-run-lock.json`；有人值守，[0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md) §3.4） |
-| **knowbot-data v1**：运行方读分身绑定的用户数据 | `knowlab-app/contracts/knowbot-data/v1/`（由 knowlab 后端模型生成：`python -m app.domain.knowbots.data_schema`） | 运行方调用（`knowlab:read`；knowbench 锁 `knowbench-app/contracts/knowlab-knowbot-data-lock.json`） | 两端已写，未部署（[0027](../../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md) §3.5） |
+| **knowbot-test-run v1**：运行方跑测试 | `knowlab-app/contracts/knowbot-test-run/v1/`（由 knowlab 后端模型生成） | 运行方实现，knowlab 调用（`<运行方>:testrun`） | 两端已写，未部署（knowbench 持锁 `knowbench-app/contracts/knowlab-test-run-lock.json`；有人值守，[0027](../../design/SDD/modules/0027-knowbot-first-path.md) §3.4） |
+| **knowbot-data v1**：运行方读分身绑定的用户数据 | `knowlab-app/contracts/knowbot-data/v1/`（由 knowlab 后端模型生成：`python -m app.domain.knowbots.data_schema`） | 运行方调用（`knowlab:read`；knowbench 锁 `knowbench-app/contracts/knowlab-knowbot-data-lock.json`） | 两端已写，未部署（[0027](../../design/SDD/modules/0027-knowbot-first-path.md) §3.5） |
 | **工作台 MCP**：`/api/mcp/workbench` | knowbench `interfaces/mcp/workbench_mcp.py` | 沙箱里的 Codex（读本项目别的对话与底稿） | 在用 |
 | **会合点协议**：本地代理、沙箱、工作台管理者的握手与透传 | 会合点源码 `k8s/infrastructure/applications/component-images/relay/`（`service-v1.md`、`local-permission-v1.md/.json`） | 本地代理（锁 `sunmoon-link/agent/contracts/relay-permissions.lock.json`）、沙箱、knowbench | 在用；协议字段（如 `role=agent`）不随产品改名 |
 | **web-interaction v1**：同一个应用内后端 ↔ 网页端 | `tpl-app/contracts/web-interaction-v1.consumer-vectors.json`（共享测试向量） | 各应用后端 DTO 与网页端 zod | 定义齐全，但各实例默认适配器是 `UnavailableWebInteractionAdapter`（返回 503），**没接线** |
 
-判断一个契约面能不能用，看上表「现状」与对应的 [`repos/`](../repos/) 文件，**不要看契约文件是否齐全**。
+判断一个契约面能不能用，看上表「现状」与对应的 [`repos/`](../repos) 文件，**不要看契约文件是否齐全**。
 
 ## 2. 锁怎么用
 

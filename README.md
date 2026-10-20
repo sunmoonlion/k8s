@@ -14,14 +14,14 @@ make -C infrastructure application-check APP=<应用>
 
 | 要找的 | 在哪 |
 | --- | --- |
-| 部署相关的规矩（配置归属、分层、发布、升级、清理） | [`constraints.md`](docs/dev-investment-agent/tree-build/rules/constraints.md)「发布」`C-R*` |
-| 还没做完的平台目标（开机恢复、Harbor 持久化、空间管理、灾备、云端建群） | [待办账](docs/dev-investment-agent/tree-build/pending-after-migration.md) 104–109 |
+| 部署相关的规矩（配置归属、分层、发布、升级、清理） | [`constraints.md`](docs/design/rules/constraints.md)「发布」`C-R*` |
+| 还没做完的平台目标（开机恢复、Harbor 持久化、空间管理、灾备、云端建群） | [待办账](docs/design/pending-after-migration.md) 104–109 |
 | 宿主（WSL、数据盘、开机服务、空间） | [infrastructure/host/](infrastructure/host/README.md) |
 | 集群、Harbor、入口、边缘机 | `infrastructure/` 下各目录的 README |
 | 应用构建与自研组件镜像 | [infrastructure/applications/](infrastructure/applications/README.md) |
-| 部署声明（Flux） | [gitops/](gitops/) |
-| 我们在建什么、做到哪了 | [docs/dev-investment-agent/pipeline.md](docs/dev-investment-agent/pipeline.md) |
+| 部署声明（Flux） | [gitops/](gitops) |
+| 我们在建什么、做到哪了 | [docs/process/pipeline.md](docs/process/pipeline.md) |
 | 项目总览 | [docs/project-guide/overall-architecture.md](docs/project-guide/overall-architecture.md) |
-| 通用参考资料（行业、采集、技术笔记、运维笔记） | [docs/reference/](docs/reference/) |
+| 通用参考资料（行业、采集、技术笔记、运维笔记） | [docs/reference/](docs/reference) |
 
 旧体系（`sunmoonai/` 下的旧部署、`utils/`、`legacy/`、`./sunmoon` 命令行）已于 2026-10-16 删除，要查看时按 Git 历史取（最后一个包含它们的提交是 `9a2abf12`）。

@@ -1,10 +1,10 @@
 # SunMoonAI 项目总览
 
-> 最后更新：2026-10-17 ｜ 工作台 investment 改名 knowbench、本地代理仓 runtime 改名 sunmoon-link（[0028](../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)：仓、代码、检出已改，**集群里跑的还是改名前的 investment**，随 0027 P6 按新名部署）；专家线 0027 P1–P5 代码已写未部署。2026-10-16 按 knowlab 定位重写的结构不变。
+> 最后更新：2026-10-17 ｜ 工作台 investment 改名 knowbench、本地代理仓 runtime 改名 sunmoon-link（[0028](../design/SDD/modules/0028-knowbench-rename.md)：仓、代码、检出已改，**集群里跑的还是改名前的 investment**，随 0027 P6 按新名部署）；专家线 0027 P1–P5 代码已写未部署。2026-10-16 按 knowlab 定位重写的结构不变。
 >
 > **本文件是进入这个项目的入口。**读完它，你应当知道：这个产品是什么、改动落在哪个仓、东西跑在哪里、怎么发布、去哪里查更细的。细节都在指路的文档里；本文不写易腐的值（提交号、镜像摘要、迁移头、版本号、副本数）。与代码冲突时**永远以代码为准**，并请指出本文件需要更新。
 >
-> **地图位置**（2026-10-20 按 [架构总纲](../总纲/架构总纲.md) 标注）：本页以**第 6 层应用层与第 7 层产品线**为主，是部分地图；第 3 节只给站点与现网的概貌（全图在 [运行拓扑](../总纲/运行拓扑.md)），第 6 节只给交付链的入口（宿主层、集群层、平台层的目录在 [`repos/k8s.md`](repos/k8s.md)，代码事实在 [平台代码地图](../dev-investment-agent/tree-build/平台代码地图.md)）。层次与归属以总纲为准，本页只写现状。
+> **地图位置**（2026-10-20 按 [架构总纲](../总纲/架构总纲.md) 标注）：本页以**第 6 层应用层与第 7 层产品线**为主，是部分地图；第 3 节只给站点与现网的概貌（全图在 [运行拓扑](../总纲/运行拓扑.md)），第 6 节只给交付链的入口（宿主层、集群层、平台层的目录在 [`repos/k8s.md`](repos/k8s.md)，代码事实在 [平台代码地图](../design/平台代码地图.md)）。层次与归属以总纲为准，本页只写现状。
 
 ---
 
@@ -21,11 +21,11 @@
 | 循环在云、执行在本机 | Codex app-server 跑在内网的每用户沙箱里；要碰用户本机文件时，exec-server 跑在用户电脑上的**本地代理**（英文 sunmoon-link）里 |
 | 界面是网页，边缘 + 内网 | 只装一个小的本地代理，不做桌面应用；公网只有无状态的薄边缘，业务在内网，深处只出站 |
 
-为什么这样定：规避证券投资咨询类监管——平台不向用户提供自己的投资分析或建议（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「五、合规分析」，对外收费前取得书面法律意见）。knowmart 对外开放（有资格的开发者把专家上架给别人用）是**持牌以后**的下一步。
+为什么这样定：规避证券投资咨询类监管——平台不向用户提供自己的投资分析或建议（[0026](../design/SDD/modules/0026-knowlab.md)「五、合规分析」，对外收费前取得书面法律意见）。knowmart 对外开放（有资格的开发者把专家上架给别人用）是**持牌以后**的下一步。
 
-需求的真源是 [需求](../dev-investment-agent/tree-build/PRD/requirement.md)；做到哪了、每一站谁做见 [流水线](../dev-investment-agent/pipeline.md)；所有者的决定见 [决策](../dev-investment-agent/tree-build/decisions.md)。
+需求的真源是 [需求](../design/PRD/requirement.md)；做到哪了、每一站谁做见 [流水线](../process/pipeline.md)；所有者的决定见 [决策](../design/decisions.md)。
 
-**现在有什么**（2026-10-17）：knowbench 工作台（聊天、工作、「专家」三种对话与项目——10-16 曾定「专家」改叫「分身」，10-18 定都叫专家、不改；每用户一个沙箱、会合点、供给器；Windows 本地代理经网页一行命令安装配对；集群里现在跑的是改名前的那一版，网址仍是 `investment.sunmoonai.com`）；knowfeed 采集、knowbase 数据集与语义层（经 MCP 给沙箱）；我们作为第一个普通用户在做的专家「中国A股上市公司财务分析与预测」（[0023](../dev-investment-agent/tree-build/SDD/modules/0023-fin-forecast.md)）。**还没上线**：knowlab-app、knowmart-app 已建成空应用并部署；专家的创建、存放、「请」、有人值守的测试、运行时读用户数据（0027 P1–P5）代码都已写、已测，未部署，攒到 P6 与改名的集群切换一起发布（[专家](topics/knowbot.md)）。
+**现在有什么**（2026-10-17）：knowbench 工作台（聊天、工作、「专家」三种对话与项目——10-16 曾定「专家」改叫「分身」，10-18 定都叫专家、不改；每用户一个沙箱、会合点、供给器；Windows 本地代理经网页一行命令安装配对；集群里现在跑的是改名前的那一版，网址仍是 `investment.sunmoonai.com`）；knowfeed 采集、knowbase 数据集与语义层（经 MCP 给沙箱）；我们作为第一个普通用户在做的专家「中国A股上市公司财务分析与预测」（[0023](../design/SDD/modules/0023-fin-forecast.md)）。**还没上线**：knowlab-app、knowmart-app 已建成空应用并部署；专家的创建、存放、「请」、有人值守的测试、运行时读用户数据（0027 P1–P5）代码都已写、已测，未部署，攒到 P6 与改名的集群切换一起发布（[专家](topics/knowbot.md)）。
 
 ## 2. 仓
 
@@ -37,14 +37,14 @@
 | [`knowfeed-app`](repos/knowfeed-app.md) | 采集：从公开来源取原件、建数据集、质量检查、向 knowbase 登记 | 同上 |
 | [`knowbase-app`](repos/knowbase-app.md) | 加工入库：数据集目录、口径、语义层，经 MCP 给沙箱；文档入库与检索（RAGFlow） | 同上 |
 | [`knowbench-app`](repos/knowbench-app.md) | 工作台：网页、工作台后端（对话、项目、专家运行、账、验收、交付）、给沙箱的记录 MCP、本地代理安装包的发放 | 同上 |
-| `knowlab-app` | 创建专家：受理、工程化、测试、交付（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)、[0027](../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
-| `knowmart-app` | 存放专家与「请」（先做私有模式，[0018](../dev-investment-agent/tree-build/SDD/modules/0018-advisor-market.md)、[0027](../dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
+| `knowlab-app` | 创建专家：受理、工程化、测试、交付（[0026](../design/SDD/modules/0026-knowlab.md)、[0027](../design/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
+| `knowmart-app` | 存放专家与「请」（先做私有模式，[0018](../design/SDD/modules/0018-advisor-market.md)、[0027](../design/SDD/modules/0027-knowbot-first-path.md)） | 由 tpl-app 实例化；三个子仓 |
 | [`k8s`](repos/k8s.md) | 部署与项目文档：宿主、仓库、入口、建群、Flux、全部平台组件与应用的部署声明；本目录也在此 | 无业务源码（自研的会合点、沙箱、供给器源码除外） |
 | [`sunmoon-link`](repos/sunmoon-link.md) | 本地代理（英文 sunmoon-link，命令现在还叫 `sunmoon-agent`，0028 R5 发新 Windows 包时改），装在用户电脑上 | 不参与集群部署 |
 
-2026-10-17 起，GitHub 与 gitee 上的 `investment-app`（连同三个子仓）改名为 `knowbench-*`，`runtime` 改名为 `sunmoon-link`，GitHub 的旧地址自动转到新仓；两台机器的检出已换名（[0028](../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md)）。
+2026-10-17 起，GitHub 与 gitee 上的 `investment-app`（连同三个子仓）改名为 `knowbench-*`，`runtime` 改名为 `sunmoon-link`，GitHub 的旧地址自动转到新仓；两台机器的检出已换名（[0028](../design/SDD/modules/0028-knowbench-rename.md)）。
 
-工位与同步：主目录 `~/master/<仓>`，工位 `~/worktrees/<工位>/<仓>`（`mb` 管理）；两台机器（远程机写、本地机跑）之间只经 Git origin 往来，所有者用 `~/switch-test/human-local.sh`、`human-remote.sh` 同步；派活卡与回执在 [`switch-test/`](../dev-investment-agent/switch-test/README.md)。
+工位与同步：主目录 `~/master/<仓>`，工位 `~/worktrees/<工位>/<仓>`（`mb` 管理）；两台机器（远程机写、本地机跑）之间只经 Git origin 往来，所有者用 `~/switch-test/human-local.sh`、`human-remote.sh` 同步；派活卡与回执在 [`switch-test/`](../process/switch-test/README.md)。
 
 ## 3. 东西跑在哪里（站点层与宿主层的概貌）
 
@@ -71,7 +71,7 @@
 - **公网边缘 = 东京云 VM**：Traefik + frps，对公网只放工作台、`casdoor`、`relay.sunmoonai.com`；工作台现在仍是改名前的 `investment.sunmoonai.com`，0028 R5 换成 `knowbench.sunmoonai.com`；knowfeed、knowbase、knowlab、knowmart 与各管理端只在所有者机器上可用。
 - 集群里的后端**不按公网名互连**：访问 Casdoor、会合点、供给器一律走集群内 Service（`*_BACKCHANNEL_ENDPOINT` 等）；公网名只出现在交给浏览器与本地代理的地址里。
 
-拓扑的图与一次「工作」的顺序：[`k8s/docs/总纲/运行拓扑.md`](../总纲/运行拓扑.md)；裁定与风险：[拓扑设计](../dev-investment-agent/tree-build/SDD/architecture/topology.md)。
+拓扑的图与一次「工作」的顺序：[`k8s/docs/总纲/运行拓扑.md`](../总纲/运行拓扑.md)；裁定与风险：[拓扑设计](../design/SDD/architecture/topology.md)。
 
 ## 4. 应用与数据怎么流
 
@@ -95,7 +95,7 @@
 | knowbase | 看有哪些数据、数据到哪一天、口径怎么算 | 数据集版本、登记、工具调用情况 |
 | knowfeed | （网页端没有功能页） | 批准申请、发起采集、看批次、关注清单 |
 
-管理端的业务页按应用角色 `admin`/`operator` 显示，现行部署没配角色白名单，admin 只看得到「治理控制台」「设置」（[待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 98）。
+管理端的业务页按应用角色 `admin`/`operator` 显示，现行部署没配角色白名单，admin 只看得到「治理控制台」「设置」（[待办账](../design/pending-after-migration.md) 98）。
 
 | 规则 | 说明 |
 | --- | --- |
@@ -104,7 +104,7 @@
 | 每步只写自己的库 | 跨应用不用分布式事务；投递走 Outbox/Inbox，消费方幂等 |
 | 新数据先定归属 | 新增数据实体先答五问（`C-D12`）；原始证据先存再处理、不覆盖（`C-D13`）（[数据](topics/data.md)） |
 
-knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/modules/0017-three-kinds-of-conversation.md)）；工作区 = 本地代理里加的白名单目录；底稿与结果放右边栏。
+knowbench 内部：三种对话（[0017](../design/SDD/modules/0017-three-kinds-of-conversation.md)）；工作区 = 本地代理里加的白名单目录；底稿与结果放右边栏。
 
 ## 5. 一个标准应用长什么样
 
@@ -124,7 +124,7 @@ knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/
 
 ## 6. 部署与发布（横切 A 交付链，`k8s` 仓）
 
-交付链横切各层：源码在应用层，镜像进物料层的 Harbor，声明在平台层与应用层的组件目录，调和在集群里。单机 WSL 里的 KIND 是第一期；同一套组件声明以后用于云端建群。Make 是公开入口，Ansible 编排，Flux 拥有集群声明。部署相关的规矩（入口与编排、配置归属、分层、镜像来源、升级、操作副作用、清理）在 [`constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md)「发布」`C-R*`，还没做完的平台目标在 [待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 104–109，目录见 [`repos/k8s.md`](repos/k8s.md)。
+交付链横切各层：源码在应用层，镜像进物料层的 Harbor，声明在平台层与应用层的组件目录，调和在集群里。单机 WSL 里的 KIND 是第一期；同一套组件声明以后用于云端建群。Make 是公开入口，Ansible 编排，Flux 拥有集群声明。部署相关的规矩（入口与编排、配置归属、分层、镜像来源、升级、操作副作用、清理）在 [`constraints.md`](../design/rules/constraints.md)「发布」`C-R*`，还没做完的平台目标在 [待办账](../design/pending-after-migration.md) 104–109，目录见 [`repos/k8s.md`](repos/k8s.md)。
 
 **发布链**（一张发布卡的标准动作，样板见 `switch-test/done/` 里的卡）：
 
@@ -140,7 +140,7 @@ knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/
   → make application-check APP=…
 ```
 
-现在由人照发布卡跑；2026-10-20 起平台线 B 段把这串入口交给宿主上的 Jenkins（[0033](../dev-investment-agent/tree-build/SDD/modules/0033-jenkins-on-host.md)），D 段换 Argo CD 调和，约束不变。要点：秘密在宿主私有目录里主备两份、逐字节一致，已有身份丢失就停、不重新生成；Flux 根与各阶段都是 **`prune: false`**，删掉的声明不会自动删集群对象，下线旧对象要专门清理（样板：改名时的清理工具，Git 历史 `3951246c:docs/rename-tools/r6_cleanup.py`）。组件 prepare 的先后顺序有一个已知隐患，修好前别跑 `platform-stage OBJECT=all`（[待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 97）。
+现在由人照发布卡跑；2026-10-20 起平台线 B 段把这串入口交给宿主上的 Jenkins（[0033](../design/SDD/modules/0033-jenkins-on-host.md)），D 段换 Argo CD 调和，约束不变。要点：秘密在宿主私有目录里主备两份、逐字节一致，已有身份丢失就停、不重新生成；Flux 根与各阶段都是 **`prune: false`**，删掉的声明不会自动删集群对象，下线旧对象要专门清理（样板：改名时的清理工具，Git 历史 `3951246c:docs/rename-tools/r6_cleanup.py`）。组件 prepare 的先后顺序有一个已知隐患，修好前别跑 `platform-stage OBJECT=all`（[待办账](../design/pending-after-migration.md) 97）。
 
 ## 7. 身份
 
@@ -149,7 +149,7 @@ knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/
 | 类别 | 机制 |
 | --- | --- |
 | 浏览器 | Casdoor OIDC 授权码 → 后端会话 cookie。每个应用的 Admin 与 Web 是两个独立边界：各有 client、回调、cookie、会话命名空间、Origin |
-| 组织 | 管理端只收 `built-in` 组织的令牌（admin 只用于 Casdoor 和管理后台）；网页端只收 `sunmoonai` 组织（所有者日常用自己的 sunmoonai 账号，[0014](../dev-investment-agent/tree-build/SDD/modules/0014-user-organization.md)） |
+| 组织 | 管理端只收 `built-in` 组织的令牌（admin 只用于 Casdoor 和管理后台）；网页端只收 `sunmoonai` 组织（所有者日常用自己的 sunmoonai 账号，[0014](../design/SDD/modules/0014-user-organization.md)） |
 | 服务间 | client credentials，按关系各一个身份：knowfeed → knowbase `knowbase:ingest`，knowbench → knowbase `knowbase:retrieve`；接收方核 audience 与主体绑定表。专家线的新关系（knowlab 交付 `knowmart:deliver`、工作台取清单 `knowmart:summon`、knowlab 调工作台跑测试 `knowbench:testrun`、工作台向 knowlab 读用户数据 `knowlab:read`）走通用机制 `common/backend/service-client`，已写未部署（[专家](topics/knowbot.md) §4） |
 | 沙箱 | knowbench 给每个沙箱签发短期令牌：调记录 MCP 与 knowbase MCP；模型 key 只在沙箱进程环境里 |
 | 本地代理 | 网页里一行命令安装与配对；连会合点用 knowbench 签发、会合点就地验签的短期令牌，可吊销 |
@@ -158,13 +158,13 @@ knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/
 
 | 层 | 在哪 | 违反后果 |
 | --- | --- | --- |
-| 动代码前必读的规则 `C-*`（含合规 `C-L*`） | [`rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) | 方案不进入讨论 |
-| 不变量 `I1`–`I14` | [`SDD/architecture/invariants.md`](../dev-investment-agent/tree-build/SDD/architecture/invariants.md) | 同上 |
+| 动代码前必读的规则 `C-*`（含合规 `C-L*`） | [`rules/constraints.md`](../design/rules/constraints.md) | 方案不进入讨论 |
+| 不变量 `I1`–`I14` | [`SDD/architecture/invariants.md`](../design/SDD/architecture/invariants.md) | 同上 |
 | 结构不变量测试 | 各后端 `app/tests/test_kernel_invariants.py` | 测试失败 |
 | 启动期配置校验 | 各后端 `core/config.py` | **进程起不来**，不降级运行 |
 | 部署准备的断言 | 各组件 `prepare.yaml` | stage 失败 |
-| 文档门禁 | `docs/dev-investment-agent/tools/doc-gate.py`、`anchor-gate.py`（钩子 `.githooks/`） | 提交被拒 |
-| 人的批准点 | [`turn/approvals.md`](../dev-investment-agent/turn/approvals.md) | 不能自动通过 |
+| 文档门禁 | `docs/process/tools/doc-gate.py`、`anchor-gate.py`（钩子 `.githooks/`） | 提交被拒 |
+| 人的批准点 | [`turn/approvals.md`](../process/turn/approvals.md) | 不能自动通过 |
 
 ## 9. 动手前必知的红线
 
@@ -178,7 +178,7 @@ knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/
 | 先改实例再改模板 | 公共缺陷必须先修 tpl-app 再同步实例 |
 | 重新生成已有身份、清私有目录、为清状态删 PVC 或 force apply | 身份与数据对不上，可能不可恢复 |
 | 集群内组件按公网名互连 | 公网解析一变就连错；要连就加 backchannel 变量 |
-| 把评测、验收、批准写成「系统会自动」 | 不得假设还不存在的自动化（[流水线](../dev-investment-agent/pipeline.md)） |
+| 把评测、验收、批准写成「系统会自动」 | 不得假设还不存在的自动化（[流水线](../process/pipeline.md)） |
 | 秘密进日志、回执、Git | 口令、令牌、私钥只在私有目录与 SOPS 里 |
 | 把「部署了」当成「可以对外服务」 | 对外前逐项过上线门（`C-R10`）；单机 KIND 不是生产高可用 |
 
@@ -188,16 +188,16 @@ knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/
 
 | 我要… | 读 |
 | --- | --- |
-| 知道这个产品要什么 | [需求](../dev-investment-agent/tree-build/PRD/requirement.md)、[`PRD/apps/`](../dev-investment-agent/tree-build/PRD/apps/README.md)、[决策](../dev-investment-agent/tree-build/decisions.md) |
-| 知道某块怎么设计 | [`SDD/architecture/`](../dev-investment-agent/tree-build/SDD/architecture/README.md)、[`SDD/modules/`](../dev-investment-agent/tree-build/SDD/modules/) |
-| 动代码前必读的规则 | [`rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) |
-| 一次求助 / 一次委托怎么走 | [流水线](../dev-investment-agent/pipeline.md)、[`turn/`](../dev-investment-agent/turn/README.md) |
+| 知道这个产品要什么 | [需求](../design/PRD/requirement.md)、[`PRD/apps/`](../design/PRD/apps/README.md)、[决策](../design/decisions.md) |
+| 知道某块怎么设计 | [`SDD/architecture/`](../design/SDD/architecture/README.md)、[`SDD/modules/`](../design/SDD/modules) |
+| 动代码前必读的规则 | [`rules/constraints.md`](../design/rules/constraints.md) |
+| 一次求助 / 一次委托怎么走 | [流水线](../process/pipeline.md)、[`turn/`](../process/turn/README.md) |
 | 拓扑、谁连谁、发布链 | [`k8s/docs/总纲/运行拓扑.md`](../总纲/运行拓扑.md) |
-| 部署、发版、某个组件怎么维护 | `k8s/README.md`、`infrastructure/` 与各组件目录的 `README.md`、[规则「发布」](../dev-investment-agent/tree-build/rules/constraints.md#发布) |
-| 派活卡、回执、两台机器怎么同步 | [`switch-test/`](../dev-investment-agent/switch-test/README.md)（`inbox/`、`done/`、`human-*.sh`）；回执在各仓 `scripts/results/` |
-| 改某个仓的代码 | [`repos/`](repos/) 对应文件 |
-| 跨应用契约、数据、专家 | [`topics/`](topics/) 对应文件（专家：[`topics/knowbot.md`](topics/knowbot.md)） |
-| 还没做的事 | [待办账](../dev-investment-agent/tree-build/pending-after-migration.md)、[接下来做什么](staging.md)；进行中的改名 investment→knowbench、runtime→sunmoon-link 见 [0028](../dev-investment-agent/tree-build/SDD/modules/0028-knowbench-rename.md) 与执行手册 `k8s/docs/rename.md`（回执 `docs/rename-receipts/`）；上一次改名（info→knowfeed、knowledge→knowbase，2026-10-14 至 16）的手册与回执已删，按 Git 历史 `3951246c:docs/rename.md` 取 |
+| 部署、发版、某个组件怎么维护 | `k8s/README.md`、`infrastructure/` 与各组件目录的 `README.md`、[规则「发布」](../design/rules/constraints.md#发布) |
+| 派活卡、回执、两台机器怎么同步 | [`switch-test/`](../process/switch-test/README.md)（`inbox/`、`done/`、`human-*.sh`）；回执在各仓 `scripts/results/` |
+| 改某个仓的代码 | [`repos/`](repos) 对应文件 |
+| 跨应用契约、数据、专家 | [`topics/`](topics) 对应文件（专家：[`topics/knowbot.md`](topics/knowbot.md)） |
+| 还没做的事 | [待办账](../design/pending-after-migration.md)、[接下来做什么](staging.md)；进行中的改名 investment→knowbench、runtime→sunmoon-link 见 [0028](../design/SDD/modules/0028-knowbench-rename.md) 与执行手册 `k8s/docs/process/rename-2026-10-15/README.md`（回执 `docs/process/rename-2026-10-15/receipts/`）；上一次改名（info→knowfeed、knowledge→knowbase，2026-10-14 至 16）的手册与回执已删，按 Git 历史 `3951246c:docs/rename.md` 取 |
 | 查当前钉的提交 / 镜像摘要 / 已晋级的源 | `infrastructure/applications/sources.yaml`、各组件 `image.lock.yaml`、`infrastructure/environments/kind/flux-source.yaml` |
 | 查集群里实际跑的 | `export KUBECONFIG=~/.kube/sunmoon-kind.config; kubectl -n app-platform-dev get deploy -o wide`（所有者机器） |
 | 复核本文的某条断言 | **读代码**，别的都不算数 |
@@ -212,7 +212,7 @@ knowbench 内部：三种对话（[0017](../dev-investment-agent/tree-build/SDD/
 
 ## 已知缺口
 
-- 专家线代码未部署（0027 P1–P5 已写，P6 一次发布）；工作台改名进行中（0028：R5 随 P6 按新名部署，R6 下线改名前的对象，之前集群里仍是 investment）；内置专家包还是对全体用户可选、沙箱还默认接 knowbase 数据服务——工作台对用户开放前要改完（[0026](../dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)「四」）。
-- 管理端业务页受角色缺口所限看不到；admin 的旧沙箱待按 0014 U4 回收（[待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 98、99）。
-- 单机 KIND：数据主备同在一块物理盘，机器外备份未落地；开机恢复的剩余验证、Harbor 持久化实测、长期空间管理、灾备、云端建群见 [待办账](../dev-investment-agent/tree-build/pending-after-migration.md) 104–109。
+- 专家线代码未部署（0027 P1–P5 已写，P6 一次发布）；工作台改名进行中（0028：R5 随 P6 按新名部署，R6 下线改名前的对象，之前集群里仍是 investment）；内置专家包还是对全体用户可选、沙箱还默认接 knowbase 数据服务——工作台对用户开放前要改完（[0026](../design/SDD/modules/0026-knowlab.md)「四」）。
+- 管理端业务页受角色缺口所限看不到；admin 的旧沙箱待按 0014 U4 回收（[待办账](../design/pending-after-migration.md) 98、99）。
+- 单机 KIND：数据主备同在一块物理盘，机器外备份未落地；开机恢复的剩余验证、Harbor 持久化实测、长期空间管理、灾备、云端建群见 [待办账](../design/pending-after-migration.md) 104–109。
 - 评测的自动化门未接；`scripts/test_switch_test_sync.py` 有 3 个用例早就失败。

@@ -26,4 +26,4 @@ make -C infrastructure foundations-check
 
 bootstrap安装SOPS并协调晋级基础声明，有API写入；check核声明/拉取/安全配置。服务检查的随机Pod另验证允许/拒绝边界，不打印凭据。密文恢复见[secrets](../../../infrastructure/flux/secrets.md)。
 
-共享namespace已包含业务应用统一app-platform-dev，Casdoor database Job在data，而Casdoor init/runtime在app。目录归属不等于运行位置。所有数据/Secret/Job保留，失败不能用删PV/PVC或放开网络绕过。完整机器/删群持久化和备份恢复见[未完成项](../../../docs/dev-investment-agent/tree-build/pending-after-migration.md)（104–109）。
+共享namespace已包含业务应用统一app-platform-dev，Casdoor database Job在data，而Casdoor init/runtime在app。目录归属不等于运行位置。所有数据/Secret/Job保留，失败不能用删PV/PVC或放开网络绕过。完整机器/删群持久化和备份恢复见[未完成项](../../../docs/design/pending-after-migration.md)（104–109）。

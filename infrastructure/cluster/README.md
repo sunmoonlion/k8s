@@ -53,6 +53,6 @@ infrastructure/.tools/bin/kubectl --context=kind-sunmoon-kind get pv,pvc -A
 
 ## 重启、重建和失败恢复
 
-本模块没有cluster-start/stop/delete统一target，也没有任意删除旧集群后自动认领同名新UID的流程。整套启停、开机顺序、重启DNS/IP更新和Harbor跨删群持久化验收属于[未完成项](../../docs/dev-investment-agent/tree-build/pending-after-migration.md)（104–109）。
+本模块没有cluster-start/stop/delete统一target，也没有任意删除旧集群后自动认领同名新UID的流程。整套启停、开机顺序、重启DNS/IP更新和Harbor跨删群持久化验收属于[未完成项](../../docs/design/pending-after-migration.md)（104–109）。
 
 不得为了清运行状态直接删节点或Docker卷。重建先明确数据处理/备份、receipt新旧身份、节点存储映射、Flux/SOPS恢复、Harbor完整摘要及新节点拉取验收；目录挂载正确不等于这些已验证。失败检查保留节点与证据，按[宿主诊断](../host/troubleshooting.md)和[Flux诊断](../flux/README.md#故障与退回)定位。

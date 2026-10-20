@@ -9,27 +9,27 @@
 **动结构前必读**——七层加三横切：每样东西归哪一层、层间只有哪几种关系、新东西往哪放（所有者 2026-10-20 定）；代码事实在代码地图：
 
 `docs/总纲/架构总纲.md`
-`docs/dev-investment-agent/tree-build/平台代码地图.md`
+`docs/design/平台代码地图.md`
 
 我们在建什么、做到哪了、每一站谁做：
 
-`docs/dev-investment-agent/pipeline.md`
+`docs/process/pipeline.md`
 
 **动代码前必读**——代码必须符合的规则（按主题分组，含合规 `C-L*`）：
 
-`docs/dev-investment-agent/tree-build/rules/constraints.md`
+`docs/design/rules/constraints.md`
 
 要建什么（需求的真源）：
 
-`docs/dev-investment-agent/tree-build/PRD/requirement.md`
+`docs/design/PRD/requirement.md`
 
 任何开发任务都要遵守的通用开发规范，以及自己那一类（PRD、SDD、IMP、UAT）的规则：
 
-`docs/dev-investment-agent/turn/README.md`
+`docs/process/turn/README.md`
 
 涉及人的批准、裁量或终审时（人介入、权力表、审批档位）：
 
-`docs/dev-investment-agent/turn/approvals.md`
+`docs/process/turn/approvals.md`
 
 部署、运维、某个组件怎么维护：
 

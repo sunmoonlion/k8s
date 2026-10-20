@@ -1,6 +1,6 @@
 # knowlab-app
 
-knowlab（知识实验室）：用户的想法与数据做成用户自己的分身（knowbot）；我们只做工程化与测试。集群里跑的仍是空应用那一版；代码里已有分身的提交、草稿、测试与交付（[0027](../../../../docs/dev-investment-agent/tree-build/SDD/modules/0027-knowbot-first-path.md) P3：网页端「提交一个想法」「我在做的分身」，管理端「分身草稿」，测试契约 `knowbot-test-run/v1`；以及「我的数据」，存自己的对象存储桶，见 [storage](knowlab-backend/storage/README.md)），随 0027 P6 一起部署。出站服务身份是后端 config 的 `service_clients`：交付 knowmart（`knowmart:deliver`）、调运行方跑测试（`knowbench:testrun`）。接收的是 `service_receivers`：运行方读分身绑定的用户数据（`knowlab:read`，契约 `knowbot-data/v1`，0027 §3.5），内部入口在 traefik service-access 的 `service_access_routes.knowlab`。设计见 [0026](../../../../docs/dev-investment-agent/tree-build/SDD/modules/0026-knowlab.md)。
+knowlab（知识实验室）：用户的想法与数据做成用户自己的分身（knowbot）；我们只做工程化与测试。集群里跑的仍是空应用那一版；代码里已有分身的提交、草稿、测试与交付（[0027](../../../../docs/design/SDD/modules/0027-knowbot-first-path.md) P3：网页端「提交一个想法」「我在做的分身」，管理端「分身草稿」，测试契约 `knowbot-test-run/v1`；以及「我的数据」，存自己的对象存储桶，见 [storage](knowlab-backend/storage/README.md)），随 0027 P6 一起部署。出站服务身份是后端 config 的 `service_clients`：交付 knowmart（`knowmart:deliver`）、调运行方跑测试（`knowbench:testrun`）。接收的是 `service_receivers`：运行方读分身绑定的用户数据（`knowlab:read`，契约 `knowbot-data/v1`，0027 §3.5），内部入口在 traefik service-access 的 `service_access_routes.knowlab`。设计见 [0026](../../../../docs/design/SDD/modules/0026-knowlab.md)。
 
 ## 配置导航
 

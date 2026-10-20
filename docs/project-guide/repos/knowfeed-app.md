@@ -15,7 +15,7 @@
 | 采集申请与关注清单 | `domain/securities/requests.py` | `security_request`、`security_request_requester`、`security_watchlist`、`security_watchlist_log` |
 | 投递 | `application/services/delivery_outbox.py`、`infrastructure/messaging/` | `outbox_message`、`inbox_message`、`distribution_record` |
 
-设计：[0008](../../dev-investment-agent/tree-build/SDD/modules/0008-info.md)；后端自己的说明在 `knowfeed-backend/docs/`（证券入库 `SECURITY_INGESTION.md`、报表抽取 `REPORT_EXTRACTION.md`、投递与调度的几份）。
+设计：[0008](../../design/SDD/modules/0008-info.md)；后端自己的说明在 `knowfeed-backend/docs/`（证券入库 `SECURITY_INGESTION.md`、报表抽取 `REPORT_EXTRACTION.md`、投递与调度的几份）。
 
 ## 和别的应用
 
