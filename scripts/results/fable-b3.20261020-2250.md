@@ -327,4 +327,39 @@ cd ~/worktrees/fable/k8s && git pull --ff-only origin fable \
 
 ### 推回原文
 
-（推送后补写）
+```text
+$ git pull --ff-only origin fable
+   0999ea79..4e229f75  fable      -> origin/fable
+Updating 0999ea79..4e229f75
+Fast-forward
+pull exit=0
+（带进 42d7e0b1、4e229f75 两笔：所有者关于「平台线 luna 就地修的授权」在 README 加了一行又撤回，与本卡两处故障无关）
+
+$ git add …（三个路径）&& git status --short
+A  docs/dev-investment-agent/switch-test/inbox/fable/2026-10-20-fable-b3-v2-two-faults.md
+M  scripts/results/fable-b2e.20261020-213201.md
+A  scripts/results/fable-b3.20261020-2250.md
+
+$ git commit -m "fable-b3 第二版停在第三节：agent.yaml retries 模板与 PIN=keep 检出冲突（qwen）"
+[fable e74f7aed] fable-b3 第二版停在第三节：agent.yaml retries 模板与 PIN=keep 检出冲突（qwen）
+ 3 files changed, 358 insertions(+)
+ create mode 100644 docs/dev-investment-agent/switch-test/inbox/fable/2026-10-20-fable-b3-v2-two-faults.md
+ create mode 100644 scripts/results/fable-b3.20261020-2250.md
+commit exit=0
+
+$ git push origin fable
+To https://github.com/sunmoonlion/k8s.git
+   4e229f75..e74f7aed  fable -> fable
+remote: Powered by GITEE.COM [1.1.23]
+remote: Set trace flag 3b4491b4
+To https://gitee.com/sunmoonlion/k8s.git
+   4e229f75..e74f7aed  fable -> fable
+push exit=0
+
+$ git status --short          → 空
+$ git rev-list --left-right --count origin/fable...HEAD → 0  0
+```
+
+三样改动：本回执新增（`A`）、给远程的一页新增（`A`）、b2e 回执追加更正（`M`，只在末尾追加一节，上文一字未改）。**卡没有 `git mv` 到 `done/`**，仍在 `inbox/qwen/`（原因见本节开头）。`e74f7aed` 已上 `origin/fable`（该仓 origin 配双 URL，GitHub 与 Gitee 同时推到同一号）。本节这段推回原文是推完之后补写的，故还有一笔只动本回执的补写提交。**没改任何代码**：`agent.yaml:303`、`release.groovy`、`build.yaml:114`、`sources.yaml` 全部原样未动，修法只作为候选写在回执与页子里，交远程决定。
+
+`/tmp/b3v2-*` 九个日志（`sec2`、`agent-stop`、`stop`、`deploy`、`agent-start`、`status`、`agent-status`、`release`、`sec34`）已删，`ls /tmp/b3v2-*` 报 `no matches found`。`infrastructure/.build/jenkins/` 下这轮没产生新日志（停点 A 使 `make` 没走到取日志那步）。
