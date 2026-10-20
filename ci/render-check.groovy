@@ -44,25 +44,30 @@ def run(params, reposDir) {
     }
 
     stage('候选与已提交的差异') {
-        // 剔掉摘要行后看工作负载有没有结构变化；存成产物给人看，不判过不过
-        sh '''
-set -o pipefail
-out=.build/render-check
+        // 渲染器把候选写在 infrastructure/.build/components/<路径>，与 gitops/components/<路径> 同形
+        //（components/render.yaml 的 build 变量）。剔掉摘要行后看工作负载有没有结构变化；存成产物给人看，不判过不过。
+        // sh 步默认用 /bin/sh（本机是 dash，不认 pipefail），所以第一行点名 bash。
+        sh '''#!/bin/bash
+set -euo pipefail
+cand=infrastructure/.build/components/app-platform
+out=infrastructure/.build/render-check
 mkdir -p "$out"
 : > "$out/diff.txt"
-for d in .build/components/app-platform/*/; do
+for d in "$cand"/*/; do
+  [ -d "$d" ] || continue
   app=$(basename "$d")
-  for f in $(cd "$d" && find . -name '*.yaml' -not -name '*.sops.yaml' | sort); do
+  while IFS= read -r f; do
+    f=${f#./}
     if [ -f "gitops/components/app-platform/$app/$f" ]; then
-      diff -u "gitops/components/app-platform/$app/$f" "$d/$f" | grep -v -E 'sha256:|digest|^(\\+\\+\\+|---) ' >> "$out/diff.txt" || true
+      diff -u "gitops/components/app-platform/$app/$f" "$d$f" | grep -v -E 'sha256:|digest|^([+]{3}|-{3}) ' >> "$out/diff.txt" || true
     else
       echo "NEW $app/$f" >> "$out/diff.txt"
     fi
-  done
+  done < <(cd "$d" && find . -name '*.yaml' -not -name '*.sops.yaml' | sort)
 done
 wc -l "$out/diff.txt"
 '''
-        archiveArtifacts artifacts: '.build/render-check/diff.txt', allowEmptyArchive: true
+        archiveArtifacts artifacts: 'infrastructure/.build/render-check/diff.txt', allowEmptyArchive: true
     }
 
     stage('工作区回到干净') {
