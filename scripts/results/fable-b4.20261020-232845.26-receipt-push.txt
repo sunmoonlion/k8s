@@ -1,0 +1,8 @@
+To https://github.com/sunmoonlion/k8s.git
+   48838294b..f05b3f18b  fable -> fable
+remote: Powered by [01;33mGITEE.COM [0m[1.1.23]        
+remote: Set trace flag 4a4f92b9        
+To https://gitee.com/sunmoonlion/k8s.git
+   48838294b..f05b3f18b  fable -> fable
+
+exit=0
