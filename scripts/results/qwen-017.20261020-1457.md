@@ -1,8 +1,8 @@
-# qwen-017 回执：knowlab 后端——测试通过不再随刷新自动交付（停在 3.2 构建）
+# qwen-017 回执：knowlab 后端——测试通过不再随刷新自动交付（第一次停在 3.2；改卡为 7 行钉后全过并上线）
 
 - 卡：`docs/dev-investment-agent/switch-test/inbox/qwen/2026-10-20-qwen-017-knowlab-delivery-guard.md`（95 行）
 - 执行者：Qwen（本地机）；开工前所有者原话「已经都好了你直接做发卡」，追加令「工作台那次请专家已经交回了，前提满足，照 qwen-017 做。第二节那条查询照样跑，status='testing' 必须是 0 行才往下走，不是 0 行就停下来告诉我。做完在 k8s 本地提交，不推，然后跟我说「跑完了」」
-- 结果：**停在 3.2**。第一节、第二节、3.1 全对卡；3.2 `platform-build OBJECT=app-platform/knowlab-app` 在 **web 组件**上 `exit=2`。按卡面「任何一步 exit 不是 0 就停，输出原样进回执，不重试、不退回」停住，未发布、未晋级、未部署、未推。
+- 结果：**第一次停在 3.2**（3 行钉），Opus 改卡为 **7 行钉**后重做，**第二次全过并发布上线**（详第七节）。第一至六节保留为第一次的历史记录，不改一字；最终口径以第七节为准。
 - 纪律边界：全程只读 + 卡面明令的改钉与构建；**没有** `rollout restart`、没有写库、没有碰 knowbench/knowmart/测试电脑/沙箱；`web_*`/`admin_*` 四行钉一字未动；一次性脚本无（命令块直接跑），`/tmp` 日志用完即删（见第五节）。
 
 ## 一、第一节核对（只读）——全对卡
@@ -170,9 +170,189 @@ deployment_id: knowlab-backend-57ac0aeb69b53a21
 
 - 只读 SELECT 一条（第二节），未写库；未替所有者点任何页面；未 `rollout restart`；未推（`git push` 一次没跑，qwen-013 的 2.3 末尾那行 `git push origin qwen` 按本卡「不推」明令**跳过**）。
 - key/口令未落任何输出（DB 口令走 Pod 内 `cat /run/auth/password`，未打印）。
-- 一次性产物：`/tmp/q017-sec1.log`、`/tmp/q017-sec2.log`、`/tmp/q017-pin.log`、`/tmp/q017-32.log`、`/tmp/q017-build-knowlab.log`。关键原文已全部抄进本回执，**除构建日志 `/tmp/q017-build-knowlab.log` 暂留一份供 Opus 复核外，其余已删**；Opus 说不用了我就删掉它。仓内无 `scripts/tmp-*`、无一次性脚本文件（命令块直接在 bash 里跑）。
+- 一次性产物：`/tmp/q017-sec1.log`、`/tmp/q017-sec2.log`、`/tmp/q017-pin.log`、`/tmp/q017-32.log`、`/tmp/q017-build-knowlab.log`。关键原文已全部抄进本回执，当时暂留构建日志一份供 Opus 复核；**改卡后 Opus 明令不用留，已连同第二次的一起全部删除**（详见 7.6）。仓内无 `scripts/tmp-*`、无一次性脚本文件（命令块直接在 bash 里跑）。
 - 本回执在 k8s 本地提交，**不推**（推回是所有者的 human-remote.sh），等 Opus 审。
 
-## 六、结论
+## 六、第一次的结论（历史，已被第七节取代）
 
-第一节 7 项全对卡、第二节 0 行、3.1 三行钉精确落地（`web_*`/`admin_*` 四行未动）；3.2 应用级构建在 web 组件的源修订断言上 `exit=2`，根因是卡面「两个前端的钉不动」与父仓 `43cd00fc` 已把两个前端 gitlink 推到新号互斥（只读证据见第三节三值对照）。按卡面停住，未重试、未退回、未发布、未部署、未推。需要所有者/Opus 在两条候选口径里定一条，再往下走 3.2–3.3 与第四节。
+第一节 7 项全对卡、第二节 0 行、3.1 三行钉精确落地（`web_*`/`admin_*` 四行未动）；3.2 应用级构建在 web 组件的源修订断言上 `exit=2`，根因是卡面「两个前端的钉不动」与父仓 `43cd00fc` 已把两个前端 gitlink 推到新号互斥（只读证据见第三节三值对照）。按卡面停住，未重试、未退回、未发布、未部署、未推。当时提的两条候选里，**「只建后端组件」被 Opus 否决**：`build_kind=component` 指的是平台自己的组件镜像（如 postgresql、traefik），不是应用里的后端；就算只建了后端，`sources.yaml` 的钉与父仓 gitlink 还是对不上，以后整应用构建还会卡。故采用第二条：7 行钉全换、两个前端照样重建一次（代码与线上一字不差，摘要会变）。
+
+## 七、第二次（7 行钉，改卡后）——全过，已上线
+
+改卡原文要点（Opus）：钉改成 7 行，网页、管理端也钉到父仓 `43cd00fc` 里记的号；两个前端照样重建一次（代码和线上一字不差，摘要会变）；`knowlab-web`、`knowlab-admin` 的摘要会变，**各自和自己的 `image.lock` 一致就算过**。
+
+### 7.1 退回失败那次留下的两处改动
+
+```text
+$ git checkout -- infrastructure/applications/sources.yaml gitops/components/app-platform/knowlab-app/knowlab-backend/image.lock.yaml
+checkout exit=0
+-- git status --short（应为空）--
+(空)
+-- HEAD 仍是回执提交 --
+5227c512 docs(qwen-017): 停在 3.2——…本地提交不推
+```
+
+工作区退回后为空 ✓（回执提交 `5227c512` 不受影响 ✓）。
+
+### 7.2 3.1 改钉（7 行）
+
+改卡给的 python 原样跑，输出原文：
+
+```text
+pin exit=0
+ infrastructure/applications/sources.yaml | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
++行数: 7
+== 实际改了哪几行 ==
+-    parent_revision: aa51ed9eb8ca1decf6124b0a1c93c1a68b6cf515
+-    backend_parent_revision: 7c9731cdbe79f8be7f00bf6c73ebcf7a70dffd8e
+-    backend_revision: 7c9731cdbe79f8be7f00bf6c73ebcf7a70dffd8e
+-    web_parent_revision: 6da5cef54da34d616146530a09cbf8ae73c21acd
+-    web_revision: 6da5cef54da34d616146530a09cbf8ae73c21acd
+-    admin_parent_revision: d46b6bd5ad03c3675f165f573713c82e4cafb5bf
+-    admin_revision: d46b6bd5ad03c3675f165f573713c82e4cafb5bf
++    parent_revision: 43cd00fc7c930419474a86cee0317dfe54dad2f4
++    backend_parent_revision: e3287024050aef46b6d6954e5e8ab6f59294eaad
++    backend_revision: e3287024050aef46b6d6954e5e8ab6f59294eaad
++    web_parent_revision: d7589583436d7d42d90e390f91508acb6ed76a39
++    web_revision: d7589583436d7d42d90e390f91508acb6ed76a39
++    admin_parent_revision: 2d5c1124c0b3f76ec0efda2371fadbd5f13787b0
++    admin_revision: 2d5c1124c0b3f76ec0efda2371fadbd5f13787b0
+```
+
+逐项对卡：`pin exit=0` ✓；只动 `sources.yaml` ✓；最后一行 **7** ✓。改后 knowlab 段七个钉与第一节量到的父仓/子仓号逐一相等（后端 `e3287024…`、网页 `d7589583…`、管理端 `2d5c1124…`，父 `43cd00fc…`）。
+
+### 7.3 3.2 构建、暂存、计划（qwen-014 一段 2.2 原命令，日志名 `q017-*`）
+
+```text
+build knowlab exit=0
+== 变了的镜像锁 ==
+gitops/…/knowlab-admin-frontend/image.lock.yaml: digest: sha256:57422c78f2f4701ca14b1aab5f2ddc0c8cc798157f76637bb3c59189eced5f1e source_revision: 2d5c1124c0b3f76ec0efda2371fadbd5f13787b0
+gitops/…/knowlab-backend/image.lock.yaml:       digest: sha256:57ac0aeb69b53a21c117413d4651511631be49fc7929bc7ef7d258e807951fe5 source_revision: e3287024050aef46b6d6954e5e8ab6f59294eaad
+gitops/…/knowlab-web-frontend/image.lock.yaml:  digest: sha256:5c43b733dbdfc22da11770620062697263afb27cb14f05c40a2ab591abeb9cc0 source_revision: d7589583436d7d42d90e390f91508acb6ed76a39
+stage knowlab exit=0
+key-check-done            （前面没有任何文件名，即无私钥/公钥泄入 gitops）
+== 暂存产物归属统计 ==
+      2 components/app-platform/knowlab-app/knowlab-admin-frontend
+      8 components/app-platform/knowlab-app/knowlab-backend
+      2 components/app-platform/knowlab-app/knowlab-web-frontend
+== 越界闸门：gitops 里非 knowlab 的改动（应为空）==
+(空)
+== 运行时 workload diff（除镜像与摘要）==
+-- knowlab-app/knowlab-backend/runtime/workload.yaml
+-  DEPLOYMENT_ID: "knowlab-backend-afca9881f01d4a94"
++  DEPLOYMENT_ID: "knowlab-backend-57ac0aeb69b53a21"
+-- knowlab-app/knowlab-web-frontend/workload.yaml
+-            - {name: DEPLOYMENT_ID, value: "knowlab-web-frontend-a89b38ec326bd87a"}
++            - {name: DEPLOYMENT_ID, value: "knowlab-web-frontend-5c43b733dbdfc22d"}
+-- knowlab-app/knowlab-admin-frontend/workload.yaml
+-            - {name: DEPLOYMENT_ID, value: "knowlab-admin-frontend-8f83032359d5566b"}
++            - {name: DEPLOYMENT_ID, value: "knowlab-admin-frontend-57422c78f2f4701c"}
+== 迁移 workload diff（除镜像与摘要）==
+-            - {name: DEPLOYMENT_ID, value: '7c9731cdbe79f8be7f00bf6c73ebcf7a70dffd8e'}
++            - {name: DEPLOYMENT_ID, value: 'e3287024050aef46b6d6954e5e8ab6f59294eaad'}
+== 迁移头 ==
+9:  expected_schema_revision: '20261019_0010'
+plan knowlab exit=0
+TASK [Require the configured schema to match the immutable source chain] *******
+        "schema": "20261019_0010",
+localhost                  : ok=16   changed=0    unreachable=0    failed=0    skipped=7    rescued=0    ignored=0
+```
+
+逐项对卡：构建/暂存/计划 都是 0 ✓；变了的镜像锁 **3 个**，且 `source_revision` 正是后端 `e3287024…`、网页 `d7589583…`、管理端 `2d5c1124…` ✓；暂存产物只有 knowlab 三件（2+8+2=12 文件）✓；越界闸门空（别的应用零变化）✓；三个运行时 diff 除镜像与摘要外**各只有 `DEPLOYMENT_ID`** ✓；迁移 workload diff 只有 `DEPLOYMENT_ID`（`EXPECTED_SCHEMA_REVISION` 未出现在 diff 里，即仍是 `20261019_0010`）✓；计划核到 `20261019_0010`、`failed=0` ✓。`key-check-done` 前无文件名 ✓。
+
+### 7.4 3.3 提交、发布、晋级、检查（qwen-013 的 2.3，**末尾 `git push` 按本卡明令跳过**）
+
+```text
+commit exit=0
+33024551 deploy(knowlab): 测试通过不再随刷新自动交付（qwen-017）
+release exit=0
+localhost                  : ok=30   changed=8    unreachable=0    failed=0    skipped=22   rescued=0    ignored=0
+promote-file exit=0
+chown exit=0
+1:digest: sha256:7812a0d1f2d5a066c16a8caa38b0ecce2b672b4e6606be76927e12e450007ac0
+2:path: ./clusters/kind
+3:repository: oci://harbor.sunmoonai.com:30443/platform/deployments-kind
+5:revision: 33024551cddc44ada0b2e16980a019d018d1f4f6
+release-commit exit=0
+061d2bbd release(kind): 晋级到 33024551（qwen-017）
+apply exit=0
+localhost                  : ok=38   changed=3    unreachable=0    failed=0    skipped=28   rescued=0    ignored=0
+kustomization …/knowlab-admin condition met
+kustomization …/knowlab-database condition met
+kustomization …/knowlab-identity condition met
+kustomization …/knowlab-knowbench-testrun-identity condition met
+kustomization …/knowlab-knowmart-deliver-identity condition met
+kustomization …/knowlab-migration condition met
+kustomization …/knowlab-rabbitmq condition met
+kustomization …/knowlab-redis condition met
+kustomization …/knowlab-runtime condition met
+kustomization …/knowlab-storage condition met
+kustomization …/knowlab-web condition met
+wait exit=0            （11 个 knowlab kustomization 全 Ready）
+check knowlab exit=0
+                "admin_list_read": true,
+localhost                  : ok=50   changed=0    unreachable=0    failed=0    skipped=24   rescued=0    ignored=0
+```
+
+迁移 Job（卡面 `get jobs | grep knowlab-migrate | tail -2` 取到的是字母序旧 Job——qwen-014 擞过同一个坑，故改按新 digest 名直查）：
+
+```text
+NAME                              STATUS     COMPLETIONS   DURATION   AGE     IMAGES
+knowlab-migrate-57ac0aeb69b5-v1   Complete   1/1           8s         6m31s   harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:57ac0aeb69b53a21c117413d4651511631be49fc7929bc7ef7d258e807951fe5
+job-query exit=0
+```
+
+各 deploy 镜像摘要与锁对齐（改卡口径：前端摘要会变，各自和自己的 `image.lock` 一致就算过）：
+
+```text
+knowlab-api       = …/knowlab-backend@sha256:57ac0aeb69b53a21c117413d4651511631be49fc7929bc7ef7d258e807951fe5
+knowlab-worker    = …/knowlab-backend@sha256:57ac0aeb69b53a21c117413d4651511631be49fc7929bc7ef7d258e807951fe5
+knowlab-scheduler = …/knowlab-backend@sha256:57ac0aeb69b53a21c117413d4651511631be49fc7929bc7ef7d258e807951fe5
+knowlab-web       = …/knowlab-web-frontend@sha256:5c43b733dbdfc22da11770620062697263afb27cb14f05c40a2ab591abeb9cc0
+knowlab-admin     = …/knowlab-admin-frontend@sha256:57422c78f2f4701ca14b1aab5f2ddc0c8cc798157f76637bb3c59189eced5f1e
+image.lock 对照：backend 57ac0aeb69b5… / web 5c43b733dbdf… / admin 57422c78f2f4…  → 五者逐一对上 ✓
+knowlab-admin-5894d8bcd7-xksvm    1/1 Running 0 4m33s
+knowlab-api-79477dcf8d-mzrrq      1/1 Running 0 4m56s
+knowlab-scheduler-66865f4f9f-xxtx6 1/1 Running 0 4m55s
+knowlab-web-79979c7c9d-72jz5      1/1 Running 0 4m26s
+knowlab-worker-5786f55bcd-scfnd   1/1 Running 0 4m56s
+```
+
+五个 Pod 均 1/1 Running、0 重启；无新迁移（Job 照样跑一次、`Complete 1/1`、8s）。
+
+### 7.5 第四节上线后核
+
+第 1 行（Qwen）原文：
+
+```text
+$K -n app-platform-dev logs deploy/knowlab-api --since=10m | grep -E "Traceback|ERROR"
+grep exit=1 (1=无命中)
+== api 启动尾（只取最后 4 行，均为 WARNING/INFO 级）==
+2026-10-20 07:16:32 - app.interfaces.errors.exception_handlers - WARNING - application_error status=403 code=forbidden path=/api/auth/admin/logout
+2026-10-20 07:16:32 - app.bootstrap.api - INFO - audit_mutation method=POST path=/api/auth/admin/logout status=403 actor_id=- …
+2026-10-20 07:16:32 - app.bootstrap.api - INFO - audit_mutation method=POST path=/api/auth/admin/logout status=200 actor_id=- …
+2026-10-20 07:16:32 - app.interfaces.errors.exception_handlers - WARNING - application_error status=401 code=auth_required path=/api/auth/admin/me
+```
+
+**零命中** ✓（无 `Traceback`、无 `ERROR`）。那几条 403/401 WARNING 是 `application-check` 自己跑真实登录/登出探测留下的审计行，属检查过程正常输出，不是新后端报错。
+
+第 2–4 行（所有者实操，不截图，写一句结果）：
+
+| # | 做什么 | 要看到 | 所有者所见 |
+| --- | --- | --- | --- |
+| 2 | 管理端 `/zh-CN/avatars`，admin 登录、硬刷新、点分身 1.3 | 页面正常、**不出现「读取失败」**；分身 1.3 仍写「已交付 knowmart，专家编号 084acc72…」 | 待填 |
+| 3 | web端 `/zh-CN/avatars`，sig-am 登录 | 页面正常、不出现「读取失败」；看得到分身 1.3 | 待填 |
+| 4 | 管理端「专家」`/zh-CN/experts` | 「财务分析与预测」第 1 版仍在 | 待填 |
+
+按卡面「不做的」：没去点「刷新结果」「交付」来试（现在没有通过而未交付的分身，点了也看不出什么；新行为由后端测试保证）。
+
+### 7.6 第二次的纪律与清理
+
+- 未推：`git push` 一次没跑，本地 ahead（回执提交 + `33024551` + `061d2bbd` + 本回执补写），推回归所有者 human-remote.sh。
+- 未写库；本轮只读 SELECT 共一条（第二节 `testing` 0 行）；未 `rollout restart`（受 flux 管的部署全靠 flux reconcile）；未碰 knowbench/knowmart/测试电脑/沙箱。
+- 一次性产物：`/tmp/q017-run32.sh`、`/tmp/q017-run33.sh` 两个临时脚本，与 `/tmp/q017-build-knowlab.log`（改卡明令不用留）、`q017-stage-knowlab.log`、`q017-plan-knowlab.log`、`q017-release.log`、`q017-apply.log`、`q017-check.log`、`q017-pin2.log`、`q017-32b.log`、`q017-33.log`、`q017-sec4.log`——关键原文已全抄进本回执，**全部删除**；仓内无 `scripts/tmp-*`、无残留脚本。
+
+### 7.7 第二次的结论
+
+7 行钉全换后应用级构建、暂存、计划、提交、发布、晋级、flux wait、`application-check` 全部 exit=0；三个镜像锁对应三个源修订，五个 deploy 的摘要与各自 `image.lock` 逐一对上；迁移头仍 `20261019_0010`（无新迁移，Job `Complete 1/1`）；api 日志无 `Traceback`/`ERROR`；越界闸门空（别的应用零变化）。「测试通过不再随刷新自动交付」与「用户没要的交付回 409」已随 knowlab 后端 `e3287024…` 上线；两个前端按改卡重建，代码与线上一字不差、摘要已变。剩下的只有第四节第 2–4 行的所有者页面核。
