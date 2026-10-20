@@ -27,6 +27,7 @@
 | --- | --- | --- |
 | **Opus** | 远程机 `~/worktrees/qwen/*` | 主导：设计、写代码与测试、发布卡与任务页、审回执；收件箱 `inbox/opus/` |
 | **Qwen** | 本地机 `~/worktrees/qwen/*` | 只跑 `inbox/qwen/` 里的卡：本地 KIND 部署、浏览器走查的集群侧核对、要真 key 的实跑；回执写 `scripts/results/`；登录处停下等所有者 |
+| **luna** | 本地机 `~/worktrees/luna/*` | 2026-10-20 起跑平台线的卡（`inbox/luna/`，远程 Fable 写）：宿主上的 Jenkins、环境参数化、冷建；回执写 `scripts/results/`；远程把 fable 分支快进推到 luna 分支，所有者 `WS=luna` 拉 |
 | 远程 Fable | 远程机 `~/worktrees/fable/*` | 所有者要时审读 Opus 的工作，意见写成一页进 k8s，采不采纳由 Opus 定；处理完把取舍记进 `decisions.md`，那一页就删 |
 | 所有者 | 两边 | 定方向与取舍；在浏览器里登录、走查；传话 |
 
