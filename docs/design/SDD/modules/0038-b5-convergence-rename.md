@@ -86,6 +86,10 @@
 
 真搬成 `infrastructure/{materials,site,host,cluster,platform,apps}/…` 要改：Makefile 里全部 `-i host/inventory.yaml <模块>/x.yaml` 路径、CONFIG_FILES、每个剧本里 `playbook_dir + "/../<模块>/…"` 的相对引用（`artifacts/files.lock.json`、`../.build`、应用仓的 `../../../<app>-app`）、生命周期模板、Jenkins 代理里的路径、十几份 README。而第 5 层三个目录 D 段就没了，`applications/` D 段改名。**建议 B5 把这张对照表写进 `infrastructure/README.md` 顶上（每个模块 README 加一行「所在层」），目录到 D 段和渲染层一起搬**——那时要搬的少一半，而且是必须重写的时候。
 
+### 4.1 停点 3 做成（2026-10-21）
+
+`infrastructure/README.md` 顶上加了「模块 → 所在层 → 管什么」对照表（13 个模块；`flux/`、`services/`、`components/` 标「暂住，D 段挪」，`applications/` 标「D 段改名 build/」，`host/` 里的对象选择标「交付链的事，D 段随渲染层搬」），每个模块 README 标题下加一行「所在层」，`environments/` 补了 README。目录一个没搬。停点 1 由 luna 在真机验过（卡 fable-b5-1：23 个公开入口通、6 个旧名无、render-check #43 用 `components-render` 跑到 SUCCESS）；停点 2、3 的变基推送后，由卡 fable-b5-2 验新路径与所有者的转发器。
+
 ## 五、D 仓改名 k8s → sunmoonun
 
 ### 5.1 仓里要改的（代码提交，先做）
