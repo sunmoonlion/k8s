@@ -171,7 +171,7 @@ echo "批准人 ${state.approvedBy}  \$(date -Is)" | tee '${out}/8-approval.txt'
 cp '${out}/7-source-candidate.yaml' infrastructure/environments/kind/flux-source.yaml
 git add infrastructure/environments/kind/flux-source.yaml
 git -c user.name=sunmoon-ci -c user.email=ci@sunmoonai.com commit -q -m "release(kind): 晋级到 \$(git rev-parse --short '${state.commit}')（release #${n}）"
-git fetch -q --tags origin
+git -c url.git@github.com:.insteadOf=https://github.com/ fetch -q --tags origin
 d=\$(date +%Y%m%d); k=\$(git tag -l "release-\$d-*" | wc -l); tag="release-\$d-\$((k+1))"
 git tag "\$tag"
 { cat infrastructure/environments/kind/flux-source.yaml; echo "pointer-commit \$(git rev-parse HEAD)"; echo "tag \$tag"; } | tee '${out}/9-pointer.txt'
