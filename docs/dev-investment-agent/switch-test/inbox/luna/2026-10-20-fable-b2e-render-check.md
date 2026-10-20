@@ -16,7 +16,7 @@
 
 ```bash
 cd ~/worktrees/fable/k8s && git pull --ff-only origin fable && git log --oneline -1 && git status --short | head -3
-head -c 400 ci/render-check.groovy | tail -c 1 >/dev/null; grep -n "^#!/bin/bash\|cand=infrastructure" ci/render-check.groovy
+grep -n "^#!/bin/bash\|cand=infrastructure" ci/render-check.groovy
 make -C infrastructure jenkins-status; echo "status exit=$?"
 make -C infrastructure jenkins-agent-status; echo "agent status exit=$?"
 ```
