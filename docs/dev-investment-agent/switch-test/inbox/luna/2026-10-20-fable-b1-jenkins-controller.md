@@ -6,7 +6,7 @@
 > **第二次接续（2026-10-20 晚）**：第一、二节和第三节的 plan/deploy/status 已过（回执 `scripts/results/fable-b1.20261020-173741.md`：归档 sha256 与锁一致、预设已导入、控制器 active 且 enabled、剧本内三项核对都过）。停在第三节的独立 curl：`/etc/sunmoon/registry/tls/` 是 root 0700，普通用户读不到 CA，退出 77。这是卡写错了执行身份，不是控制器的问题。**从第三节的 bash 块接着跑**（curl 改成 `sudo -n`），不要重跑 deploy；然后第四节。
 
 ```text
-被测仓：k8s，fable 工位 ~/worktrees/fable/k8s，分支 fable（luna 在本地机的 fable 工位跑平台线的卡，所有者 2026-10-20）
+被测仓：k8s；工位 WS=fable（所有者定本卡在 fable 工位跑）：~/worktrees/fable/k8s，分支 fable。换工位就把下面命令里的 fable 换成那个工位名
 改动：infrastructure/jenkins/（新模块）、Makefile（jenkins-* 目标、config 清单）、artifacts 两份锁与 image-archives 选择、entry/config.yaml 加 jenkins 路由、host/accounts.yaml 加 jenkins 账号、host/lifecycle.yaml 停与状态清单加 jenkins
 会停的东西：第四节 entry-stop 到 entry-deploy 之间内网入口 30443 断几十秒（Harbor、各应用的内网域名都走它）。选个没人在用的时候做；边缘不受影响。
 停下的规则：任何一步 exit 不是 0 就停，输出原样进回执，不重试、不退回；带管道的命令包进 bash <<'SH' … SH 里跑
@@ -78,7 +78,7 @@ make -C infrastructure platform-status; echo "status exit=$?"
 
 `scripts/results/fable-b1.<时间>.md`（第二次用新时间戳，另起一份，不改第一次的）：每节命令与 exit、第三节四行 curl 与 systemctl 输出、第四节两行 curl、停在哪（若有）。不拍、不抄任何口令。
 
-## 七、推回（新规矩，不再经所有者的脚本）
+## 七、推回（新规矩，不再经所有者的脚本；推的是本卡工位的分支）
 
 ```bash
 cd ~/worktrees/fable/k8s && git pull --ff-only origin fable && git add scripts/results/fable-b1.*.md && git mv docs/dev-investment-agent/switch-test/inbox/luna/2026-10-20-fable-b1-jenkins-controller.md docs/dev-investment-agent/switch-test/done/ && git commit -m "fable-b1 回执：宿主 Jenkins 控制器（luna）" && git push origin fable; echo "push exit=$?"
