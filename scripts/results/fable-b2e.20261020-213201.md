@@ -257,3 +257,16 @@ push exit=0
 ```
 
 只有回执新增（`A`）与卡的改名（`R`）两样 ✓；`574d9356 fable-b2e 回执：render-check 真跑、边缘、总状态（qwen）` 已上 `origin/fable`（该仓 origin 配双 URL，GitHub 与 Gitee 同时推到同一号），推后 `git status --short` 空、`origin/fable…HEAD` 计数 `0 0`。本节这两行（glob 改动与推回原文）是推完之后补写的，故还有一笔只动本回执的补写提交。**没改任何代码**（1.2 与本节改的都是我执行的命令，不是仓里的文件）。
+
+---
+
+## 更正（2026-10-20 夜，跑 fable-b3 第二版时发现；追加在本回执末尾，上文一字未改）
+
+第 2.1 节那段「Qwen 的一处误判，如实记」写反了，需要更正：
+
+- 我当时说「#18 只有 `<duration>0</duration>`、没有 `<result>`」，随后自纠说「实际那行末尾就有 `<result>SUCCESS</result>`，是我读漏」，并据此判定 #18 已完成、直接触发了强制构建 #19。
+- **自纠那半是错的，最初的判断才对：#18 当时确实正在跑。** 现在（22:4x）它的账面是 `<duration>397530</duration> <result>SUCCESS</result>`、log 431325 字节、mtime 21:22:37——即 21:21 那会儿它还没结束。
+- 原因是 Jenkins 的 `build.xml` 在构建**进行中**就写着 `<duration>0</duration>` 与 `<result>SUCCESS</result>` 占位，结束后才换成真值。所以「有没有 `<result>`」判不出活体；要看 `<building>true</building>`、或 `duration` 是否为 0、或 `builds/<n>/log` 的 mtime 是否在长。同一夜 `release #1` 在队列里等执行器时，账面也正是 `duration 0 + SUCCESS`，两处互证。
+- 第 2.1 节那句「18 次构建全都有 `<result>`，没有在跑的」因此也不成立：#18 当时在跑。
+- 后果：不严重。#18 结束后（21:22:37）我触发的 #19 仍 `SUCCESS 395143ms`，b2e 的判据没有受影响；但那次触发实际上是与 #18 排队串行的，不是「确认没在跑才触发」。
+- 牵连到卡面：b3 卡第一节的扫描命令 `grep -q "<result>" "$f" || echo "running: $f"` 用的就是这个不可靠的判据，已在 `inbox/fable/2026-10-20-fable-b3-v2-two-faults.md` 里提请远程改写。
