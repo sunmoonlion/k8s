@@ -27,7 +27,7 @@
 | --- | --- | --- |
 | **Opus** | 远程机 `~/worktrees/qwen/*` | 主导：设计、写代码与测试、发布卡与任务页、审回执；收件箱 `inbox/opus/` |
 | **Qwen** | 本地机 `~/worktrees/qwen/*` | 只跑 `inbox/qwen/` 里的卡：本地 KIND 部署、浏览器走查的集群侧核对、要真 key 的实跑；回执写 `scripts/results/`；登录处停下等所有者 |
-| **luna** | 本地机 **fable 工位** `~/worktrees/fable/*` | 2026-10-20 起跑平台线的卡（`inbox/luna/`，远程 Fable 写）：宿主上的 Jenkins、环境参数化、冷建；回执写 `scripts/results/`；所有者 `WS=fable` 拉与推 |
+| **luna**（或所有者临时点名的别的本地助手） | 本地机 **fable 工位** `~/worktrees/fable/*` | 2026-10-20 起跑平台线的卡（远程 Fable 写）：宿主上的 Jenkins、环境参数化、冷建；卡放在**被点名助手**的收件箱（b1–b2d 是 `inbox/luna/`，b2e 起所有者让 Qwen 跑，放 `inbox/qwen/`）；不论谁跑，都在 fable 工位里跑、回执写 `scripts/results/`、只推拉 `origin/fable` |
 
 **平台线的同步（所有者 2026-10-20 定，取代两个脚本）**：一项工作由所有者指定**一个工位** `WS`（fable、cursor、luna……），远程写的助手和本地跑的助手都只在这个工位的分支上推拉，**不同步别的工位**。所有者只传一句话。
 - 远程助手：在 `~/worktrees/<WS>/k8s` 上提交、`git push origin <WS>`；卡放 `inbox/<本地助手名>/`，卡头部写明 `WS`，卡第一步固定是 `cd ~/worktrees/<WS>/k8s && git pull --ff-only origin <WS>`。所有者说「请看 inbox」。
