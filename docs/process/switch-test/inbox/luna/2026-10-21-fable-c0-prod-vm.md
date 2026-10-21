@@ -7,7 +7,7 @@
 ```text
 工位 WS=fable：~/worktrees/fable/sunmoonun，分支 fable；收件箱 docs/process/switch-test/inbox/luna/
 会联网的：下载 Ubuntu 24.04 live-server ISO（releases.ubuntu.com，约 3 GB）与校验和；WSL 里可能要 apt 装 xorriso
-磁盘：本地机只有 C 盘（约 119 GiB 空闲）。ISO 放 `C:\iso\`，虚拟机放 `C:\VMs\sunmoon-prod\`；两块虚拟盘都选「不立即分配全部空间」（用多少长多少），标称 60 + 200 GB 不会一次占掉。所有者安排 WSL 离线压缩在建机**之前**（同一次停机），压完把回收量写进回执
+磁盘：本地机只有 C 盘（约 127 GiB 空闲）。ISO 放 `C:\iso\`，虚拟机放 `C:\VMs\sunmoon-prod\`；两块虚拟盘都选「不立即分配全部空间」（用多少长多少），标称 60 + 200 GB 不会一次占掉。**顺序已改（2026-10-21 远程）：先建机，WSL 压缩脱钩另卡 c0b，等所有者另约时间**
 ```
 
 ## 一、WSL 侧：两个 ISO（luna）
