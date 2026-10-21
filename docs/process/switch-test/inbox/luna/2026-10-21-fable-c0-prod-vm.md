@@ -29,7 +29,7 @@ ls -l /mnt/d/iso/
 
 ## 二、Windows 侧：建虚拟机（**所有者**，VMware Workstation Pro）
 
-本地机是 Windows **家庭版**、所有者不想动原系统，所以不用 Hyper-V，改 VMware Workstation Pro（个人免费）。luna 把 [`vm/README-vmware.md`](../../../../../infrastructure/environments/prod/vm/README-vmware.md) 这页和系统 ISO 文件名交给所有者，所有者照它做三段：一次性准备（开 Windows Hypervisor Platform、装 VMware、把 VMnet8 改成 192.168.80.0/24 网关 .2）→ 界面里新建虚拟机（8 核、32 GB、60 + 200 GB 两块盘、两张 ISO、UEFI、NAT）→ 控制台输一次 `yes`，装完自己关机，移除光盘再开机 → 管理员 PowerShell 两行开转发 → 告诉 luna「起来了」。
+本地机是 Windows **家庭版**、所有者不想动原系统，所以不用 Hyper-V，改 VMware Workstation Pro（免费）。luna 把 [`vm/README-vmware.md`](../../../../../infrastructure/environments/prod/vm/README-vmware.md) 这页和系统 ISO 文件名交给所有者，所有者照它做三段：一次性准备（开 Windows Hypervisor Platform、装 VMware、把 VMnet8 改成 192.168.80.0/24 网关 .2）→ 界面里新建虚拟机（8 核、32 GB、60 + 200 GB 两块盘、两张 ISO、UEFI、NAT）→ 控制台输一次 `yes`，装完自己关机，移除光盘再开机 → 管理员 PowerShell 两行开转发 → 告诉 luna「起来了」。
 
 ## 三、WSL 侧：核对（luna）
 

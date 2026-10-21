@@ -1,11 +1,11 @@
 # 用 VMware Workstation Pro 建 `sunmoon-prod`（Windows 家庭版，不动原系统）
 
-所有者 2026-10-21：本地机是 Windows 家庭中文版，没有 Hyper-V 管理器，也不想升级。改用 VMware Workstation Pro（2024 年起个人使用免费），和 WSL2 共存。`New-SunmoonProdVm.ps1` 留给将来有 Hyper-V 的机器或云，这页是手点的清单。应答 ISO 照用（`make-seed-iso.sh`），装系统仍是全自动。
+所有者 2026-10-21：本地机是 Windows 家庭中文版，没有 Hyper-V 管理器，也不想升级。改用 VMware Workstation Pro（2024 年起免费，个人、教育、商业都是），和 WSL2 共存。`New-SunmoonProdVm.ps1` 留给将来有 Hyper-V 的机器或云，这页是手点的清单——这轮先把机器建起来；VMware 带 `vmrun` 等命令行，以后再建第二台时把这页改成脚本。应答 ISO 照用（`make-seed-iso.sh`），装系统仍是全自动。
 
 ## 一次性准备（所有者）
 
 1. Windows「启用或关闭 Windows 功能」里勾上 **Windows Hypervisor Platform**（WSL2 已经用着「虚拟机平台」，这个是给 VMware 和它共存用的），按提示重启。
-2. 装 VMware Workstation Pro 17.6 或更新（Broadcom 网站注册免费账号下载，或 `winget install VMware.WorkstationPro`）。首次启动选「个人用途」。
+2. 装 VMware Workstation Pro 17.6 或更新（Broadcom 网站注册免费账号下载，或 `winget install VMware.WorkstationPro`）。
 3. 打开 VMware 的 编辑 → 虚拟网络编辑器 → 选 **VMnet8（NAT）** → 子网改成 `192.168.80.0`、掩码 `255.255.255.0` → 「NAT 设置」里网关 `192.168.80.2` → 应用。这一步要管理员权限，它会自己提示。
 
 ## 新建虚拟机（所有者，在 VMware 界面里）
@@ -36,6 +36,10 @@ Get-NetIPInterface -AddressFamily IPv4 | Where-Object { $_.Forwarding -eq 'Enabl
 ```
 
 Windows 重启后这两处转发可能要再开一次。还是不通就把虚拟机的网络改成**桥接**（直接上家里的局域网，IP 另定），告诉远程改应答里的 IP 和网关。
+
+## 共存与性能
+
+VMware 在开着 Hyper-V/WSL2 的 Windows 上经 Windows Hypervisor Platform 运行，官方支持；这台机上的实际性能要等建起来跑 kubeadm 时实测（luna 提醒），慢得离谱再考虑别的。
 
 ## 之后
 

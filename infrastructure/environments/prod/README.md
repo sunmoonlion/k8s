@@ -2,7 +2,7 @@
 
 > 所在层：2 站点层。第二个站点，和 `kind/` 共用同一套声明，只换参数（SDD 0039）。
 
-**现在的形态（2026-10-21 所有者定）**：手里还没有云，先在本地机（Windows 家庭版，128 GB 内存）上用 **VMware Workstation Pro**（个人免费；家庭版没有 Hyper-V 管理器，所有者不想动原系统）建一台 Ubuntu 24.04 虚拟机当生产宿主：8 核、32 GB、系统盘 60 GB、数据盘 200 GB，NAT 网络 VMnet8 改成 192.168.80.0/24（网关 .2），固定 IP `192.168.80.10`。手点清单在 [`vm/README-vmware.md`](vm/README-vmware.md)；Hyper-V 的脚本留给将来的机器。C、D、E 三段都先在它上面走通；将来租到云 VM，同一份 `site.yaml` 只换 IP 和盘。公网仍经东京边缘的 frp（`edge_mode: separate`），搬到云上再改 `local`。
+**现在的形态（2026-10-21 所有者定）**：手里还没有云，先在本地机（Windows 家庭版，128 GB 内存）上用 **VMware Workstation Pro**（现已免费；家庭版没有 Hyper-V 管理器，所有者不想动原系统）建一台 Ubuntu 24.04 虚拟机当生产宿主：8 核、32 GB、系统盘 60 GB、数据盘 200 GB，NAT 网络 VMnet8 改成 192.168.80.0/24（网关 .2），固定 IP `192.168.80.10`。手点清单在 [`vm/README-vmware.md`](vm/README-vmware.md)；Hyper-V 的脚本留给将来的机器。C、D、E 三段都先在它上面走通；将来租到云 VM，同一份 `site.yaml` 只换 IP 和盘。公网仍经东京边缘的 frp（`edge_mode: separate`），搬到云上再改 `local`。
 
 | 文件 | 用途 |
 | --- | --- |
