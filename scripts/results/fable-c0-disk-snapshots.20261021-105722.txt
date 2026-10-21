@@ -1,0 +1,51 @@
+window-before.json
+{
+    "TimeUtc":  "2026-10-21T02:57:22.2130007Z",
+    "CFreeBytes":  136983511040,
+    "Disks":  [
+                  {
+                      "Path":  "C:\\Users\\zymun\\AppData\\Local\\Packages\\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\\LocalState\\ext4.vhdx",
+                      "LengthBytes":  515737911296
+                  },
+                  {
+                      "Path":  "C:\\wsl-disks\\sunmoon-data.vhdx",
+                      "LengthBytes":  180728365056
+                  }
+              ]
+}
+
+before.json
+{
+    "TimeUtc":  "2026-10-21T02:59:14.3591951Z",
+    "CFreeBytes":  136982659072,
+    "Disks":  [
+                  {
+                      "Path":  "C:\\Users\\zymun\\AppData\\Local\\Packages\\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\\LocalState\\ext4.vhdx",
+                      "LengthBytes":  515737911296
+                  },
+                  {
+                      "Path":  "C:\\wsl-disks\\sunmoon-data.vhdx",
+                      "LengthBytes":  180728365056
+                  }
+              ]
+}
+
+after.json
+{
+    "TimeUtc":  "2026-10-21T02:59:52.7479442Z",
+    "CFreeBytes":  137207033856,
+    "Disks":  [
+                  {
+                      "Path":  "C:\\Users\\zymun\\AppData\\Local\\Packages\\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\\LocalState\\ext4.vhdx",
+                      "LengthBytes":  515737911296
+                  },
+                  {
+                      "Path":  "C:\\wsl-disks\\sunmoon-data.vhdx",
+                      "LengthBytes":  180493484032
+                  }
+              ]
+}
+
+C free observed delta bytes=223522816
+No diskpart command/log files exist for this invocation.
+exit=0

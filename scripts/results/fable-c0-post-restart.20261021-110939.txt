@@ -1,0 +1,45 @@
+2026-10-21T11:09:39+08:00
+Id=sunmoon-platform.target
+ActiveState=active
+
+Result=exit-code
+Id=sunmoon-platform-boot.service
+ActiveState=failed
+
+Result=success
+Id=sunmoon-cluster.service
+ActiveState=active
+
+Result=success
+Id=sunmoon-entry.service
+ActiveState=active
+
+Result=success
+Id=sunmoon-registry.service
+ActiveState=active
+
+Result=success
+Id=sunmoon-jenkins.service
+ActiveState=active
+
+Result=success
+Id=sunmoon-jenkins-agent.service
+ActiveState=active
+NAME                         STATUS   ROLES           AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                       KERNEL-VERSION                              CONTAINER-RUNTIME
+sunmoon-kind-control-plane   Ready    control-plane   19d   v1.36.5   172.18.0.2    <none>        Debian GNU/Linux 13 (trixie)   6.6.114.1-microsoft-standard-WSL2 (amd64)   containerd://2.3.4
+sunmoon-kind-worker          Ready    <none>          19d   v1.36.5   172.18.0.3    <none>        Debian GNU/Linux 13 (trixie)   6.6.114.1-microsoft-standard-WSL2 (amd64)   containerd://2.3.4
+sunmoon-kind-worker2         Ready    <none>          19d   v1.36.5   172.18.0.4    <none>        Debian GNU/Linux 13 (trixie)   6.6.114.1-microsoft-standard-WSL2 (amd64)   containerd://2.3.4
+pods_total=286 not_ready=0
+flux_total=105 not_ready=10
+{"namespace": "flux-system", "name": "investment-admin", "sourceRef": {"kind": "OCIRepository", "name": "platform"}, "path": "./components/app-platform/investment-app/investment-admin-frontend", "conditions": [{"lastTransitionTime": "2026-10-17T09:27:32Z", "message": "dependency 'flux-system/investment-runtime' is not ready", "observedGeneration": 2, "reason": "DependencyNotReady", "status": "False", "type": "Ready"}, {"lastTransitionTime": "2026-10-17T09:23:37Z", "message": "Health check passed in 27.991656ms", "observedGeneration": 2, "reason": "Succeeded", "status": "True", "type": "Healthy"}]}
+{"namespace": "flux-system", "name": "investment-agent-releases", "sourceRef": {"kind": "OCIRepository", "name": "platform"}, "path": "./components/app-platform/investment-app/investment-backend/agent-releases", "conditions": [{"lastTransitionTime": "2026-10-21T03:09:17Z", "message": "Fetching manifests for revision sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788 with a timeout of 8m0s", "observedGeneration": 1, "reason": "ProgressingWithRetry", "status": "True", "type": "Reconciling"}, {"lastTransitionTime": "2026-10-21T03:09:17Z", "message": "kustomization path not found: stat /tmp/kustomization-1105587003/components/app-platform/investment-app/investment-backend/agent-releases: no such file or directory", "observedGeneration": 1, "reason": "ArtifactFailed", "status": "False", "type": "Ready"}, {"lastTransitionTime": "2026-10-17T09:24:19Z", "message": "Health check passed in 15.538877ms", "observedGeneration": 1, "reason": "Succeeded", "status": "True", "type": "Healthy"}]}
+{"namespace": "flux-system", "name": "investment-database", "sourceRef": {"kind": "OCIRepository", "name": "platform"}, "path": "./components/app-platform/investment-app/investment-backend/database", "conditions": [{"lastTransitionTime": "2026-10-21T03:09:25Z", "message": "Fetching manifests for revision sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788 with a timeout of 8m0s", "observedGeneration": 2, "reason": "ProgressingWithRetry", "status": "True", "type": "Reconciling"}, {"lastTransitionTime": "2026-10-21T03:09:25Z", "message": "kustomization path not found: stat /tmp/kustomization-3802501846/components/app-platform/investment-app/investment-backend/database: no such file or directory", "observedGeneration": 2, "reason": "ArtifactFailed", "status": "False", "type": "Ready"}, {"lastTransitionTime": "2026-10-17T09:24:39Z", "message": "Health check passed in 19.621861ms", "observedGeneration": 2, "reason": "Succeeded", "status": "True", "type": "Healthy"}]}
+{"namespace": "flux-system", "name": "investment-identity", "sourceRef": {"kind": "OCIRepository", "name": "platform"}, "path": "./components/app-platform/investment-app/investment-backend/identity", "conditions": [{"lastTransitionTime": "2026-10-17T09:28:05Z", "message": "dependency 'flux-system/investment-rabbitmq' is not ready", "observedGeneration": 1, "reason": "DependencyNotReady", "status": "False", "type": "Ready"}, {"lastTransitionTime": "2026-10-17T09:25:12Z", "message": "Health check passed in 22.097887ms", "observedGeneration": 1, "reason": "Succeeded", "status": "True", "type": "Healthy"}]}
+{"namespace": "flux-system", "name": "investment-migration", "sourceRef": {"kind": "OCIRepository", "name": "platform"}, "path": "./components/app-platform/investment-app/investment-backend/migration", "conditions": [{"lastTransitionTime": "2026-10-17T09:27:32Z", "message": "dependency 'flux-system/investment-database' is not ready", "observedGeneration": 1, "reason": "DependencyNotReady", "status": "False", "type": "Ready"}, {"lastTransitionTime": "2026-10-17T09:24:25Z", "message": "Health check passed in 23.184519ms", "observedGeneration": 1, "reason": "Succeeded", "status": "True", "type": "Healthy"}]}
+{"namespace": "flux-system", "name": "investment-rabbitmq", "sourceRef": {"kind": "OCIRepository", "name": "platform"}, "path": "./components/app-platform/investment-app/investment-backend/rabbitmq", "conditions": [{"lastTransitionTime": "2026-10-17T09:27:32Z", "message": "dependency 'flux-system/investment-redis' is not ready", "observedGeneration": 2, "reason": "DependencyNotReady", "status": "False", "type": "Ready"}, {"lastTransitionTime": "2026-10-17T09:25:18Z", "message": "Health check passed in 27.904639ms", "observedGeneration": 2, "reason": "Succeeded", "status": "True", "type": "Healthy"}]}
+{"namespace": "flux-system", "name": "investment-redis", "sourceRef": {"kind": "OCIRepository", "name": "platform"}, "path": "./components/app-platform/investment-app/investment-backend/redis", "conditions": [{"lastTransitionTime": "2026-10-17T09:27:32Z", "message": "dependency 'flux-system/investment-migration' is not ready", "observedGeneration": 2, "reason": "DependencyNotReady", "status": "False", "type": "Ready"}, {"lastTransitionTime": "2026-10-17T09:22:56Z", "message": "Health check passed in 21.825413ms", "observedGeneration": 2, "reason": "Succeeded", "status": "True", "type": "Healthy"}]}
+{"namespace": "flux-system", "name": "investment-runtime", "sourceRef": {"kind": "OCIRepository", "name": "platform"}, "path": "./components/app-platform/investment-app/investment-backend/runtime", "conditions": [{"lastTransitionTime": "2026-10-17T09:27:32Z", "message": "dependency 'flux-system/investment-identity' is not ready", "observedGeneration": 3, "reason": "DependencyNotReady", "status": "False", "type": "Ready"}, {"lastTransitionTime": "2026-10-17T09:25:06Z", "message": "Health check passed in 93.449677ms", "observedGeneration": 3, "reason": "Succeeded", "status": "True", "type": "Healthy"}]}
+{"namespace": "flux-system", "name": "investment-service-identity", "sourceRef": {"kind": "OCIRepository", "name": "platform"}, "path": "./components/app-platform/investment-app/investment-backend/service-identity", "conditions": [{"lastTransitionTime": "2026-10-21T03:09:27Z", "message": "Fetching manifests for revision sha256:44f56adc0b3b9db50e1adae244da164605d12669b2e4da959e92e33384db1788 with a timeout of 8m0s", "observedGeneration": 2, "reason": "ProgressingWithRetry", "status": "True", "type": "Reconciling"}, {"lastTransitionTime": "2026-10-21T03:09:27Z", "message": "kustomization path not found: stat /tmp/kustomization-2350172309/components/app-platform/investment-app/investment-backend/service-identity: no such file or directory", "observedGeneration": 2, "reason": "ArtifactFailed", "status": "False", "type": "Ready"}, {"lastTransitionTime": "2026-10-17T09:26:14Z", "message": "Health check passed in 23.30291ms", "observedGeneration": 2, "reason": "Succeeded", "status": "True", "type": "Healthy"}]}
+{"namespace": "flux-system", "name": "investment-web", "sourceRef": {"kind": "OCIRepository", "name": "platform"}, "path": "./components/app-platform/investment-app/investment-web-frontend", "conditions": [{"lastTransitionTime": "2026-10-17T09:27:32Z", "message": "dependency 'flux-system/investment-runtime' is not ready", "observedGeneration": 2, "reason": "DependencyNotReady", "status": "False", "type": "Ready"}, {"lastTransitionTime": "2026-10-17T09:22:55Z", "message": "Health check passed in 30.452794ms", "observedGeneration": 2, "reason": "Succeeded", "status": "True", "type": "Healthy"}]}
+zsh:15: command not found: sudo
+exit=127

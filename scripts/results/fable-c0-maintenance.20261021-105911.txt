@@ -1,0 +1,33 @@
+﻿**********************
+Windows PowerShell 脚本开始
+开始时间: 20261021105911
+用户名: ZYMUN\zymun
+RunAs 用户: ZYMUN\zymun
+配置名称: 
+计算机: ZYMUN (Microsoft Windows NT 10.0.26200.0)
+主机应用程序: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File C:\wsl-disks\maintenance\c0-20261021\compact-offline.ps1 -Apply
+进程 ID: 10860
+PSVersion: 5.1.26100.9711
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9711
+BuildVersion: 10.0.26100.9711
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+
+
+PS>TerminatingError():“WSL command failed: make -C /home/zymun/worktrees/fable/sunmoonun/infrastructure platform-start”
+>> TerminatingError():“WSL command failed: make -C /home/zymun/worktrees/fable/sunmoonun/infrastructure platform-start”
+FAILED: WSL command failed: make -C /home/zymun/worktrees/fable/sunmoonun/infrastructure platform-start
+Preserve logs. If stop/trim completed but recovery did not, use this same script with -Recover after inspecting the failure.
+exit=1
+**********************
+Windows PowerShell 脚本结束
+结束时间: 20261021111158
+**********************
+exit=1
+
+exit=1

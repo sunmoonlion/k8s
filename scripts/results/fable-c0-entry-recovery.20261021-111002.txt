@@ -1,0 +1,7 @@
+harbor.sunmoonai.com HTTP=200
+knowbench.sunmoonai.com HTTP=307
+jenkins.sunmoonai.com HTTP=200
+{"TaskName":"sunmoon-data-mount","State":3,"Enabled":true}
+{"LastRunTime":"\/Date(1792551592000)\/","LastTaskResult":0}
+{"Free":137211305984,"Used":855330172928}
+exit=0
