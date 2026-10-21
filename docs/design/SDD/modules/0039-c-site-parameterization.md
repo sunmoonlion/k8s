@@ -90,9 +90,31 @@ environments/
 
 ### C2 域名与端口变参数（动 gitops/ 的 config 与模板）
 
-- 24 份 `config.yaml` 的 `origin: https://tpl.sunmoonai.com:30443` 改成 `origin: 'https://{{ hostnames.tpl_web }}.{{ site_domain }}:{{ public_port }}'`（`--extra-vars @file` 进来的值 Ansible 会在用到时模板化，已有先例 `entry_cluster_routes` 就这么写）；33 份模板里的字面量同样改。
-- 边缘、入口、Jenkins、Harbor 的域名都从 `hostnames` + `site_domain` 拼。
-- **验收**：同 C1，开发站点渲染结果逐字节相同（因为值没变）。
+**摸底（2026-10-21 夜）**：代码里 `sunmoonai.com` 的 187 处，121 处是 `harbor.sunmoonai.com:30443`（即 `registry_address`，两站同名，**不动**）；其余大多在**已提交的渲染产物** `workload.yaml` 里（渲染会重写，不是手改对象）。真正的**来源**只有这些：
+
+| 来源 | 处数 | 今天的样子 |
+| --- | --- | --- |
+| 12 份应用前端 `config.yaml` 的 `origin` | 12 | `https://tpl.sunmoonai.com:30443`（字面量，**被 bind/verify/deploy/domain 用 `lookup("file")` 重读**） |
+| 10 份运维/数据组件 `config.yaml` 的 `*_origin` | 10 | `https://kibana.sunmoonai.com:{{ entry_port }}`（已半参数化，只走 extra-vars） |
+| `casdoor_hostname`、`jenkins_hostname` | 2 | 字面量 |
+| knowbench 的 `WORKBENCH_RELAY_PUBLIC_URL`、admin 的 `KNOWFEED_ADMIN_URL` | 2 | 字面量 |
+| `edge_domains`（东京）、`frpc_domains`（集群侧） | 2 | 三个公开名字的列表 |
+| 模板里 `{{ casdoor_hostname }}:30443` | 8 处 `.j2` | 端口写死 |
+| 断言 `is match('^https://[a-z0-9.-]+:30443$')`、`casdoor_hostname + ":30443"` | 9 | 端口写死 |
+| Python：`check-browser.py` 的 `30443`、`verify-live.py` 的 casdoor 地址、`edge/smoke/run.sh` | 3 个文件 | 字面量 |
+
+**两个 30443 不是一回事**：公网/入口端口（开发 30443、生产 443）和 Traefik 的 NodePort（30443，两站都是，kind 的 `containerPort`、`entry_cluster_backend` 的端口都是它）。前者进站点文件叫 `public_port`，后者是入口组件的常量，不参数化。
+
+**参数面（site.yaml 加三个，短名不进站点文件）**：`site_domain`（开发 `sunmoonai.com` → C2b 改 `dev.sunmoonai.com`；生产 `sunmoonai.com`）、`public_port`（开发 30443、生产 443）、`edge_public_ip`（从 `edge/config.yaml` 搬来，它是站点事实；`edge_mode` 一并加）。短名（`tpl`、`tpl-admin`、`casdoor`、`kibana`…）两站相同，留在各模块 config 里：`casdoor_hostname: 'casdoor.{{ site_domain }}'`、`origin: 'https://tpl.{{ site_domain }}:{{ public_port }}'`、`entry_port: '{{ public_port }}'`、`edge_domains: ['knowbench.{{ site_domain }}', …]`。与第三节表的出入：表里的 `hostnames.<对象>` 不做，短名不是站点事实。`registry_hostname` 仍是字面量（所有者定）。
+
+**重读的解法（C1 教训的正解）**：所有 `lookup("file", <config.yaml>) | from_yaml` 改成 `lookup("template", …) | from_yaml`——`template` 查找会先过一遍 Jinja、变量和当前 play 相同、键序不变。bind/verify/deploy 的 web/admin 配置（6 处）、`domain/prepare.yaml` 的四个 `web_origins`、test-computer 读 `edge/config.yaml` 的那处（改成直接用变量）一起改。改完这条规矩变成：**配置文件里可以写 Jinja，重读一律用 `template`**。
+
+**代码清单**：① 24 份 config.yaml 的 origin/hostname/domains 改派生；② 8 处 `.j2` 与 9 处断言的 30443 改 `public_port`；③ `check-browser.py` 端口从目标 origin 取、`verify-live.py` 收 `--casdoor-origin`、`edge/smoke/run.sh` 从 edge 配置取域名与端口；④ edge 的 make 目标加载站点文件；⑤ `test-computer` 的出站放行端口改 `public_port`。`casdoor_client_id: sunmoon-kind-tpl-web` 这类嵌着集群名的身份 **C2 不动**（它们是 Casdoor 里登记过的身份，改了要重新登记），留到 C5 和样例站点一起定。
+
+**分两停**：
+
+- **C2a 参数化、值不变**：开发站点渲染逐字节相同（方法同 C1：冷目录 before/after、sops 比明文哈希）、五项只读入口、render-check SUCCESS。远程自己跑。
+- **C2b 开发站点改 `dev.sunmoonai.com`**：改一行 `site_domain`，然后走一次**真实发布**（Jenkins release，人批）。渲染会变的：所有前端 origin 与跨应用链接、Casdoor 各应用的回调地址（`provision.py` 按 origin 重新登记）、平台 CA 重签 casdoor/组件/Jenkins 证书（SAN 换名）、relay 公网地址、frpc 与东京的域名、HAProxy 路由。**所有者要做的三件**：(1) 域名商处加公网 DNS：`knowbench.dev`、`casdoor.dev`、`relay.dev` → 43.153.135.74（或 `*.dev.sunmoonai.com` 泛解析；Let's Encrypt 要靠它签新证书，集群内 Pod 解析 casdoor 也靠它）；(2) 本机 hosts 加 17 个 `*.dev.sunmoonai.com` → 127.0.0.1（`windows_hosts_add.ps1`，过 UAC），旧行先留着；(3) Jenkins 第 8 阶段点批。**验收**：render-check SUCCESS；release SUCCESS；所有者浏览器用新名字登录工作台一次；东京 `edge-smoke` 过；`application-check` 过；Windows 本地代理（sunmoon-link）能重新连上新的 relay 地址——它装在所有者电脑上、连接地址来自工作台下发，若缓存了旧名要重配一次，这是 C2b 最可能出问题的地方。正式名 `knowbench.sunmoonai.com` 等的 DNS 这时**不动**，继续指东京（等生产站点建好再指过去）。
 
 ### C3 站点角色：两段流水线与 Harbor 复制
 
