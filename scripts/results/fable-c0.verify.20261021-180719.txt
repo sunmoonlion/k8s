@@ -1,0 +1,42 @@
+Read-only C0 verification via SSH; first host-key TOFU after vmrun IP / VMX MAC / Windows neighbor matched.
+$ ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 sunmoon@192.168.80.10 bash -s
+time=2026-10-21T10:07:19+00:00
+sunmoon-prod
+sunmoon
+sudo-ok
+6.8.0-147-generic
+active
+2026-10-21 10:07:19,709 - util.py[WARNING]: REDACTED config part /etc/cloud/cloud.cfg.d/99-installer.cfg, insufficient permissions
+2026-10-21 10:07:19,710 - util.py[WARNING]: REDACTED config part /etc/cloud/cloud.cfg.d/90-installer-network.cfg, insufficient permissions
+status: disabled
+extended_status: disabled
+boot_status_code: disabled-by-marker-file
+last_update: Thu, 01 Jan 1970 00:02:19 +0000
+detail: DataSourceNone
+errors: []
+recoverable_errors: {}
+NAME    SIZE FSTYPE LABEL        MOUNTPOINTS
+sda      60G                     
+├─sda1    1G vfat                /boot/efi
+└─sda2 58.9G ext4                /
+sdb     300G ext4   sunmoon-data /data
+TARGET SOURCE   FSTYPE OPTIONS
+/data  /dev/sdb ext4   rw,relatime
+               total        used        free      shared  buff/cache   available
+Mem:              47           0          46           0           0          46
+8
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    altname enp2s1
+    inet 192.168.80.10/24 brd 192.168.80.255 scope global eth0
+       valid_lft forever preferred_lft forever
+default via 192.168.80.2 dev eth0 proto static 
+192.168.80.0/24 dev eth0 proto kernel scope link src 192.168.80.10 
+UEFI=yes
+permitrootlogin without-password
+pubkeyauthentication yes
+passwordauthentication no
+256 SHA256:wPjE3CPfKHi8NgXbGAilRRMJXXJWEr/4DaJzsZXdnn4 root@sunmoon-prod (ED25519)
+{"checked": "hostname,user,8_vcpu,48_GiB_config_usable_memory,60_GiB_system,300_GiB_ext4_data,label,mount,UEFI,IP,gateway", "pass": true, "memTotalBytes": 50467389440}
+mirrors.aliyun.com HTTP=301 TLSverify=0
+
+ssh exit=0

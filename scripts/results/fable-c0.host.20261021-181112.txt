@@ -1,0 +1,110 @@
+Read-only Windows identity / interface checks.
+{
+    "ProductName":  "VMware Workstation",
+    "ProductVersion":  "26.0.1 build-25688693",
+    "FileVersion":  "26.0.1 build-25688693"
+}
+Total running VMs: 1
+C:\VMs\sunmoon-prod\sunmoon-prod.vmx
+192.168.80.10
+{
+    "InterfaceAlias":  "VMware Network Adapter VMnet8",
+    "IPAddress":  "192.168.80.10",
+    "LinkLayerAddress":  "00-0C-29-BE-9F-13",
+    "State":  "Reachable"
+}
+[
+    {
+        "InterfaceAlias":  "VMware Network Adapter VMnet8",
+        "Forwarding":  "Enabled"
+    },
+    {
+        "InterfaceAlias":  "vEthernet (WSL (Hyper-V firewall))",
+        "Forwarding":  "Enabled"
+    }
+]
+
+exit=0
+
+VMX selected nonsecret settings:
+memsize = "49152"
+numvcpus = "8"
+cpuid.coresPerSocket = "8"
+firmware = "efi"
+ethernet0.connectionType = "nat"
+ethernet0.generatedAddress = "00:0c:29:be:9f:13"
+sata0:0.present = <absent>
+sata0:1.present = <absent>
+
+Disk descriptor: sunmoon-prod.vmdk
+createType="twoGbMaxExtentSparse"
+RW 8323072 SPARSE "sunmoon-prod-s001.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s002.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s003.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s004.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s005.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s006.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s007.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s008.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s009.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s010.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s011.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s012.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s013.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s014.vmdk"
+RW 8323072 SPARSE "sunmoon-prod-s015.vmdk"
+RW 983040 SPARSE "sunmoon-prod-s016.vmdk"
+
+Disk descriptor: sunmoon-prod-0.vmdk
+createType="twoGbMaxExtentSparse"
+RW 19660800 SPARSE "sunmoon-prod-0-s001.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s002.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s003.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s004.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s005.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s006.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s007.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s008.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s009.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s010.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s011.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s012.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s013.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s014.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s015.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s016.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s017.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s018.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s019.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s020.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s021.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s022.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s023.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s024.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s025.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s026.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s027.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s028.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s029.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s030.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s031.vmdk"
+RW 19660800 SPARSE "sunmoon-prod-0-s032.vmdk"
+
+Initial installer signature verification record (no installer executed by assistant):
+Source: https://archive.org/download/vmwareworkstationarchive/26H1/VMware-Workstation-Full-26H1u1-25688693.exe
+Publisher review: Windows signature is Valid; current signer is Broadcom Inc, reviewed after the first check expected the former VMware publisher. Final check requires exact Broadcom organization and product version 26.0.1.
+{
+    "SignatureStatus":  "Valid",
+    "Publisher":  "CN=Broadcom Inc, O=Broadcom Inc, L=San Jose, S=California, C=US, SERIALNUMBER=6610117, OID.2.5.4.15=Private Organization, OID.1.3.6.1.4.1.311.60.2.1.2=Delaware, OID.1.3.6.1.4.1.311.60.2.1.3=US",
+    "CertificateThumbprint":  "CE4458CC481945B6C80C6A5C02807E07C452C154",
+    "TimestampPublisher":  "CN=DigiCert SHA256 RSA4096 Timestamp Responder 2025 1, O=\"DigiCert, Inc.\", C=US",
+    "FileVersion":  "26.0.1",
+    "ProductVersion":  "26.0.1",
+    "Sha256":  "3D775C3C2153600EEF4642F95D519A514BA7E861400BDA2598352BFF792DB473",
+    "Path":  "C:\\iso\\VMware-Workstation-Full-26H1u1-25688693.exe",
+    "InstallerExecuted":  false
+}
+
+exit=0
+
+Host metadata read exit=0

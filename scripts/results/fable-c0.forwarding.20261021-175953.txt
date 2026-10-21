@@ -1,0 +1,100 @@
+Windows IPv4 forwarding; owner requested execution; elevated via owner UAC.
+
+Source: C:\iso\Enable-SunmoonVmForwarding.ps1
+SHA256: 39cdd98fb7d1108f11dde6afce6a6d01565e75db9b11fe91e36240b0947c043d
+$ErrorActionPreference='Stop'
+$ProgressPreference='SilentlyContinue'
+[Console]::OutputEncoding=New-Object System.Text.UTF8Encoding
+$log='C:\iso\sunmoon-vm-forwarding.log'
+$result='C:\iso\sunmoon-vm-forwarding-result.json'
+$code=1
+$before=@();$after=@();$problem=$null
+try {
+    ('StartedUtc=' + [DateTime]::UtcNow.ToString('o')) | Set-Content -LiteralPath $log -Encoding UTF8
+    $principal=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'Administrator privileges required'}
+    $targets=@(Get-NetIPInterface -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -eq 'VMware Network Adapter VMnet8' -or $_.InterfaceAlias -like 'vEthernet (WSL*' })
+    if($targets.Count -ne 2){throw ('Expected exactly two reviewed adapters, found '+$targets.Count)}
+    $before=@($targets | ForEach-Object {[pscustomobject]@{InterfaceAlias=$_.InterfaceAlias;InterfaceIndex=$_.InterfaceIndex;Forwarding=[string]$_.Forwarding}})
+    $before | ConvertTo-Json | Add-Content -LiteralPath $log -Encoding UTF8
+    foreach($item in $targets){
+        ('Set-NetIPInterface -InterfaceIndex '+$item.InterfaceIndex+' -AddressFamily IPv4 -Forwarding Enabled') | Add-Content -LiteralPath $log -Encoding UTF8
+        Set-NetIPInterface -InterfaceIndex $item.InterfaceIndex -AddressFamily IPv4 -Forwarding Enabled
+    }
+    $after=@(Get-NetIPInterface -AddressFamily IPv4 | Where-Object {$_.InterfaceIndex -in $targets.InterfaceIndex} | ForEach-Object {[pscustomobject]@{InterfaceAlias=$_.InterfaceAlias;InterfaceIndex=$_.InterfaceIndex;Forwarding=[string]$_.Forwarding}})
+    $after | ConvertTo-Json | Add-Content -LiteralPath $log -Encoding UTF8
+    if($after.Count -ne 2 -or @($after | Where-Object {$_.Forwarding -ne 'Enabled'}).Count -ne 0){throw 'Forwarding verification did not pass'}
+    $code=0
+} catch {
+    $problem=$_.Exception.Message
+    $problem | Add-Content -LiteralPath $log -Encoding UTF8
+} finally {
+    [pscustomobject]@{CompletedUtc=[DateTime]::UtcNow.ToString('o');Success=($code -eq 0);Before=$before;After=$after;Error=$problem} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $result -Encoding UTF8
+    ('exit='+$code) | Add-Content -LiteralPath $log -Encoding UTF8
+}
+exit $code
+
+Source: C:\iso\sunmoon-vm-forwarding.log
+SHA256: ee628a701bf009a4b20d50f96fdeb4202d42097bd55ca4bc8cb6e1b426e7d04f
+StartedUtc=2026-10-21T09:59:52.1669405Z
+[
+    {
+        "InterfaceAlias":  "VMware Network Adapter VMnet8",
+        "InterfaceIndex":  20,
+        "Forwarding":  "Disabled"
+    },
+    {
+        "InterfaceAlias":  "vEthernet (WSL (Hyper-V firewall))",
+        "InterfaceIndex":  28,
+        "Forwarding":  "Disabled"
+    }
+]
+Set-NetIPInterface -InterfaceIndex 20 -AddressFamily IPv4 -Forwarding Enabled
+Set-NetIPInterface -InterfaceIndex 28 -AddressFamily IPv4 -Forwarding Enabled
+[
+    {
+        "InterfaceAlias":  "VMware Network Adapter VMnet8",
+        "InterfaceIndex":  20,
+        "Forwarding":  "Enabled"
+    },
+    {
+        "InterfaceAlias":  "vEthernet (WSL (Hyper-V firewall))",
+        "InterfaceIndex":  28,
+        "Forwarding":  "Enabled"
+    }
+]
+exit=0
+
+Source: C:\iso\sunmoon-vm-forwarding-result.json
+SHA256: 127ec44d9909b709765c510f7497d0871dce73bf78769e6c3d75dd923d156070
+{
+    "CompletedUtc":  "2026-10-21T09:59:53.2062636Z",
+    "Success":  true,
+    "Before":  [
+                   {
+                       "InterfaceAlias":  "VMware Network Adapter VMnet8",
+                       "InterfaceIndex":  20,
+                       "Forwarding":  "Disabled"
+                   },
+                   {
+                       "InterfaceAlias":  "vEthernet (WSL (Hyper-V firewall))",
+                       "InterfaceIndex":  28,
+                       "Forwarding":  "Disabled"
+                   }
+               ],
+    "After":  [
+                  {
+                      "InterfaceAlias":  "VMware Network Adapter VMnet8",
+                      "InterfaceIndex":  20,
+                      "Forwarding":  "Enabled"
+                  },
+                  {
+                      "InterfaceAlias":  "vEthernet (WSL (Hyper-V firewall))",
+                      "InterfaceIndex":  28,
+                      "Forwarding":  "Enabled"
+                  }
+              ],
+    "Error":  null
+}
+
+Elevated PowerShell process exit=0

@@ -1,0 +1,128 @@
+Read-only investigation of network wait unit failure; no unit/config changes or restarts.
+Result=exit-code
+ExecMainStatus=1
+ExecStart={ path=/lib/systemd/systemd-networkd-wait-online ; argv[]=/lib/systemd/systemd-networkd-wait-online -i eth0:degraded ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }
+ExecStart={ path=/lib/systemd/systemd-networkd-wait-online ; argv[]=/lib/systemd/systemd-networkd-wait-online --any -o routable -i eth0 ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }
+ActiveEnterTimestamp=
+InactiveEnterTimestamp=Wed 2026-10-21 10:04:17 UTC
+IDX LINK TYPE     OPERATIONAL SETUP
+  1 lo   loopback carrier     unmanaged
+  2 eth0 ether    routable    configured
+
+2 links listed.
+● 2: eth0
+                   Link File: /run/systemd/network/10-netplan-eth0.link
+                Network File: /run/systemd/network/10-netplan-eth0.network
+                       State: routable (configured)
+                Online state: online
+                        Type: ether
+                        Path: pci-0000:02:01.0
+                      Driver: e1000
+                      Vendor: Intel Corporation
+                       Model: 82545EM Gigabit Ethernet Controller (Copper) (PRO/1000 MT Single Port Adapter)
+           Alternative Names: enp2s1
+            Hardware Address: 00:0c:29:be:9f:13 (VMware, Inc.)
+                         MTU: 1500 (min: 46, max: 16110)
+                       QDisc: fq_codel
+IPv6 Address Generation Mode: eui64
+    Number of Queues (Tx/Rx): 1/1
+            Auto negotiation: yes
+                       Speed: 1Gbps
+                      Duplex: full
+                        Port: tp
+                     Address: 192.168.80.10
+                              fe80::20c:29ff:febe:9f13
+                     Gateway: 192.168.80.2
+                         DNS: 223.5.5.5
+                              119.29.29.29
+           Activation Policy: up
+         Required For Online: yes
+           DHCP6 Client DUID: DUID-EN/Vendor:0000ab1120a275200c37f7a2
+
+Oct 21 10:04:18 sunmoon-prod systemd-networkd[1266]: eth0: Reconfiguring with /run/systemd/network/10-netplan-eth0.network.
+Oct 21 10:04:18 sunmoon-prod systemd-networkd[1266]: eth0: Link UP
+Oct 21 10:04:18 sunmoon-prod systemd-networkd[1266]: eth0: Gained carrier
+Oct 21 10:04:18 sunmoon-prod systemd-networkd[1412]: eth0: Link UP
+Oct 21 10:04:18 sunmoon-prod systemd-networkd[1412]: eth0: Gained carrier
+Oct 21 10:04:18 sunmoon-prod systemd-networkd[1412]: eth0: Configuring with /run/systemd/network/10-netplan-eth0.network.
+Oct 21 10:04:20 sunmoon-prod systemd-networkd[1412]: eth0: Gained IPv6LL
+2026-10-21T10:02:17+00:00 sunmoon-prod systemd[1]: Starting systemd-networkd.service - Network Configuration...
+2026-10-21T10:02:17+00:00 sunmoon-prod systemd-networkd[1266]: lo: Link UP
+2026-10-21T10:02:17+00:00 sunmoon-prod systemd-networkd[1266]: lo: Gained carrier
+2026-10-21T10:02:17+00:00 sunmoon-prod systemd-networkd[1266]: Enumeration completed
+2026-10-21T10:02:17+00:00 sunmoon-prod systemd[1]: Started systemd-networkd.service - Network Configuration.
+2026-10-21T10:02:17+00:00 sunmoon-prod systemd[1]: Starting systemd-networkd-wait-online.service - Wait for Network to be Configured...
+2026-10-21T10:04:17+00:00 sunmoon-prod systemd-networkd-wait-online[1271]: Timeout occurred while waiting for network connectivity.
+2026-10-21T10:04:17+00:00 sunmoon-prod systemd[1]: systemd-networkd-wait-online.service: Main process exited, code=exited, status=1/FAILURE
+2026-10-21T10:04:17+00:00 sunmoon-prod systemd[1]: systemd-networkd-wait-online.service: Failed with result 'exit-code'.
+2026-10-21T10:04:17+00:00 sunmoon-prod systemd[1]: Failed to start systemd-networkd-wait-online.service - Wait for Network to be Configured.
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd-networkd[1266]: ens33: Interface name change detected, renamed to eth0.
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd-networkd[1266]: eth0: Reconfiguring with /run/systemd/network/10-netplan-eth0.network.
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd-networkd[1266]: eth0: Link UP
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd-networkd[1266]: eth0: Gained carrier
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd[1]: Stopping systemd-networkd.service - Network Configuration...
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd[1]: systemd-networkd.service: Deactivated successfully.
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd[1]: Stopped systemd-networkd.service - Network Configuration.
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd[1]: Starting systemd-networkd.service - Network Configuration...
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd-networkd[1412]: lo: Link UP
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd-networkd[1412]: lo: Gained carrier
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd-networkd[1412]: eth0: Link UP
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd-networkd[1412]: eth0: Gained carrier
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd-networkd[1412]: Enumeration completed
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd[1]: Started systemd-networkd.service - Network Configuration.
+2026-10-21T10:04:18+00:00 sunmoon-prod systemd-networkd[1412]: eth0: Configuring with /run/systemd/network/10-netplan-eth0.network.
+2026-10-21T10:04:20+00:00 sunmoon-prod systemd-networkd[1412]: eth0: Gained IPv6LL
+
+Generated network wait settings:
+# /usr/lib/systemd/system/systemd-networkd-wait-online.service
+#  SPDX-License-Identifier: LGPL-2.1-or-later
+#
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; either version 2.1 of the License, or
+#  (at your option) any later version.
+
+[Unit]
+Description=Wait for Network to be Configured
+Documentation=man:systemd-networkd-wait-online.service(8)
+ConditionCapability=CAP_NET_ADMIN
+DefaultDependencies=no
+Conflicts=shutdown.target
+BindsTo=systemd-networkd.service
+After=systemd-networkd.service
+Before=network-online.target shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/systemd/systemd-networkd-wait-online
+RemainAfterExit=yes
+
+[Install]
+WantedBy=network-online.target
+
+# /run/systemd/system/systemd-networkd-wait-online.service.d/10-netplan.conf
+[Unit]
+ConditionPathIsSymbolicLink=/run/systemd/generator/network-online.target.wants/systemd-networkd-wait-online.service
+
+[Service]
+ExecStart=
+ExecStart=/lib/systemd/systemd-networkd-wait-online -i eth0:degraded
+ExecStart=/lib/systemd/systemd-networkd-wait-online --any -o routable -i eth0
+
+Network file identities and online requirements:
+/run/systemd/network/10-netplan-eth0.link:[Match]
+/run/systemd/network/10-netplan-eth0.link:OriginalName=e*
+/run/systemd/network/10-netplan-eth0.link:[Link]
+/run/systemd/network/10-netplan-eth0.link:Name=eth0
+/run/systemd/network/10-netplan-eth0.network:[Match]
+/run/systemd/network/10-netplan-eth0.network:Name=eth0
+/run/systemd/network/10-netplan-eth0.network:[Network]
+/run/systemd/network/10-netplan-eth0.network:LinkLocalAddressing=ipv6
+/run/systemd/network/10-netplan-eth0.network:Address=192.168.80.10/24
+/run/systemd/network/10-netplan-eth0.network:DNS=223.5.5.5
+/run/systemd/network/10-netplan-eth0.network:DNS=119.29.29.29
+/run/systemd/network/10-netplan-eth0.network:Gateway=192.168.80.2
+
+ssh exit=0

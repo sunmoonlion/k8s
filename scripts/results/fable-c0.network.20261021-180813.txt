@@ -1,0 +1,30 @@
+Read-only outbound redirect / persistence / boot follow-up.
+aliyun mirror HTTP=200 TLSverify=0 final=https://developer.aliyun.com/mirror/
+/data fstab: LABEL=sunmoon-data /data ext4 defaults,nofail 0 2
+  UNIT                                 LOAD   ACTIVE SUB    DESCRIPTION
+● systemd-networkd-wait-online.service loaded failed failed Wait for Network to be Configured
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+1 loaded units listed.
+status: disabled
+extended_status: disabled
+boot_status_code: disabled-by-marker-file
+last_update: Thu, 01 Jan 1970 00:02:19 +0000
+detail: DataSourceNone
+errors: []
+recoverable_errors: {}
+
+ssh exit=0
+
+$ ping -c 2 -W 3 192.168.80.10
+PING 192.168.80.10 (192.168.80.10) 56(84) bytes of data.
+64 bytes from 192.168.80.10: icmp_seq=1 ttl=63 time=1.54 ms
+64 bytes from 192.168.80.10: icmp_seq=2 ttl=63 time=1.30 ms
+
+--- 192.168.80.10 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 999ms
+rtt min/avg/max/mdev = 1.299/1.420/1.541/0.121 ms
+ping exit=0

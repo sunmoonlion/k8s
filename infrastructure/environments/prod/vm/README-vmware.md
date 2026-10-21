@@ -5,7 +5,7 @@
 ## 一次性准备（所有者）
 
 1. Windows「启用或关闭 Windows 功能」里勾上 **Windows Hypervisor Platform**（WSL2 已经用着「虚拟机平台」，这个是给 VMware 和它共存用的），按提示重启。
-2. 装 VMware Workstation Pro 17.6 或更新（Broadcom 网站注册免费账号下载，或 `winget install VMware.WorkstationPro`）。
+2. 从 Broadcom 网站注册账号并下载 Windows 版 VMware Workstation Pro，完成账号验证后安装。本次实际安装版本为 26H1u1。
 3. 打开 VMware 的 编辑 → 虚拟网络编辑器 → 选 **VMnet8（NAT）** → 子网改成 `192.168.80.0`、掩码 `255.255.255.0` → 「NAT 设置」里网关 `192.168.80.2` → 应用。这一步要管理员权限，它会自己提示。
 
 ## 新建虚拟机（所有者，在 VMware 界面里）
@@ -16,13 +16,13 @@
 | 安装来源 | **稍后安装操作系统** |
 | 客户机操作系统 | Linux → Ubuntu 64 位 |
 | 名称与位置 | `sunmoon-prod`，位置 `C:\VMs\sunmoon-prod`（本地机只有 C 盘） |
-| 固件 | **UEFI**，安全引导可开可不开 |
-| 处理器 | 处理器数 8（或 4×2），其余默认 |
-| 内存 | 32768 MB |
+| 固件 | **UEFI**；创建后也可在「编辑虚拟机设置 → Options／选项 → Advanced／高级 → Firmware type」设置，首次安装前选好 |
+| 处理器 | **处理器数量 1，每个处理器 8 核，总共 8 核** |
+| 内存 | **49152 MB（48 GiB）** |
 | 网络 | **使用网络地址转换（NAT）**（就是 VMnet8） |
 | 控制器、磁盘类型 | 默认 |
 | 磁盘 | 创建新虚拟磁盘，**60 GB**，单个文件，**不勾「立即分配所有磁盘空间」** |
-| 完成前「自定义硬件」 | ① 新 CD/DVD → 使用 ISO → 选系统 ISO；② **再添加一个** CD/DVD → 使用 ISO → `sunmoon-prod-seed.iso`；③ 添加 → 硬盘 → 新建 **300 GB**，单个文件，同样不立即分配（按需增长，可再扩） |
+| 创建后、首次开机前「编辑虚拟机设置」 | ① CD/DVD → 使用 ISO → 选系统 ISO；② **再添加一个** CD/DVD → 使用 ISO → `sunmoon-prod-seed.iso`；③ **Add／添加 → Hard Disk／硬盘 → 创建新虚拟磁盘 → 300 GB**，同样不立即分配（按需增长，可再扩） |
 | 开机 | 控制台里安装器问「Continue with autoinstall?」输 `yes` 回车。之后全自动，装完虚拟机自己关机 |
 | 关机后 | 虚拟机 → 设置 → 把两个 CD/DVD 设备**移除**（或取消「启动时连接」）→ 开机 |
 
