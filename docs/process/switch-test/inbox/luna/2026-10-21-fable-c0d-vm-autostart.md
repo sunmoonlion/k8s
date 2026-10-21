@@ -1,6 +1,6 @@
 # luna 卡 fable-c0d：生产虚拟机随 Windows 开机自起 + WSL 转发开机自动（0039 C0 收尾）
 
-> 状态：**可执行**（远程 Fable 2026-10-21 晚写，所有者定：无界面 Ubuntu 起得快，开机自启动装上）。两件事：① 用 VMware Workstation 17 自带的 **Auto Start**（宿主开机、不等登录就起 VM；由 `VMware Autostart Service` 管，关机时它收尾），不用计划任务起 `vmrun`；② 让 WSL→VMnet8 的 IPv4 转发开机自动开（WSL 的 vEthernet 每次 WSL 启动会重建，设置不一定留得住），用一个 SYSTEM 身份的计划任务轮询两张网卡、幂等开启。
+> 状态：**只剩第四节**（远程 2026-10-21 晚审：第一、二、三节已做并通过，回执 `scripts/results/fable-c0d.20261021-2040.md`，走的是 A 方案；所有者定本次不重启 Windows。**下次 Windows 启动后**从第四节开始跑，写回执、卡移 done）。原卡头：（远程 Fable 2026-10-21 晚写，所有者定：无界面 Ubuntu 起得快，开机自启动装上）。两件事：① 用 VMware Workstation 17 自带的 **Auto Start**（宿主开机、不等登录就起 VM；由 `VMware Autostart Service` 管，关机时它收尾），不用计划任务起 `vmrun`；② 让 WSL→VMnet8 的 IPv4 转发开机自动开（WSL 的 vEthernet 每次 WSL 启动会重建，设置不一定留得住），用一个 SYSTEM 身份的计划任务轮询两张网卡、幂等开启。
 >
 > 临时就地修授权同前：`infrastructure/environments/prod/vm/` 下脚本与本卡命令里让步骤过不去的错可以就地改、验、续跑并推 `origin/fable`，回执里写「就地修了什么」；不改机制（不改成登录任务起 vmrun、不关防火墙、不改 VM 配置）、不碰 WSL/开发集群。需要管理员权限的两步走 UAC，所有者点同意（同 c0 转发那次）。
 
