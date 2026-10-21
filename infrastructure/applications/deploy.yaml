@@ -12,8 +12,8 @@
     # check lives in applications/verify.yaml
     application_check_port: '{{ entry_port if application_check_public | default(false) | bool else cluster_ingress_port }}'
     capacity_operation: 'application-deploy-{{ application_name }}'
-    application_cfg: '{{ (lookup("file", app_root + "/config.yaml") | from_yaml)[application_name + "_deployment"] }}'
-    backend_cfg_raw: '{{ (lookup("file", component_root + "/config.yaml") | from_yaml)[application_name + "_backend_deployment"] }}'
+    application_cfg: '{{ (lookup("template", app_root + "/config.yaml", convert_data=False) | from_yaml)[application_name + "_deployment"] }}'
+    backend_cfg_raw: '{{ (lookup("template", component_root + "/config.yaml", convert_data=False) | from_yaml)[application_name + "_backend_deployment"] }}'
     # private_dir/backup_dir 由站点值推出，插回配置里原来的位置（deploy_budget_bytes 之前）；与 common/backend/bind.yaml 同一规则
     backend_cfg: >-
       {%- set out = {} -%}
@@ -24,8 +24,8 @@
         {%- set _ = out.update({k: v}) -%}
       {%- endfor -%}
       {{ out }}
-    web_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-web-frontend/config.yaml") | from_yaml)[application_name + "_web_deployment"] }}'
-    admin_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-admin-frontend/config.yaml") | from_yaml)[application_name + "_admin_deployment"] }}'
+    web_cfg: '{{ (lookup("template", app_root + "/" + application_name + "-web-frontend/config.yaml", convert_data=False) | from_yaml)[application_name + "_web_deployment"] }}'
+    admin_cfg: '{{ (lookup("template", app_root + "/" + application_name + "-admin-frontend/config.yaml", convert_data=False) | from_yaml)[application_name + "_admin_deployment"] }}'
     cfg: '{{ application_cfg | combine(backend_cfg) | combine({"namespace":app_namespace, "web_origin":web_cfg.origin, "admin_origin":admin_cfg.origin}) }}'
     app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/{{ application_name }}-app'
     component_root: '{{ app_root }}/{{ application_name }}-backend'
@@ -56,8 +56,8 @@
     service_relation: '{{ "ingest" if application_name == "knowfeed" else "retrieve" }}'
     service_env_prefix: '{{ "KNOWBASE_APP_SERVICE" if application_name == "knowfeed" else "KNOWBASE_RETRIEVAL_SERVICE" }}'
     service_bindings:
-      ingest: '{{ (lookup("file", repo + "/gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml") | from_yaml).knowfeed_backend_deployment.knowbase_service }}'
-      retrieve: '{{ (lookup("file", repo + "/gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml") | from_yaml).knowbench_backend_deployment.knowbase_service }}'
+      ingest: '{{ (lookup("template", repo + "/gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml", convert_data=False) | from_yaml).knowfeed_backend_deployment.knowbase_service }}'
+      retrieve: '{{ (lookup("template", repo + "/gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml", convert_data=False) | from_yaml).knowbench_backend_deployment.knowbase_service }}'
     all_candidate_files: '{{ core_candidate_files + (["agent-releases/workload.yaml","agent-releases/provision.sops.yaml","agent-releases/kustomization.yaml","runtime/agent-releases.sops.yaml"] if agent_releases_enabled else []) + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) + (["service-identity/workload.yaml","service-identity/provision.sops.yaml","service-identity/kustomization.yaml","runtime/service.sops.yaml"] if service_enabled else []) }}'
     selected_application_components: '{{ selection.applications[application_name] }}'
     selected_backend: '{{ application_name + "-backend" in selected_application_components }}'
@@ -111,8 +111,8 @@
           - admin_cfg.port | int > 1024 and admin_cfg.port | int < 65536
           - web_cfg.replicas | int >= 1
           - admin_cfg.replicas | int >= 1
-          - cfg.web_origin is match('^https://[a-z0-9.-]+:30443$')
-          - cfg.admin_origin is match('^https://[a-z0-9.-]+:30443$')
+          - cfg.web_origin is match('^https://[a-z0-9.-]+:' + (public_port | string) + '$')
+          - cfg.admin_origin is match('^https://[a-z0-9.-]+:' + (public_port | string) + '$')
           - cfg.web_origin != cfg.admin_origin
           - cfg.rabbitmq_user is match('^[a-z][a-z0-9_.-]{1,63}$')
           - cfg.rabbitmq_user not in ['admin','guest']

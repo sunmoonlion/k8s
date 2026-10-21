@@ -49,7 +49,7 @@ spec:
           command: [python, /script/provision.py]
           env:
             - {name: CASDOOR_INTERNAL_ENDPOINT, value: 'http://casdoor.{{ app_namespace }}.svc.cluster.local:8000'}
-            - {name: CASDOOR_ORIGIN, value: 'https://{{ casdoor_hostname }}:30443'}
+            - {name: CASDOOR_ORIGIN, value: 'https://{{ casdoor_hostname }}:{{ public_port }}'}
             - {name: CASDOOR_ORGANIZATION, value: '{{ cfg.identity_organization }}'}
             - {name: CASDOOR_USER_ORGANIZATION, value: '{{ cfg.identity_user_organization }}'}
             - name: BROWSER_CLIENTS
@@ -71,7 +71,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata: {name: {{ application_name }}-browser-identity, namespace: {{ app_namespace }}}
 data:
-  CASDOOR_ENDPOINT: 'https://{{ casdoor_hostname }}:30443'
+  CASDOOR_ENDPOINT: 'https://{{ casdoor_hostname }}:{{ public_port }}'
   CASDOOR_ORGANIZATION: '{{ cfg.identity_organization }}'
   WEB_CASDOOR_ORGANIZATIONS: '{{ cfg.identity_user_organization }}'
   # 管理端业务页给 admin、operator 两个角色看（待办 98）；角色由注册脚本在 built-in 里建好

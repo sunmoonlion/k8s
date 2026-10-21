@@ -1,7 +1,7 @@
 ---
 # Celery Flower for the platform RabbitMQ broker. Independent basic-auth, no password-table row.
 services_flower_enabled: true
-flower_origin: 'https://flower.sunmoonai.com:{{ entry_port }}'
+flower_origin: 'https://flower.{{ site_domain }}:{{ public_port }}'
 flower_port: 5555
 flower_username: admin
 flower_resources:

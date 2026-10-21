@@ -1,7 +1,7 @@
 # 浏览器入口；后端身份配置读取同一来源。运行配置与本组件声明同处。
 ---
 knowlab_web_deployment:
-  origin: https://knowlab.sunmoonai.com:30443
+  origin: 'https://knowlab.{{ site_domain }}:{{ public_port }}'
   casdoor_application: sunmoonai-knowlab-web
   casdoor_client_id: sunmoon-kind-knowlab-web
   port: 3000

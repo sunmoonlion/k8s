@@ -39,7 +39,7 @@ spec:
           command: [python, /script/provision.py]
           env:
             - {name: CASDOOR_INTERNAL_ENDPOINT, value: 'https://{{ service_access_hosts.casdoor }}'}
-            - {name: CASDOOR_ORIGIN, value: 'https://{{ casdoor_hostname }}:30443'}
+            - {name: CASDOOR_ORIGIN, value: 'https://{{ casdoor_hostname }}:{{ public_port }}'}
             - {name: CASDOOR_ORGANIZATION, value: '{{ cfg.knowbase_service.organization }}'}
             - name: SERVICE_DEFINITION
               value: {{ cfg.knowbase_service | to_json | to_json }}

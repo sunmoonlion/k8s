@@ -5,6 +5,7 @@ here=$(cd "$(dirname "$0")" && pwd); infra=$(cd "$here/../.." && pwd)
 work=$(mktemp -d); dir=/etc/sunmoon/edge-smoke
 node_bin=${NODE_BIN:-$HOME/.nvm/versions/node/v24.21.0/bin/node}
 frpc_image=$(awk -F': ' '/^edge_smoke_frpc_image:/{print $2}' "$infra/edge/config.yaml")
+site_domain=$(awk -F': *' '/^site_domain:/{print $2}' "$infra/environments/kind/site.yaml"); port=$(awk -F': *' '/^public_port:/{print $2}' "$infra/environments/kind/site.yaml")
 fail=0; check() { if (set +o pipefail; eval "$2"); then echo "  ✓ $1"; else echo "  ✗ $1"; fail=1; fi; }
 cleanup() {
   docker rm -f sunmoon-edge-smoke-frpc sunmoon-edge-smoke-badfrpc >/dev/null 2>&1
@@ -19,7 +20,7 @@ token=$(openssl rand -base64 36 | tr -d '\n/+=' | cut -c1-48)
 sudo -n install -d -m 700 "$dir"
 printf 'token: %s\n' "$token" | sudo -n install -m 600 /dev/stdin "$dir/frp-token.yaml"
 echo "== 部署（smoke 模式）"
-(cd "$infra" && .venv/bin/ansible-playbook -i edge/inventory.yaml edge/service.yaml -e @edge/config.yaml \
+(cd "$infra" && .venv/bin/ansible-playbook -i edge/inventory.yaml edge/service.yaml -e @environments/kind/site.yaml -e @edge/config.yaml \
   -e edge_action=deploy -e edge_tls_mode=smoke -e edge_config_dir=$dir -e edge_token_file=$dir/frp-token.yaml </dev/null >"$work/deploy.log" 2>&1) \
   || { tail -30 "$work/deploy.log"; exit 1; }
 openssl req -x509 -newkey rsa:2048 -nodes -keyout "$work/k.pem" -out "$work/c.pem" -days 1 -subj /CN=smoke >/dev/null 2>&1
@@ -27,19 +28,19 @@ openssl req -x509 -newkey rsa:2048 -nodes -keyout "$work/k.pem" -out "$work/c.pe
 docker run -d --name sunmoon-edge-smoke-frpc --network host -e FRP_AUTH_TOKEN="$token" \
   -v "$here/frpc.toml.tmpl:/etc/frp/frpc.toml:ro" "$frpc_image" -c /etc/frp/frpc.toml >/dev/null
 sleep 4
-r() { curl -sk --max-time 10 --resolve "$1:30443:127.0.0.1" "https://$1:30443$2" "${@:3}"; }
+r() { curl -sk --max-time 10 --resolve "$1:$port:127.0.0.1" "https://$1:$port$2" "${@:3}"; }
 echo "== 检查"
 for h in knowbench relay; do
-  check "$h 经隧道回显正确 Host" "r $h.sunmoonai.com /hello | grep -q '\"host\":\"$h.sunmoonai.com'"
+  check "$h 经隧道回显正确 Host" "r $h.$site_domain /hello | grep -q '\"host\":\"$h.$site_domain'"
 done
-check "casdoor 放行的登录路径经隧道回显正确 Host" "r casdoor.sunmoonai.com /login/oauth/authorize | grep -q '\"host\":\"casdoor.sunmoonai.com'"
-check "casdoor 没放行的路径 403（管理界面不对公网）" "[ \"\$(r casdoor.sunmoonai.com /api/get-users -o /dev/null -w '%{http_code}')\" = 403 ] && [ \"\$(r casdoor.sunmoonai.com / -o /dev/null -w '%{http_code}')\" = 403 ]"
-check "proto=https 保留到后端" "r knowbench.sunmoonai.com /x | grep -q '\"proto\":\"https\"'"
-check "X-Forwarded-For 第一个是真实来源" "r knowbench.sunmoonai.com /x | grep -q '\"xff\":\"127.0.0.1'"
-check "未列出的域名 404" "[ \"\$(r harbor.sunmoonai.com / -o /dev/null -w '%{http_code}')\" = 404 ]"
-check "80 跳 30443" "curl -s -o /dev/null -w '%{redirect_url}' --resolve knowbench.sunmoonai.com:80:127.0.0.1 http://knowbench.sunmoonai.com/a | grep -q '^https://knowbench.sunmoonai.com:30443/a'"
-check "SSE 分三次到达（不被缓冲）" "r knowbench.sunmoonai.com /sse -N | awk '{print systime()}' | uniq | wc -l | grep -qE '^[23]$'"
-check "WebSocket 升级透传 101" "curl -sk -i --max-time 5 --http1.1 --resolve relay.sunmoonai.com:30443:127.0.0.1 -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: c21va2Utc21va2Utc21va2U=' https://relay.sunmoonai.com:30443/ws 2>/dev/null | head -1 | grep -q ' 101 '"
+check "casdoor 放行的登录路径经隧道回显正确 Host" "r casdoor.$site_domain /login/oauth/authorize | grep -q '\"host\":\"casdoor.$site_domain'"
+check "casdoor 没放行的路径 403（管理界面不对公网）" "[ \"\$(r casdoor.$site_domain /api/get-users -o /dev/null -w '%{http_code}')\" = 403 ] && [ \"\$(r casdoor.$site_domain / -o /dev/null -w '%{http_code}')\" = 403 ]"
+check "proto=https 保留到后端" "r knowbench.$site_domain /x | grep -q '\"proto\":\"https\"'"
+check "X-Forwarded-For 第一个是真实来源" "r knowbench.$site_domain /x | grep -q '\"xff\":\"127.0.0.1'"
+check "未列出的域名 404" "[ \"\$(r harbor.$site_domain / -o /dev/null -w '%{http_code}')\" = 404 ]"
+check "80 跳 $port" "curl -s -o /dev/null -w '%{redirect_url}' --resolve knowbench.$site_domain:80:127.0.0.1 http://knowbench.$site_domain/a | grep -q '^https://knowbench.$site_domain:$port/a'"
+check "SSE 分三次到达（不被缓冲）" "r knowbench.$site_domain /sse -N | awk '{print systime()}' | uniq | wc -l | grep -qE '^[23]$'"
+check "WebSocket 升级透传 101" "curl -sk -i --max-time 5 --http1.1 --resolve relay.$site_domain:$port:127.0.0.1 -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: c21va2Utc21va2Utc21va2U=' https://relay.$site_domain:$port/ws 2>/dev/null | head -1 | grep -q ' 101 '"
 docker run -d --name sunmoon-edge-smoke-badfrpc --network host -e FRP_AUTH_TOKEN="wrong-token-wrong-token-wrong-token" \
   -v "$here/frpc.toml.tmpl:/etc/frp/frpc.toml:ro" "$frpc_image" -c /etc/frp/frpc.toml >/dev/null; sleep 3
 check "错令牌的 frpc 登录被拒" "docker logs sunmoon-edge-smoke-badfrpc 2>&1 | grep -qi 'token'"

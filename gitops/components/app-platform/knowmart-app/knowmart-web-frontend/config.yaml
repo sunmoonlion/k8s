@@ -1,7 +1,7 @@
 # 浏览器入口；后端身份配置读取同一来源。运行配置与本组件声明同处。
 ---
 knowmart_web_deployment:
-  origin: https://knowmart.sunmoonai.com:30443
+  origin: 'https://knowmart.{{ site_domain }}:{{ public_port }}'
   casdoor_application: sunmoonai-knowmart-web
   casdoor_client_id: sunmoon-kind-knowmart-web
   port: 3000

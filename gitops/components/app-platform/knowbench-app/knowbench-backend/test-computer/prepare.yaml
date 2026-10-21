@@ -39,7 +39,7 @@
 - name: Read the pinned sandbox image (Node and Codex) and the public edge address
   ansible.builtin.set_fact:
     test_computer_image: '{{ lookup("file", playbook_dir + "/../../gitops/components/sandbox-platform/sandbox/image.lock.yaml") | from_yaml }}'
-    test_computer_edge_ip: '{{ (lookup("file", playbook_dir + "/../edge/config.yaml") | from_yaml).edge_public_ip }}'
+    test_computer_edge_ip: '{{ edge_public_ip }}'
 - name: Require a pinned image digest and an edge address
   ansible.builtin.assert:
     quiet: true

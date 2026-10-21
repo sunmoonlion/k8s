@@ -1,7 +1,7 @@
 # 浏览器入口；后端身份配置读取同一来源。运行配置与本组件声明同处。
 ---
 knowbase_admin_deployment:
-  origin: https://knowbase-admin.sunmoonai.com:30443
+  origin: 'https://knowbase-admin.{{ site_domain }}:{{ public_port }}'
   casdoor_application: sunmoonai-knowbase-admin
   casdoor_client_id: sunmoon-kind-knowbase-admin
   port: 3000

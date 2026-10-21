@@ -76,7 +76,7 @@ knowbench_backend_deployment:
     WORKBENCH_RUNNER_ID: '{{ cluster_name }}-r1'
     WORKBENCH_PROVISIONER_URL: 'http://sandbox-provisioner.{{ sandbox_namespace }}.svc.cluster.local:8080'
     WORKBENCH_RELAY_ADMIN_URL: 'ws://relay.{{ relay_namespace }}.svc.cluster.local:47100'
-    WORKBENCH_RELAY_PUBLIC_URL: 'wss://relay.sunmoonai.com:{{ entry_port }}'
+    WORKBENCH_RELAY_PUBLIC_URL: 'wss://relay.{{ site_domain }}:{{ public_port }}'
     # 作为运行方跑分身测试（SDD 0027 §3.4）：测试电脑的工作区、每月测试费用上限（所有者定 1000 元）。
     # 测试账号 knowbot-tester 的 Casdoor 用户 id（0028 R5.4 建）
     KNOWBOT_TEST_SUBJECT: '1929b2c2-760f-4d1a-bdc9-d1b55410003c'

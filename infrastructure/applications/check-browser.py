@@ -42,9 +42,9 @@ def run(settings):
 
         def request(self, url, method='GET', data=None, headers=None):
             target = urlsplit(url)
-            require(target.scheme == 'https' and target.hostname in allowed and target.port == 30443,
+            require(target.scheme == 'https' and target.hostname in allowed and target.port == int(settings['entry_port']),
                     'Unexpected protocol destination')
-            connection = Connection(target.hostname, 30443, timeout=15, context=context)
+            connection = Connection(target.hostname, int(settings['entry_port']), timeout=15, context=context)
             request_headers = {'Host': target.netloc, **(headers or {})}
             jar = self.cookies.get(target.hostname, {})
             if jar:

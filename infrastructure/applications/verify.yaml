@@ -11,8 +11,8 @@
     application_action: check
     application_check_port: '{{ entry_port if application_check_public | default(false) | bool else cluster_ingress_port }}'
     capacity_operation: 'application-deploy-{{ application_name }}'
-    application_cfg: '{{ (lookup("file", app_root + "/config.yaml") | from_yaml)[application_name + "_deployment"] }}'
-    backend_cfg_raw: '{{ (lookup("file", component_root + "/config.yaml") | from_yaml)[application_name + "_backend_deployment"] }}'
+    application_cfg: '{{ (lookup("template", app_root + "/config.yaml", convert_data=False) | from_yaml)[application_name + "_deployment"] }}'
+    backend_cfg_raw: '{{ (lookup("template", component_root + "/config.yaml", convert_data=False) | from_yaml)[application_name + "_backend_deployment"] }}'
     # private_dir/backup_dir 由站点值推出，插回配置里原来的位置（deploy_budget_bytes 之前）；与 common/backend/bind.yaml 同一规则
     backend_cfg: >-
       {%- set out = {} -%}
@@ -23,8 +23,8 @@
         {%- set _ = out.update({k: v}) -%}
       {%- endfor -%}
       {{ out }}
-    web_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-web-frontend/config.yaml") | from_yaml)[application_name + "_web_deployment"] }}'
-    admin_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-admin-frontend/config.yaml") | from_yaml)[application_name + "_admin_deployment"] }}'
+    web_cfg: '{{ (lookup("template", app_root + "/" + application_name + "-web-frontend/config.yaml", convert_data=False) | from_yaml)[application_name + "_web_deployment"] }}'
+    admin_cfg: '{{ (lookup("template", app_root + "/" + application_name + "-admin-frontend/config.yaml", convert_data=False) | from_yaml)[application_name + "_admin_deployment"] }}'
     cfg: '{{ application_cfg | combine(backend_cfg) | combine({"namespace":app_namespace, "web_origin":web_cfg.origin, "admin_origin":admin_cfg.origin}) }}'
     app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/{{ application_name }}-app'
     component_root: '{{ app_root }}/{{ application_name }}-backend'
@@ -55,8 +55,8 @@
     service_relation: '{{ "ingest" if application_name == "knowfeed" else "retrieve" }}'
     service_env_prefix: '{{ "KNOWBASE_APP_SERVICE" if application_name == "knowfeed" else "KNOWBASE_RETRIEVAL_SERVICE" }}'
     service_bindings:
-      ingest: '{{ (lookup("file", repo + "/gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml") | from_yaml).knowfeed_backend_deployment.knowbase_service }}'
-      retrieve: '{{ (lookup("file", repo + "/gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml") | from_yaml).knowbench_backend_deployment.knowbase_service }}'
+      ingest: '{{ (lookup("template", repo + "/gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml", convert_data=False) | from_yaml).knowfeed_backend_deployment.knowbase_service }}'
+      retrieve: '{{ (lookup("template", repo + "/gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml", convert_data=False) | from_yaml).knowbench_backend_deployment.knowbase_service }}'
     all_candidate_files: '{{ core_candidate_files + (["agent-releases/workload.yaml","agent-releases/provision.sops.yaml","agent-releases/kustomization.yaml","runtime/agent-releases.sops.yaml"] if agent_releases_enabled else []) + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) + (["service-identity/workload.yaml","service-identity/provision.sops.yaml","service-identity/kustomization.yaml","runtime/service.sops.yaml"] if service_enabled else []) }}'
     selected_application_components: '{{ selection.applications[application_name] }}'
     selected_backend: '{{ application_name + "-backend" in selected_application_components }}'
@@ -109,8 +109,8 @@
           - admin_cfg.port | int > 1024 and admin_cfg.port | int < 65536
           - web_cfg.replicas | int >= 1
           - admin_cfg.replicas | int >= 1
-          - cfg.web_origin is match('^https://[a-z0-9.-]+:30443$')
-          - cfg.admin_origin is match('^https://[a-z0-9.-]+:30443$')
+          - cfg.web_origin is match('^https://[a-z0-9.-]+:' + (public_port | string) + '$')
+          - cfg.admin_origin is match('^https://[a-z0-9.-]+:' + (public_port | string) + '$')
           - cfg.web_origin != cfg.admin_origin
           - cfg.rabbitmq_user is match('^[a-z][a-z0-9_.-]{1,63}$')
           - cfg.rabbitmq_user not in ['admin','guest']
@@ -196,7 +196,7 @@
           delay: 5
         - name: Verify only selected frontend health and exact deployment identity
           ansible.builtin.command:
-            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item.value.origin | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ item.value.origin }}/healthz']
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item.value.origin | urlsplit("hostname") }}:{{ public_port }}:127.0.0.1:{{ application_check_port }}', '{{ item.value.origin }}/healthz']
           loop: '{{ selected_browser_clients | dict2items }}'
           register: selected_health
           changed_when: false
@@ -208,7 +208,7 @@
         - name: Verify actual login and session boundaries through only selected frontend routes
           ansible.builtin.command:
             argv: [/usr/bin/python3, '{{ playbook_dir }}/check-browser.py']
-            stdin: '{{ {"clients":selected_browser_clients,"provider":"https://" + casdoor_hostname + ":30443","organization":cfg.identity_organization,"user_organization":cfg.identity_user_organization,"username":"admin","password":(selected_browser_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password,"application":application_name,"ca_file":registry_config_dir + "/tls/ca.crt","entry_port":application_check_port | int} | to_json }}'
+            stdin: '{{ {"clients":selected_browser_clients,"provider":"https://" + casdoor_hostname + ":" + (public_port | string),"organization":cfg.identity_organization,"user_organization":cfg.identity_user_organization,"username":"admin","password":(selected_browser_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password,"application":application_name,"ca_file":registry_config_dir + "/tls/ca.crt","entry_port":application_check_port | int} | to_json }}'
           register: selected_browser_result
           changed_when: false
           no_log: true
@@ -406,7 +406,7 @@
               - identity_acceptance.client_secrets_match is sameas true
               - identity_acceptance.authorization_code_only is sameas true
               - identity_acceptance.signup_disabled is sameas true
-              - identity_acceptance.issuer == 'https://' + casdoor_hostname + ':30443'
+              - identity_acceptance.issuer == 'https://' + casdoor_hostname + ':' + (public_port | string)
               - identity_acceptance.pkce_s256 is sameas true
               - identity_acceptance.jwks_available is sameas true
         - name: Verify the current runtime deployments and exact image identities
@@ -516,20 +516,20 @@
               ansible.builtin.debug: {msg: '{{ provider_check.stdout | from_json }}'}
         - name: Verify API readiness through each new TLS route
           ansible.builtin.command:
-            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ item }}/api/health']
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item | urlsplit("hostname") }}:{{ public_port }}:127.0.0.1:{{ application_check_port }}', '{{ item }}/api/health']
           loop: ['{{ cfg.web_origin }}', '{{ cfg.admin_origin }}']
           register: api_route
           changed_when: false
           failed_when: api_route.rc != 0 or (api_route.stdout | from_json).status != 'ready'
         - name: Verify the exact API deployment identity through TLS
           ansible.builtin.command:
-            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ cfg.web_origin | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ cfg.web_origin }}/api/version']
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ cfg.web_origin | urlsplit("hostname") }}:{{ public_port }}:127.0.0.1:{{ application_check_port }}', '{{ cfg.web_origin }}/api/version']
           register: api_version
           changed_when: false
           failed_when: api_version.rc != 0 or (api_version.stdout | from_json).deploymentId != deployment_id
         - name: Verify both frontend surfaces through their own certificate hostnames
           ansible.builtin.command:
-            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item.origin | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ item.origin }}/healthz']
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item.origin | urlsplit("hostname") }}:{{ public_port }}:127.0.0.1:{{ application_check_port }}', '{{ item.origin }}/healthz']
           loop:
             - {origin: '{{ cfg.web_origin }}', surface: web}
             - {origin: '{{ cfg.admin_origin }}', surface: admin}
@@ -566,7 +566,7 @@
         - name: Verify real authorization callback SSR and security boundaries through the selected entry
           ansible.builtin.command:
             argv: [/usr/bin/python3, '{{ playbook_dir }}/check-browser.py']
-            stdin: '{{ {"clients":browser_clients, "provider":"https://" + casdoor_hostname + ":30443", "organization":cfg.identity_organization,"user_organization":cfg.identity_user_organization, "username":"admin", "password":(browser_acceptance_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password, "application":application_name, "ca_file":registry_config_dir + "/tls/ca.crt", "entry_port":application_check_port | int} | to_json }}'
+            stdin: '{{ {"clients":browser_clients, "provider":"https://" + casdoor_hostname + ":" + (public_port | string), "organization":cfg.identity_organization,"user_organization":cfg.identity_user_organization, "username":"admin", "password":(browser_acceptance_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password, "application":application_name, "ca_file":registry_config_dir + "/tls/ca.crt", "entry_port":application_check_port | int} | to_json }}'
           register: browser_acceptance
           changed_when: false
           no_log: true

@@ -145,4 +145,4 @@ spec:
       ports: [{protocol: TCP, port: {{ object_storage_port }}}]
     - to:
         - ipBlock: {cidr: {{ test_computer_edge_ip }}/32}
-      ports: [{protocol: TCP, port: 30443}]
+      ports: [{protocol: TCP, port: {{ public_port }}}]

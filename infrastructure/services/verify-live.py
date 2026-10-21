@@ -76,6 +76,8 @@ def main():
     parser.add_argument('--kubeconfig', required=True)
     parser.add_argument('--context', required=True)
     parser.add_argument('--ca', required=True)
+    parser.add_argument('--casdoor-origin', required=True)
+    parser.add_argument('--ingress-port', required=True)
     parser.add_argument('--messaging-namespace', required=True)
     parser.add_argument('--app-namespace', required=True)
     parser.add_argument('--data-namespace', required=True)
@@ -147,8 +149,8 @@ def main():
     if not args.skip_casdoor:
         with tempfile.TemporaryDirectory(prefix='sunmoon-identity-') as temporary:
             cookies = str(Path(temporary)/'cookies')
-            origin = 'https://casdoor.sunmoonai.com:30443'
-            base = ['curl','--silent','--show-error','--fail','--max-time','30','--noproxy','*','--cacert',args.ca,'--connect-to','casdoor.sunmoonai.com:30443:127.0.0.1:29443']
+            origin = args.casdoor_origin
+            base = ['curl','--silent','--show-error','--fail','--max-time','30','--noproxy','*','--cacert',args.ca,'--connect-to', origin.split('://', 1)[1] + ':127.0.0.1:' + args.ingress_port]
             payload = {'application':'app-built-in','organization':'built-in','username':'admin','password':credentials['casdoor_admin_password'],'type':'login'}
             result = subprocess.run(base + ['--cookie-jar',cookies,'--header','Content-Type: application/json','--header','Origin: '+origin,'--data-binary','@-',origin+'/api/login'], input=json.dumps(payload), capture_output=True, text=True, env=environment, timeout=35)
             require(result.returncode == 0, 'Casdoor trusted TLS/login request failed')

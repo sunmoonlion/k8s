@@ -71,10 +71,10 @@
       CROSS_APP_SOURCES_JSON: '{{ cross_app_sources }}'
   vars:
     web_origins:
-      knowfeed: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml") | from_yaml).knowfeed_web_deployment.origin }}'
-      knowbase: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml") | from_yaml).knowbase_web_deployment.origin }}'
-      knowbench: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml") | from_yaml).knowbench_web_deployment.origin }}'
-      knowmart: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml") | from_yaml).knowmart_web_deployment.origin }}'
+      knowfeed: '{{ (lookup("template", playbook_dir + "/../../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml", convert_data=False) | from_yaml).knowfeed_web_deployment.origin }}'
+      knowbase: '{{ (lookup("template", playbook_dir + "/../../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml", convert_data=False) | from_yaml).knowbase_web_deployment.origin }}'
+      knowbench: '{{ (lookup("template", playbook_dir + "/../../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml", convert_data=False) | from_yaml).knowbench_web_deployment.origin }}'
+      knowmart: '{{ (lookup("template", playbook_dir + "/../../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml", convert_data=False) | from_yaml).knowmart_web_deployment.origin }}'
     # 谁带人去哪（PRD/apps/README.md 4.1）：knowbench 去 knowfeed、knowbase，以及 knowmart「我的分身」（请分身，SDD 0027 P4）；
     # knowbase 去 knowfeed；knowfeed 去 knowbase；knowmart 去 knowbench（专家目录「去工作台请」，SDD 0032）
     target_names: "{{ {'knowbench': ['knowfeed','knowbase','knowmart'], 'knowbase': ['knowfeed'], 'knowfeed': ['knowbase'], 'tpl': [], 'knowlab': [], 'knowmart': ['knowbench']}[application_name] }}"

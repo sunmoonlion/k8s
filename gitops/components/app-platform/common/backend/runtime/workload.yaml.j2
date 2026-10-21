@@ -42,14 +42,14 @@ data:
   {{ service_env_prefix }}_APPLICATION: {{ cfg.knowbase_service.application | to_json }}
   {{ service_env_prefix }}_CLIENT_ID: {{ cfg.knowbase_service.client_id | to_json }}
   {{ service_env_prefix }}_SCOPE: {{ cfg.knowbase_service.scope | to_json }}
-  {{ service_env_prefix }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
+  {{ service_env_prefix }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:{{ public_port }}/.well-known/openid-configuration
   {{ service_env_prefix }}_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
   SSL_CERT_FILE: /etc/sunmoon/service/ca.crt
 {% endif %}
 {% if receiver_enabled %}
 {% for relation,prefix in [('ingest','INTERNAL_AUTH'),('retrieve','RETRIEVAL_AUTH')] %}
   {{ prefix }}_CASDOOR_APPLICATION: {{ service_bindings[relation].application | to_json }}
-  {{ prefix }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
+  {{ prefix }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:{{ public_port }}/.well-known/openid-configuration
   {{ prefix }}_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
   {{ prefix }}_AUDIENCE: {{ service_bindings[relation].client_id | to_json }}
   {{ prefix }}_SUBJECT_ALLOWLIST: {{ ('admin/' + service_bindings[relation].application) | to_json }}
@@ -62,7 +62,7 @@ data:
   {{ p }}_SERVICE_APPLICATION: {{ client.application | to_json }}
   {{ p }}_SERVICE_CLIENT_ID: {{ client.client_id | to_json }}
   {{ p }}_SERVICE_SCOPE: {{ client.scope | to_json }}
-  {{ p }}_SERVICE_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
+  {{ p }}_SERVICE_DISCOVERY_URL: https://{{ casdoor_hostname }}:{{ public_port }}/.well-known/openid-configuration
   {{ p }}_SERVICE_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
 {% endfor %}
 {% for relation, group in generic_service_receivers | default([]) | groupby('relation') %}
@@ -70,7 +70,7 @@ data:
 {% for receiver in group %}
 {% set p = 'SERVICE_AUTH_' ~ (receiver.relation | upper) ~ '_' ~ (receiver.caller | upper | replace('-', '_')) %}
   {{ p }}_CASDOOR_APPLICATION: {{ receiver.client.application | to_json }}
-  {{ p }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
+  {{ p }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:{{ public_port }}/.well-known/openid-configuration
   {{ p }}_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
   {{ p }}_AUDIENCE: {{ receiver.client.client_id | to_json }}
   {{ p }}_SUBJECT_ALLOWLIST: {{ ('admin/' + receiver.client.application) | to_json }}

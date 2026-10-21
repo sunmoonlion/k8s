@@ -13,6 +13,13 @@ cluster_kubeconfig: /home/zymun/.kube/sunmoon-kind.config
 cluster_operator: zymun
 operator_home: /home/zymun
 data_root: /mnt/sunmoon-data
+# 网络：站点域名与公网/入口端口（短名 tpl、casdoor、kibana… 两站相同，留在各模块 config 里拼成 '<短名>.{{ site_domain }}'）
+# Traefik 的 NodePort 30443 是入口组件常量，不是这个端口（生产 public_port=443 时 NodePort 仍是 30443）
+site_domain: sunmoonai.com
+public_port: 30443
+# 边缘：开发站点的公网入口在东京 VM（separate），生产宿主自带公网 IP 时为 local
+edge_mode: separate
+edge_public_ip: 43.153.135.74
 # 入口：非 Harbor 域名的默认后端（kind 节点 IP + 节点入口端口；C4 起改由建群模块的身份回执给出）
 entry_cluster_backend: 172.18.0.5:30443
 # 物料与仓库

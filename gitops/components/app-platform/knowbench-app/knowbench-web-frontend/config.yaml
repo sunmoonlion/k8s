@@ -1,7 +1,7 @@
 # 浏览器入口；后端身份配置读取同一来源。运行配置与本组件声明同处。
 ---
 knowbench_web_deployment:
-  origin: https://knowbench.sunmoonai.com:30443
+  origin: 'https://knowbench.{{ site_domain }}:{{ public_port }}'
   casdoor_application: sunmoonai-knowbench-web
   casdoor_client_id: sunmoon-kind-knowbench-web
   port: 3000

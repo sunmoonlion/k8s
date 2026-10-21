@@ -16,10 +16,10 @@
     frontend_admin_object: 'app-platform/{{ prepare_vars.application_name }}-app/{{ prepare_vars.application_name }}-admin-frontend'
 - name: Load application configuration and locked images
   ansible.builtin.set_fact:
-    application_cfg: '{{ (lookup("file", app_root + "/config.yaml") | from_yaml)[application_name + "_deployment"] }}'
-    backend_cfg_raw: '{{ (lookup("file", component_root + "/config.yaml") | from_yaml)[application_name + "_backend_deployment"] }}'
-    web_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-web-frontend/config.yaml") | from_yaml)[application_name + "_web_deployment"] }}'
-    admin_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-admin-frontend/config.yaml") | from_yaml)[application_name + "_admin_deployment"] }}'
+    application_cfg: '{{ (lookup("template", app_root + "/config.yaml", convert_data=False) | from_yaml)[application_name + "_deployment"] }}'
+    backend_cfg_raw: '{{ (lookup("template", component_root + "/config.yaml", convert_data=False) | from_yaml)[application_name + "_backend_deployment"] }}'
+    web_cfg: '{{ (lookup("template", app_root + "/" + application_name + "-web-frontend/config.yaml", convert_data=False) | from_yaml)[application_name + "_web_deployment"] }}'
+    admin_cfg: '{{ (lookup("template", app_root + "/" + application_name + "-admin-frontend/config.yaml", convert_data=False) | from_yaml)[application_name + "_admin_deployment"] }}'
     app_images:
       backend: '{{ lookup("file", component_root + "/image.lock.yaml") | from_yaml }}'
       web: '{{ lookup("file", app_root + "/" + application_name + "-web-frontend/image.lock.yaml") | from_yaml }}'
@@ -55,8 +55,8 @@
     service_relation: '{{ "ingest" if application_name == "knowfeed" else "retrieve" }}'
     service_env_prefix: '{{ "KNOWBASE_APP_SERVICE" if application_name == "knowfeed" else "KNOWBASE_RETRIEVAL_SERVICE" }}'
     service_bindings:
-      ingest: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml") | from_yaml).knowfeed_backend_deployment.knowbase_service }}'
-      retrieve: '{{ (lookup("file", playbook_dir + "/../../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml") | from_yaml).knowbench_backend_deployment.knowbase_service }}'
+      ingest: '{{ (lookup("template", playbook_dir + "/../../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml", convert_data=False) | from_yaml).knowfeed_backend_deployment.knowbase_service }}'
+      retrieve: '{{ (lookup("template", playbook_dir + "/../../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml", convert_data=False) | from_yaml).knowbench_backend_deployment.knowbase_service }}'
 - name: Derive public rollout identity
   ansible.builtin.set_fact:
     deployment_id: '{{ app_images.backend.deployment_id }}'
@@ -71,7 +71,7 @@
     generic_service_receivers: >-
       {%- set out = [] -%}
       {%- for r in backend_cfg.service_receivers | default([]) if r.enabled -%}
-        {%- set caller = (lookup("file", playbook_dir + "/../../gitops/components/app-platform/" + r.caller + "-app/" + r.caller + "-backend/config.yaml") | from_yaml)[r.caller + "_backend_deployment"] -%}
+        {%- set caller = (lookup("template", playbook_dir + "/../../gitops/components/app-platform/" + r.caller + "-app/" + r.caller + "-backend/config.yaml", convert_data=False) | from_yaml)[r.caller + "_backend_deployment"] -%}
         {%- set found = caller.service_clients | default([]) | selectattr("target", "equalto", application_name) | selectattr("relation", "equalto", r.relation) | list -%}
         {%- set _ = out.append({"relation": r.relation, "caller": r.caller, "client": (found[0] if found | length == 1 else none)}) -%}
       {%- endfor -%}

@@ -5,7 +5,7 @@ entry_enabled: true
 # 监听地址；修改边界见同目录 README 的字段表。
 entry_listen_address: 0.0.0.0
 # 宿主共享TLS端口；修改边界见同目录 README 的字段表。
-entry_port: 30443
+entry_port: '{{ public_port }}'
 # entry_cluster_backend（非 Harbor 域名的默认后端）是站点事实，自 C1 起在 environments/<站点>/site.yaml。
 # HAProxy配置目录；修改边界见同目录 README 的字段表。
 entry_config_dir: /etc/sunmoon/entry

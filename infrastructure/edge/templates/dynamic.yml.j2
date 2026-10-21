@@ -8,7 +8,7 @@ http:
       middlewares: [to-https]
       service: noop@internal
 {% for host in edge_domains %}
-{% set allow = edge_path_allowlist.get(host) %}
+{% set allow = edge_path_allowlist.get(host.split('.')[0]) %}
 {% set terms = [] %}
 {% for path in (allow or {}).get('paths', []) %}{% set _ = terms.append('Path(`' ~ path ~ '`)') %}{% endfor %}
 {% for prefix in (allow or {}).get('prefixes', []) %}{% set _ = terms.append('PathPrefix(`' ~ prefix ~ '`)') %}{% endfor %}

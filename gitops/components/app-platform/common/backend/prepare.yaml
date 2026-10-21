@@ -45,8 +45,8 @@
       - admin_cfg.port | int > 1024 and admin_cfg.port | int < 65536
       - web_cfg.replicas | int >= 1
       - admin_cfg.replicas | int >= 1
-      - cfg.web_origin is match('^https://[a-z0-9.-]+:30443$')
-      - cfg.admin_origin is match('^https://[a-z0-9.-]+:30443$')
+      - cfg.web_origin is match('^https://[a-z0-9.-]+:' + (public_port | string) + '$')
+      - cfg.admin_origin is match('^https://[a-z0-9.-]+:' + (public_port | string) + '$')
       - cfg.web_origin != cfg.admin_origin
       - cfg.rabbitmq_user is match('^[a-z][a-z0-9_.-]{1,63}$')
       - cfg.rabbitmq_user not in ['admin','guest']

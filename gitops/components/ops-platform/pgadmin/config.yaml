@@ -1,7 +1,7 @@
 ---
 # Browser console for PostgreSQL. Login is an independent pgAdmin email identity.
 services_pgadmin_enabled: true
-pgadmin_origin: 'https://pgadmin.sunmoonai.com:{{ entry_port }}'
+pgadmin_origin: 'https://pgadmin.{{ site_domain }}:{{ public_port }}'
 pgadmin_port: 5050
 pgadmin_volume: {name: pgadmin, node: worker2, size: 2Gi, uid: 5050, gid: 5050}
 pgadmin_resources:

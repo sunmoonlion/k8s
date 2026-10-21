@@ -1,7 +1,7 @@
 # 浏览器入口；后端身份配置读取同一来源。运行配置与本组件声明同处。
 ---
 knowfeed_web_deployment:
-  origin: https://knowfeed.sunmoonai.com:30443
+  origin: 'https://knowfeed.{{ site_domain }}:{{ public_port }}'
   casdoor_application: sunmoonai-knowfeed-web
   casdoor_client_id: sunmoon-kind-knowfeed-web
   port: 3000

@@ -1,9 +1,8 @@
 # 公网边缘第一期（SDD 0013）。只放公开参数；frp 令牌在私有文件里，不进 Git。
 ---
-edge_public_ip: 43.153.135.74
-edge_domains: [knowbench.sunmoonai.com, casdoor.sunmoonai.com, relay.sunmoonai.com]
-# 沿用集群入口端口，应用里的 origin/回调不用改；改 443 另起一轮（SDD 0013 第七节）。
-edge_https_port: 30443
+# edge_public_ip 是站点事实，在 environments/<站点>/site.yaml（C2 起）；域名与公网端口也从站点拼。
+edge_domains: ['knowbench.{{ site_domain }}', 'casdoor.{{ site_domain }}', 'relay.{{ site_domain }}']
+edge_https_port: '{{ public_port }}'
 edge_http_port: 80
 edge_frps_port: 7000
 edge_vhost_port: 8080
@@ -25,7 +24,8 @@ edge_rate_limit: {average: 50, burst: 100}
 # Casdoor（4.12.0）实走登录录下来的：首次进入、错密码、登录拿到回跳、再次授权、注册页。换令牌、JWKS 走集群内部，不经边缘。
 # 升级 Casdoor 或打开注册、找回密码、MFA 时要重录。/api/logout 是单点登录的退出（各应用带 client_id 跳来结束会话，
 # Casdoor 只跳回登记过的地址），2026-10-16 实验录入（SDD 0027 P1b）。
+# 键是短名（域名 = 短名.site_domain）：extra-vars 的字典键不过 Jinja，所以不写全名。
 edge_path_allowlist:
-  casdoor.sunmoonai.com:
+  casdoor:
     paths: [/login/oauth/authorize, /signup/oauth/authorize, /api/get-account, /api/get-app-login, /api/login, /api/logout]
     prefixes: [/assets/]

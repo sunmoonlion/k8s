@@ -3,7 +3,7 @@
 # 部署/启动准入；修改边界见同目录 README 的字段表。
 jenkins_enabled: true
 # 控制器的 TLS/SNI 域名（只在内网入口 30443 上，边缘不转发）；修改边界见同目录 README 的字段表。
-jenkins_hostname: jenkins.sunmoonai.com
+jenkins_hostname: 'jenkins.{{ site_domain }}'
 # Compose 实例名；修改边界见同目录 README 的字段表。
 jenkins_project: sunmoon-jenkins
 # 宿主回环 HTTPS 后端端口（入口 SNI 直通到这里，由随附的 HAProxy 终止 TLS）；修改边界见同目录 README 的字段表。

@@ -1,7 +1,7 @@
 # 浏览器入口；后端身份配置读取同一来源。运行配置与本组件声明同处。
 ---
 tpl_admin_deployment:
-  origin: https://tpl-admin.sunmoonai.com:30443
+  origin: 'https://tpl-admin.{{ site_domain }}:{{ public_port }}'
   casdoor_application: sunmoonai-tpl-admin
   casdoor_client_id: sunmoon-kind-tpl-admin
   port: 3000
