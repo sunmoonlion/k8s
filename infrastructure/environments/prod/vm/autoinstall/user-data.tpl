@@ -18,6 +18,9 @@ autoinstall:
     version: 2
     ethernets:
       eth0:
+        # 这台虚拟机只有一张网卡，兼容 VMware 的 ens*/enp* 命名。
+        match: {name: "e*"}
+        set-name: eth0
         dhcp4: false
         addresses: [__VM_IP__/__PREFIX__]
         routes: [{to: default, via: __GATEWAY__}]

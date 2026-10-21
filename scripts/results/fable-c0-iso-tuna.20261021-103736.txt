@@ -1,0 +1,5 @@
+gpgv: Signature made Wed Sep 16 03:11:12 2026 CST
+gpgv:                using RSA key 843938DF228D22F7B3742BC0D94AA3F0EFE21092
+gpgv: Good signature from "Ubuntu CD Image Automatic Signing Key (2012) <cdimage@ubuntu.com>"
+source=https://mirrors.tuna.tsinghua.edu.cn/ubuntu-releases/24.04.3/ubuntu-24.04.3-live-server-amd64.iso
+exit=143

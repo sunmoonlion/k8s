@@ -1,0 +1,13 @@
+gpgv: Signature made Wed Sep 16 03:11:12 2026 CST
+gpgv:                using RSA key 843938DF228D22F7B3742BC0D94AA3F0EFE21092
+gpgv: Good signature from "Ubuntu CD Image Automatic Signing Key (2012) <cdimage@ubuntu.com>"
+resume_prefix_bytes=1121828864
+total_bytes=3303444480; range_concurrency=4; TLS and final official SHA256 required
+range 2 verified: 2212636672-2758040575
+range 0 verified: 1121828864-1667232767
+range 1 verified: 1667232768-2212636671
+range 3 verified: 2758040576-3303444479
+iso=ubuntu-24.04.3-live-server-amd64.iso; bytes=3303444480; SHA256=c3514bf0056180d09376462a7a1b4f213c1d6e8ea67fae5c25099c6fd3d8274b
+iso verify exit=0
+Only temporary segments from this invocation removed after complete ISO verification.
+exit=0

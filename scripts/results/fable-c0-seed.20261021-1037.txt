@@ -1,0 +1,5 @@
+
+xorriso 1.5.6 : RockRidge filesystem manipulator, libburnia project.
+
+seed iso: /mnt/c/iso/sunmoon-prod-seed.iso (380928 bytes); host sunmoon-prod user sunmoon ip 192.168.80.10/24 gw 192.168.80.2
+exit=0
