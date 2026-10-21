@@ -26,6 +26,8 @@ powershell.exe -NoProfile -Command 'Get-Service -Name <实测Name> | Select-Obje
 
 要看到 `Status: Running`、`StartType: Automatic`。
 
+**没有这个服务怎么办**（本机装的是 26H1u1，不是 17.x；Auto Start 是 17.0 加的，26H1 的说明没提它去留，以实测为准）：第一条命令列出的服务里没有 Autostart，或者第二节的菜单/列表不存在 → 走 **B 方案**，不用停：在第三节的注册脚本里**多注册一个**计划任务 `Sunmoon-ProdVm-Start`：触发器系统启动时，身份 SYSTEM，动作 `"C:\Program Files (x86)\VMware\VMware Workstation\vmrun.exe" -T ws start "C:\VMs\sunmoon-prod\sunmoon-prod.vmx" nogui`，启动前先 `vmrun -T ws list` 已在跑就不重复起。B 方案在宿主关机时**不会**替客户机干净关机，第四节「上一次关机干净吗」多半会不干净——照实记进回执，远程再定（候选：关机事件触发 `vmrun stop soft`，或《虚拟机操作》里让所有者关 Windows 前先关虚拟机）。回执第一行写明走的是 A（Auto Start）还是 B。
+
 ## 二、把 sunmoon-prod 加进自动启动列表（**所有者**，界面）
 
 把这一行交给所有者：VMware Workstation → 菜单 **文件 → 配置自动启动虚拟机**（File → Configure Auto Start VMs）→ 勾选 `sunmoon-prod` → 确定。列表为空的话先确认第一节服务已 Running，再重开 VMware。所有者说「勾了」再往下。
