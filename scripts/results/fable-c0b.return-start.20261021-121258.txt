@@ -1,0 +1,286 @@
+make: Entering directory '/home/zymun/worktrees/fable/sunmoonun/infrastructure'
+sudo -n nsenter --target 1 --mount --wd=/home/zymun/worktrees/fable/sunmoonun/infrastructure -- sudo -n -u zymun -H env PATH="/home/zymun/.qoder/entry:/home/zymun/.codex-official/packages/app-server-daemon/releases/0.163.0-x86_64-unknown-linux-musl/codex-path:/home/zymun/.codex-official/tmp/arg0-linux/codex-arg0QAzDiJ:/home/zymun/.codex-official/tmp/arg0/codex-arg0h2VX5c:/home/zymun/.nvm/versions/node/v24.18.0/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/codex-path:/home/zymun/.kimi-code/bin:/home/zymun/.local/bin:/home/zymun/.vscode-server/data/User/globalStorage/github.copilot-chat/debugCommand:/home/zymun/.vscode-server/data/User/globalStorage/github.copilot-chat/copilotCli:/home/zymun/.vscode-server/bin/6d62b1d5dace93a33b3a6d3eca1317bd5e15bcb1/bin/remote-cli:/home/zymun/.kimi-code/bin:/home/zymun/.nvm/versions/node/v24.18.0/bin:/home/zymun/.local/bin:/home/zymun/miniconda3/condabin:/home/zymun/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Windows/system32:/mnt/c/Windows:/mnt/c/Windows/System32/Wbem:/mnt/c/Windows/System32/WindowsPowerShell/v1.0/:/mnt/c/Windows/System32/OpenSSH/:/mnt/c/Program Files/dotnet/:/mnt/c/Program Files/Git/cmd:/mnt/c/Program Files/nodejs/:/mnt/c/Users/zymun/AppData/Local/Programs/Python/Python313/Scripts/:/mnt/c/Users/zymun/AppData/Local/Programs/Python/Python313/:/mnt/c/Users/zymun/AppData/Local/Programs/Python/Launcher/:/mnt/c/Users/zymun/AppData/Local/Microsoft/WindowsApps:/mnt/c/Users/zymun/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Users/zymun/AppData/Local/Programs/cursor/resources/app/bin:/mnt/c/Users/zymun/AppData/Local/Programs/Qoder IDE/bin:/mnt/c/Wind/Wind.NET.Client/WindNET/bin:/mnt/c/Wind/Wind.NET.Client/WindNET/x64:/mnt/c/Users/zymun/AppData/Roaming/npm:/home/zymun/.vscode-server/extensions/ms-python.debugpy-2026.7.12571009-linux-x64/bundled/scripts/noConfigScripts" OBJECT="$OBJECT" SITE="$SITE" PLATFORM_CONFIG_FILES="$PLATFORM_CONFIG_FILES" AGENT_ZIP="$AGENT_ZIP" HTTPS_PROXY="$HTTPS_PROXY" /home/zymun/worktrees/fable/sunmoonun/infrastructure/.venv/bin/ansible-playbook -i host/inventory.yaml host/lifecycle.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'host_action=start'
+
+PLAY [Plan or control the independently owned local platform] ******************
+
+TASK [Require the exact current site and explicit action] **********************
+ok: [localhost]
+
+TASK [Read installed service states without starting anything] *****************
+ok: [localhost]
+
+TASK [Report lifecycle state] **************************************************
+ok: [localhost] => {
+    "states.stdout_lines": [
+        "Id=sunmoon-platform.target",
+        "ActiveState=inactive",
+        "UnitFileState=static",
+        "",
+        "Id=sunmoon-platform-boot.service",
+        "ActiveState=failed",
+        "UnitFileState=enabled",
+        "",
+        "Id=sunmoon-cluster.service",
+        "ActiveState=failed",
+        "UnitFileState=static",
+        "",
+        "Id=sunmoon-registry.service",
+        "ActiveState=active",
+        "UnitFileState=disabled",
+        "",
+        "Id=sunmoon-entry.service",
+        "ActiveState=active",
+        "UnitFileState=disabled",
+        "",
+        "Id=sunmoon-jenkins.service",
+        "ActiveState=inactive",
+        "UnitFileState=enabled",
+        "",
+        "Id=sunmoon-jenkins-agent.service",
+        "ActiveState=inactive",
+        "UnitFileState=enabled"
+    ]
+}
+
+TASK [Require the installed controller before shutdown] ************************
+skipping: [localhost]
+
+TASK [Refuse unowned shutdown] *************************************************
+skipping: [localhost]
+
+TASK [Verify immutable node ownership before stopping, including an already stopped cluster] ***
+skipping: [localhost]
+
+TASK [Stop pending boot recovery and target without deleting containers] *******
+skipping: [localhost] => (item=sunmoon-platform-boot.service) 
+skipping: [localhost] => (item=sunmoon-platform.target) 
+skipping: [localhost] => (item=sunmoon-jenkins-agent.service) 
+skipping: [localhost] => (item=sunmoon-jenkins.service) 
+skipping: [localhost] => (item=sunmoon-entry.service) 
+skipping: [localhost] => (item=sunmoon-cluster.service) 
+skipping: [localhost] => (item=sunmoon-registry.service) 
+skipping: [localhost]
+
+TASK [Read remaining owned node running states after systemd stop] *************
+skipping: [localhost] => (item=sunmoon-kind-control-plane) 
+skipping: [localhost] => (item=sunmoon-kind-worker) 
+skipping: [localhost] => (item=sunmoon-kind-worker2) 
+skipping: [localhost]
+
+TASK [Stop only the already verified owned nodes if not yet managed by systemd] ***
+skipping: [localhost]
+
+TASK [Read authoritative cluster identity] *************************************
+skipping: [localhost]
+
+TASK [Decode owned identity and derive immutable Windows publication] **********
+skipping: [localhost]
+
+TASK [Require matching three node IDs before publishing lifecycle files] *******
+skipping: [localhost] => (item=sunmoon-kind-control-plane) 
+skipping: [localhost] => (item=sunmoon-kind-worker) 
+skipping: [localhost] => (item=sunmoon-kind-worker2) 
+skipping: [localhost]
+
+TASK [Refuse stale or foreign receipt] *****************************************
+skipping: [localhost]
+
+TASK [Resolve immutable Windows candidate path] ********************************
+skipping: [localhost]
+
+TASK [Resolve actual Windows UNC path to the reviewed capacity helper] *********
+skipping: [localhost]
+
+TASK [Set actual Windows paths without escaped path duplication] ***************
+skipping: [localhost]
+
+TASK [Prepare private lifecycle candidate directory] ***************************
+skipping: [localhost]
+
+TASK [Render guard configuration] **********************************************
+skipping: [localhost]
+
+TASK [Copy reviewed storage guard] *********************************************
+skipping: [localhost]
+
+TASK [Render native runtime scripts and service definitions] *******************
+skipping: [localhost] => (item={'src': '../cluster/check-nodes.sh.j2', 'dest': 'check-nodes.sh'}) 
+skipping: [localhost] => (item={'src': '../cluster/sunmoon-cluster.service.j2', 'dest': 'sunmoon-cluster.service'}) 
+skipping: [localhost] => (item={'src': 'templates/boot.sh.j2', 'dest': 'boot.sh'}) 
+skipping: [localhost] => (item={'src': 'templates/sunmoon-platform.target.j2', 'dest': 'sunmoon-platform.target'}) 
+skipping: [localhost] => (item={'src': 'templates/sunmoon-platform-boot.service.j2', 'dest': 'sunmoon-platform-boot.service'}) 
+skipping: [localhost] => (item={'src': 'templates/attach-storage.ps1.j2', 'dest': 'attach-storage.ps1'}) 
+skipping: [localhost] => (item={'src': 'templates/request-storage.ps1.j2', 'dest': 'request-storage.ps1'}) 
+skipping: [localhost] => (item={'src': 'templates/run-storage-hidden.vbs.j2', 'dest': 'run-storage-hidden.vbs'}) 
+skipping: [localhost]
+
+TASK [Validate native shell syntax without execution] **************************
+skipping: [localhost] => (item=check-nodes.sh) 
+skipping: [localhost] => (item=boot.sh) 
+skipping: [localhost]
+
+TASK [Check real storage in both service mount namespaces] *********************
+skipping: [localhost]
+
+TASK [Hash Windows administrator publication candidates] ***********************
+skipping: [localhost] => (item=attach-storage.ps1) 
+skipping: [localhost] => (item=request-storage.ps1) 
+skipping: [localhost] => (item=run-storage-hidden.vbs) 
+skipping: [localhost]
+
+TASK [Create nonsecret Windows review directory] *******************************
+skipping: [localhost]
+
+TASK [Publish the read-only capacity helper locally for RemoteSigned compatibility] ***
+skipping: [localhost]
+
+TASK [Read nonsecret Windows review candidates across the filesystem boundary] ***
+skipping: [localhost] => (item=attach-storage.ps1) 
+skipping: [localhost] => (item=request-storage.ps1) 
+skipping: [localhost] => (item=run-storage-hidden.vbs) 
+skipping: [localhost]
+
+TASK [Publish review copies as the Windows owner, not as an elevated task] *****
+skipping: [localhost] => (item=attach-storage.ps1) 
+skipping: [localhost] => (item=request-storage.ps1) 
+skipping: [localhost] => (item=run-storage-hidden.vbs) 
+skipping: [localhost]
+
+TASK [Publish task installer for explicit administrator use] *******************
+skipping: [localhost]
+
+TASK [Write review manifest with immutable target and exact digests] ***********
+skipping: [localhost]
+
+TASK [Report exact lifecycle scope] ********************************************
+skipping: [localhost]
+
+TASK [Create private lifecycle rollback directory] *****************************
+skipping: [localhost]
+
+TASK [Allocate one distinct maintenance rollback receipt] **********************
+skipping: [localhost]
+
+TASK [Read full restart policies and identities before modification] ***********
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost]
+
+TASK [Save bounded identities and reversible restart policies] *****************
+skipping: [localhost]
+
+TASK [Back up the actual existing service definitions] *************************
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-registry.service) 
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-entry.service) 
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-data-boot.service) 
+skipping: [localhost]
+
+TASK [Show the bounded rollback directory] *************************************
+skipping: [localhost]
+
+TASK [Check physical growth reserve] *******************************************
+skipping: [localhost]
+
+TASK [Create root owned worktree independent runtime] **************************
+skipping: [localhost]
+
+TASK [Install native runtime inputs] *******************************************
+skipping: [localhost] => (item=storage.py) 
+skipping: [localhost] => (item=check-nodes.sh) 
+skipping: [localhost] => (item=boot.sh) 
+skipping: [localhost]
+
+TASK [Install the read-only capacity helper independent of the worktree] *******
+skipping: [localhost]
+
+TASK [Save exact restart-policy baseline for later boot activation] ************
+skipping: [localhost]
+
+TASK [Install immutable request path independently of the worktree] ************
+skipping: [localhost]
+
+TASK [Install nonsecret storage identity] **************************************
+skipping: [localhost]
+
+TASK [Read locked kubectl bytes] ***********************************************
+skipping: [localhost]
+
+TASK [Require verified runtime tool] *******************************************
+skipping: [localhost]
+
+TASK [Install kubectl independent of worktree] *********************************
+skipping: [localhost]
+
+TASK [Install native systemd lifecycle definitions] ****************************
+skipping: [localhost] => (item=sunmoon-cluster.service) 
+skipping: [localhost] => (item=sunmoon-platform.target) 
+skipping: [localhost] => (item=sunmoon-platform-boot.service) 
+skipping: [localhost]
+
+TASK [Create dedicated target dependency drop-in directories] ******************
+skipping: [localhost] => (item=sunmoon-registry.service) 
+skipping: [localhost] => (item=sunmoon-entry.service) 
+skipping: [localhost]
+
+TASK [Attach existing native services to the unified target] *******************
+skipping: [localhost] => (item=sunmoon-registry.service) 
+skipping: [localhost] => (item=sunmoon-entry.service) 
+skipping: [localhost]
+
+TASK [Validate installed native unit definitions before reloading] *************
+skipping: [localhost]
+
+TASK [Reload definitions without starting services] ****************************
+skipping: [localhost]
+
+TASK [Read actual managed unit states before starting] *************************
+ok: [localhost]
+
+TASK [Start the reviewed worktree independent sequence] ************************
+changed: [localhost]
+
+TASK [Read immutable Windows request path from installed runtime] **************
+skipping: [localhost]
+
+TASK [Verify the task identity and complete a real attachment check] ***********
+skipping: [localhost]
+
+TASK [Recheck actual storage visibility before changing recovery policy] *******
+skipping: [localhost]
+
+TASK [Require exact owned cluster nodes and mount identities] ******************
+skipping: [localhost]
+
+TASK [Load approved container identities from installation rollback] ***********
+skipping: [localhost]
+
+TASK [Inspect exact container IDs before recovery policy changes] **************
+skipping: [localhost]
+
+TASK [Refuse changing policy on replaced container names] **********************
+skipping: [localhost]
+
+TASK [Give systemd exclusive restart ownership of new nodes and disable legacy auto-start] ***
+skipping: [localhost] => (item=sunmoon-kind-control-plane) 
+skipping: [localhost] => (item=sunmoon-kind-worker) 
+skipping: [localhost] => (item=sunmoon-kind-worker2) 
+skipping: [localhost] => (item=kind-control-plane) 
+skipping: [localhost] => (item=kind-worker) 
+skipping: [localhost] => (item=kind-worker2) 
+skipping: [localhost]
+
+TASK [Disable the superseded one-shot data checker without removing its rollback files] ***
+skipping: [localhost]
+
+TASK [Enable the one bounded WSL recovery sequence without starting it now] ****
+skipping: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=1    unreachable=0    failed=0    skipped=58   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/sunmoonun/infrastructure'
+exit=0

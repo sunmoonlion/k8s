@@ -1,0 +1,115 @@
+2026-10-21T12:04:08+08:00 wsl-dev systemd[1]: Started sunmoon-platform-boot.service - Recover SunMoon once after WSL startup.
+2026-10-21T12:04:09+08:00 wsl-dev boot.sh[866]: {"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+2026-10-21T12:04:09+08:00 wsl-dev boot.sh[893]: {"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+2026-10-21T12:04:10+08:00 wsl-dev boot.sh[907]: {"checked_at_utc":"2026-10-21T04:04:10.3843002Z","c_free_bytes":255189975040,"data_vhd_length":69830967296,"data_vhd_allocated_bytes":69830967296,"configured_data_maximum_bytes":246960619520,"future_data_growth_bytes":177129652224,"planned_bytes":0,"remaining_after_growth_and_plan_bytes":78060322816,"minimum_free_bytes":10737418240,"passes":true,"scope":"Configured VHD growth plus requested operation; excludes other future system disk growth"}
+2026-10-21T12:04:11+08:00 wsl-dev boot.sh[989]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:14+08:00 wsl-dev boot.sh[1911]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:17+08:00 wsl-dev boot.sh[2017]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:20+08:00 wsl-dev boot.sh[2022]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:23+08:00 wsl-dev boot.sh[2030]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:26+08:00 wsl-dev boot.sh[2033]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:29+08:00 wsl-dev boot.sh[2036]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:32+08:00 wsl-dev boot.sh[2040]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:35+08:00 wsl-dev boot.sh[2046]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:38+08:00 wsl-dev boot.sh[2050]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:41+08:00 wsl-dev boot.sh[2053]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:44+08:00 wsl-dev boot.sh[2319]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:47+08:00 wsl-dev boot.sh[2322]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:50+08:00 wsl-dev boot.sh[2325]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:53+08:00 wsl-dev boot.sh[2328]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:56+08:00 wsl-dev boot.sh[2331]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:04:59+08:00 wsl-dev boot.sh[2334]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:02+08:00 wsl-dev boot.sh[2337]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:05+08:00 wsl-dev boot.sh[2340]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:08+08:00 wsl-dev boot.sh[2343]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:11+08:00 wsl-dev boot.sh[2346]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:14+08:00 wsl-dev boot.sh[2585]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:17+08:00 wsl-dev boot.sh[2588]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:20+08:00 wsl-dev boot.sh[2591]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:23+08:00 wsl-dev boot.sh[2594]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:26+08:00 wsl-dev boot.sh[2597]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:29+08:00 wsl-dev boot.sh[2600]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:32+08:00 wsl-dev boot.sh[2603]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:35+08:00 wsl-dev boot.sh[2607]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:38+08:00 wsl-dev boot.sh[2610]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:41+08:00 wsl-dev boot.sh[2613]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:44+08:00 wsl-dev boot.sh[2780]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:05:57+08:00 wsl-dev systemd[1]: Starting sunmoon-cluster.service - SunMoon owned KIND cluster sunmoon-kind...
+2026-10-21T12:05:57+08:00 wsl-dev check-nodes.sh[3070]: {"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+2026-10-21T12:05:57+08:00 wsl-dev docker[3168]: sunmoon-kind-control-plane
+2026-10-21T12:05:58+08:00 wsl-dev docker[3168]: sunmoon-kind-worker
+2026-10-21T12:05:58+08:00 wsl-dev docker[3168]: sunmoon-kind-worker2
+2026-10-21T12:05:58+08:00 wsl-dev check-nodes.sh[3648]: {"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+2026-10-21T12:06:06+08:00 wsl-dev check-nodes.sh[7461]: node/sunmoon-kind-control-plane condition met
+2026-10-21T12:06:06+08:00 wsl-dev check-nodes.sh[7461]: node/sunmoon-kind-worker condition met
+2026-10-21T12:06:06+08:00 wsl-dev check-nodes.sh[7461]: node/sunmoon-kind-worker2 condition met
+2026-10-21T12:06:06+08:00 wsl-dev systemd[1]: Finished sunmoon-cluster.service - SunMoon owned KIND cluster sunmoon-kind.
+2026-10-21T12:06:07+08:00 wsl-dev boot.sh[7593]: {"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+2026-10-21T12:06:08+08:00 wsl-dev boot.sh[7911]: node/sunmoon-kind-control-plane condition met
+2026-10-21T12:06:08+08:00 wsl-dev boot.sh[7911]: node/sunmoon-kind-worker condition met
+2026-10-21T12:06:08+08:00 wsl-dev boot.sh[7911]: node/sunmoon-kind-worker2 condition met
+2026-10-21T12:08:41+08:00 wsl-dev boot.sh[745]: Owned Harbor, TLS entry and KIND restored. Run platform-check for application protocols.
+2026-10-21T12:09:27+08:00 wsl-dev systemd[1]: Stopping sunmoon-cluster.service - SunMoon owned KIND cluster sunmoon-kind...
+2026-10-21T12:09:27+08:00 wsl-dev systemd[1]: sunmoon-platform-boot.service: Deactivated successfully.
+2026-10-21T12:09:27+08:00 wsl-dev systemd[1]: Stopped sunmoon-platform-boot.service - Recover SunMoon once after WSL startup.
+2026-10-21T12:09:27+08:00 wsl-dev systemd[1]: sunmoon-platform-boot.service: Consumed 15.369s CPU time, 9.7M memory peak, 0B memory swap peak.
+2026-10-21T12:09:27+08:00 wsl-dev docker[44042]: Flag --time has been deprecated, use --timeout instead
+2026-10-21T12:09:52+08:00 wsl-dev systemd[1]: Started sunmoon-platform-boot.service - Recover SunMoon once after WSL startup.
+2026-10-21T12:09:53+08:00 wsl-dev boot.sh[1007]: {"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+2026-10-21T12:09:53+08:00 wsl-dev boot.sh[1025]: {"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+2026-10-21T12:09:54+08:00 wsl-dev boot.sh[1039]: {"checked_at_utc":"2026-10-21T04:09:54.3952003Z","c_free_bytes":256629116928,"data_vhd_length":69965185024,"data_vhd_allocated_bytes":69965185024,"configured_data_maximum_bytes":246960619520,"future_data_growth_bytes":176995434496,"planned_bytes":0,"remaining_after_growth_and_plan_bytes":79633682432,"minimum_free_bytes":10737418240,"passes":true,"scope":"Configured VHD growth plus requested operation; excludes other future system disk growth"}
+2026-10-21T12:09:55+08:00 wsl-dev boot.sh[1764]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:09:58+08:00 wsl-dev boot.sh[2408]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:01+08:00 wsl-dev boot.sh[3541]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:04+08:00 wsl-dev boot.sh[3904]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:07+08:00 wsl-dev boot.sh[4096]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:10+08:00 wsl-dev boot.sh[4175]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:13+08:00 wsl-dev boot.sh[4280]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:16+08:00 wsl-dev boot.sh[4607]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:19+08:00 wsl-dev boot.sh[4657]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:22+08:00 wsl-dev boot.sh[4969]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:25+08:00 wsl-dev boot.sh[5286]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:28+08:00 wsl-dev boot.sh[5571]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:31+08:00 wsl-dev boot.sh[5586]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:34+08:00 wsl-dev boot.sh[5597]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:37+08:00 wsl-dev boot.sh[5637]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:40+08:00 wsl-dev boot.sh[5689]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:43+08:00 wsl-dev boot.sh[5709]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:46+08:00 wsl-dev boot.sh[5748]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:49+08:00 wsl-dev boot.sh[5757]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:52+08:00 wsl-dev boot.sh[5834]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:55+08:00 wsl-dev boot.sh[5857]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:10:58+08:00 wsl-dev boot.sh[6117]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:11:01+08:00 wsl-dev boot.sh[6159]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:11:04+08:00 wsl-dev boot.sh[6168]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:11:07+08:00 wsl-dev boot.sh[6212]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:11:10+08:00 wsl-dev boot.sh[6235]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:11:13+08:00 wsl-dev boot.sh[6257]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:11:16+08:00 wsl-dev boot.sh[6323]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:11:19+08:00 wsl-dev boot.sh[6332]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:11:22+08:00 wsl-dev boot.sh[6374]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:11:25+08:00 wsl-dev boot.sh[6397]: curl: (7) Failed to connect to harbor.sunmoonai.com port 11443 after 0 ms: Couldn't connect to server
+2026-10-21T12:11:41+08:00 wsl-dev systemd[1]: Starting sunmoon-cluster.service - SunMoon owned KIND cluster sunmoon-kind...
+2026-10-21T12:11:41+08:00 wsl-dev check-nodes.sh[6978]: {"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+2026-10-21T12:11:41+08:00 wsl-dev docker[7099]: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: unable to apply cgroup configuration: unable to start unit "docker-c29095b68f4c54acdb24b72984077d464fa69a7990eee3b06e561b0248fa2108.scope" (properties [{Name:Description Value:"libcontainer container c29095b68f4c54acdb24b72984077d464fa69a7990eee3b06e561b0248fa2108"} {Name:Slice Value:"system.slice"} {Name:Delegate Value:true} {Name:PIDs Value:@au [7148]} {Name:MemoryAccounting Value:true} {Name:CPUAccounting Value:true} {Name:IOAccounting Value:true} {Name:TasksAccounting Value:true} {Name:DefaultDependencies Value:false}]): error creating systemd unit `docker-c29095b68f4c54acdb24b72984077d464fa69a7990eee3b06e561b0248fa2108.scope`: got `failed`
+2026-10-21T12:11:41+08:00 wsl-dev docker[7099]: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: unable to apply cgroup configuration: unable to start unit "docker-fff1b2734975223b429a8ea5551e88c11066804bd2616a32250b6dca55a6cb2c.scope" (properties [{Name:Description Value:"libcontainer container fff1b2734975223b429a8ea5551e88c11066804bd2616a32250b6dca55a6cb2c"} {Name:Slice Value:"system.slice"} {Name:Delegate Value:true} {Name:PIDs Value:@au [7194]} {Name:MemoryAccounting Value:true} {Name:CPUAccounting Value:true} {Name:IOAccounting Value:true} {Name:TasksAccounting Value:true} {Name:DefaultDependencies Value:false}]): error creating systemd unit `docker-fff1b2734975223b429a8ea5551e88c11066804bd2616a32250b6dca55a6cb2c.scope`: got `failed`
+2026-10-21T12:11:41+08:00 wsl-dev docker[7099]: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: unable to apply cgroup configuration: unable to start unit "docker-c9f07c2bb06cb8e7f52d06d56fb0911f69947f398729faf51713012c1c4eb73c.scope" (properties [{Name:Description Value:"libcontainer container c9f07c2bb06cb8e7f52d06d56fb0911f69947f398729faf51713012c1c4eb73c"} {Name:Slice Value:"system.slice"} {Name:Delegate Value:true} {Name:PIDs Value:@au [7238]} {Name:MemoryAccounting Value:true} {Name:CPUAccounting Value:true} {Name:IOAccounting Value:true} {Name:TasksAccounting Value:true} {Name:DefaultDependencies Value:false}]): error creating systemd unit `docker-c9f07c2bb06cb8e7f52d06d56fb0911f69947f398729faf51713012c1c4eb73c.scope`: got `failed`
+2026-10-21T12:11:41+08:00 wsl-dev docker[7099]: failed to start containers: sunmoon-kind-control-plane, sunmoon-kind-worker, sunmoon-kind-worker2
+2026-10-21T12:11:41+08:00 wsl-dev systemd[1]: sunmoon-cluster.service: Main process exited, code=exited, status=1/FAILURE
+2026-10-21T12:11:41+08:00 wsl-dev systemd[1]: sunmoon-cluster.service: Failed with result 'exit-code'.
+2026-10-21T12:11:41+08:00 wsl-dev systemd[1]: Failed to start sunmoon-cluster.service - SunMoon owned KIND cluster sunmoon-kind.
+2026-10-21T12:11:41+08:00 wsl-dev systemctl[6961]: Job for sunmoon-cluster.service failed because the control process exited with error code.
+2026-10-21T12:11:41+08:00 wsl-dev systemctl[6961]: See "systemctl status sunmoon-cluster.service" and "journalctl -xeu sunmoon-cluster.service" for details.
+2026-10-21T12:11:41+08:00 wsl-dev systemd[1]: sunmoon-platform-boot.service: Main process exited, code=exited, status=1/FAILURE
+2026-10-21T12:11:41+08:00 wsl-dev systemd[1]: sunmoon-platform-boot.service: Failed with result 'exit-code'.
+2026-10-21T12:13:00+08:00 wsl-dev systemd[1]: Starting sunmoon-cluster.service - SunMoon owned KIND cluster sunmoon-kind...
+2026-10-21T12:13:00+08:00 wsl-dev check-nodes.sh[8885]: {"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+2026-10-21T12:13:01+08:00 wsl-dev docker[8944]: sunmoon-kind-control-plane
+2026-10-21T12:13:01+08:00 wsl-dev docker[8944]: sunmoon-kind-worker
+2026-10-21T12:13:01+08:00 wsl-dev docker[8944]: sunmoon-kind-worker2
+2026-10-21T12:13:01+08:00 wsl-dev check-nodes.sh[9449]: {"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+2026-10-21T12:13:09+08:00 wsl-dev check-nodes.sh[13183]: node/sunmoon-kind-control-plane condition met
+2026-10-21T12:13:09+08:00 wsl-dev check-nodes.sh[13183]: node/sunmoon-kind-worker condition met
+2026-10-21T12:13:09+08:00 wsl-dev check-nodes.sh[13183]: node/sunmoon-kind-worker2 condition met
+2026-10-21T12:13:09+08:00 wsl-dev systemd[1]: Finished sunmoon-cluster.service - SunMoon owned KIND cluster sunmoon-kind.
+exit=0

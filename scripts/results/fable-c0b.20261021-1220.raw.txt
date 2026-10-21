@@ -1,0 +1,808 @@
+C0b actual Windows run, selected full files decoded as UTF-8 BOM / UTF-16 BOM / UTF-8 / GB18030. Original bytes remain unchanged in Windows run directory.
+Source: /mnt/c/wsl-disks/maintenance/c0b-20261021/runs/20261021-115628-880
+
+SHA256 of all original files:
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  001-before-running-distros.stderr.log
+3be96968c4fe10766f74721e1a4b82864e8df9ced507dace24b185b9ed76e098  001-before-running-distros.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  002-preflight.stderr.log
+9bac90c3aa5b90a2290e61575d75b756b07378b54e8a082f80fb600d319e8083  002-preflight.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  003-before-status.stderr.log
+b165ebe8292b42eedf6ffbed738f3685447f69f17d152e25510b915a55919891  003-before-status.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  004-platform-stop.stderr.log
+bdcecacc770d0364ee3bf8b1d9ea31779f1963172cdcdc43f09937e27fa8cdae  004-platform-stop.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  005-sync-before-trim.stderr.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  005-sync-before-trim.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  006-trim-system.stderr.log
+b5b2135bda57f3567028067841503361115de95a9549f8f1cc248fce97f7bc5a  006-trim-system.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  007-trim-data.stderr.log
+97798f5953d0e907c51b10d81f3d7851f6faffe1d0e9c414b9083f17b1fca884  007-trim-data.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  008-sync-after-trim.stderr.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  008-sync-after-trim.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  009-wsl-shutdown.stderr.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  009-wsl-shutdown.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  010-running-distros.stderr.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  010-running-distros.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  011-running-distros.stderr.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  011-running-distros.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  012-compact-0.stderr.log
+d6010e9b2435432ddfb95e8de6792e38e6878e701d08fc43d58fb17b3bea4bf9  012-compact-0.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  013-running-distros.stderr.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  013-running-distros.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  014-compact-1.stderr.log
+ade0b1d84485dbd3063d2593a6dd9f609d5969dafbe2ba6ee5dfee4181473a10  014-compact-1.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  015-restore-preflight.stderr.log
+d363fa019d6c0a4784ade8fef71165992acad47efea4f979e2cec6c6d6e79ce3  015-restore-preflight.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  016-restore-start.stderr.log
+4aa3ffa94d3d7139ba762fe26b7f153e781841661946d7fbb04ea81b631b45e5  016-restore-start.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  017-restore-jenkins.stderr.log
+2365ee250e8c36bc3daaec31dd741f5b07173f89d53e64729bfad8e12a240684  017-restore-jenkins.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  018-restore-status.stderr.log
+5b8ce4cb6bdaf04ed64b0530d653842dc98266239f648e66316a3480a88018b2  018-restore-status.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  019-restore-nodes.stderr.log
+c1587b7a1c2695a0c08b6894a1f41b0347b03abd9f56533b609b81e4b823bdeb  019-restore-nodes.stdout.log
+acd2fdb55f9f323e01a4126cf175ba08b0e6e33d02db3293fa03ac45fe83a3ee  after-compact.json
+047da75f9f7f799bc2df0604889ef460b4eb87ad3e79314d881e2048614a4a2c  after.json
+9dcde9bbd0989c1e9ea92161ca13237edb6a990a2d2e8cd85f32b9765fdc2ab0  before.json
+18dc9fa9e384f4d63dde952481fb97b0318141489e7a351d1d29c0bc07d6f5e2  diskpart-0.txt
+39f35def1bd1ec990c4f570ab684dd7d8c08b32873acdf872bb87c8459b8a124  diskpart-1.txt
+b776d4e3040505decd88a9c241cdcadd0f2b4bb9a7d2d93f8354719c76eb7491  result.json
+2095d5302e465922147e220c0389f7a923ea0c1509a23097f04b3c220798aef8  result.log
+fc7f00786b59a72ae1c5b96827b90342dace4199cc86da71b488dac00c39dad5  script-hashes.json
+2d21baed658ebfaccc27c1249d829f1b5fbb8fb81ca0e6f70f7325e9668c0f43  state.json
+5d5a1a37acc2302d582af9702396ca8b54b14614b8b3b0f3f3760b8eea7c3471  steps.log
+
+===== before.json =====
+{
+    "TimeUtc":  "2026-10-21T03:56:29.0047516Z",
+    "CFreeBytes":  137293406208,
+    "Disks":  [
+                  {
+                      "Path":  "C:\\Users\\zymun\\AppData\\Local\\Packages\\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\\LocalState\\ext4.vhdx",
+                      "LengthBytes":  515737911296
+                  },
+                  {
+                      "Path":  "C:\\wsl-disks\\sunmoon-data.vhdx",
+                      "LengthBytes":  180493484032
+                  }
+              ]
+}
+
+===== after-compact.json =====
+{
+    "TimeUtc":  "2026-10-21T04:03:58.6860584Z",
+    "CFreeBytes":  255224250368,
+    "Disks":  [
+                  {
+                      "Path":  "C:\\Users\\zymun\\AppData\\Local\\Packages\\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\\LocalState\\ext4.vhdx",
+                      "LengthBytes":  508436676608
+                  },
+                  {
+                      "Path":  "C:\\wsl-disks\\sunmoon-data.vhdx",
+                      "LengthBytes":  69830967296
+                  }
+              ]
+}
+
+===== after.json =====
+{
+    "TimeUtc":  "2026-10-21T04:09:13.4625407Z",
+    "CFreeBytes":  254913171456,
+    "Disks":  [
+                  {
+                      "Path":  "C:\\Users\\zymun\\AppData\\Local\\Packages\\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\\LocalState\\ext4.vhdx",
+                      "LengthBytes":  508570894336
+                  },
+                  {
+                      "Path":  "C:\\wsl-disks\\sunmoon-data.vhdx",
+                      "LengthBytes":  69965185024
+                  }
+              ]
+}
+
+===== result.json =====
+{
+    "CompletedUtc":  "2026-10-21T04:09:13.5216546Z",
+    "Success":  true,
+    "PrepareError":  null,
+    "Phases":  {
+                   "OfflineError":  null,
+                   "RecoveryError":  null,
+                   "Success":  true
+               }
+}
+
+===== result.log =====
+exit=0
+
+===== steps.log =====
+001-before-running-distros exit=0
+002-preflight exit=0
+003-before-status exit=0
+004-platform-stop exit=0
+005-sync-before-trim exit=0
+006-trim-system exit=0
+007-trim-data exit=0
+008-sync-after-trim exit=0
+009-wsl-shutdown exit=0
+010-running-distros exit=0
+011-running-distros exit=0
+012-compact-0 exit=0
+013-running-distros exit=0
+014-compact-1 exit=0
+015-restore-preflight exit=0
+016-restore-start exit=0
+017-restore-jenkins exit=0
+018-restore-status exit=0
+019-restore-nodes exit=0
+
+===== diskpart-0.txt =====
+select vdisk file="C:\Users\zymun\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\LocalState\ext4.vhdx"
+compact vdisk
+exit
+
+===== diskpart-1.txt =====
+select vdisk file="C:\wsl-disks\sunmoon-data.vhdx"
+compact vdisk
+exit
+
+===== 006-trim-system.stdout.log =====
+/: 548.4 GiB (588822044672 bytes) trimmed
+
+===== 007-trim-data.stdout.log =====
+/mnt/sunmoon-data: 0 B (0 bytes) trimmed
+
+===== 012-compact-0.stdout.log =====
+
+Microsoft DiskPart 版本 10.0.26100.1150
+
+Copyright (C) Microsoft Corporation.
+在计算机上: ZYMUN
+
+DiskPart 已成功选择虚拟磁盘文件。
+
+   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   10 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   11 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   13 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   18 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   19 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   20 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   24 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   25 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   26 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   27 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   28 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   29 百分比已完成   30 百分比已完成   30 百分比已完成   30 百分比已完成   94 百分比已完成   94 百分比已完成   94 百分比已完成   94 百分比已完成   94 百分比已完成   94 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成   98 百分比已完成  100 百分比已完成
+
+DiskPart 已成功压缩虚拟磁盘文件。
+
+退出 DiskPart...
+
+===== 012-compact-0.stderr.log =====
+
+
+===== 014-compact-1.stdout.log =====
+
+Microsoft DiskPart 版本 10.0.26100.1150
+
+Copyright (C) Microsoft Corporation.
+在计算机上: ZYMUN
+
+DiskPart 已成功选择虚拟磁盘文件。
+
+   10 百分比已完成   10 百分比已完成   10 百分比已完成   11 百分比已完成   11 百分比已完成   12 百分比已完成   12 百分比已完成   12 百分比已完成   13 百分比已完成   13 百分比已完成   14 百分比已完成   17 百分比已完成   18 百分比已完成   19 百分比已完成   23 百分比已完成   31 百分比已完成   31 百分比已完成   31 百分比已完成   32 百分比已完成   32 百分比已完成   32 百分比已完成   33 百分比已完成   33 百分比已完成   34 百分比已完成   34 百分比已完成   34 百分比已完成   35 百分比已完成   35 百分比已完成   35 百分比已完成   35 百分比已完成   35 百分比已完成   35 百分比已完成   35 百分比已完成   36 百分比已完成   36 百分比已完成   36 百分比已完成   36 百分比已完成   36 百分比已完成   36 百分比已完成   36 百分比已完成   36 百分比已完成   36 百分比已完成   36 百分比已完成   36 百分比已完成   36 百分比已完成   36 百分比已完成   46 百分比已完成   46 百分比已完成   47 百分比已完成   47 百分比已完成   47 百分比已完成   47 百分比已完成   47 百分比已完成   47 百分比已完成   47 百分比已完成   47 百分比已完成   47 百分比已完成   47 百分比已完成   47 百分比已完成   47 百分比已完成   48 百分比已完成   48 百分比已完成   48 百分比已完成   48 百分比已完成   48 百分比已完成   48 百分比已完成   48 百分比已完成   48 百分比已完成   48 百分比已完成   48 百分比已完成   48 百分比已完成   48 百分比已完成   48 百分比已完成   49 百分比已完成   49 百分比已完成   49 百分比已完成   49 百分比已完成   49 百分比已完成   49 百分比已完成   50 百分比已完成   50 百分比已完成   50 百分比已完成   50 百分比已完成   50 百分比已完成   51 百分比已完成   51 百分比已完成   51 百分比已完成   51 百分比已完成   51 百分比已完成   51 百分比已完成   52 百分比已完成   52 百分比已完成   52 百分比已完成   52 百分比已完成   52 百分比已完成   53 百分比已完成   53 百分比已完成   53 百分比已完成   53 百分比已完成   53 百分比已完成   53 百分比已完成   54 百分比已完成   54 百分比已完成   54 百分比已完成   54 百分比已完成   54 百分比已完成   54 百分比已完成   54 百分比已完成   54 百分比已完成   67 百分比已完成   67 百分比已完成   67 百分比已完成   96 百分比已完成   96 百分比已完成   96 百分比已完成   96 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成   97 百分比已完成  100 百分比已完成
+
+DiskPart 已成功压缩虚拟磁盘文件。
+
+退出 DiskPart...
+
+===== 014-compact-1.stderr.log =====
+
+
+===== 016-restore-start.stdout.log =====
+make: Entering directory '/home/zymun/worktrees/fable/sunmoonun/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml host/lifecycle.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'host_action=start'
+
+PLAY [Plan or control the independently owned local platform] ******************
+
+TASK [Require the exact current site and explicit action] **********************
+ok: [localhost]
+
+TASK [Read installed service states without starting anything] *****************
+ok: [localhost]
+
+TASK [Report lifecycle state] **************************************************
+ok: [localhost] => {
+    "states.stdout_lines": [
+        "Id=sunmoon-platform.target",
+        "ActiveState=inactive",
+        "UnitFileState=static",
+        "",
+        "Id=sunmoon-platform-boot.service",
+        "ActiveState=active",
+        "UnitFileState=enabled",
+        "",
+        "Id=sunmoon-cluster.service",
+        "ActiveState=inactive",
+        "UnitFileState=static",
+        "",
+        "Id=sunmoon-registry.service",
+        "ActiveState=active",
+        "UnitFileState=disabled",
+        "",
+        "Id=sunmoon-entry.service",
+        "ActiveState=inactive",
+        "UnitFileState=disabled",
+        "",
+        "Id=sunmoon-jenkins.service",
+        "ActiveState=inactive",
+        "UnitFileState=enabled",
+        "",
+        "Id=sunmoon-jenkins-agent.service",
+        "ActiveState=inactive",
+        "UnitFileState=enabled"
+    ]
+}
+
+TASK [Require the installed controller before shutdown] ************************
+skipping: [localhost]
+
+TASK [Refuse unowned shutdown] *************************************************
+skipping: [localhost]
+
+TASK [Verify immutable node ownership before stopping, including an already stopped cluster] ***
+skipping: [localhost]
+
+TASK [Stop pending boot recovery and target without deleting containers] *******
+skipping: [localhost] => (item=sunmoon-platform-boot.service) 
+skipping: [localhost] => (item=sunmoon-platform.target) 
+skipping: [localhost] => (item=sunmoon-jenkins-agent.service) 
+skipping: [localhost] => (item=sunmoon-jenkins.service) 
+skipping: [localhost] => (item=sunmoon-entry.service) 
+skipping: [localhost] => (item=sunmoon-cluster.service) 
+skipping: [localhost] => (item=sunmoon-registry.service) 
+skipping: [localhost]
+
+TASK [Read remaining owned node running states after systemd stop] *************
+skipping: [localhost] => (item=sunmoon-kind-control-plane) 
+skipping: [localhost] => (item=sunmoon-kind-worker) 
+skipping: [localhost] => (item=sunmoon-kind-worker2) 
+skipping: [localhost]
+
+TASK [Stop only the already verified owned nodes if not yet managed by systemd] ***
+skipping: [localhost]
+
+TASK [Read authoritative cluster identity] *************************************
+skipping: [localhost]
+
+TASK [Decode owned identity and derive immutable Windows publication] **********
+skipping: [localhost]
+
+TASK [Require matching three node IDs before publishing lifecycle files] *******
+skipping: [localhost] => (item=sunmoon-kind-control-plane) 
+skipping: [localhost] => (item=sunmoon-kind-worker) 
+skipping: [localhost] => (item=sunmoon-kind-worker2) 
+skipping: [localhost]
+
+TASK [Refuse stale or foreign receipt] *****************************************
+skipping: [localhost]
+
+TASK [Resolve immutable Windows candidate path] ********************************
+skipping: [localhost]
+
+TASK [Resolve actual Windows UNC path to the reviewed capacity helper] *********
+skipping: [localhost]
+
+TASK [Set actual Windows paths without escaped path duplication] ***************
+skipping: [localhost]
+
+TASK [Prepare private lifecycle candidate directory] ***************************
+skipping: [localhost]
+
+TASK [Render guard configuration] **********************************************
+skipping: [localhost]
+
+TASK [Copy reviewed storage guard] *********************************************
+skipping: [localhost]
+
+TASK [Render native runtime scripts and service definitions] *******************
+skipping: [localhost] => (item={'src': '../cluster/check-nodes.sh.j2', 'dest': 'check-nodes.sh'}) 
+skipping: [localhost] => (item={'src': '../cluster/sunmoon-cluster.service.j2', 'dest': 'sunmoon-cluster.service'}) 
+skipping: [localhost] => (item={'src': 'templates/boot.sh.j2', 'dest': 'boot.sh'}) 
+skipping: [localhost] => (item={'src': 'templates/sunmoon-platform.target.j2', 'dest': 'sunmoon-platform.target'}) 
+skipping: [localhost] => (item={'src': 'templates/sunmoon-platform-boot.service.j2', 'dest': 'sunmoon-platform-boot.service'}) 
+skipping: [localhost] => (item={'src': 'templates/attach-storage.ps1.j2', 'dest': 'attach-storage.ps1'}) 
+skipping: [localhost] => (item={'src': 'templates/request-storage.ps1.j2', 'dest': 'request-storage.ps1'}) 
+skipping: [localhost] => (item={'src': 'templates/run-storage-hidden.vbs.j2', 'dest': 'run-storage-hidden.vbs'}) 
+skipping: [localhost]
+
+TASK [Validate native shell syntax without execution] **************************
+skipping: [localhost] => (item=check-nodes.sh) 
+skipping: [localhost] => (item=boot.sh) 
+skipping: [localhost]
+
+TASK [Check real storage in both service mount namespaces] *********************
+skipping: [localhost]
+
+TASK [Hash Windows administrator publication candidates] ***********************
+skipping: [localhost] => (item=attach-storage.ps1) 
+skipping: [localhost] => (item=request-storage.ps1) 
+skipping: [localhost] => (item=run-storage-hidden.vbs) 
+skipping: [localhost]
+
+TASK [Create nonsecret Windows review directory] *******************************
+skipping: [localhost]
+
+TASK [Publish the read-only capacity helper locally for RemoteSigned compatibility] ***
+skipping: [localhost]
+
+TASK [Read nonsecret Windows review candidates across the filesystem boundary] ***
+skipping: [localhost] => (item=attach-storage.ps1) 
+skipping: [localhost] => (item=request-storage.ps1) 
+skipping: [localhost] => (item=run-storage-hidden.vbs) 
+skipping: [localhost]
+
+TASK [Publish review copies as the Windows owner, not as an elevated task] *****
+skipping: [localhost] => (item=attach-storage.ps1) 
+skipping: [localhost] => (item=request-storage.ps1) 
+skipping: [localhost] => (item=run-storage-hidden.vbs) 
+skipping: [localhost]
+
+TASK [Publish task installer for explicit administrator use] *******************
+skipping: [localhost]
+
+TASK [Write review manifest with immutable target and exact digests] ***********
+skipping: [localhost]
+
+TASK [Report exact lifecycle scope] ********************************************
+skipping: [localhost]
+
+TASK [Create private lifecycle rollback directory] *****************************
+skipping: [localhost]
+
+TASK [Allocate one distinct maintenance rollback receipt] **********************
+skipping: [localhost]
+
+TASK [Read full restart policies and identities before modification] ***********
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost] => (item=(censored due to no_log)) 
+skipping: [localhost]
+
+TASK [Save bounded identities and reversible restart policies] *****************
+skipping: [localhost]
+
+TASK [Back up the actual existing service definitions] *************************
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-registry.service) 
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-entry.service) 
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-data-boot.service) 
+skipping: [localhost]
+
+TASK [Show the bounded rollback directory] *************************************
+skipping: [localhost]
+
+TASK [Check physical growth reserve] *******************************************
+skipping: [localhost]
+
+TASK [Create root owned worktree independent runtime] **************************
+skipping: [localhost]
+
+TASK [Install native runtime inputs] *******************************************
+skipping: [localhost] => (item=storage.py) 
+skipping: [localhost] => (item=check-nodes.sh) 
+skipping: [localhost] => (item=boot.sh) 
+skipping: [localhost]
+
+TASK [Install the read-only capacity helper independent of the worktree] *******
+skipping: [localhost]
+
+TASK [Save exact restart-policy baseline for later boot activation] ************
+skipping: [localhost]
+
+TASK [Install immutable request path independently of the worktree] ************
+skipping: [localhost]
+
+TASK [Install nonsecret storage identity] **************************************
+skipping: [localhost]
+
+TASK [Read locked kubectl bytes] ***********************************************
+skipping: [localhost]
+
+TASK [Require verified runtime tool] *******************************************
+skipping: [localhost]
+
+TASK [Install kubectl independent of worktree] *********************************
+skipping: [localhost]
+
+TASK [Install native systemd lifecycle definitions] ****************************
+skipping: [localhost] => (item=sunmoon-cluster.service) 
+skipping: [localhost] => (item=sunmoon-platform.target) 
+skipping: [localhost] => (item=sunmoon-platform-boot.service) 
+skipping: [localhost]
+
+TASK [Create dedicated target dependency drop-in directories] ******************
+skipping: [localhost] => (item=sunmoon-registry.service) 
+skipping: [localhost] => (item=sunmoon-entry.service) 
+skipping: [localhost]
+
+TASK [Attach existing native services to the unified target] *******************
+skipping: [localhost] => (item=sunmoon-registry.service) 
+skipping: [localhost] => (item=sunmoon-entry.service) 
+skipping: [localhost]
+
+TASK [Validate installed native unit definitions before reloading] *************
+skipping: [localhost]
+
+TASK [Reload definitions without starting services] ****************************
+skipping: [localhost]
+
+TASK [Read actual managed unit states before starting] *************************
+ok: [localhost]
+
+TASK [Start the reviewed worktree independent sequence] ************************
+changed: [localhost]
+
+TASK [Read immutable Windows request path from installed runtime] **************
+skipping: [localhost]
+
+TASK [Verify the task identity and complete a real attachment check] ***********
+skipping: [localhost]
+
+TASK [Recheck actual storage visibility before changing recovery policy] *******
+skipping: [localhost]
+
+TASK [Require exact owned cluster nodes and mount identities] ******************
+skipping: [localhost]
+
+TASK [Load approved container identities from installation rollback] ***********
+skipping: [localhost]
+
+TASK [Inspect exact container IDs before recovery policy changes] **************
+skipping: [localhost]
+
+TASK [Refuse changing policy on replaced container names] **********************
+skipping: [localhost]
+
+TASK [Give systemd exclusive restart ownership of new nodes and disable legacy auto-start] ***
+skipping: [localhost] => (item=sunmoon-kind-control-plane) 
+skipping: [localhost] => (item=sunmoon-kind-worker) 
+skipping: [localhost] => (item=sunmoon-kind-worker2) 
+skipping: [localhost] => (item=kind-control-plane) 
+skipping: [localhost] => (item=kind-worker) 
+skipping: [localhost] => (item=kind-worker2) 
+skipping: [localhost]
+
+TASK [Disable the superseded one-shot data checker without removing its rollback files] ***
+skipping: [localhost]
+
+TASK [Enable the one bounded WSL recovery sequence without starting it now] ****
+skipping: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=1    unreachable=0    failed=0    skipped=58   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/sunmoonun/infrastructure'
+
+===== 016-restore-start.stderr.log =====
+
+
+===== 017-restore-jenkins.stdout.log =====
+make: Entering directory '/home/zymun/worktrees/fable/sunmoonun/infrastructure'
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/service.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_action=start'
+
+PLAY [Configure and control the host Jenkins controller] ***********************
+
+TASK [Validate site and operation] *********************************************
+ok: [localhost]
+
+TASK [Show intended configuration without secrets] *****************************
+ok: [localhost] => {
+    "msg": {
+        "action": "start",
+        "administrator": "admin (table row 13; preset only at first start)",
+        "agent_port": "127.0.0.1:50000",
+        "directories": {
+            "config": "/etc/sunmoon/jenkins",
+            "data": "/mnt/sunmoon-data/jenkins/home",
+            "runtime": "/opt/sunmoon/jenkins"
+        },
+        "images": [
+            "docker.io/jenkins/jenkins@sha256:5e70c4e8c97025f7784858bb5c4380912fc17e5fa0f0afa1d4833700a08666eb",
+            "docker.io/library/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272"
+        ],
+        "intranet": "https://jenkins.sunmoonai.com:30443 -> entry SNI -> 127.0.0.1:18443 (TLS by the locked HAProxy) -> jenkins:8080",
+        "loopback_http": "127.0.0.1:18080 (host agent and local checks only)",
+        "public_edge": "not routed (SDD 0013: the edge forwards only knowbench, casdoor, relay)"
+    }
+}
+
+TASK [Inspect current service state] *******************************************
+ok: [localhost]
+
+TASK [Check capacity for the controller home and generated configuration] ******
+skipping: [localhost]
+
+TASK [Require the locked local images] *****************************************
+skipping: [localhost] => (item=jenkins) 
+skipping: [localhost] => (item=haproxy) 
+skipping: [localhost]
+
+TASK [Verify image platform and manifest] **************************************
+skipping: [localhost] => (item=jenkins) 
+skipping: [localhost] => (item=haproxy) 
+skipping: [localhost]
+
+TASK [Verify the Compose binary source] ****************************************
+skipping: [localhost]
+
+TASK [Require locked Compose] **************************************************
+skipping: [localhost]
+
+TASK [Inspect managed root directories] ****************************************
+skipping: [localhost] => (item=/etc/sunmoon/jenkins) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/home) 
+skipping: [localhost]
+
+TASK [Refuse symlink or non-directory roots] ***********************************
+skipping: [localhost] => (item=/etc/sunmoon/jenkins) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/home) 
+skipping: [localhost]
+
+TASK [Create private configuration and runtime directories] ********************
+skipping: [localhost] => (item=/etc/sunmoon/jenkins) 
+skipping: [localhost] => (item=/etc/sunmoon/jenkins/private) 
+skipping: [localhost] => (item=/etc/sunmoon/jenkins/private/presets) 
+skipping: [localhost] => (item=/etc/sunmoon/jenkins/tls) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/secrets) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/tls) 
+skipping: [localhost]
+
+TASK [Install the shared standalone mount guard] *******************************
+skipping: [localhost]
+
+TASK [Set startup storage policy] **********************************************
+skipping: [localhost]
+
+TASK [Create the data directory on the data disk only] *************************
+skipping: [localhost]
+
+TASK [Require Docker to see the actual data disk before creating the home] *****
+skipping: [localhost]
+
+TASK [Create the controller home owned by the container user] ******************
+skipping: [localhost]
+
+TASK [Create and validate the private administrator credential and certificates] ***
+skipping: [localhost]
+
+TASK [Place the locked plugin closure for the container to pick up at start] ***
+skipping: [localhost]
+
+TASK [Preview runtime configuration changes] ***********************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/compose.yaml) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/haproxy.cfg) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy.override) 
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-jenkins.service) 
+skipping: [localhost]
+
+TASK [Require stopping this service before changing its runtime configuration] ***
+skipping: [localhost]
+
+TASK [Write runtime configuration] *********************************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/compose.yaml) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/haproxy.cfg) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy.override) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy.override) 
+skipping: [localhost] => (item=/etc/systemd/system/sunmoon-jenkins.service) 
+skipping: [localhost]
+
+TASK [Remove init scripts written without the .override suffix by earlier deploys (they would be skipped by the image entrypoint anyway)] ***
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/01-platform.groovy) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/02-agent-node.groovy) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/03-render-check.groovy) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/init.groovy.d/04-release.groovy) 
+skipping: [localhost]
+
+TASK [Install verified Compose independent of the worktree] ********************
+skipping: [localhost]
+
+TASK [Validate the generated Compose file without starting anything] ***********
+skipping: [localhost]
+
+TASK [Validate the TLS terminator configuration with the locked HAProxy image] ***
+skipping: [localhost]
+
+TASK [Reload service definitions and join the platform target] *****************
+skipping: [localhost]
+
+TASK [Stop only the controller] ************************************************
+skipping: [localhost]
+
+TASK [Start the controller] ****************************************************
+ok: [localhost]
+
+TASK [Wait for the certificate-verified login page through the TLS backend] ****
+ok: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+ok: [localhost]
+
+TASK [Require an authenticated administrator identity] *************************
+ok: [localhost]
+
+TASK [Require anonymous access to be denied] ***********************************
+ok: [localhost]
+
+TASK [Require the locked plugins to be loaded and the agent node to exist] *****
+ok: [localhost] => (item=(censored due to no_log))
+ok: [localhost] => (item=(censored due to no_log))
+
+TASK [Report actual service state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "Id=sunmoon-jenkins.service",
+        "ActiveState=active",
+        "SubState=running",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=11   changed=0    unreachable=0    failed=0    skipped=24   rescued=0    ignored=0   
+
+.venv/bin/ansible-playbook -i host/inventory.yaml jenkins/agent.yaml --extra-vars '@applications/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/tpl-app/tpl-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/knowfeed-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowfeed-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbase-app/knowbase-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowlab-app/knowlab-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowmart-app/knowmart-admin-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-backend/agent-releases/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-web-frontend/config.yaml' --extra-vars '@../gitops/components/app-platform/knowbench-app/knowbench-admin-frontend/config.yaml' --extra-vars '@registry/config.yaml' --extra-vars '@entry/config.yaml' --extra-vars '@jenkins/config.yaml' --extra-vars '@cluster/config.yaml' --extra-vars '@flux/config.yaml' --extra-vars '@services/config.yaml' --extra-vars '@host/config.yaml' --extra-vars '@../gitops/components/data-platform/postgresql/config.yaml' --extra-vars '@../gitops/components/data-platform/redis/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/config.yaml' --extra-vars '@../gitops/components/data-platform/object-storage/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/text-embeddings/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/elasticsearch/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/collector/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/data-view/config.yaml' --extra-vars '@../gitops/components/data-platform/elk/kibana/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/config.yaml' --extra-vars '@../gitops/components/data-platform/neo4j/ui/config.yaml' --extra-vars '@../gitops/components/data-platform/mongodb/config.yaml' --extra-vars '@../gitops/components/data-platform/infinity/config.yaml' --extra-vars '@../gitops/components/data-platform/valkey/config.yaml' --extra-vars '@../gitops/components/data-platform/ragflow/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/config.yaml' --extra-vars '@../gitops/components/messaging-platform/rabbitmq/ui/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/config.yaml' --extra-vars '@../gitops/components/ingress-platform/frpc/config.yaml' --extra-vars '@../gitops/components/ingress-platform/traefik/service-access/config.yaml' --extra-vars '@../gitops/components/app-platform/auth-app/casdoor/config.yaml' --extra-vars '@../gitops/components/ops-platform/pgadmin/config.yaml' --extra-vars '@../gitops/components/ops-platform/redisinsight/config.yaml' --extra-vars '@../gitops/components/ops-platform/flower/config.yaml' --extra-vars '@../gitops/components/ops-platform/mongo-express/config.yaml' --extra-vars '@../gitops/components/relay-platform/relay/config.yaml' --extra-vars '@../gitops/components/sandbox-platform/provisioner/config.yaml' --extra-vars '@environments/kind/site.yaml' --extra-vars 'jenkins_agent_action=start'
+
+PLAY [Install and control the host Jenkins agent] ******************************
+
+TASK [Validate action and settings] ********************************************
+ok: [localhost]
+
+TASK [Show the plan without secrets] *******************************************
+ok: [localhost] => {
+    "msg": {
+        "action": "start",
+        "jre": "temurin-jre 21.0.12.1+1 -> /opt/sunmoon/jenkins/jre/21.0.12.1_1",
+        "render_check": "job render-check on fable every H/10 * * * *",
+        "repos": "/mnt/sunmoon-data/jenkins/repos: sunmoonun, tpl-app, knowfeed-app, knowbase-app, knowbench-app, knowlab-app, knowmart-app (origins from ~zymun/worktrees/fable)",
+        "unit": "sunmoon-jenkins-agent.service as zymun -> http://127.0.0.1:18080 (node host)"
+    }
+}
+
+TASK [Read controller and agent unit states] ***********************************
+ok: [localhost] => (item=sunmoon-jenkins.service)
+ok: [localhost] => (item=sunmoon-jenkins-agent.service)
+
+TASK [Check capacity for JRE, repos and tools] *********************************
+skipping: [localhost]
+
+TASK [Require the controller to be running] ************************************
+skipping: [localhost]
+
+TASK [Verify the locked JRE package] *******************************************
+skipping: [localhost]
+
+TASK [Require the original JRE bytes] ******************************************
+skipping: [localhost]
+
+TASK [Create runtime directories for the agent] ********************************
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre) 
+skipping: [localhost] => (item=/opt/sunmoon/jenkins/jre/21.0.12.1_1) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/agent) 
+skipping: [localhost] => (item=/mnt/sunmoon-data/jenkins/repos) 
+skipping: [localhost]
+
+TASK [Extract the verified JRE once] *******************************************
+skipping: [localhost]
+
+TASK [Verify the extracted JRE members against the lock] ***********************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Require exact JRE member bytes] ******************************************
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/bin/java) 
+skipping: [localhost] => (item=jdk-21.0.12.1+1-jre/lib/server/libjvm.so) 
+skipping: [localhost]
+
+TASK [Point the current JRE at the verified version] ***************************
+skipping: [localhost]
+
+TASK [Fetch agent.jar from our own controller (it is served by the controller, no third party)] ***
+skipping: [localhost]
+
+TASK [Read the node secret the controller wrote at start (init.groovy.d/02-agent-node)] ***
+skipping: [localhost]
+
+TASK [Give the agent user its own read-only copy of the node secret] ***********
+skipping: [localhost]
+
+TASK [Let the agent user traverse the secrets directory] ***********************
+skipping: [localhost]
+
+TASK [Prepare the repos the agent works on] ************************************
+skipping: [localhost]
+
+TASK [Preview the unit] ********************************************************
+skipping: [localhost]
+
+TASK [Write the unit] **********************************************************
+skipping: [localhost]
+
+TASK [Reload, enable and (re)start the agent] **********************************
+skipping: [localhost]
+
+TASK [Stop only the agent] *****************************************************
+skipping: [localhost]
+
+TASK [Start the agent] *********************************************************
+ok: [localhost]
+
+TASK [Read the administrator credential only for this check] *******************
+ok: [localhost]
+
+TASK [Wait for the agent to be connected] **************************************
+ok: [localhost]
+
+TASK [Get a CSRF crumb] ********************************************************
+skipping: [localhost]
+
+TASK [Queue the build] *********************************************************
+skipping: [localhost]
+
+TASK [Wait for the queue item to become a build] *******************************
+skipping: [localhost]
+
+TASK [Wait for the build to finish] ********************************************
+skipping: [localhost]
+
+TASK [Create the local directory for build consoles] ***************************
+skipping: [localhost]
+
+TASK [Save the console log beside the other build receipts] ********************
+skipping: [localhost]
+
+TASK [Report the build result] *************************************************
+skipping: [localhost]
+
+TASK [Require the check to pass] ***********************************************
+skipping: [localhost]
+
+TASK [Report the agent unit state] *********************************************
+ok: [localhost]
+
+TASK [Display only non-secret state] *******************************************
+ok: [localhost] => {
+    "final_state.stdout_lines": [
+        "NRestarts=0",
+        "User=zymun",
+        "Id=sunmoon-jenkins-agent.service",
+        "ActiveState=active",
+        "SubState=running",
+        "UnitFileState=enabled"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=26   rescued=0    ignored=0   
+
+make: Leaving directory '/home/zymun/worktrees/fable/sunmoonun/infrastructure'
+
+===== 017-restore-jenkins.stderr.log =====
+
+
+===== 019-restore-nodes.stdout.log =====
+NAME                         STATUS   ROLES           AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                       KERNEL-VERSION                              CONTAINER-RUNTIME
+sunmoon-kind-control-plane   Ready    control-plane   19d   v1.36.5   172.18.0.2    <none>        Debian GNU/Linux 13 (trixie)   6.6.114.1-microsoft-standard-WSL2 (amd64)   containerd://2.3.4
+sunmoon-kind-worker          Ready    <none>          19d   v1.36.5   172.18.0.3    <none>        Debian GNU/Linux 13 (trixie)   6.6.114.1-microsoft-standard-WSL2 (amd64)   containerd://2.3.4
+sunmoon-kind-worker2         Ready    <none>          19d   v1.36.5   172.18.0.4    <none>        Debian GNU/Linux 13 (trixie)   6.6.114.1-microsoft-standard-WSL2 (amd64)   containerd://2.3.4
+
+===== 019-restore-nodes.stderr.log =====
+
+
+archive_read_exit=0

@@ -1,0 +1,51 @@
+$ infrastructure/.tools/bin/kubectl --kubeconfig=/home/zymun/.kube/sunmoon-kind.config get nodes
+NAME                         STATUS   ROLES           AGE   VERSION
+sunmoon-kind-control-plane   Ready    control-plane   19d   v1.36.5
+sunmoon-kind-worker          Ready    <none>          19d   v1.36.5
+sunmoon-kind-worker2         Ready    <none>          19d   v1.36.5
+exit=0
+$ kubectl get kustomizations.kustomize.toolkit.fluxcd.io,helmreleases.helm.toolkit.fluxcd.io -A -o json | metadata/status readiness summary
+{"total": 96, "notReady": []}
+exit=0
+$ kubectl get pods -A -o json | metadata/status readiness summary
+{"total": 273, "notReady": []}
+exit=0
+$ sudo -n curl --silent --show-error --noproxy * --cacert /etc/sunmoon/registry/tls/ca.crt --resolve harbor.sunmoonai.com:30443:127.0.0.1 --connect-timeout 5 --max-time 15 -o /dev/null -w harbor.sunmoonai.com HTTP=%{http_code}
+ https://harbor.sunmoonai.com:30443/api/v2.0/health
+harbor.sunmoonai.com HTTP=200
+exit=0
+$ sudo -n curl --silent --show-error --noproxy * --cacert /etc/sunmoon/registry/tls/ca.crt --resolve knowbench.sunmoonai.com:30443:127.0.0.1 --connect-timeout 5 --max-time 15 -o /dev/null -w knowbench.sunmoonai.com HTTP=%{http_code}
+ https://knowbench.sunmoonai.com:30443/
+knowbench.sunmoonai.com HTTP=307
+exit=0
+$ sudo -n curl --silent --show-error --noproxy * --cacert /etc/sunmoon/registry/tls/ca.crt --resolve jenkins.sunmoonai.com:30443:127.0.0.1 --connect-timeout 5 --max-time 15 -o /dev/null -w jenkins.sunmoonai.com HTTP=%{http_code}
+ https://jenkins.sunmoonai.com:30443/login
+jenkins.sunmoonai.com HTTP=200
+exit=0
+$ systemctl show sunmoon-cluster.service sunmoon-registry.service sunmoon-entry.service sunmoon-jenkins.service sunmoon-jenkins-agent.service --property=Id,ActiveState,SubState,Result
+Result=success
+Id=sunmoon-cluster.service
+ActiveState=active
+SubState=exited
+
+Result=success
+Id=sunmoon-registry.service
+ActiveState=active
+SubState=running
+
+Result=success
+Id=sunmoon-entry.service
+ActiveState=active
+SubState=running
+
+Result=success
+Id=sunmoon-jenkins.service
+ActiveState=active
+SubState=running
+
+Result=success
+Id=sunmoon-jenkins-agent.service
+ActiveState=active
+SubState=running
+exit=0
+all_commands_exit=0
