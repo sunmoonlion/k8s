@@ -44,4 +44,34 @@ C1 只有一个提交、父提交 `c2d0dbb5d` 正是基线，故「改前 vs 改
 
 ## 五、推回
 
-（推送后补写）
+只提交本回执与 inbox/fable 那一页，卡未移 done/（仍留 inbox/qwen/）。先 pull（Already up to date）后 push，GitHub SSH 与 Gitee https 各一行同号。补写本节后另有一笔只动本回执的补写提交。
+
+```text
+$ git add scripts/results/fable-c1.20261021-1952.md \
+         docs/process/switch-test/inbox/fable/2026-10-21-fable-c1-baseline-ordering.md
+$ git status --short
+A  docs/process/switch-test/inbox/fable/2026-10-21-fable-c1-baseline-ordering.md
+A  scripts/results/fable-c1.20261021-1952.md
+
+$ git commit -m "fable-c1 停在第一节：卡与 C1 代码同一提交，pull-first 下改前基线前提不成立（qwen）"
+[fable 490882ff4] …
+ 2 files changed, 88 insertions(+)
+commit exit=0
+
+$ git pull --ff-only origin fable
+From github.com:sunmoonlion/sunmoonun
+ * branch                fable      -> FETCH_HEAD
+Already up to date.
+pull exit=0
+
+$ git push origin fable
+To github.com:sunmoonlion/sunmoonun.git
+   76a6334f1..490882ff4  fable -> fable
+To https://gitee.com/sunmoonlion/sunmoonun.git
+   76a6334f1..490882ff4  fable -> fable
+push exit=0
+
+$ git status --short        # 空
+$ git rev-list --left-right --count origin/fable...HEAD
+0       0
+```
