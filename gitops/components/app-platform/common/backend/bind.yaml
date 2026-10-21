@@ -27,7 +27,7 @@
     source_lock: '{{ (lookup("file", playbook_dir + "/../applications/sources.yaml") | from_yaml).applications[application_name] }}'
 - name: Combine public application identity
   ansible.builtin.set_fact:
-    cfg: '{{ application_cfg | combine(backend_cfg) | combine({"namespace": app_namespace, "web_origin": web_cfg.origin, "admin_origin": admin_cfg.origin}) }}'
+    cfg: '{{ application_cfg | combine(backend_cfg) | combine({"private_dir": "/etc/sunmoon/applications/" + cluster_name + "/" + application_name, "backup_dir": data_root + "/backups/applications/" + cluster_name + "/" + application_name, "namespace": app_namespace, "web_origin": web_cfg.origin, "admin_origin": admin_cfg.origin}) }}'
     browser_clients:
       web: {name: '{{ web_cfg.casdoor_application }}', client_id: '{{ web_cfg.casdoor_client_id }}', origin: '{{ web_cfg.origin }}'}
       admin: {name: '{{ admin_cfg.casdoor_application }}', client_id: '{{ admin_cfg.casdoor_client_id }}', origin: '{{ admin_cfg.origin }}'}

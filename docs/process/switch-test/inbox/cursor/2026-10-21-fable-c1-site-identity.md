@@ -1,6 +1,6 @@
 # cursor 卡 fable-c1：集群身份与路径参数化——开发站点渲染字节不变（0039 停点 C1）
 
-> 状态：**可执行**（远程 Fable 2026-10-21 写；**第二版** 2026-10-21 晚：第一节改为从父提交的临时工作树取基线，答 qwen 的停点；**改派 Cursor** 2026-10-21 晚，qwen 配额用尽，所有者定）。C1 改了 59 个文件、一行业务逻辑都没加：把写死的集群名 `sunmoon-kind`、`kind-` 上下文前缀、`/mnt/sunmoon-data`、`/home/zymun` 收进 `environments/kind/site.yaml`，模块配置改成按站点值派生，守卫改成跨字段核对。**这种改法唯一的验收就是「改前改后结果一模一样」**，所以这张卡的核心是你在本地先按现在的代码渲染一遍存下来，再拉新代码渲染一遍，逐字节比。
+> 状态：**可执行**（远程 Fable 2026-10-21 写；**第二版** 2026-10-21 晚：第一节改为从父提交的临时工作树取基线，答 qwen 的停点；**改派 Cursor** 2026-10-21 晚，qwen 配额用尽，所有者定；**第三版**：Cursor 第一次改后渲染在 private_dir 断言失败——应用配置被 `lookup("file")` 重读不过 Jinja，是 C1 的 bug，已修（两个路径字段改由加载处推出），**改前基线复用你上次渲染好的，不用再开临时工作树**）。C1 改了 59 个文件、一行业务逻辑都没加：把写死的集群名 `sunmoon-kind`、`kind-` 上下文前缀、`/mnt/sunmoon-data`、`/home/zymun` 收进 `environments/kind/site.yaml`，模块配置改成按站点值派生，守卫改成跨字段核对。**这种改法唯一的验收就是「改前改后结果一模一样」**，所以这张卡的核心是你在本地先按现在的代码渲染一遍存下来，再拉新代码渲染一遍，逐字节比。
 >
 > 工位 **WS=fable**：`~/worktrees/fable/sunmoonun`，分支 fable（不是 cursor 自己的工位）。只读集群，不部署、不改 gitops 声明、不碰 Harbor/Jenkins 数据。卡命令本身的笔误可以改并写进回执；代码不对就**停**，把输出写进 `inbox/fable/`，不就地改代码。
 
@@ -10,38 +10,32 @@
 产物目录：~/sunmoon-probe-runs/c1-<时间戳>/（不进 git）
 ```
 
-## 一、改前基线：在父提交 `c2d0dbb5` 的临时工作树里渲染
+## 一、改前基线：复用上一轮的
 
-> 第一版卡把「先别拉代码」写在了卡和代码同一个提交里，拉到卡时代码已经进来，前提自相矛盾（qwen 2026-10-21 停点，对的）。改成：改前的代码从 `git worktree` 取，和你的工作副本互不干扰；`.venv`、`.tools` 用软链接借主工作树的。
+上一轮你在 `~/sunmoon-probe-runs/c1-20261021-2008/before/` 已经把 `c2d0dbb5` 的渲染、plan、config 存好了（补了 `services-chart` 和旁路应用仓软链后 failed=0），直接用它：
+
+```bash
+P=~/sunmoon-probe-runs/c1-20261021-2008; ls $P/before/components | head -3; tail -1 $P/before/plan.log; wc -l $P/before/config.txt
+```
+
+要看到有文件、`failed=0`、62 行。目录不在了才按上一版卡（git 历史里 3558f402 的第一节）重做基线：临时工作树 + 软链 `.venv`/`.tools` + 旁路应用仓软链 + 先 `make services-chart`。
+
+## 二、改后：在主工作树（拉到本次修复之后）渲染
 
 ```bash
 cd ~/worktrees/fable/sunmoonun && git pull --ff-only origin fable && git status --short && git log --oneline -1
-P=~/sunmoon-probe-runs/c1-$(date +%Y%m%d-%H%M); mkdir -p $P/before $P/after; echo "P=$P"
-git worktree add --detach $P/base c2d0dbb5 && (cd $P/base && git log --oneline -1)
-ln -s ~/worktrees/fable/sunmoonun/infrastructure/.venv $P/base/infrastructure/.venv
-ln -s ~/worktrees/fable/sunmoonun/infrastructure/.tools $P/base/infrastructure/.tools
-cd $P/base/infrastructure
-grep -c "sunmoon-kind" environments/kind/site.yaml cluster/config.yaml      # 改前：site.yaml 1 行、cluster/config.yaml 1 行（kubeconfig 路径）
-make components-render OBJECT=all > $P/before/render.log 2>&1; tail -2 $P/before/render.log
-cp -a .build/components $P/before/components
-make platform-plan OBJECT=all > $P/before/plan.log 2>&1; tail -1 $P/before/plan.log
-make config > $P/before/config.txt
-```
-
-要看到：`$P/base` 的提交是 `c2d0dbb5`；两个 log 末尾 `failed=0`。
-
-## 二、改后：在主工作树（已是 C1 之后）再来一遍
-
-```bash
-cd ~/worktrees/fable/sunmoonun/infrastructure && git log --oneline -1       # 76a6334f 或更新
-grep -c "sunmoon-kind" environments/kind/site.yaml; grep -c "sunmoon-kind" cluster/config.yaml || true   # 改后：site.yaml 2 行（名字、上下文），cluster/config.yaml 0
+cd infrastructure
+grep -c "private_dir" ../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml || echo "0 (字段已不在配置里，由加载处推出)"
+make services-chart > $P/after/chart.log 2>&1; tail -1 $P/after/chart.log
 make components-render OBJECT=all > $P/after/render.log 2>&1; tail -2 $P/after/render.log
 cp -a .build/components $P/after/components
 make platform-plan OBJECT=all > $P/after/plan.log 2>&1; tail -1 $P/after/plan.log
 make config > $P/after/config.txt
 ```
 
-渲染结果或日志里可能带工作树的绝对路径，两边路径不同会造成假差异，先把 before 里的临时路径替换成主工作树的再比：
+要看到：提交在本次修复（卡头提到的第三版提交）或之后；render 末尾 `failed=0`。`$P/after` 里上一轮失败的 render.log 会被覆盖，无妨。
+
+渲染结果或日志里可能带工作树的绝对路径，上一轮 before 来自临时工作树，先把它的路径替换成主工作树的再比（已经替换过就是空操作）：
 
 ```bash
 grep -rl "$P/base" $P/before | xargs -r sed -i "s#$P/base#$HOME/worktrees/fable/sunmoonun#g"
@@ -71,12 +65,8 @@ make jenkins-agent-check 2>&1 | tail -3                    # Jenkins 上的 rend
 
 render-check 结束后把 Jenkins 构建号、结果和 `diff.txt` 行数写进回执（看法同 b2 卡：`infrastructure/jenkins/使用说明` 已搬到 `docs/ops/jenkins-使用说明.md`）。
 
-## 五、回执与清理
+## 五、回执
 
-```bash
-cd ~/worktrees/fable/sunmoonun && git worktree remove --force $P/base && git worktree prune && git worktree list
-```
-
-临时工作树只用来渲染基线，比完就删（`git worktree list` 里不该再有 `c1-*/base`）；`$P/before`、`$P/after` 留着。
+上一轮临时工作树已删；`git worktree list` 确认没有残留即可。`$P/before`、`$P/after` 留着。
 
 `scripts/results/fable-c1.<YYYYMMDD-HHMM>.md`：三个 IDENTICAL 的原文、第四节五条命令的末尾输出、render-check 构建号；卡移 `done/`；`git add` 回执与卡 → commit → `git push origin fable`。不通过就停，写 `inbox/fable/`，把 `$P/diff.txt` 或失败命令的输出贴进去。

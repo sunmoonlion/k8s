@@ -16,7 +16,7 @@
     backend_cfg: '{{ (lookup("file", component_root + "/config.yaml") | from_yaml)[application_name + "_backend_deployment"] }}'
     web_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-web-frontend/config.yaml") | from_yaml)[application_name + "_web_deployment"] }}'
     admin_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-admin-frontend/config.yaml") | from_yaml)[application_name + "_admin_deployment"] }}'
-    cfg: '{{ application_cfg | combine(backend_cfg) | combine({"namespace":app_namespace, "web_origin":web_cfg.origin, "admin_origin":admin_cfg.origin}) }}'
+    cfg: '{{ application_cfg | combine(backend_cfg) | combine({"private_dir": "/etc/sunmoon/applications/" + cluster_name + "/" + application_name, "backup_dir": data_root + "/backups/applications/" + cluster_name + "/" + application_name, "namespace":app_namespace, "web_origin":web_cfg.origin, "admin_origin":admin_cfg.origin}) }}'
     app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/{{ application_name }}-app'
     component_root: '{{ app_root }}/{{ application_name }}-backend'
     mechanism_root: '{{ playbook_dir }}/../../gitops/components/app-platform/common/backend'
@@ -77,8 +77,6 @@
           - cfg.database_extensions | default([]) | difference(['uuid-ossp']) | length == 0
           - cfg.database_bootstrap_revision is match('^[a-z0-9-]{1,16}$')
           - cfg.migration_job_revision is match('^[a-z0-9-]{1,16}$')
-          - cfg.private_dir == '/etc/sunmoon/applications/' + cluster_name + '/' + application_name
-          - cfg.backup_dir == data_root + '/backups/applications/' + cluster_name + '/' + application_name
           - app_images.backend.repository == application_name + '-backend'
           - app_images.backend.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
           - app_images.web.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
