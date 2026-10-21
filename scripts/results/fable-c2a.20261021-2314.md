@@ -23,7 +23,7 @@ WS=fable，分支 fable，代码提交 `ce33ccc1`。改前基线 = C1 的改后�
 | `make platform-account-plan OBJECT=registry` | failed=0 |
 | `make platform-check OBJECT=data-platform/object-storage` | `"passed": true`，failed=0 |
 | `make entry-status`（`entry_port` 已改为派生） | failed=0 |
-| `make jenkins-agent-check` | render-check #129 <result>NOT_BUILT</result> diff=? |
+| `make jenkins-agent-check` | render-check **#128 SUCCESS**，`diff.txt` 49 行（与已提交声明的差异 = 上面判定接受的两个 `config-sha256` 和 knowbench domain 的 sops 重加密；#129 是其后的定时空跑 NOT_BUILT） |
 
 日志在本地 `~/sunmoon-probe-runs/c2a-20261021-2251/`（checks/、diff.txt），不进 git；没有口令、密文进本页。
 
@@ -32,3 +32,5 @@ WS=fable，分支 fable，代码提交 `ce33ccc1`。改前基线 = C1 的改后�
 C2a 关闭。下一步 C2b：开发站点改 `dev.sunmoonai.com`，要所有者先做三件事（公网 DNS、本机 hosts、Jenkins 点批），见 0039 C2 节。
 
 exit=0
+
+更正（同晚）：第一版把表里 render-check 一格写成了随后的定时构建 #129 NOT_BUILT；本次 `jenkins-agent-check` 触发的是 #128 SUCCESS，已改正。
