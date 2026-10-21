@@ -61,6 +61,13 @@
       - tls_files.results[0].stat.exists or tls_files.results[2].stat.exists or (query('fileglob', tls_declaration) | length == 0)
       - tls_files.results[1].stat.exists or tls_files.results[3].stat.exists or (query('fileglob', tls_declaration) | length == 0)
       - not (tls_files.results[1].stat.exists or tls_files.results[3].stat.exists) or (tls_files.results[0].stat.exists or tls_files.results[2].stat.exists)
+- name: Retire the application certificate when its names no longer match the site
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../components/tasks/tls-retire.yaml'
+  vars:
+    tls_retire_crt: '{{ tls_private_dir }}/tls/server.crt'
+    tls_retire_csr: '{{ tls_private_dir }}/tls/server.csr'
+    tls_retire_backup_crt: '{{ tls_backup_dir }}/tls/server.crt'
+    tls_retire_names: '{{ tls_hostnames }}'
 - name: Generate the application TLS key only once
   ansible.builtin.command:
     argv: [openssl, genpkey, -algorithm, RSA, -pkeyopt, 'rsa_keygen_bits:3072', -out, '{{ tls_private_dir }}/tls/server.key']

@@ -9,6 +9,13 @@
       - casdoor_session_lifetime_seconds >= 3600 and casdoor_session_lifetime_seconds <= 2592000
 - name: Read the shared core identities
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/shared-credentials.yaml'
+- name: Retire the service certificate when its name no longer matches the site
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../components/tasks/tls-retire.yaml'
+  vars:
+    tls_retire_crt: '{{ services_config_dir }}/tls/server.crt'
+    tls_retire_csr: '{{ services_config_dir }}/tls/server.csr'
+    tls_retire_backup_crt: '{{ services_backup_dir }}/tls/server.crt'
+    tls_retire_names: ['{{ casdoor_hostname }}']
 - name: Generate a private service TLS key only when absent
   ansible.builtin.command:
     argv: [openssl, genpkey, -algorithm, RSA, -pkeyopt, 'rsa_keygen_bits:3072', -out, '{{ services_config_dir }}/tls/server.key']

@@ -1,0 +1,18 @@
+---
+# 证书上的名字（CN/SAN）跟着站点参数走（C2：`site_domain`），而各处签发都是「只签一次」（creates），换名后旧证书会在
+# 「核对名字」那一步失败。签发前先核一次：现有证书缺任何一个声明的名字 → 退役 CSR 与证书（私钥保留，身份不变），
+# 连同独立备份里的那份证书一起退，让签发与备份任务按 creates / force=false 重做。证书可由私钥与平台 CA 重签，不是秘密。
+# 调用方给：tls_retire_crt、tls_retire_csr、tls_retire_names（列表）、可选 tls_retire_backup_crt。结果：tls_retired。
+- name: Read the names carried by the existing certificate
+  ansible.builtin.command:
+    argv: [openssl, x509, -noout, -ext, subjectAltName, -in, '{{ tls_retire_crt }}']
+  register: tls_retire_existing
+  changed_when: false
+  failed_when: false
+- name: Decide whether the existing certificate still carries every declared name
+  ansible.builtin.set_fact:
+    tls_retired: "{{ tls_retire_existing.rc == 0 and ((tls_retire_names | map('regex_replace', '^', 'DNS:') | list) | difference(tls_retire_existing.stdout | regex_findall('DNS:[^,\\s]+')) | length > 0) }}"
+- name: Retire the certificate whose names no longer match the declaration (private key is kept)
+  ansible.builtin.file: {path: '{{ item }}', state: absent}
+  loop: "{{ [tls_retire_csr, tls_retire_crt] + ([tls_retire_backup_crt] if tls_retire_backup_crt is defined else []) }}"
+  when: tls_retired | bool

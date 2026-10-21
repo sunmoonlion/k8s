@@ -46,6 +46,13 @@
   ansible.builtin.assert:
     quiet: true
     that: (tls_files.results[0].stat.exists or tls_files.results[2].stat.exists) or query('fileglob', playbook_dir + '/../../gitops/components/' + tls_guard_manifest) | length == 0
+- name: Retire the internal certificate when its names no longer match the declaration
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../components/tasks/tls-retire.yaml'
+  vars:
+    tls_retire_crt: '{{ services_config_dir }}/{{ tls_component }}-tls/public.crt'
+    tls_retire_csr: '{{ services_config_dir }}/{{ tls_component }}-tls/server.csr'
+    tls_retire_backup_crt: '{{ services_backup_dir }}/{{ tls_component }}-tls/public.crt'
+    tls_retire_names: "{{ [tls_component, tls_component + '.' + tls_component_namespace + '.svc.cluster.local'] + (tls_extra_hostnames | default([])) }}"
 - name: Generate internal service key only once
   ansible.builtin.command:
     argv: [openssl, genpkey, -algorithm, RSA, -pkeyopt, 'rsa_keygen_bits:3072', -out, '{{ services_config_dir }}/{{ tls_component }}-tls/private.key']
