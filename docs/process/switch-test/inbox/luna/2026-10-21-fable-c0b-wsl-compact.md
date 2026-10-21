@@ -1,6 +1,6 @@
-# luna 卡 fable-c0b：WSL 离线压缩重做（等所有者另约时间）
+# luna 卡 fable-c0b：WSL 离线压缩重做（所有者定：先压缩，再建机）
 
-> 状态：**待所有者给时间再跑**（远程 Fable 2026-10-21 写）。上次（c0 维护回执）DiskPart 没跑到：`wsl --shutdown` 之后 VS Code 的 WSL 服务自己把 WSL 又拉起来了。压缩和建机已经脱钩（建机先做，见 c0 卡）。本卡只是把下次怎么做定下来，材料你已经有（`C:\wsl-disks\maintenance\`），按下面三点改好等时间。
+> 状态：**现在做，排在 c0a 之后、c0 建机之前**（远程 Fable 2026-10-21 写；所有者「先压缩」）。上次（c0 维护回执）DiskPart 没跑到：`wsl --shutdown` 之后 VS Code 的 WSL 服务自己把 WSL 又拉起来了。先按下面三点改材料（`C:\wsl-disks\maintenance\`），改好把启动器路径和「要关什么」交给所有者，所有者关掉全部 VS Code 与 WSL 终端后从开始菜单开的管理员 PowerShell 里跑；恢复后你回 WSL 核对、写回执。
 >
 > 范围不变：只对 WSL 系统盘 vhdx 和 `sunmoon-data.vhdx` 做 DiskPart compact；不清理里面任何数据（C-R19）。
 
