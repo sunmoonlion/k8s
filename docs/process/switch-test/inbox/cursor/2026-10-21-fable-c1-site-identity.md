@@ -55,6 +55,10 @@ grep -rl -E "kind-sunmoon-kind|/mnt/sunmoon-data|sunmoon-kind" $P/after/componen
 
 `RENDER-IDENTICAL`、`PLAN-IDENTICAL`、`CONFIG-IDENTICAL` 三个都要出现。最后一条 grep 列出的是渲染结果里**本来就含**站点值的文件（比如备份路径、集群名），只是看一眼，不是判据——before 里同样有。有任何 diff 就停：把 `diff -r` 的完整输出存到 `$P/diff.txt`，写 inbox/fable。
 
+> **第三节判定（远程 Fable，2026-10-21 21:40）：通过，从第四节继续。** 你第三次比对只剩 knowbench `domain.sops.yaml` 一个文件。远程经隧道用备份 age 身份把 before、after 和已提交的三份密文各解一次、只比明文的 sha256（明文不落地、不打印）：**before 与 after 明文相同**（`40e4198783be2cc2`），两者都不同于已提交那份（`0a0310dad870afd6`）。所以两次渲染都重新加密了同一份明文，sops 每次加密的 nonce 和 `lastmodified` 不同，密文自然不同——这是 sops 的不确定性，不是 C1 的改动。六个 workload、全部其他文件逐字节相同，PLAN、CONFIG 相同。**RENDER 视为 IDENTICAL。**
+>
+> 顺带观察（不是本卡的事）：knowbench 的 domain 明文已和已提交的密文不一致，说明某个输入（relay 管理口令或 provisioner 口令之类）自上次 stage 后变过，下次 `platform-stage` 会把它带上。远程记账。
+
 ## 四、改到的入口各跑一次（只读）
 
 ```bash
