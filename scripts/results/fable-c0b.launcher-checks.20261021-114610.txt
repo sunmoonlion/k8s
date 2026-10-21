@@ -1,0 +1,20 @@
+PASS: Code.exe blocks before any maintenance
+PASS: wsl.exe blocks before any maintenance
+PASS: empty client list permits the offline gate
+PASS: fresh manual invocation has a valid maintenance window
+PASS: expired maintenance window refuses further compaction
+PASS: offline/recovery errors remain distinct in result
+PASS: original offline error saved before recovery
+PASS: recovery error saved separately
+PASS: both successful phases produce success
+PASS: English/Chinese DiskPart success text accepted
+PASS: DiskPart exit zero without valid success is rejected
+PASS: DiskPart exit zero without valid success is rejected
+PASS: DiskPart exit zero without valid success is rejected
+PASS: WSL UTF-16 output decoded
+[11:46:10] native-zero
+PASS: native exit zero captured with stdout/stderr paths
+[11:46:11] native-seven
+PASS: native exit seven fails and is logged
+All checks passed. Files: C:\wsl-disks\maintenance\c0b-20261021\checks\20261021-114610-642
+exit=0

@@ -1,0 +1,42 @@
+{
+    "TimeUtc":  "2026-10-21T03:47:30.9952821Z",
+    "CFreeBytes":  137194958848,
+    "Disks":  [
+                  {
+                      "Path":  "C:\\Users\\zymun\\AppData\\Local\\Packages\\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\\LocalState\\ext4.vhdx",
+                      "LengthBytes":  515737911296
+                  },
+                  {
+                      "Path":  "C:\\wsl-disks\\sunmoon-data.vhdx",
+                      "LengthBytes":  180493484032
+                  }
+              ]
+}
+READ-ONLY PREVIEW. No task changes, service stop, trim, WSL shutdown, or DiskPart.
+Blocking VS Code/WSL clients: 20
+
+Name     ProcessId ParentProcessId
+----     --------- ---------------
+Code.exe      3924           11208
+Code.exe     31256            3924
+Code.exe     30940            3924
+Code.exe     17140            3924
+Code.exe      3620            3924
+Code.exe      3584            3924
+Code.exe     21660            3924
+Code.exe     31828            3924
+Code.exe     32616           18388
+wsl.exe      14340           32616
+wsl.exe      20208           14340
+Code.exe     32480            3924
+Code.exe     25888            3924
+Code.exe     19060           25888
+wsl.exe      32472           32616
+wsl.exe      11052           32472
+wsl.exe       4644           32616
+wsl.exe       5984            4644
+wsl.exe      29900           25888
+wsl.exe      20352           29900
+
+
+exit=0

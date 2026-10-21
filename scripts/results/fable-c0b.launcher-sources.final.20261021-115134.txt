@@ -1,0 +1,448 @@
+FINAL PREPARED SOURCE SNAPSHOT. Replaces the earlier 114959 snapshot for delivery. No actual maintenance Run executed.
+
+FILE C:\wsl-disks\maintenance\c0b-20261021\Start-C0b.cmd
+SHA256=fe56efc1adfb1917fbca2ecd49d728379b320634cb18bbe111cb66958ff6c02c
+@echo off
+setlocal
+cd /d "%~dp0"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Start-C0b.ps1" -Run
+set "c0b_exit=%ERRORLEVEL%"
+echo.
+echo C0b exit=%c0b_exit%
+echo Logs: C:\wsl-disks\maintenance\c0b-20261021\runs\
+pause
+exit /b %c0b_exit%
+
+
+FILE C:\wsl-disks\maintenance\c0b-20261021\Start-C0b.ps1
+SHA256=bf019970aba8f38afa5856d01cdd312c353cd7bf8eecdcaec6eee1593f46c7cc
+[CmdletBinding()]
+param([switch]$Run, [string]$Recover)
+Set-StrictMode -Version Latest
+$ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'C0b.Common.ps1')
+$RootVhd='C:\Users\zymun\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\LocalState\ext4.vhdx'
+$DataVhd='C:\wsl-disks\sunmoon-data.vhdx'
+$Disks=@($RootVhd,$DataVhd)
+$Marker='C:\wsl-disks\sunmoon-data.maintenance'
+$TaskName='sunmoon-data-mount'
+$Infra='/home/zymun/worktrees/fable/sunmoonun/infrastructure'
+$Wsl=Join-Path $env:WINDIR 'System32\wsl.exe'
+
+if (-not $Run -and -not $Recover) {
+    Get-C0Snapshot -Disks $Disks | ConvertTo-Json -Depth 5
+    $clients=@(Get-C0Clients)
+    Write-Host 'READ-ONLY PREVIEW. No task changes, service stop, trim, WSL shutdown, or DiskPart.'
+    Write-Host ('Blocking VS Code/WSL clients: ' + $clients.Count)
+    $clients | Format-Table -AutoSize
+    return
+}
+if ($Run -and $Recover) { throw 'Choose Run OR Recover' }
+$owner=[Security.Principal.WindowsIdentity]::GetCurrent().Name
+if ($owner -ne 'ZYMUN\zymun') { throw 'Use the original owner account ZYMUN\zymun, not another administrator account' }
+$admin=([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $admin) {
+    $argsText='-NoProfile -ExecutionPolicy Bypass -File "' + $PSCommandPath + '"'
+    if ($Run) { $argsText+=' -Run' } else { $argsText+=' -Recover "' + $Recover + '"' }
+    $child=Start-Process -FilePath (Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe') -ArgumentList $argsText -WorkingDirectory $PSScriptRoot -Verb RunAs -PassThru -Wait
+    exit $child.ExitCode
+}
+
+function Restore-C0Platform($Context, $State) {
+    Write-Host 'Restoring the existing native attachment task and platform...'
+    if (Test-Path -LiteralPath $Marker) {
+        if ((Get-Content -LiteralPath $Marker -Raw).Trim() -ne $State.Nonce) { throw 'Maintenance marker belongs to another operation; leaving it untouched' }
+        Remove-Item -LiteralPath $Marker
+    }
+    # Do not call wsl.exe before the existing task attaches the VHD and starts Ubuntu.
+    $last=(Get-ScheduledTaskInfo -TaskName $TaskName).LastRunTime
+    Enable-ScheduledTask -TaskName $TaskName | Out-Null
+    Start-ScheduledTask -TaskName $TaskName
+    $deadline=(Get-Date).AddSeconds(180)
+    do {
+        Start-Sleep -Milliseconds 500
+        $task=Get-ScheduledTask -TaskName $TaskName
+        $info=Get-ScheduledTaskInfo -TaskName $TaskName
+        if ((Get-Date) -gt $deadline) { throw 'Native attachment task timed out; no forced attach or new disk initialization' }
+    } until ($info.LastRunTime -gt $last -and $task.State -notin @('Running','Queued'))
+    if ($info.LastTaskResult -ne 0) { throw ('Native attachment task failed: ' + $info.LastTaskResult) }
+    Invoke-C0Wsl $Context 'restore-preflight' @('make','-C',$Infra,'preflight')
+    Invoke-C0Wsl $Context 'restore-start' @('make','-C',$Infra,'platform-start')
+    Invoke-C0Wsl $Context 'restore-jenkins' @('make','-C',$Infra,'jenkins-start','jenkins-agent-start')
+    Invoke-C0Wsl $Context 'restore-status' @('make','-C',$Infra,'platform-status')
+    Invoke-C0Wsl $Context 'restore-nodes' @('/home/zymun/worktrees/fable/sunmoonun/infrastructure/.tools/bin/kubectl','--kubeconfig=/home/zymun/.kube/sunmoon-kind.config','--request-timeout=15s','get','nodes','-o','wide')
+}
+
+$mutex=[System.Threading.Mutex]::new($false,'Local\SunmoonC0bMaintenance')
+$locked=$false
+$exitCode=1
+$runDir=$null
+try {
+    try { $locked=$mutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $locked=$true }
+    if (-not $locked) { throw 'Another C0b maintenance process is running; do not start a second one' }
+    if ($Recover) {
+        $runDir=(Resolve-Path -LiteralPath $Recover).Path
+        if (-not $runDir.StartsWith((Join-Path $PSScriptRoot 'runs\'),[StringComparison]::OrdinalIgnoreCase)) { throw 'Recovery path must be one of this launcher runs' }
+        $state=Get-Content -LiteralPath (Join-Path $runDir 'state.json') -Raw | ConvertFrom-Json
+        if ($state.WindowsUser -ne $owner) { throw 'Saved owner differs' }
+        $recoveryDir=Join-Path $runDir ('recovery-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
+        New-Item -ItemType Directory -Path $recoveryDir | Out-Null
+        $ctx=[pscustomobject]@{RunDir=$recoveryDir; Index=0; Wsl=$Wsl}
+        try {
+            Restore-C0Platform $ctx $state
+            Get-C0Snapshot $Disks | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $recoveryDir 'after.json') -Encoding UTF8
+            $exitCode=0
+        } catch { Save-C0Error (Join-Path $recoveryDir 'recovery-error.log') $_ }
+    } else {
+        # This check happens BEFORE any WSL start, service stop, or task mutation.
+        Assert-C0NoClients
+        if (Test-Path -LiteralPath $Marker) { throw 'An existing maintenance marker requires inspection; no services stopped' }
+        foreach ($disk in $Disks) { if (-not (Test-Path -LiteralPath $disk -PathType Leaf)) { throw ('Existing disk missing: ' + $disk) } }
+        $distro=@(Get-ChildItem HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss | ForEach-Object { Get-ItemProperty $_.PSPath } | Where-Object { $_.DistributionName -eq 'Ubuntu' })
+        if ($distro.Count -ne 1 -or (Join-Path $distro[0].BasePath 'ext4.vhdx') -ne $RootVhd) { throw 'Ubuntu registration does not match the reviewed system VHD path' }
+        $task=Get-ScheduledTask -TaskName $TaskName
+        if (-not $task.Settings.Enabled -or $task.State -in @('Running','Queued')) { throw 'Attachment task must already be enabled and idle; inspect before stopping services' }
+        $runDir=Join-Path $PSScriptRoot ('runs\' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
+        New-Item -ItemType Directory -Path $runDir -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $PSScriptRoot 'last-run.txt') -Value $runDir -Encoding UTF8
+        $ctx=[pscustomobject]@{RunDir=$runDir; Index=0; Wsl=$Wsl}
+        $state=[pscustomobject]@{WindowsUser=$owner; ApprovedAtUtc=[DateTime]::UtcNow.ToString('o'); Nonce=[Guid]::NewGuid().ToString(); Disks=$Disks}
+        $state | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $runDir 'state.json') -Encoding UTF8
+        Get-FileHash -Algorithm SHA256 -LiteralPath $PSCommandPath,(Join-Path $PSScriptRoot 'C0b.Common.ps1') | Select-Object Path,Hash | ConvertTo-Json | Set-Content (Join-Path $runDir 'script-hashes.json') -Encoding UTF8
+        Get-C0Snapshot $Disks | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $runDir 'before.json') -Encoding UTF8
+        Write-Host ('Logs: ' + $runDir)
+        $stopAttempted=$false
+        $prepareError=$null
+        try {
+            # Refuse another running distro: shutdown would affect it too.
+            $r=Invoke-C0Native $ctx 'before-running-distros' $Wsl @('--list','--running','--quiet')
+            $other=@($r.Out -split "`r?`n" | ForEach-Object { ($_ -replace "`0", '').Trim() } | Where-Object { $_ -and $_ -ne 'Ubuntu' })
+            if ($other.Count) { throw ('Another WSL distribution is running: ' + ($other -join ', ')) }
+            Invoke-C0Wsl $ctx 'preflight' @('make','-C',$Infra,'preflight')
+            Invoke-C0Wsl $ctx 'before-status' @('make','-C',$Infra,'platform-status')
+            Assert-C0NoClients
+            Assert-C0Window $state.ApprovedAtUtc
+            $stopAttempted=$true
+            Invoke-C0Wsl $ctx 'platform-stop' @('make','-C',$Infra,'platform-stop')
+            $state.Nonce | Set-Content -LiteralPath $Marker -Encoding ASCII
+            Disable-ScheduledTask -TaskName $TaskName | Out-Null
+            $deadline=(Get-Date).AddSeconds(60)
+            while ((Get-ScheduledTask -TaskName $TaskName).State -in @('Running','Queued')) {
+                if ((Get-Date) -gt $deadline) { throw 'Attachment task did not finish; no forced cancellation' }
+                Start-Sleep -Milliseconds 500
+            }
+            Invoke-C0Wsl $ctx 'sync-before-trim' @('sudo','-n','sync')
+            Invoke-C0Wsl $ctx 'trim-system' @('sudo','-n','fstrim','-v','/')
+            Invoke-C0Wsl $ctx 'trim-data' @('sudo','-n','fstrim','-v','/mnt/sunmoon-data')
+            Invoke-C0Wsl $ctx 'sync-after-trim' @('sudo','-n','sync')
+        } catch {
+            $prepareError=$_.Exception.Message
+            Save-C0Error (Join-Path $runDir 'prepare-error.log') $_
+        }
+        $phases=$null
+        if ($null -eq $prepareError) {
+            $phases=Invoke-C0OfflineRecovery -RunDir $runDir -Offline {
+                Assert-C0Window $state.ApprovedAtUtc
+                Assert-C0NoClients
+                Invoke-C0Native $ctx 'wsl-shutdown' $Wsl @('--shutdown') | Out-Null
+                Write-Host 'Waiting 10 seconds after WSL shutdown; do not open VS Code or WSL.'
+                Start-Sleep -Seconds 10
+                Assert-C0NoRunningDistros $ctx
+                Assert-C0NoClients
+                $deadline=(Get-Date).AddSeconds(30)
+                do {
+                    $handles=@(); $free=$false
+                    try {
+                        foreach ($disk in $Disks) { $handles += [IO.File]::Open($disk,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::None) }
+                        $free=$true
+                    } catch {
+                        if ((Get-Date) -ge $deadline) { throw 'VHDX still open; refusing compaction without forced detach' }
+                        Start-Sleep -Milliseconds 500
+                    } finally { foreach ($h in $handles) { $h.Dispose() } }
+                } until ($free)
+                for ($i=0; $i -lt $Disks.Count; $i++) {
+                    Assert-C0Window $state.ApprovedAtUtc
+                    Assert-C0NoClients
+                    Assert-C0NoRunningDistros $ctx
+                    $cmd=Join-Path $runDir ('diskpart-' + $i + '.txt')
+                    @(('select vdisk file="{0}"' -f $Disks[$i]),'compact vdisk','exit') | Set-Content -LiteralPath $cmd -Encoding ASCII
+                    Write-Host ('Compacting ' + $Disks[$i] + '. Do not interrupt DiskPart.')
+                    $r=Invoke-C0Native $ctx ('compact-' + $i) (Join-Path $env:WINDIR 'System32\diskpart.exe') @('/s',$cmd)
+                    Assert-C0DiskpartSuccess -Code $r.Code -Text ($r.Out + $r.Err)
+                }
+                Get-C0Snapshot $Disks | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $runDir 'after-compact.json') -Encoding UTF8
+            } -Recovery { Restore-C0Platform $ctx $state }
+        } elseif ($stopAttempted) {
+            try { Restore-C0Platform $ctx $state } catch { Save-C0Error (Join-Path $runDir 'recovery-error.log') $_ }
+        }
+        $after=Get-C0Snapshot $Disks
+        $after | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $runDir 'after.json') -Encoding UTF8
+        $before=Get-Content (Join-Path $runDir 'before.json') -Raw | ConvertFrom-Json
+        Write-Host ('C: free before {0:N2} GiB; after {1:N2} GiB; observed change {2:N2} GiB.' -f ($before.CFreeBytes/1GB),($after.CFreeBytes/1GB),(($after.CFreeBytes-$before.CFreeBytes)/1GB))
+        $success=($null -eq $prepareError -and $null -ne $phases -and $phases.Success)
+        [pscustomobject]@{CompletedUtc=[DateTime]::UtcNow.ToString('o'); Success=$success; PrepareError=$prepareError; Phases=$phases} | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $runDir 'result.json') -Encoding UTF8
+        if ($success) { $exitCode=0 }
+    }
+} catch {
+    Write-Host ('STOPPED: ' + $_.Exception.Message) -ForegroundColor Red
+    if ($runDir) { Save-C0Error (Join-Path $runDir 'launcher-error.log') $_ }
+} finally {
+    if ($locked) { $mutex.ReleaseMutex() }
+    $mutex.Dispose()
+    if ($runDir) { Add-Content (Join-Path $runDir 'result.log') ('exit=' + $exitCode) }
+    Write-Host ('exit=' + $exitCode)
+    if ($exitCode -eq 0) { Write-Host 'Completed. You can reopen VS Code/WSL and tell luna you are back.' -ForegroundColor Green }
+    elseif ($runDir) { Write-Host ('Not completed. Do not rerun blindly. Preserve logs: ' + $runDir) -ForegroundColor Yellow }
+    else { Write-Host 'No maintenance run was started. Close the listed clients, then launch from Windows.' -ForegroundColor Yellow }
+}
+exit $exitCode
+
+
+FILE C:\wsl-disks\maintenance\c0b-20261021\C0b.Common.ps1
+SHA256=8014087f2a1105aaa5a720e244042d54ae052ab6b07d3fec710662c9bd8f31b4
+Set-StrictMode -Version Latest
+
+function Read-C0Text([string]$Path) {
+    $bytes = [IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -eq 0) { return '' }
+    if (($bytes.Length -ge 2 -and $bytes[0] -eq 255 -and $bytes[1] -eq 254) -or
+        ($bytes.Length -ge 4 -and $bytes[1] -eq 0 -and $bytes[3] -eq 0)) {
+        return [Text.Encoding]::Unicode.GetString($bytes).TrimStart([char]0xFEFF)
+    }
+    $utf8 = [Text.Encoding]::UTF8.GetString($bytes)
+    if ($utf8.Contains([string][char]0xFFFD)) { return [Text.Encoding]::Default.GetString($bytes) }
+    return $utf8.TrimStart([char]0xFEFF)
+}
+
+function Get-C0Clients {
+    @(Get-CimInstance Win32_Process -Filter "Name = 'Code.exe' OR Name = 'wsl.exe'" |
+        Select-Object Name,ProcessId,ParentProcessId)
+}
+
+function Assert-C0NoClients {
+    $clients = @(Get-C0Clients)
+    if ($clients.Count) {
+        $list = ($clients | ForEach-Object { $_.Name + ' PID=' + $_.ProcessId }) -join '; '
+        throw ('Close ALL VS Code windows and WSL terminals, then retry from Windows. Remaining: ' + $list)
+    }
+}
+
+function Assert-C0Window([string]$ApprovedAtUtc) {
+    $at=[DateTime]::Parse($ApprovedAtUtc).ToUniversalTime()
+    if ($at -gt [DateTime]::UtcNow -or [DateTime]::UtcNow -gt $at.AddHours(2)) {
+        throw 'The two-hour maintenance window expired; restore services and arrange another window'
+    }
+}
+
+function Invoke-C0Native($Context, [string]$Step, [string]$Exe, [string[]]$Arguments) {
+    # Every native argument used by this fixed maintenance job is a single token.
+    # Refuse ambiguous quoting rather than changing a target path silently.
+    foreach ($arg in $Arguments) {
+        if ($arg -match '[\s"]') { throw ('Unexpected native argument requiring quoting: ' + $Step) }
+    }
+    $Context.Index++
+    $stem = '{0:D3}-{1}' -f $Context.Index,$Step
+    $stdout = Join-Path $Context.RunDir ($stem + '.stdout.log')
+    $stderr = Join-Path $Context.RunDir ($stem + '.stderr.log')
+    Write-Host ('[' + (Get-Date -Format HH:mm:ss) + '] ' + $Step)
+    $p = Start-Process -FilePath $Exe -ArgumentList ($Arguments -join ' ') -WorkingDirectory $Context.RunDir -NoNewWindow -PassThru -Wait -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $result = [pscustomobject]@{Code=$p.ExitCode; Out=(Read-C0Text $stdout); Err=(Read-C0Text $stderr); Stdout=$stdout; Stderr=$stderr}
+    Add-Content -LiteralPath (Join-Path $Context.RunDir 'steps.log') -Value ($stem + ' exit=' + $result.Code)
+    if ($result.Code -ne 0) { throw ($Step + ' failed, exit=' + $result.Code + '. See ' + $stdout + ' and ' + $stderr) }
+    return $result
+}
+
+function Invoke-C0Wsl($Context, [string]$Step, [string[]]$Command) {
+    Invoke-C0Native -Context $Context -Step $Step -Exe $Context.Wsl -Arguments (@('-d','Ubuntu','-u','zymun','--') + $Command) | Out-Null
+}
+
+function Assert-C0NoRunningDistros($Context) {
+    $r = Invoke-C0Native -Context $Context -Step 'running-distros' -Exe $Context.Wsl -Arguments @('--list','--running','--quiet')
+    $names = @($r.Out -split "`r?`n" | ForEach-Object { ($_ -replace "`0", '').Trim() } | Where-Object { $_ })
+    if ($names.Count) { throw ('WSL restarted during offline maintenance: ' + ($names -join ', ')) }
+}
+
+function Save-C0Error([string]$Path, $Record) {
+    # Append; never overwrite an earlier failure or depend on a later recovery.
+    $text = [DateTime]::UtcNow.ToString('o') + "`r`n" + $Record.ToString() + "`r`n" + $Record.ScriptStackTrace + "`r`n"
+    Add-Content -LiteralPath $Path -Value $text -Encoding UTF8
+}
+
+function Invoke-C0OfflineRecovery([scriptblock]$Offline, [scriptblock]$Recovery, [string]$RunDir) {
+    $offlineFailure = $null
+    $recoveryFailure = $null
+    try { & $Offline } catch {
+        $offlineFailure = $_.Exception.Message
+        Save-C0Error -Path (Join-Path $RunDir 'offline-error.log') -Record $_
+    }
+    try { & $Recovery } catch {
+        $recoveryFailure = $_.Exception.Message
+        Save-C0Error -Path (Join-Path $RunDir 'recovery-error.log') -Record $_
+    }
+    [pscustomobject]@{OfflineError=$offlineFailure; RecoveryError=$recoveryFailure; Success=($null -eq $offlineFailure -and $null -eq $recoveryFailure)}
+}
+
+function Assert-C0DiskpartSuccess([int]$Code, [string]$Text) {
+    if ($Code -ne 0 -or $Text -match '(?i)\berror\b|failed|失败|错误|拒绝|无法|不支持|找不到' -or
+        $Text -notmatch '(?is)successfully.*compact|成功.*压缩') {
+        throw 'DiskPart success was not established. Preserve its stdout/stderr; do not retry blindly.'
+    }
+}
+
+function Get-C0Snapshot([string[]]$Disks) {
+    [pscustomobject]@{
+        TimeUtc=[DateTime]::UtcNow.ToString('o')
+        CFreeBytes=(Get-PSDrive -Name C).Free
+        Disks=@($Disks | ForEach-Object {
+            $f=Get-Item -LiteralPath $_
+            [pscustomobject]@{Path=$f.FullName; LengthBytes=$f.Length}
+        })
+    }
+}
+
+
+FILE C:\wsl-disks\maintenance\c0b-20261021\Test-C0b.ps1
+SHA256=bba132a2c00dca595dffb442694f8dd5ee1297bc162989d3c5d63fa2123dcc07
+# No WSL/service/task/disk mutations. Only isolated temp files and cmd.exe exit probes.
+Set-StrictMode -Version Latest
+$ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'C0b.Common.ps1')
+$testDir=Join-Path $PSScriptRoot ('checks\' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
+New-Item -ItemType Directory -Path $testDir -Force | Out-Null
+function Check([bool]$Value,[string]$Label) {
+    if (-not $Value) { throw ('CHECK FAILED: ' + $Label) }
+    Write-Host ('PASS: ' + $Label)
+}
+
+function Get-C0Clients { [pscustomobject]@{Name='Code.exe';ProcessId=42;ParentProcessId=1} }
+$caught=$false
+try { Assert-C0NoClients } catch { $caught=$_.Exception.Message.Contains('Code.exe PID=42') }
+Check $caught 'Code.exe blocks before any maintenance'
+function Get-C0Clients { [pscustomobject]@{Name='wsl.exe';ProcessId=43;ParentProcessId=1} }
+$caught=$false
+try { Assert-C0NoClients } catch { $caught=$_.Exception.Message.Contains('wsl.exe PID=43') }
+Check $caught 'wsl.exe blocks before any maintenance'
+function Get-C0Clients { @() }
+Assert-C0NoClients
+Check $true 'empty client list permits the offline gate'
+Assert-C0Window ([DateTime]::UtcNow.ToString('o'))
+Check $true 'fresh manual invocation has a valid maintenance window'
+$caught=$false
+try { Assert-C0Window ([DateTime]::UtcNow.AddHours(-3).ToString('o')) } catch { $caught=$true }
+Check $caught 'expired maintenance window refuses further compaction'
+
+$dual=Join-Path $testDir 'dual-failure'
+New-Item -ItemType Directory -Path $dual | Out-Null
+$r=Invoke-C0OfflineRecovery -RunDir $dual -Offline { throw 'ORIGINAL-OFFLINE-FAILURE' } -Recovery {
+    if (-not (Test-Path (Join-Path $dual 'offline-error.log'))) { throw 'offline error was not saved BEFORE recovery' }
+    throw 'SEPARATE-RECOVERY-FAILURE'
+}
+Check (-not $r.Success -and $r.OfflineError -eq 'ORIGINAL-OFFLINE-FAILURE' -and $r.RecoveryError -eq 'SEPARATE-RECOVERY-FAILURE') 'offline/recovery errors remain distinct in result'
+Check ((Read-C0Text (Join-Path $dual 'offline-error.log')).Contains('ORIGINAL-OFFLINE-FAILURE')) 'original offline error saved before recovery'
+Check ((Read-C0Text (Join-Path $dual 'recovery-error.log')).Contains('SEPARATE-RECOVERY-FAILURE')) 'recovery error saved separately'
+$ok=Join-Path $testDir 'success'
+New-Item -ItemType Directory -Path $ok | Out-Null
+$r=Invoke-C0OfflineRecovery -RunDir $ok -Offline {} -Recovery {}
+Check $r.Success 'both successful phases produce success'
+
+Assert-C0DiskpartSuccess 0 'DiskPart successfully compacted the virtual disk file.'
+Assert-C0DiskpartSuccess 0 'DiskPart 成功地压缩了虚拟磁盘文件。'
+Check $true 'English/Chinese DiskPart success text accepted'
+foreach ($text in @('DiskPart has encountered an error: access denied.','DiskPart 错误：无法打开虚拟磁盘。','')) {
+    $caught=$false
+    try { Assert-C0DiskpartSuccess 0 $text } catch { $caught=$true }
+    Check $caught 'DiskPart exit zero without valid success is rejected'
+}
+$utf16=Join-Path $testDir 'wsl-utf16.log'
+[IO.File]::WriteAllBytes($utf16,[Text.Encoding]::Unicode.GetBytes("Ubuntu`r`n"))
+Check ((Read-C0Text $utf16).Trim() -eq 'Ubuntu') 'WSL UTF-16 output decoded'
+
+$ctx=[pscustomobject]@{RunDir=$testDir;Index=0}
+$r=Invoke-C0Native $ctx 'native-zero' $env:ComSpec @('/d','/c','exit','0')
+Check ($r.Code -eq 0) 'native exit zero captured with stdout/stderr paths'
+$caught=$false
+try { Invoke-C0Native $ctx 'native-seven' $env:ComSpec @('/d','/c','exit','7') | Out-Null } catch { $caught=$_.Exception.Message.Contains('exit=7') }
+Check $caught 'native exit seven fails and is logged'
+Write-Host ('All checks passed. Files: ' + $testDir)
+exit 0
+
+
+FILE C:\wsl-disks\maintenance\c0b-20261021\Test-CmdWrapper.ps1
+SHA256=081c6b1fe5b2c694c5a4d4d6fc4baf5f35c1edad1a7a9653048b6f7d2a0894fb
+# Execute an EXACT COPY of the CMD with a harmless stub in an isolated directory.
+Set-StrictMode -Version Latest
+$ErrorActionPreference='Stop'
+$d=Join-Path $PSScriptRoot ('checks\cmd-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
+New-Item -ItemType Directory -Path $d -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Start-C0b.cmd') -Destination $d
+@'
+param([switch]$Run)
+if (-not $Run) { exit 99 }
+Set-Content -LiteralPath (Join-Path $PSScriptRoot 'stub-ran.txt') -Value 'Run flag received'
+exit 17
+'@ | Set-Content -LiteralPath (Join-Path $d 'Start-C0b.ps1') -Encoding UTF8
+$inputFile=Join-Path $d 'pause-input.txt'
+Set-Content -LiteralPath $inputFile -Value 'x' -Encoding ASCII
+$p=Start-Process -FilePath $env:ComSpec -ArgumentList @('/d','/c',(Join-Path $d 'Start-C0b.cmd')) -WorkingDirectory $d -NoNewWindow -PassThru -RedirectStandardInput $inputFile -RedirectStandardOutput (Join-Path $d 'stdout.log') -RedirectStandardError (Join-Path $d 'stderr.log')
+$handle=$p.Handle
+if (-not $p.WaitForExit(15000)) { $p.Kill(); throw 'Isolated CMD wrapper test timed out' }
+if ($p.ExitCode -ne 17) { throw ('CMD wrapper did not preserve child exit 17: ' + $p.ExitCode) }
+if (-not (Test-Path (Join-Path $d 'stub-ran.txt'))) { throw 'CMD wrapper did not invoke its sibling script with Run' }
+Write-Host 'PASS: exact CMD wrapper invokes sibling PowerShell script with Run and preserves exit 17'
+Write-Host 'Only an isolated harmless stub was executed. No actual maintenance launch or UAC.'
+exit 0
+
+
+FILE C:\wsl-disks\maintenance\c0b-20261021\README.txt
+SHA256=e7c11ef368ee3011a7b775bd2fea5bd95928d94dc3b73377f0784bad5a746721
+C0b — Windows 独立离线压缩（2026-10-21）
+
+本目录与全部脚本都在 C 盘，运行不依赖助手会话。
+用户自己启动本次维护即确定新的维护时段，不需要助手预填时间或 ready.json。
+C0a 已实跑通过：95 个 Flux 对象全部 Ready，platform-start 返回 0。
+
+开始前请保存工作并关闭：
+1. 所有 VS Code 窗口，包括本机窗口、Remote-WSL 窗口和当前助手窗口。
+2. Windows Terminal 里所有 Ubuntu/WSL 标签页、单独的 Ubuntu 窗口，以及正在
+   执行 wsl.exe 的 CMD/PowerShell 窗口。原生 Windows PowerShell 可以留着运行本脚本。
+3. 正在浏览 \\wsl$ 或 \\wsl.localhost 目录的资源管理器窗口，以及访问这些文件的程序。
+
+方法一：从 Windows 资源管理器双击：
+C:\wsl-disks\maintenance\c0b-20261021\Start-C0b.cmd
+如有 UAC，用原来的 ZYMUN\zymun 账号点“是”，不要换另一个管理员账号。
+
+方法二：在 Windows 开始菜单打开“Windows PowerShell（管理员）”，运行：
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\wsl-disks\maintenance\c0b-20261021\Start-C0b.ps1 -Run
+
+不要从 WSL 终端运行上面的命令。不要用上一轮 c0-20261021 的旧启动器。
+
+脚本会先检查 Code.exe/wsl.exe 残留，列出名字和 PID；有就停止，不会替你硬关。
+独立 Windows 启动后，全程自动完成：
+原生预检/状态 → platform-stop → 维护标记/暂停附盘任务 → sync/fstrim
+→ 再查残留进程 → 关闭 WSL → 等 10 秒并确认无运行发行版、无文件占用
+→ DiskPart compact 原系统盘和 sunmoon-data.vhdx
+→ 原附盘任务先附盘再启动 Ubuntu → preflight/platform-start
+→ Jenkins/代理启动检查 → platform-status/节点检查。
+不删除数据，不调整虚拟容量、UUID、服务身份或部署版本。
+
+运行中保持脚本窗口打开，不启动 VS Code、Ubuntu、WSL 标签页或访问 WSL 目录。
+压缩时不要中断 DiskPart。控制台会显示当前步骤和日志位置。
+恢复检查可能需要几分钟；它要等待应用 Pod 和 Flux 全部就绪。
+看到绿色 Completed、exit=0 后才重新打开 VS Code/WSL，告诉助手“回来了”。
+若 exit=1，先保存日志；等脚本结束后再重新连接助手，不盲目再次压缩。
+
+日志每轮单独保留：
+C:\wsl-disks\maintenance\c0b-20261021\runs\<开始时间>\
+last-run.txt 记录最近一轮目录。每条原生命令分别保存 stdout/stderr 和退出码。
+before.json / after-compact.json / after.json 记录 C 空闲及两块 VHDX 长度；
+result.json 和 result.log 记录结果。offline-error.log 在开始恢复前立即保存
+最初离线异常；recovery-error.log 单独保存恢复失败，互不覆盖。
+
+只恢复服务（不再次压缩），需要先检查失败日志；用管理员 Windows PowerShell：
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\wsl-disks\maintenance\c0b-20261021\Start-C0b.ps1 -Recover C:\wsl-disks\maintenance\c0b-20261021\runs\<实际开始时间>
+不要原样复制尖括号，必须用该轮真实目录。恢复同样走现有附盘任务和 Make 入口。
+
+只读预览（可在准备阶段使用，不会停服务、trim 或压缩）：
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\wsl-disks\maintenance\c0b-20261021\Start-C0b.ps1
+
+exit=0

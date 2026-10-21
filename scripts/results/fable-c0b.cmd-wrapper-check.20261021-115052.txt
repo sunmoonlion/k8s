@@ -1,0 +1,3 @@
+PASS: exact CMD wrapper invokes sibling PowerShell script with Run and preserves exit 17
+Only an isolated harmless stub was executed. No actual maintenance launch or UAC.
+exit=0
