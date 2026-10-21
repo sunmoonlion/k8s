@@ -5,6 +5,9 @@ autoinstall:
   locale: en_US.UTF-8
   keyboard: {layout: us}
   refresh-installer: {update: false}
+  # 装机时不装安全更新：第一台实测这一步又从 noble-updates 拉一遍内核与固件（470 KB/s 下近一小时）。
+  # 补丁交给 C4 的宿主剧本（apt full-upgrade，阿里云镜像、可重跑、有记录），安装器只管装出最小系统。
+  updates: none
   identity:
     hostname: __HOSTNAME__
     username: __USER__
@@ -45,4 +48,8 @@ autoinstall:
       fi
     - echo '__USER__ ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/90-__USER__ && chmod 0440 /target/etc/sudoers.d/90-__USER__
     - curtin in-target --target=/target -- systemctl enable ssh
+    # 网卡名固定为内核的 eth0（net.ifnames=0）：第一台实测 netplan 的 set-name 只在 udev 首次事件时改名，
+    # 而 VMware 网卡驱动在 initramfs 里就已探测、按 99-default.link 命名成 ens33；根文件系统起来后 .link 不再生效，
+    # wait-online 等 eth0 两分钟超时才有东西触发改名（回执 fable-c0.boot-network）。关掉可预测命名，初始事件里就是 eth0。
+    - curtin in-target --target=/target -- sh -c 'sed -i -E "s/^GRUB_CMDLINE_LINUX=\"/&net.ifnames=0 biosdevname=0 /" /etc/default/grub && update-grub'
   shutdown: poweroff
