@@ -1,6 +1,6 @@
 # cursor 卡 fable-c1：集群身份与路径参数化——开发站点渲染字节不变（0039 停点 C1）
 
-> 状态：**可执行**（远程 Fable 2026-10-21 写；**第二版** 2026-10-21 晚：第一节改为从父提交的临时工作树取基线，答 qwen 的停点；**改派 Cursor** 2026-10-21 晚，qwen 配额用尽，所有者定；**第三版**：Cursor 第一次改后渲染在 private_dir 断言失败——应用配置被 `lookup("file")` 重读不过 Jinja，是 C1 的 bug，已修（两个路径字段改由加载处推出），**改前基线复用你上次渲染好的，不用再开临时工作树**）。C1 改了 59 个文件、一行业务逻辑都没加：把写死的集群名 `sunmoon-kind`、`kind-` 上下文前缀、`/mnt/sunmoon-data`、`/home/zymun` 收进 `environments/kind/site.yaml`，模块配置改成按站点值派生，守卫改成跨字段核对。**这种改法唯一的验收就是「改前改后结果一模一样」**，所以这张卡的核心是你在本地先按现在的代码渲染一遍存下来，再拉新代码渲染一遍，逐字节比。
+> 状态：**可执行**（远程 Fable 2026-10-21 写；**第二版** 2026-10-21 晚：第一节改为从父提交的临时工作树取基线，答 qwen 的停点；**改派 Cursor** 2026-10-21 晚，qwen 配额用尽，所有者定；**第三版**：Cursor 第一次改后渲染在 private_dir 断言失败——应用配置被 `lookup("file")` 重读不过 Jinja，是 C1 的 bug，已修（两个路径字段改由加载处推出），**改前基线复用你上次渲染好的，不用再开临时工作树**；**第四版**：第二次比对的三类差异都已处理——配置摘要的键序改回原位、改后渲染改从干净的 `.build/components` 起步以排除主工作树残留（旧名应用目录、旧 sops 候选））。C1 改了 59 个文件、一行业务逻辑都没加：把写死的集群名 `sunmoon-kind`、`kind-` 上下文前缀、`/mnt/sunmoon-data`、`/home/zymun` 收进 `environments/kind/site.yaml`，模块配置改成按站点值派生，守卫改成跨字段核对。**这种改法唯一的验收就是「改前改后结果一模一样」**，所以这张卡的核心是你在本地先按现在的代码渲染一遍存下来，再拉新代码渲染一遍，逐字节比。
 >
 > 工位 **WS=fable**：`~/worktrees/fable/sunmoonun`，分支 fable（不是 cursor 自己的工位）。只读集群，不部署、不改 gitops 声明、不碰 Harbor/Jenkins 数据。卡命令本身的笔误可以改并写进回执；代码不对就**停**，把输出写进 `inbox/fable/`，不就地改代码。
 
@@ -26,6 +26,9 @@ P=~/sunmoon-probe-runs/c1-20261021-2008; ls $P/before/components | head -3; tail
 cd ~/worktrees/fable/sunmoonun && git pull --ff-only origin fable && git status --short && git log --oneline -1
 cd infrastructure
 grep -c "private_dir" ../gitops/components/app-platform/tpl-app/tpl-backend/config.yaml || echo "0 (字段已不在配置里，由加载处推出)"
+# 主工作树的 .build/components 里有历次渲染的残留（旧名应用目录、旧的 sops 候选），改前基线是冷目录没有这些；
+# 为了两边对称，改后也从空目录起步。.build 不进 git，渲染会重新生成；sops 候选不在时从已提交的密文播种，和基线一样。
+rm -rf .build/components
 make services-chart > $P/after/chart.log 2>&1; tail -1 $P/after/chart.log
 make components-render OBJECT=all > $P/after/render.log 2>&1; tail -2 $P/after/render.log
 cp -a .build/components $P/after/components

@@ -13,10 +13,20 @@
     application_check_port: '{{ entry_port if application_check_public | default(false) | bool else cluster_ingress_port }}'
     capacity_operation: 'application-deploy-{{ application_name }}'
     application_cfg: '{{ (lookup("file", app_root + "/config.yaml") | from_yaml)[application_name + "_deployment"] }}'
-    backend_cfg: '{{ (lookup("file", component_root + "/config.yaml") | from_yaml)[application_name + "_backend_deployment"] }}'
+    backend_cfg_raw: '{{ (lookup("file", component_root + "/config.yaml") | from_yaml)[application_name + "_backend_deployment"] }}'
+    # private_dir/backup_dir 由站点值推出，插回配置里原来的位置（deploy_budget_bytes 之前）；与 common/backend/bind.yaml 同一规则
+    backend_cfg: >-
+      {%- set out = {} -%}
+      {%- for k, v in backend_cfg_raw.items() -%}
+        {%- if k == 'deploy_budget_bytes' -%}
+          {%- set _ = out.update({'private_dir': '/etc/sunmoon/applications/' ~ cluster_name ~ '/' ~ application_name, 'backup_dir': data_root ~ '/backups/applications/' ~ cluster_name ~ '/' ~ application_name}) -%}
+        {%- endif -%}
+        {%- set _ = out.update({k: v}) -%}
+      {%- endfor -%}
+      {{ out }}
     web_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-web-frontend/config.yaml") | from_yaml)[application_name + "_web_deployment"] }}'
     admin_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-admin-frontend/config.yaml") | from_yaml)[application_name + "_admin_deployment"] }}'
-    cfg: '{{ application_cfg | combine(backend_cfg) | combine({"private_dir": "/etc/sunmoon/applications/" + cluster_name + "/" + application_name, "backup_dir": data_root + "/backups/applications/" + cluster_name + "/" + application_name, "namespace":app_namespace, "web_origin":web_cfg.origin, "admin_origin":admin_cfg.origin}) }}'
+    cfg: '{{ application_cfg | combine(backend_cfg) | combine({"namespace":app_namespace, "web_origin":web_cfg.origin, "admin_origin":admin_cfg.origin}) }}'
     app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/{{ application_name }}-app'
     component_root: '{{ app_root }}/{{ application_name }}-backend'
     mechanism_root: '{{ playbook_dir }}/../../gitops/components/app-platform/common/backend'
