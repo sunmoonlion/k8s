@@ -7,7 +7,7 @@
 ```text
 工位 WS=fable：~/worktrees/fable/sunmoonun，分支 fable；收件箱 docs/process/switch-test/inbox/luna/
 会联网的：下载 Ubuntu 24.04 live-server ISO（releases.ubuntu.com，约 3 GB）与校验和；WSL 里可能要 apt 装 xorriso
-磁盘：ISO 与虚拟机文件放 Windows 的 D 盘（`D:\iso\`、`D:\Hyper-V\`）；D 盘没有或空间不够就换一个盘，把实际用的盘写进回执，PowerShell 脚本加 `-VmRoot` 参数
+磁盘：本地机只有 C 盘（约 119 GiB 空闲）。ISO 放 `C:\iso\`，虚拟机放 `C:\VMs\sunmoon-prod\`；两块虚拟盘都选「不立即分配全部空间」（用多少长多少），标称 60 + 200 GB 不会一次占掉。所有者安排 WSL 离线压缩在建机**之前**（同一次停机），压完把回收量写进回执
 ```
 
 ## 一、WSL 侧：两个 ISO（luna）
@@ -15,14 +15,14 @@
 ```bash
 cd ~/worktrees/fable/sunmoonun && git pull --ff-only origin fable && git log --oneline -1
 command -v xorriso >/dev/null || sudo -n apt-get install -y xorriso
-mkdir -p /mnt/d/iso && cd /mnt/d/iso
+mkdir -p /mnt/c/iso && cd /mnt/c/iso
 curl -fsSL -o SHA256SUMS https://releases.ubuntu.com/noble/SHA256SUMS
 iso=$(grep -o 'ubuntu-24.04[.0-9]*-live-server-amd64.iso' SHA256SUMS | head -1); echo "iso=$iso"
 [ -f "$iso" ] || curl -fL -o "$iso" "https://releases.ubuntu.com/noble/$iso"
 grep " \*$iso$" SHA256SUMS | sha256sum -c -; echo "iso verify exit=$?"
 ls -l ~/.ssh/id_rsa.pub
-bash ~/worktrees/fable/sunmoonun/infrastructure/environments/prod/vm/make-seed-iso.sh --out /mnt/d/iso/sunmoon-prod-seed.iso --pubkey ~/.ssh/id_rsa.pub --gateway 192.168.80.2
-ls -l /mnt/d/iso/
+bash ~/worktrees/fable/sunmoonun/infrastructure/environments/prod/vm/make-seed-iso.sh --out /mnt/c/iso/sunmoon-prod-seed.iso --pubkey ~/.ssh/id_rsa.pub --gateway 192.168.80.2
+ls -l /mnt/c/iso/
 ```
 
 要看到：`iso verify exit=0`（`…: OK`）；生成应答 ISO 时会要一个**控制台口令**（只在 Hyper-V 控制台登录用，SSH 走钥匙；你随机生成一个，告诉所有者，不进回执）；最后 `ls` 里有系统 ISO 和 `sunmoon-prod-seed.iso`。把系统 ISO 的文件名写进回执（第二节所有者要用）。
