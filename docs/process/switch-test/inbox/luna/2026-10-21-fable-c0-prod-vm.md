@@ -2,12 +2,12 @@
 
 > 状态：**可执行**（远程 Fable 2026-10-21 写，第二版：本地机实测是 Windows 家庭版，所有者不想动原系统，建机改用 VMware Workstation Pro）。所有者定：手里没有云，生产站点先建在本地机的虚拟机上（128 GB 内存，给它 32 GB）。这张卡三方配合：你在 WSL 里准备两个 ISO 并在最后核对，**所有者在 VMware 界面里建机**（你不能替），装完你再核。不碰现有的一切：开发集群、Jenkins、Harbor、WSL 的数据盘都不动。
 >
-> 临时就地修授权同前：`infrastructure/environments/prod/vm/` 下的脚本与模板、本卡命令里让步骤过不去的错可以就地改、验、续跑并推 `origin/fable`；不改规格（8 核、32 GB、60+200 GB、192.168.80.10，网关 192.168.80.2）、不改设计。
+> 临时就地修授权同前：`infrastructure/environments/prod/vm/` 下的脚本与模板、本卡命令里让步骤过不去的错可以就地改、验、续跑并推 `origin/fable`；不改规格（8 核、32 GB、60+300 GB、192.168.80.10，网关 192.168.80.2）、不改设计。
 
 ```text
 工位 WS=fable：~/worktrees/fable/sunmoonun，分支 fable；收件箱 docs/process/switch-test/inbox/luna/
 会联网的：下载 Ubuntu 24.04 live-server ISO（releases.ubuntu.com，约 3 GB）与校验和；WSL 里可能要 apt 装 xorriso
-磁盘：本地机只有 C 盘（约 127 GiB 空闲）。ISO 放 `C:\iso\`，虚拟机放 `C:\VMs\sunmoon-prod\`；两块虚拟盘都选「不立即分配全部空间」（用多少长多少），标称 60 + 200 GB 不会一次占掉。**顺序（所有者 2026-10-21 定）：c0a 清孤儿 → c0b 压缩 → 本卡建机**
+磁盘：本地机只有 C 盘（约 127 GiB 空闲）。ISO 放 `C:\iso\`，虚拟机放 `C:\VMs\sunmoon-prod\`；两块虚拟盘都选「不立即分配全部空间」（用多少长多少），标称 60 + 300 GB 不会一次占掉（数据盘上限由 200 改 300：按需增长、将来可扩，所有者 2026-10-21）。**顺序（所有者 2026-10-21 定）：c0a 清孤儿 → c0b 压缩 → 本卡建机**
 ```
 
 ## 一、WSL 侧：两个 ISO（luna）

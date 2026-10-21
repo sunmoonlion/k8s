@@ -3,7 +3,7 @@
 所有者在「以管理员身份运行」的 PowerShell 里执行。幂等：已有的交换机、NAT、虚拟机不重建，只报出来。
 用法：
   .\New-SunmoonProdVm.ps1 -IsoPath D:\iso\ubuntu-24.04.3-live-server-amd64.iso -SeedIso D:\iso\sunmoon-prod-seed.iso
-可选：-VmRoot D:\Hyper-V -MemoryGB 32 -Cpu 8 -OsDiskGB 60 -DataDiskGB 200 -Subnet 192.168.80.0/24
+可选：-VmRoot D:\Hyper-V -MemoryGB 32 -Cpu 8 -OsDiskGB 60 -DataDiskGB 300 -Subnet 192.168.80.0/24
 #>
 param(
   [Parameter(Mandatory = $true)][string]$IsoPath,
@@ -16,7 +16,7 @@ param(
   [int]$MemoryGB = 32,
   [int]$Cpu = 8,
   [int]$OsDiskGB = 60,
-  [int]$DataDiskGB = 200
+  [int]$DataDiskGB = 300
 )
 $ErrorActionPreference = 'Stop'
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw '要在管理员 PowerShell 里跑' }
