@@ -13,6 +13,6 @@
 | `make edge-status` / `edge-stop` | 看状态 / 停 |
 | `make edge-firewall` | 只加 ufw 放行（1022、80、30443、7000），不启用；`EDGE_EXTRA='--extra-vars edge_firewall_enable=true'` 才启用默认拒绝。**先确认 1022 在放行列表里** |
 
-文件：`config.yaml`（公开参数、镜像摘要、按域名的路径放行清单 `edge_path_allowlist`）、`service.yaml`（Ansible）、`templates/`、`smoke/`。令牌、`frp.env`、`acme.json` 只在 `/etc/sunmoon/edge/`（root 0700/0600），不进 Git。访问日志关闭（安装凭证在 URL 路径里）。
+文件：`config.yaml`（公开参数、镜像摘要、按域名的路径放行清单 `edge_path_allowlist`——键是短名如 `casdoor`，域名 = 短名.`site_domain`；`edge_domains`、`edge_https_port` 从站点文件的 `site_domain`、`public_port` 拼出，`edge_public_ip` 在站点文件里；make 的 edge 目标和 `smoke/run.sh` 都先加载 `SITE`）、`service.yaml`（Ansible）、`templates/`、`smoke/`。令牌、`frp.env`、`acme.json` 只在 `/etc/sunmoon/edge/`（root 0700/0600），不进 Git。访问日志关闭（安装凭证在 URL 路径里）。
 
 **casdoor 只放行登录路径**：`edge_path_allowlist` 列了的域名只放行列出的路径，其余 403；casdoor 公网只留 OAuth 登录要用的页面、静态资源和三个接口，管理界面与管理接口不对公网（所有者本机经 hosts 直连本地集群，不受影响）。清单是实走登录录下来的，升级 Casdoor 或打开注册、找回密码、MFA 时要重录（做法与脚本见 [`scripts/results/opus-65-edge-casdoor-paths.20261016-1655.md`](../../scripts/results/opus-65-edge-casdoor-paths.20261016-1655.md)）。

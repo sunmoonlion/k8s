@@ -28,7 +28,7 @@ services-check核可信TLS admin登录和实际session；各应用check另外核
 | `casdoor_volume.size` | 文本/表达式 | PV声明容量；不构成ext4目录硬配额，不自动扩盘。 |
 | `casdoor_volume.uid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
 | `casdoor_volume.gid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
-| `casdoor_hostname` | 文本/表达式 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `casdoor_hostname` | 文本/表达式 | `casdoor.{{ site_domain }}`（C2 起从站点文件拼）。与客户端、TLS、入口/Service及网络策略联动；换名要重签证书、重登记各应用回调。 |
 | `casdoor_database` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
 | `casdoor_database_user` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
 

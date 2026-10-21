@@ -36,7 +36,7 @@ make -C infrastructure jenkins-status
 | 字段 | 类型 | 维护条件 |
 |---|---|---|
 | `jenkins_enabled` | 开关 | 部署/启动准入；不代替停止、卸载或删除数据。 |
-| `jenkins_hostname` | 文本 | 与入口 SNI 路由、证书 SAN、Jenkins 根地址联动；边缘不开。 |
+| `jenkins_hostname` | 文本 | `jenkins.{{ site_domain }}`（C2 起从站点文件拼）。与入口 SNI 路由、证书 SAN、Jenkins 根地址、本机 hosts 行联动；边缘不开。 |
 | `jenkins_project` | 文本 | Compose 实例名。 |
 | `jenkins_https_port` / `jenkins_http_port` / `jenkins_agent_port` | 整数 | 都只绑 127.0.0.1；改端口要同时改入口路由（https）与第 2 步的代理单元（http、agent）。 |
 | `jenkins_config_dir` / `jenkins_runtime_dir` | 文本 | 目录责任；已有输入需完整恢复与路径守卫。 |

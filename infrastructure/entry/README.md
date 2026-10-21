@@ -12,7 +12,7 @@ HAProxy仅读取ClientHello的SNI做TCP分流，不终止TLS、不持应用或Ha
 | `entry_cluster_backend`（站点文件） | 文本 | 非 Harbor 域名的默认后端，是站点事实，在 [环境参数](../environments/kind/README.md)；C4 起由建群模块的身份回执给出 |
 | `entry_enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
 | `entry_listen_address` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
-| `entry_port` | 整数 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `entry_port` | 整数 | 等于站点文件的 `public_port`（C2 起派生）。与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
 | `entry_config_dir` | 文本/表达式 | 目录责任；已有输入/数据需完整恢复和路径守卫，不能换空目录重建身份。 |
 | `entry_runtime_dir` | 文本/表达式 | 目录责任；已有输入/数据需完整恢复和路径守卫，不能换空目录重建身份。 |
 | `entry_cluster_routes` | 列表 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
