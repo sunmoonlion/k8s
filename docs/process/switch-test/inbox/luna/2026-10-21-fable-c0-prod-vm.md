@@ -1,8 +1,8 @@
 # luna 卡 fable-c0：生产宿主——本地机 Hyper-V 上建 `sunmoon-prod` 虚拟机（0039 停点 C0）
 
-> 状态：**可执行**（远程 Fable 2026-10-21 写）。所有者定：手里没有云，生产站点先建在本地机的 Hyper-V 虚拟机上（Windows 专业版，128 GB 内存，给它 32 GB）。这张卡三方配合：你在 WSL 里准备两个 ISO 并在最后核对，**所有者在管理员 PowerShell 里跑建机脚本**（Hyper-V 要管理员，你不能替），装完你再核。不碰现有的一切：开发集群、Jenkins、Harbor、WSL 的数据盘都不动。
+> 状态：**可执行**（远程 Fable 2026-10-21 写，第二版：本地机实测是 Windows 家庭版，所有者不想动原系统，建机改用 VMware Workstation Pro）。所有者定：手里没有云，生产站点先建在本地机的虚拟机上（128 GB 内存，给它 32 GB）。这张卡三方配合：你在 WSL 里准备两个 ISO 并在最后核对，**所有者在 VMware 界面里建机**（你不能替），装完你再核。不碰现有的一切：开发集群、Jenkins、Harbor、WSL 的数据盘都不动。
 >
-> 临时就地修授权同前：`infrastructure/environments/prod/vm/` 下的脚本与模板、本卡命令里让步骤过不去的错可以就地改、验、续跑并推 `origin/fable`；不改规格（8 核、32 GB、60+200 GB、192.168.80.10）、不改设计。
+> 临时就地修授权同前：`infrastructure/environments/prod/vm/` 下的脚本与模板、本卡命令里让步骤过不去的错可以就地改、验、续跑并推 `origin/fable`；不改规格（8 核、32 GB、60+200 GB、192.168.80.10，网关 192.168.80.2）、不改设计。
 
 ```text
 工位 WS=fable：~/worktrees/fable/sunmoonun，分支 fable；收件箱 docs/process/switch-test/inbox/luna/
@@ -21,27 +21,15 @@ iso=$(grep -o 'ubuntu-24.04[.0-9]*-live-server-amd64.iso' SHA256SUMS | head -1);
 [ -f "$iso" ] || curl -fL -o "$iso" "https://releases.ubuntu.com/noble/$iso"
 grep " \*$iso$" SHA256SUMS | sha256sum -c -; echo "iso verify exit=$?"
 ls -l ~/.ssh/id_rsa.pub
-bash ~/worktrees/fable/sunmoonun/infrastructure/environments/prod/vm/make-seed-iso.sh --out /mnt/d/iso/sunmoon-prod-seed.iso --pubkey ~/.ssh/id_rsa.pub
+bash ~/worktrees/fable/sunmoonun/infrastructure/environments/prod/vm/make-seed-iso.sh --out /mnt/d/iso/sunmoon-prod-seed.iso --pubkey ~/.ssh/id_rsa.pub --gateway 192.168.80.2
 ls -l /mnt/d/iso/
 ```
 
 要看到：`iso verify exit=0`（`…: OK`）；生成应答 ISO 时会要一个**控制台口令**（只在 Hyper-V 控制台登录用，SSH 走钥匙；你随机生成一个，告诉所有者，不进回执）；最后 `ls` 里有系统 ISO 和 `sunmoon-prod-seed.iso`。把系统 ISO 的文件名写进回执（第二节所有者要用）。
 
-## 二、Windows 侧：建虚拟机（**所有者**，管理员 PowerShell）
+## 二、Windows 侧：建虚拟机（**所有者**，VMware Workstation Pro）
 
-luna 把下面这段连同 ISO 文件名交给所有者；所有者右键「以管理员身份运行」PowerShell：
-
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass -Force
-cd \\wsl.localhost\Ubuntu\home\zymun\worktrees\fable\sunmoonun\infrastructure\environments\prod\vm
-.\New-SunmoonProdVm.ps1 -IsoPath D:\iso\<系统ISO文件名> -SeedIso D:\iso\sunmoon-prod-seed.iso
-```
-
-（WSL 发行版名字不叫 `Ubuntu` 就按 `wsl -l` 里的名字改路径；`Set-ExecutionPolicy -Scope Process` 只对这一个窗口生效，不是关闭策略。）脚本会建内部交换机 `sunmoon-prod`、NAT、虚拟机，然后开机。所有者再做三下：
-
-1. 打开 Hyper-V 管理器 → 连接 `sunmoon-prod` 控制台 → 安装器问「Continue with autoinstall?」输 `yes` 回车。之后全自动，装完虚拟机**自己关机**（十来分钟）。
-2. 关机后在同一个 PowerShell 窗口跑：`Get-VMDvdDrive -VMName sunmoon-prod | Remove-VMDvdDrive; Start-VM sunmoon-prod`
-3. 告诉 luna「起来了」。
+本地机是 Windows **家庭版**、所有者不想动原系统，所以不用 Hyper-V，改 VMware Workstation Pro（个人免费）。luna 把 [`vm/README-vmware.md`](../../../../../infrastructure/environments/prod/vm/README-vmware.md) 这页和系统 ISO 文件名交给所有者，所有者照它做三段：一次性准备（开 Windows Hypervisor Platform、装 VMware、把 VMnet8 改成 192.168.80.0/24 网关 .2）→ 界面里新建虚拟机（8 核、32 GB、60 + 200 GB 两块盘、两张 ISO、UEFI、NAT）→ 控制台输一次 `yes`，装完自己关机，移除光盘再开机 → 管理员 PowerShell 两行开转发 → 告诉 luna「起来了」。
 
 ## 三、WSL 侧：核对（luna）
 
