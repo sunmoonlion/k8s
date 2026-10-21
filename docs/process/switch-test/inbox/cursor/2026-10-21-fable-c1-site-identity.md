@@ -1,8 +1,8 @@
-# qwen 卡 fable-c1：集群身份与路径参数化——开发站点渲染字节不变（0039 停点 C1）
+# cursor 卡 fable-c1：集群身份与路径参数化——开发站点渲染字节不变（0039 停点 C1）
 
-> 状态：**可执行**（远程 Fable 2026-10-21 写；**第二版** 2026-10-21 晚：第一节改为从父提交的临时工作树取基线，答 qwen 的停点）。C1 改了 59 个文件、一行业务逻辑都没加：把写死的集群名 `sunmoon-kind`、`kind-` 上下文前缀、`/mnt/sunmoon-data`、`/home/zymun` 收进 `environments/kind/site.yaml`，模块配置改成按站点值派生，守卫改成跨字段核对。**这种改法唯一的验收就是「改前改后结果一模一样」**，所以这张卡的核心是你在本地先按现在的代码渲染一遍存下来，再拉新代码渲染一遍，逐字节比。
+> 状态：**可执行**（远程 Fable 2026-10-21 写；**第二版** 2026-10-21 晚：第一节改为从父提交的临时工作树取基线，答 qwen 的停点；**改派 Cursor** 2026-10-21 晚，qwen 配额用尽，所有者定）。C1 改了 59 个文件、一行业务逻辑都没加：把写死的集群名 `sunmoon-kind`、`kind-` 上下文前缀、`/mnt/sunmoon-data`、`/home/zymun` 收进 `environments/kind/site.yaml`，模块配置改成按站点值派生，守卫改成跨字段核对。**这种改法唯一的验收就是「改前改后结果一模一样」**，所以这张卡的核心是你在本地先按现在的代码渲染一遍存下来，再拉新代码渲染一遍，逐字节比。
 >
-> 工位 **WS=fable**：`~/worktrees/fable/sunmoonun`，分支 fable（不是 qwen 工位）。只读集群，不部署、不改 gitops 声明、不碰 Harbor/Jenkins 数据。卡命令本身的笔误可以改并写进回执；代码不对就**停**，把输出写进 `inbox/fable/`，不就地改代码。
+> 工位 **WS=fable**：`~/worktrees/fable/sunmoonun`，分支 fable（不是 cursor 自己的工位）。只读集群，不部署、不改 gitops 声明、不碰 Harbor/Jenkins 数据。卡命令本身的笔误可以改并写进回执；代码不对就**停**，把输出写进 `inbox/fable/`，不就地改代码。
 
 ```text
 前提：开发集群在跑。先 make -C infrastructure platform-status OBJECT=all 看一眼；WSL 空闲停过机的话 platform-start 拉起来再开始
