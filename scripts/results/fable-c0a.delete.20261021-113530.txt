@@ -1,0 +1,156 @@
+Approved exact deletion plan:
+delete app-platform-dev deployments.apps/investment-admin uid=5e2e7397-ef86-4711-8cc3-af0e5c60346f
+delete app-platform-dev services/investment-admin uid=50365256-0367-48e1-bed4-057c896abc23
+delete app-platform-dev ingresses.networking.k8s.io/investment-admin uid=f490213e-1914-4f81-bbd7-4f9d2ea4125a
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-admin uid=3b580f0f-ff0f-443c-811c-4111fc091c6e
+delete data-platform-dev jobs.batch/investment-agent-releases-v1 uid=a1a4d020-0e16-4fa7-88d4-8fa7ef199b98
+delete data-platform-dev configmaps/investment-agent-releases-policy-v1 uid=7f14a947-5a8f-417f-96ba-5f319f8c9dc6
+delete data-platform-dev secrets/investment-agent-releases-provision uid=ec5d36ce-7483-4a6a-bf13-0415a0da047a
+delete data-platform-dev jobs.batch/investment-database-v1 uid=e385d0d8-3dc5-40ff-aa67-df2ca425c1e9
+delete app-platform-dev secrets/investment-database-runtime uid=98eefcf0-c962-46e6-90df-38092cf492c5
+delete data-platform-dev secrets/investment-database-bootstrap uid=34a70716-02b0-4abd-bea6-9529efd4daaf
+delete app-platform-dev serviceaccounts/investment-runtime uid=59016048-07c1-414b-99dd-5ca7abcfd2ed
+delete app-platform-dev jobs.batch/investment-identity-5a752f0f38f3-v3 uid=8f376186-b3c7-49cf-a72d-a5f6ee9cf936
+delete app-platform-dev configmaps/investment-browser-identity uid=6711fbbc-1f3e-40d9-8087-1a29e2eea829
+delete app-platform-dev configmaps/investment-identity-provision-v1 uid=488e39d5-6a63-4db2-b468-345893824655
+delete app-platform-dev configmaps/investment-identity-provision-v2 uid=471f5851-c4c9-4bb5-bd1b-57caf3ffc31a
+delete app-platform-dev configmaps/investment-identity-provision-v3 uid=9417eb62-29ac-4989-8485-ed2d3cd7f42c
+delete app-platform-dev secrets/investment-browser-secrets uid=dfdc2d66-6b59-40e3-afff-80cc151f4131
+delete app-platform-dev secrets/investment-identity-provision uid=a224d341-be3d-40ce-9251-2591211dc9df
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-identity-provision-in uid=ca89a415-75e2-415b-b4b2-786c515cbe5d
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-identity-provision-out uid=8c3621d3-12b5-4e31-8a92-695d16f13d34
+delete app-platform-dev jobs.batch/investment-migrate-5a752f0f38f3-v7 uid=ef9bb808-2ec1-4ee4-bcf7-0106cd63f3c4
+delete app-platform-dev configmaps/investment-schema-check-v1 uid=fcc2c40a-1520-4c84-ade3-b6eac7f79b9e
+delete app-platform-dev configmaps/investment-schema-check-v2 uid=d654cb68-7380-4f10-ac7a-7fa9f05b4b46
+delete app-platform-dev configmaps/investment-schema-check-v3 uid=89217485-ab7a-4b70-8ff8-7bbf95f3e53b
+delete app-platform-dev configmaps/investment-schema-check-v4 uid=f178bcaf-2f94-45bd-a836-851d3b93e318
+delete app-platform-dev configmaps/investment-schema-check-v5 uid=035c7cdc-7745-4c53-9aa7-ca02ffe9a4b9
+delete app-platform-dev configmaps/investment-schema-check-v6 uid=7612fb9e-d192-4bae-8f82-381526d0dfd7
+delete app-platform-dev configmaps/investment-schema-check-v7 uid=30448187-52e5-4627-97be-b75576eb34cf
+delete app-platform-dev secrets/investment-migration-auth uid=7d6b9b82-33ff-47de-bcad-947380448f7d
+delete messaging-platform-dev jobs.batch/investment-rabbitmq-5a752f0f38f3-v2 uid=55d67b3f-4635-475c-9fbf-69b2727596d8
+delete messaging-platform-dev configmaps/investment-rabbitmq-provision-v1 uid=c0965bdc-e44d-42a3-896b-42fb90544b87
+delete messaging-platform-dev configmaps/investment-rabbitmq-provision-v2 uid=f5220b4e-a119-4d2a-bfb3-fffe3a133ec6
+delete app-platform-dev secrets/investment-rabbitmq-runtime uid=a8bc4e2f-5710-4891-b6e0-fb771128fff6
+delete messaging-platform-dev secrets/investment-rabbitmq-provision uid=53256d0b-bffe-4b33-8128-6bee634eb40a
+delete messaging-platform-dev networkpolicies.networking.k8s.io/investment-rabbitmq-provision-in uid=266b2e5d-8a0f-4a6a-827c-7655fa5da530
+delete messaging-platform-dev networkpolicies.networking.k8s.io/investment-rabbitmq-provision-out uid=7aa76008-0e30-431d-89f5-d0bf0d0bb6a8
+delete data-platform-dev jobs.batch/investment-redis-5a752f0f38f3-v3 uid=d948dda1-da9e-4d2c-a3f1-f94d425c646e
+delete data-platform-dev configmaps/investment-redis-provision-v1 uid=65637b3a-99e8-44b8-9576-647c3feee734
+delete data-platform-dev configmaps/investment-redis-provision-v2 uid=903f7ff0-9269-4089-a1b7-17b36d8451ec
+delete data-platform-dev configmaps/investment-redis-provision-v3 uid=b30557ef-f2f1-4d6c-a905-b6b946b5a44d
+delete app-platform-dev secrets/investment-redis-runtime uid=4030cff0-4938-4344-8dbd-9c4f11b499f2
+delete data-platform-dev secrets/investment-redis-provision uid=fd2159ab-6b9c-4c2f-92f1-8b181f99793e
+delete data-platform-dev networkpolicies.networking.k8s.io/investment-redis-provision-in uid=81492fc9-0831-4750-b713-6d855ea0b7e8
+delete data-platform-dev networkpolicies.networking.k8s.io/investment-redis-provision-out uid=7c14a8a3-bd8c-42fb-9dab-be5d0ed56c11
+delete app-platform-dev deployments.apps/investment-api uid=adec1ddc-0eaf-431f-b951-1499b0347941
+delete app-platform-dev deployments.apps/investment-runner uid=b1c13855-fc19-4cfb-928a-eaa249d3bbec
+delete app-platform-dev deployments.apps/investment-scheduler uid=073c7c89-08de-493b-93fd-7ef553d11b00
+delete app-platform-dev deployments.apps/investment-worker uid=7032c81b-a9e2-4eb4-b8e9-d22bdef9b9cc
+delete app-platform-dev services/investment-api uid=4d53bff5-7c59-44a8-b3ae-ad8ac5905d40
+delete app-platform-dev configmaps/investment-celery-config uid=e39b4ef2-72f6-4946-b138-48ee5a51e3ca
+delete app-platform-dev configmaps/investment-runtime uid=7d22294a-cd20-4d92-bc69-5c99fc50a079
+delete app-platform-dev configmaps/investment-service-ca uid=9b983564-ddbe-4b74-a581-a82709461a6e
+delete app-platform-dev secrets/investment-agent-releases-runtime uid=d85fdb65-34d1-44ae-907e-fbcdf1dc662d
+delete app-platform-dev secrets/investment-domain-runtime uid=fa7e7342-f184-4dd6-a226-a53d5418ecc3
+delete app-platform-dev secrets/investment-knowbase-service uid=a2f264dc-da44-46a8-b5dc-e318d1a4fcfd
+delete app-platform-dev secrets/investment-tls uid=a508e9e9-cce5-4926-8b10-4b7496eb0612
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-api-casdoor-in uid=18347b80-347d-42ba-ab12-aae09677e7f5
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-api-casdoor-out uid=5a32866d-1a44-452a-82b0-f33015d3b2f9
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-api-ingress uid=cca60217-c329-437f-a06e-144731cb2f3f
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-provisioner-out uid=773c9b41-7e42-4b8a-9e5d-0d6fcbf1bbab
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-relay-admin-out uid=c38a79ab-ff02-4047-a41d-a6ac60ca2902
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-sandboxes-out uid=99a16173-7f94-4c04-abdf-7e71fcb063c2
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-service-https-out uid=fad5bf99-c3f7-4c2b-89c8-fba379e6d8d9
+delete app-platform-dev jobs.batch/investment-service-identity-5a752f0f38f3-v1 uid=c209a8bb-f891-433a-b31f-29f2236233ad
+delete app-platform-dev configmaps/investment-service-provision-v1 uid=8f58e931-1307-4f1b-8029-2ebb42d75451
+delete app-platform-dev secrets/investment-service-provision uid=c6ed2dff-bc9f-4980-8a23-4abfa107d1e0
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-service-provision-out uid=b7d01d05-b8bb-42ff-8cb2-ed68be959dee
+delete app-platform-dev deployments.apps/investment-web uid=a81d96a5-4a67-4f62-b588-d447cb9603f0
+delete app-platform-dev services/investment-web uid=fdb1edda-f765-4938-9a2c-0923ce4f6e06
+delete app-platform-dev ingresses.networking.k8s.io/investment-web uid=6f7d05c7-1e4e-401c-8bf2-d603c609fe42
+delete app-platform-dev networkpolicies.networking.k8s.io/investment-web uid=5138b6f4-fb2c-4243-b932-72ca4e1f0896
+Plan resources=71; protected PVC=21; protected knowbench=141
+deployment.apps "investment-admin" deleted from app-platform-dev namespace
+service "investment-admin" deleted from app-platform-dev namespace
+ingress.networking.k8s.io "investment-admin" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-admin" deleted from app-platform-dev namespace
+job.batch "investment-agent-releases-v1" deleted from data-platform-dev namespace
+configmap "investment-agent-releases-policy-v1" deleted from data-platform-dev namespace
+secret "investment-agent-releases-provision" deleted from data-platform-dev namespace
+job.batch "investment-database-v1" deleted from data-platform-dev namespace
+secret "investment-database-runtime" deleted from app-platform-dev namespace
+secret "investment-database-bootstrap" deleted from data-platform-dev namespace
+serviceaccount "investment-runtime" deleted from app-platform-dev namespace
+job.batch "investment-identity-5a752f0f38f3-v3" deleted from app-platform-dev namespace
+configmap "investment-browser-identity" deleted from app-platform-dev namespace
+configmap "investment-identity-provision-v1" deleted from app-platform-dev namespace
+configmap "investment-identity-provision-v2" deleted from app-platform-dev namespace
+configmap "investment-identity-provision-v3" deleted from app-platform-dev namespace
+secret "investment-browser-secrets" deleted from app-platform-dev namespace
+secret "investment-identity-provision" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-identity-provision-in" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-identity-provision-out" deleted from app-platform-dev namespace
+job.batch "investment-migrate-5a752f0f38f3-v7" deleted from app-platform-dev namespace
+configmap "investment-schema-check-v1" deleted from app-platform-dev namespace
+configmap "investment-schema-check-v2" deleted from app-platform-dev namespace
+configmap "investment-schema-check-v3" deleted from app-platform-dev namespace
+configmap "investment-schema-check-v4" deleted from app-platform-dev namespace
+configmap "investment-schema-check-v5" deleted from app-platform-dev namespace
+configmap "investment-schema-check-v6" deleted from app-platform-dev namespace
+configmap "investment-schema-check-v7" deleted from app-platform-dev namespace
+secret "investment-migration-auth" deleted from app-platform-dev namespace
+job.batch "investment-rabbitmq-5a752f0f38f3-v2" deleted from messaging-platform-dev namespace
+configmap "investment-rabbitmq-provision-v1" deleted from messaging-platform-dev namespace
+configmap "investment-rabbitmq-provision-v2" deleted from messaging-platform-dev namespace
+secret "investment-rabbitmq-runtime" deleted from app-platform-dev namespace
+secret "investment-rabbitmq-provision" deleted from messaging-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-rabbitmq-provision-in" deleted from messaging-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-rabbitmq-provision-out" deleted from messaging-platform-dev namespace
+job.batch "investment-redis-5a752f0f38f3-v3" deleted from data-platform-dev namespace
+configmap "investment-redis-provision-v1" deleted from data-platform-dev namespace
+configmap "investment-redis-provision-v2" deleted from data-platform-dev namespace
+configmap "investment-redis-provision-v3" deleted from data-platform-dev namespace
+secret "investment-redis-runtime" deleted from app-platform-dev namespace
+secret "investment-redis-provision" deleted from data-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-redis-provision-in" deleted from data-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-redis-provision-out" deleted from data-platform-dev namespace
+deployment.apps "investment-api" deleted from app-platform-dev namespace
+deployment.apps "investment-runner" deleted from app-platform-dev namespace
+deployment.apps "investment-scheduler" deleted from app-platform-dev namespace
+deployment.apps "investment-worker" deleted from app-platform-dev namespace
+service "investment-api" deleted from app-platform-dev namespace
+configmap "investment-celery-config" deleted from app-platform-dev namespace
+configmap "investment-runtime" deleted from app-platform-dev namespace
+configmap "investment-service-ca" deleted from app-platform-dev namespace
+secret "investment-agent-releases-runtime" deleted from app-platform-dev namespace
+secret "investment-domain-runtime" deleted from app-platform-dev namespace
+secret "investment-knowbase-service" deleted from app-platform-dev namespace
+secret "investment-tls" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-api-casdoor-in" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-api-casdoor-out" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-api-ingress" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-provisioner-out" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-relay-admin-out" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-sandboxes-out" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-service-https-out" deleted from app-platform-dev namespace
+job.batch "investment-service-identity-5a752f0f38f3-v1" deleted from app-platform-dev namespace
+configmap "investment-service-provision-v1" deleted from app-platform-dev namespace
+secret "investment-service-provision" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-service-provision-out" deleted from app-platform-dev namespace
+deployment.apps "investment-web" deleted from app-platform-dev namespace
+service "investment-web" deleted from app-platform-dev namespace
+ingress.networking.k8s.io "investment-web" deleted from app-platform-dev namespace
+networkpolicy.networking.k8s.io "investment-web" deleted from app-platform-dev namespace
+kustomization.kustomize.toolkit.fluxcd.io "investment-admin" deleted from flux-system namespace
+kustomization.kustomize.toolkit.fluxcd.io "investment-agent-releases" deleted from flux-system namespace
+kustomization.kustomize.toolkit.fluxcd.io "investment-database" deleted from flux-system namespace
+kustomization.kustomize.toolkit.fluxcd.io "investment-identity" deleted from flux-system namespace
+kustomization.kustomize.toolkit.fluxcd.io "investment-migration" deleted from flux-system namespace
+kustomization.kustomize.toolkit.fluxcd.io "investment-rabbitmq" deleted from flux-system namespace
+kustomization.kustomize.toolkit.fluxcd.io "investment-redis" deleted from flux-system namespace
+kustomization.kustomize.toolkit.fluxcd.io "investment-runtime" deleted from flux-system namespace
+kustomization.kustomize.toolkit.fluxcd.io "investment-service-identity" deleted from flux-system namespace
+kustomization.kustomize.toolkit.fluxcd.io "investment-web" deleted from flux-system namespace
+Deleted all 71 approved resources and 10 approved Kustomizations; PVC not included.
+exit=0
