@@ -23,7 +23,7 @@ WS=fable，分支 fable，代码提交 `ce33ccc1`。改前基线 = C1 的改后�
 | `make platform-account-plan OBJECT=registry` | failed=0 |
 | `make platform-check OBJECT=data-platform/object-storage` | `"passed": true`，failed=0 |
 | `make entry-status`（`entry_port` 已改为派生） | failed=0 |
-| `make jenkins-agent-check` | render-check **#128 SUCCESS**，`diff.txt` 49 行（与已提交声明的差异 = 上面判定接受的两个 `config-sha256` 和 knowbench domain 的 sops 重加密；#129 是其后的定时空跑 NOT_BUILT） |
+| `make jenkins-agent-check` | render-check **#128 SUCCESS**，`diff.txt` 49 行 = 7 个 hunk，全是 knowbench（4 处）与 knowfeed（3 处）workload 里的 `config-sha256`，即上面判定接受的那两处；没有别的文件（#129 是其后的定时空跑 NOT_BUILT） |
 
 日志在本地 `~/sunmoon-probe-runs/c2a-20261021-2251/`（checks/、diff.txt），不进 git；没有口令、密文进本页。
 
