@@ -17,7 +17,7 @@
       ansible.builtin.assert:
         quiet: true
         that:
-          - cluster_name == 'sunmoon-kind'
+          - cluster_name == 'sunmoon-' + site_name
           - not ansible_check_mode
           # make 总会导出 OBJECT（默认 all）；读不到说明环境没传进来（如 sudo 清空），不能静默按 all 跑
           - lookup("env", "OBJECT") | length > 0
@@ -50,7 +50,7 @@
       when: selection_report | bool and deployment_action == 'config'
     - name: Read actual selected Flux stages without repairing or starting anything
       ansible.builtin.command:
-        argv: '{{ [playbook_dir + "/../.tools/bin/kubectl","--kubeconfig=" + cluster_kubeconfig,"--context=kind-" + cluster_name,"--request-timeout=30s","get","kustomization","-n","flux-system","--ignore-not-found=true","-o","json"] + selection.selected_stages }}'
+        argv: '{{ [playbook_dir + "/../.tools/bin/kubectl","--kubeconfig=" + cluster_kubeconfig,"--context=" + cluster_context,"--request-timeout=30s","get","kustomization","-n","flux-system","--ignore-not-found=true","-o","json"] + selection.selected_stages }}'
       register: observed_stages
       changed_when: false
       when: deployment_action == 'status' and selection.selected_stages | length > 0

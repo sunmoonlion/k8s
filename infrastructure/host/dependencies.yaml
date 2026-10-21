@@ -6,7 +6,7 @@
   gather_facts: false
   become: true
   vars:
-    kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context={{ cluster_context }}', '--request-timeout=30s']
   tasks:
     - name: Read the independent owned API identity
       ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}

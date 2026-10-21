@@ -44,7 +44,7 @@ def verify_application_logs(request, kube, env, args, reader, require):
     pending={p['metadata']['name']:p for p in required}
     while pending and time.monotonic()<deadline:
         for name,pod in list(pending.items()):
-            query={'size':30,'sort':[{'@timestamp':'desc'}], 'query':{'bool':{'filter':[{'term':{'kubernetes.pod_name.keyword':name}},{'term':{'kubernetes.namespace_name.keyword':args.application_namespace}},{'term':{'cluster.keyword':'sunmoon-kind'}}]}}}
+            query={'size':30,'sort':[{'@timestamp':'desc'}], 'query':{'bool':{'filter':[{'term':{'kubernetes.pod_name.keyword':name}},{'term':{'kubernetes.namespace_name.keyword':args.application_namespace}},{'term':{'cluster.keyword':args.cluster}}]}}}
             hits=request('elasticsearch','POST','/'+args.index_prefix+'-*/_search',reader,query)['hits']['hits']
             if not hits: continue
             raw=subprocess.check_output(base+['-n', args.application_namespace,'logs',name,'--all-containers=true','--tail=4000'],env=env,timeout=30).decode(errors='replace')
@@ -56,7 +56,7 @@ def verify_application_logs(request, kube, env, args, reader, require):
                 del pending[name]
         if pending: time.sleep(3)
     require(not pending, 'No matching real container log for: '+','.join(sorted(pending)))
-    outside={'query':{'bool':{'filter':[{'exists':{'field':'kubernetes.namespace_name'}},{'term':{'cluster.keyword':'sunmoon-kind'}}],'must_not':[{'term':{'kubernetes.namespace_name.keyword':args.application_namespace}}]}}}
+    outside={'query':{'bool':{'filter':[{'exists':{'field':'kubernetes.namespace_name'}},{'term':{'cluster.keyword':args.cluster}}],'must_not':[{'term':{'kubernetes.namespace_name.keyword':args.application_namespace}}]}}}
     require(request('elasticsearch','POST','/'+args.index_prefix+'-*/_count',reader,outside)['count']==0, 'Collector sent logs outside application namespace')
     # Stable saved metadata, no log retention/deletion policy is created.
     views=request('kibana','GET','/api/data_views',reader)['data_view']

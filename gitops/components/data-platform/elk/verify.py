@@ -47,9 +47,9 @@ class TrustedTunnel(http.client.HTTPSConnection):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    for key in ('kubectl','kubeconfig','namespace','ca','version','writer','reader','ingest-user','index-prefix'):
+    for key in ('kubectl','kubeconfig','context','namespace','ca','version','writer','reader','ingest-user','index-prefix'):
         parser.add_argument('--'+key,required=True)
-    for key in ('collector-namespace','application-namespace','collector-digest','data-view-id','collector-enabled'):
+    for key in ('collector-namespace','application-namespace','collector-digest','data-view-id','collector-enabled','cluster'):
         parser.add_argument('--'+key)
     parser.add_argument("--components", default="all")
     args=parser.parse_args()
@@ -61,7 +61,7 @@ def main():
     env=dict(os.environ)
     for key in ('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','http_proxy','https_proxy','all_proxy'): env.pop(key,None)
     env['NO_PROXY']='*'
-    kube=[args.kubectl,'--kubeconfig='+args.kubeconfig,'--context=kind-sunmoon-kind','--request-timeout=20s','-n',args.namespace]
+    kube=[args.kubectl,'--kubeconfig='+args.kubeconfig,'--context='+args.context,'--request-timeout=20s','-n',args.namespace]
     ctx=ssl.create_default_context(cafile=args.ca)
     require(ctx.check_hostname and ctx.verify_mode==ssl.CERT_REQUIRED,'TLS verification required')
     with contextlib.ExitStack() as stack:

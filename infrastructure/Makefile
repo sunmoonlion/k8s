@@ -254,7 +254,7 @@ cluster-status:
 	$(ANSIBLE) -i host/inventory.yaml cluster/deploy.yaml $(CONFIG_ARGS) --extra-vars cluster_action=status
 	$(MAKE) cluster-dns-check
 cluster-dns-check:
-	.venv/bin/python cluster/check-dns.py --site "$(SITE)" --cluster-config cluster/config.yaml
+	.venv/bin/python cluster/check-dns.py --site "$(SITE)"
 
 .PHONY: cluster-pull-check
 cluster-pull-check: cluster-status

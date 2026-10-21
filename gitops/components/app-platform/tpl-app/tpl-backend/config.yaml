@@ -7,8 +7,8 @@ tpl_backend_deployment:
   database_bootstrap_revision: v2
   migration_job_revision: v1
   expected_schema_revision: '20260911_0003'
-  private_dir: /etc/sunmoon/applications/sunmoon-kind/tpl
-  backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/tpl
+  private_dir: /etc/sunmoon/applications/{{ cluster_name }}/tpl
+  backup_dir: '{{ data_root }}/backups/applications/{{ cluster_name }}/tpl'
   deploy_budget_bytes: 2147483648
   redis_user: tpl_runtime
   redis_key_pattern: 'tpl:*'

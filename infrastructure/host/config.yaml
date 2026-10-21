@@ -22,7 +22,7 @@ windows_minimum_free_gib: 10
 windows_script_directory: /mnt/c/wsl-disks/scripts/platform-kind-v1
 
 # Unified local lifecycle; installation/boot enabling is a reviewed maintenance action.
-host_runtime_dir: /opt/sunmoon/host/sunmoon-kind
+host_runtime_dir: /opt/sunmoon/host/{{ cluster_name }}
 wsl_distribution: Ubuntu
 host_boot_enabled: true
 # Elevated task inputs are separate from ordinary capacity/review scripts.

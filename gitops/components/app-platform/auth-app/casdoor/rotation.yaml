@@ -6,7 +6,7 @@
   register: account_cluster_identity
 - name: Require the exact owned live cluster
   ansible.builtin.command:
-    argv: ['{{ account_protocol_settings.kubectl }}','--kubeconfig={{ cluster_kubeconfig }}','--context=kind-{{ cluster_name }}',--request-timeout=20s,get,namespace,kube-system,'-o','jsonpath={.metadata.uid}']
+    argv: ['{{ account_protocol_settings.kubectl }}','--kubeconfig={{ cluster_kubeconfig }}','--context={{ cluster_context }}',--request-timeout=20s,get,namespace,kube-system,'-o','jsonpath={.metadata.uid}']
   register: account_cluster_uid
   changed_when: false
   failed_when: account_cluster_uid.rc != 0 or account_cluster_uid.stdout != (account_cluster_identity.content | b64decode | from_json).kube_system_uid

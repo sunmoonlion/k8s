@@ -19,7 +19,7 @@
     runtime: '{{ cluster_root }}/bootstrap'
     config_text: '{{ lookup("ansible.builtin.template", "kind.yaml.j2") }}'
     expected_nodes: ['{{ cluster_name }}-control-plane', '{{ cluster_name }}-worker', '{{ cluster_name }}-worker2']
-    kube: ['{{ kubectl }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    kube: ['{{ kubectl }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context={{ cluster_context }}', '--request-timeout=30s']
   environment:
     HTTP_PROXY: ''
     HTTPS_PROXY: ''

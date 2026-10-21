@@ -36,7 +36,7 @@
     images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
     image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
     migration_job: '{{ application_name }}-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
-    kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context={{ cluster_context }}', '--request-timeout=30s']
     core_candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml, identity/workload.yaml, identity/provision.sops.yaml, identity/runtime.sops.yaml, identity/kustomization.yaml, runtime/workload.yaml, runtime/tls.sops.yaml, runtime/kustomization.yaml, '../{{ application_name }}-web-frontend/workload.yaml', '../{{ application_name }}-web-frontend/kustomization.yaml', '../{{ application_name }}-admin-frontend/workload.yaml', '../{{ application_name }}-admin-frontend/kustomization.yaml']
     agent_releases_enabled: '{{ lookup("vars", application_name + "_agent_releases", default={}).enabled | default(false) | bool }}'
     storage_enabled: '{{ cfg.object_storage.enabled | default(false) | bool }}'
@@ -78,7 +78,7 @@
           - cfg.database_bootstrap_revision is match('^[a-z0-9-]{1,16}$')
           - cfg.migration_job_revision is match('^[a-z0-9-]{1,16}$')
           - cfg.private_dir == '/etc/sunmoon/applications/' + cluster_name + '/' + application_name
-          - cfg.backup_dir == '/mnt/sunmoon-data/backups/applications/' + cluster_name + '/' + application_name
+          - cfg.backup_dir == data_root + '/backups/applications/' + cluster_name + '/' + application_name
           - app_images.backend.repository == application_name + '-backend'
           - app_images.backend.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
           - app_images.web.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")

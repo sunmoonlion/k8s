@@ -8,8 +8,8 @@ knowfeed_backend_deployment:
   database_bootstrap_revision: v1
   migration_job_revision: v3
   expected_schema_revision: '20261015_0014'
-  private_dir: /etc/sunmoon/applications/sunmoon-kind/knowfeed
-  backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/knowfeed
+  private_dir: /etc/sunmoon/applications/{{ cluster_name }}/knowfeed
+  backup_dir: '{{ data_root }}/backups/applications/{{ cluster_name }}/knowfeed'
   deploy_budget_bytes: 2147483648
   redis_user: knowfeed_runtime
   redis_key_pattern: 'knowfeed:*'

@@ -26,7 +26,7 @@ jq -e --arg dest {{ dest | quote }} --arg src {{ source | quote }} \
 {% endfor %}
 if [[ ${1:-before} == ready ]]; then
   deadline=$((SECONDS + 300))
-  kube=({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context=kind-{{ cluster_name }} --request-timeout=10s)
+  kube=({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context={{ cluster_context }} --request-timeout=10s)
   until "${kube[@]}" get --raw=/readyz >/dev/null 2>&1; do
     (( SECONDS < deadline )) || { echo 'Kubernetes API readiness timed out' >&2; exit 1; }
     sleep 3
@@ -36,6 +36,6 @@ if [[ ${1:-before} == ready ]]; then
   "${kube[@]}" wait --for=condition=Ready nodes --all --timeout="${remaining}s"
 fi
 if [[ ${1:-before} == after || ${1:-before} == ready ]]; then
-  actual=$({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context=kind-{{ cluster_name }} --request-timeout=30s get ns kube-system -o 'jsonpath={.metadata.uid}')
+  actual=$({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context={{ cluster_context }} --request-timeout=30s get ns kube-system -o 'jsonpath={.metadata.uid}')
   [[ $actual == {{ owned_identity.kube_system_uid | quote }} ]]
 fi

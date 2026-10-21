@@ -20,7 +20,7 @@ def require(condition, reason):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for key in ("kubectl", "kubeconfig", "namespace", "model", "revision"):
+    for key in ("kubectl", "kubeconfig", "context", "namespace", "model", "revision"):
         parser.add_argument("--" + key, required=True)
     parser.add_argument("--dimensions", type=int, required=True)
     args = parser.parse_args()
@@ -28,7 +28,7 @@ def main():
     for key in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
         environment.pop(key, None)
     environment["NO_PROXY"] = "*"
-    prefix = [args.kubectl, "--kubeconfig=" + args.kubeconfig, "--context=kind-sunmoon-kind", "--request-timeout=20s", "-n", args.namespace]
+    prefix = [args.kubectl, "--kubeconfig=" + args.kubeconfig, "--context=" + args.context, "--request-timeout=20s", "-n", args.namespace]
     output = subprocess.run(prefix + ["get", "deployment", "text-embeddings", "-o", "json"], capture_output=True, text=True, env=environment, timeout=30)
     require(output.returncode == 0, "Cannot inspect inference ownership")
     deployment = json.loads(output.stdout)

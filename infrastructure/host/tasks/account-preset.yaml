@@ -12,6 +12,7 @@
         print(json.dumps(restore_preset(json.load(sys.stdin))))
       - '{{ inventory_dir }}'
     stdin: '{{ human_account | to_json }}'
+  environment: {SUNMOON_DATA_ROOT: '{{ data_root }}'}
   register: human_preset_result
   changed_when: (human_preset_result.stdout | from_json).changed
   no_log: true

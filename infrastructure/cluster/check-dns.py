@@ -77,15 +77,14 @@ def run_json(command: list[str]) -> Any:
     return json.loads(result.stdout)
 
 
-def check(site_path: Path, cluster_config_path: Path) -> dict[str, Any]:
+def check(site_path: Path) -> dict[str, Any]:
     site = yaml.safe_load(site_path.read_text(encoding="utf-8"))
-    cluster = yaml.safe_load(cluster_config_path.read_text(encoding="utf-8"))
     cluster_name = site["cluster_name"]
-    kubeconfig = cluster["cluster_kubeconfig"]
+    kubeconfig = site["cluster_kubeconfig"]
     app_namespace = site["app_namespace"]
     data_namespace = site["data_namespace"]
     kubectl = str(Path(__file__).resolve().parents[1] / ".tools/bin/kubectl")
-    context = f"kind-{cluster_name}"
+    context = site["cluster_context"]
 
     nodes = run_json([kubectl, f"--kubeconfig={kubeconfig}", f"--context={context}", "get", "nodes", "-o", "json"])["items"]
     node_dns: dict[str, dict[str, list[str]]] = {}
@@ -169,10 +168,9 @@ def check(site_path: Path, cluster_config_path: Path) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--site", type=Path, required=True)
-    parser.add_argument("--cluster-config", type=Path, required=True)
     args = parser.parse_args()
     try:
-        print(json.dumps(check(args.site, args.cluster_config), indent=2))
+        print(json.dumps(check(args.site), indent=2))
     except (OSError, KeyError, ValueError, RuntimeError, subprocess.SubprocessError, json.JSONDecodeError) as exc:
         print(f"DNS health check failed: {exc}", file=sys.stderr)
         return 1

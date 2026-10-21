@@ -17,7 +17,7 @@ jenkins_config_dir: /etc/sunmoon/jenkins
 # Compose、启动脚本与运行配置目录；修改边界见同目录 README 的字段表。
 jenkins_runtime_dir: /opt/sunmoon/jenkins
 # 数据目录：数据盘整盘挂载点下的子目录，不另加 bind；修改边界见同目录 README 的字段表。
-jenkins_data_dir: /mnt/sunmoon-data/jenkins
+jenkins_data_dir: '{{ data_root }}/jenkins'
 # 控制器容器资源上限；修改边界见同目录 README 的字段表。
 jenkins_memory: 2g
 jenkins_cpus: 2
@@ -25,7 +25,7 @@ jenkins_cpus: 2
 jenkins_certificate_days: 1825
 
 # Human login policy; initial files are private inputs, not passwords in configuration.
-jenkins_credential_backup_dir: /mnt/sunmoon-data/backups/jenkins/credentials
+jenkins_credential_backup_dir: '{{ data_root }}/backups/jenkins/credentials'
 jenkins_human_account:
   object: jenkins
   id: admin

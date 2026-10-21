@@ -24,7 +24,7 @@
           - not linux | bool or knowbench_agent_releases.linux is mapping
           - archive_path is match('^/')
           - not ansible_check_mode
-          - cluster_name == 'sunmoon-kind'
+          - cluster_name == 'sunmoon-' + site_name
     - name: Verify ZIP, manifest and every bundle file before opening a network connection
       ansible.builtin.command:
         argv: ['{{ ansible_playbook_python }}', '{{ playbook_dir }}/upload.py', '{{ archive_flag }}', '{{ archive_path }}']
@@ -44,7 +44,7 @@
         - name: Refuse uploading through a different cluster API
           ansible.builtin.command:
             argv: ['{{ inventory_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}',
-                   '--context=kind-{{ cluster_name }}', '--request-timeout=30s', get, ns, kube-system,
+                   '--context={{ cluster_context }}', '--request-timeout=30s', get, ns, kube-system,
                    -o, 'jsonpath={.metadata.uid}']
           register: release_cluster_uid
           changed_when: false
@@ -74,7 +74,7 @@
           ansible.builtin.command:
             argv: ['{{ ansible_playbook_python }}', '{{ playbook_dir }}/upload.py', '{{ archive_flag }}', '{{ archive_path }}', --apply,
                    --kubectl, '{{ inventory_dir }}/../.tools/bin/kubectl',
-                   --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ data_namespace }}',
+                   --kubeconfig, '{{ cluster_kubeconfig }}', --context, '{{ cluster_context }}', --namespace, '{{ data_namespace }}',
                    --ca, '{{ registry_config_dir }}/clients/ca.crt']
             stdin: '{{ public_input | combine({"credentials":release_credentials.content | b64decode | from_yaml}) | to_json }}'
           register: publication

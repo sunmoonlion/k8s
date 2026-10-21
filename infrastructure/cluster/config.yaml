@@ -12,9 +12,6 @@ cluster_pod_subnet: 10.247.0.0/16
 cluster_service_subnet: 10.99.0.0/16
 # 三个节点独立持久目录的根；修改边界见同目录 README 的字段表。
 cluster_data_root: /data/kind-clusters
-# 本集群独立访问文件；修改边界见同目录 README 的字段表。
-cluster_kubeconfig: /home/zymun/.kube/sunmoon-kind.config
-# 宿主操作用户/文件属主；修改边界见同目录 README 的字段表。
-cluster_operator: zymun
+# cluster_kubeconfig、cluster_operator 是站点事实，自 C1 起在 environments/<站点>/site.yaml。
 # 建群新增预算；修改边界见同目录 README 的字段表。
 cluster_create_budget_bytes: 5368709120

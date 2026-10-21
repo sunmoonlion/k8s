@@ -7,8 +7,8 @@ knowlab_backend_deployment:
   database_bootstrap_revision: v2
   migration_job_revision: v1
   expected_schema_revision: '20261019_0010'
-  private_dir: /etc/sunmoon/applications/sunmoon-kind/knowlab
-  backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/knowlab
+  private_dir: /etc/sunmoon/applications/{{ cluster_name }}/knowlab
+  backup_dir: '{{ data_root }}/backups/applications/{{ cluster_name }}/knowlab'
   deploy_budget_bytes: 2147483648
   redis_user: knowlab_runtime
   redis_key_pattern: 'knowlab:*'

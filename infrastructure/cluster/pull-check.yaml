@@ -9,7 +9,7 @@
     pull_image: '{{ registry_address }}/platform/haproxy@{{ published.manifest_digest }}'
     runtime: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap'
     expected_nodes: ['{{ cluster_name }}-control-plane', '{{ cluster_name }}-worker', '{{ cluster_name }}-worker2']
-    kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context={{ cluster_context }}', '--request-timeout=30s']
   tasks:
     - name: Load independently recorded cluster identity
       ansible.builtin.slurp:

@@ -12,7 +12,7 @@
     flux: '{{ playbook_dir }}/../.tools/bin/flux'
     build: '{{ playbook_dir }}/../.build/flux'
     source_lock_path: '{{ playbook_dir }}/../environments/kind/flux-source.yaml'
-    kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context={{ cluster_context }}', '--request-timeout=30s']
   environment:
     HTTP_PROXY: ''
     HTTPS_PROXY: ''
@@ -30,8 +30,8 @@
           - not ansible_check_mode
           - flux_source_action in ['publish', 'apply', 'status']
           - flux_source_action != 'apply' or flux_enabled | bool
-          - cluster_name == 'sunmoon-kind'
-          - registry_address == 'harbor.sunmoonai.com:30443'
+          - cluster_name == 'sunmoon-' + site_name
+          - registry_address == registry_hostname + ':' + (entry_port | string)
     - name: Verify the installed source CLI bytes
       ansible.builtin.stat:
         path: '{{ flux }}'
@@ -200,7 +200,7 @@
           ansible.builtin.assert:
             quiet: true
             that:
-              - source_lock_path in [playbook_dir + '/../environments/kind/flux-source.yaml', repo + '/infrastructure/environments/kind/flux-source.yaml'] or (source_lock_path is match('^/mnt/sunmoon-data/backups/[a-zA-Z0-9_/-]+/source-(before|after)\.yaml$') and '..' not in source_lock_path.split('/'))
+              - source_lock_path in [playbook_dir + '/../environments/' + site_name + '/flux-source.yaml', repo + '/infrastructure/environments/' + site_name + '/flux-source.yaml'] or (source_lock_path is match('^' + (data_root | regex_escape) + '/backups/[a-zA-Z0-9_/-]+/source-(before|after)\.yaml$') and '..' not in source_lock_path.split('/'))
         - name: Reject redirected source input
           ansible.builtin.stat: {path: '{{ source_lock_path }}', follow: false}
           register: source_input_stat
@@ -250,7 +250,7 @@
                 flux_manifest: '{{ lookup("ansible.builtin.template", "source.yaml.j2") }}'
         - name: Wait for the exact source artifact to be Ready
           ansible.builtin.command:
-            argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', reconcile, source, oci, platform, --timeout=120s]
+            argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context={{ cluster_context }}', reconcile, source, oci, platform, --timeout=120s]
           changed_when: true
           when: flux_source_action == 'apply' and declaration_diff.rc == 1
         - name: Recover a failed old graph revision through the native component policy
@@ -258,7 +258,7 @@
           when: flux_source_action == 'apply' and services_neo4j_enabled | default(false) | bool and neo4j_failed_rollout_recovery | default(false) | bool
         - name: Wait for root reconciliation
           ansible.builtin.command:
-            argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', reconcile, kustomization, platform, --timeout=600s]
+            argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context={{ cluster_context }}', reconcile, kustomization, platform, --timeout=600s]
           changed_when: true
           when: flux_source_action == 'apply' and declaration_diff.rc == 1
         - name: Inspect observed artifact and reconciliation generations

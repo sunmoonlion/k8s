@@ -60,6 +60,7 @@
             print(json.dumps(result))
           - '{{ playbook_dir }}'
         stdin: '{{ {"action":account_action,"accounts":selected_accounts,"table":account_table,"replace":account_replace_preset | bool} | to_json }}'
+      environment: {SUNMOON_DATA_ROOT: '{{ data_root }}'}
       register: account_files_result
       changed_when: account_action == 'import' and (account_files_result.stdout | from_json | selectattr('preset_changed','equalto',true) | list | length > 0)
       no_log: true

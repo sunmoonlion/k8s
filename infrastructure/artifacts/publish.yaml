@@ -44,7 +44,7 @@
           - service_material_ids is not defined or publication_image_ids | difference(service_image_ids) | length == 0
           - selected_images | map(attribute='id') | sort == publication_image_ids | sort
           - images.platform == 'linux/amd64'
-          - registry_address == 'harbor.sunmoonai.com:30443'
+          - registry_address == registry_hostname + ':' + (entry_port | string)
           - not (publication_remove_transport | default(false) | bool) or publication_image_directory | default('') == ((playbook_dir + '/../.build/applications/transfer') | realpath)
     - name: Validate immutable inputs
       ansible.builtin.assert:

@@ -137,9 +137,9 @@ def verify_tarball(stream, release):
 
 
 @contextmanager
-def tunnel(kubectl, kubeconfig, namespace):
+def tunnel(kubectl, kubeconfig, context, namespace):
     require(re.fullmatch('[a-z0-9-]+', namespace), 'Invalid namespace')
-    argv = [kubectl, '--kubeconfig=' + kubeconfig, '--context=kind-sunmoon-kind', '-n', namespace,
+    argv = [kubectl, '--kubeconfig=' + kubeconfig, '--context=' + context, '-n', namespace,
             'port-forward', '--address=127.0.0.1', 'service/object-storage', '0:9000']
     process = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
     try:
@@ -246,6 +246,7 @@ def main():
     parser.add_argument('--apply', action='store_true')
     parser.add_argument('--kubectl')
     parser.add_argument('--kubeconfig')
+    parser.add_argument('--context')
     parser.add_argument('--namespace', default='data-platform-dev')
     parser.add_argument('--ca')
     args = parser.parse_args()
@@ -262,7 +263,7 @@ def main():
             print(json.dumps({'action': 'verified-local', **checked}))
             return
         require(args.kubectl and args.kubeconfig and args.ca and inputs['release']['bucket'] == BUCKET, 'Missing deployment input')
-        with tunnel(args.kubectl, args.kubeconfig, args.namespace) as port, tempfile.TemporaryDirectory(prefix='sunmoon-release-') as folder:
+        with tunnel(args.kubectl, args.kubeconfig, args.context, args.namespace) as port, tempfile.TemporaryDirectory(prefix='sunmoon-release-') as folder:
             root = Path(folder)
             clients = {role: S3Curl(root, 'object-storage.' + args.namespace + '.svc.cluster.local', port, args.ca,
                                    inputs['region'], release[role], inputs['credentials'][role + '_secret'])

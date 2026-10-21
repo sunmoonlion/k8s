@@ -45,12 +45,12 @@ class TrustedTunnel(http.client.HTTPSConnection):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    for key in ('kubectl','kubeconfig','namespace','ca','version'):parser.add_argument('--'+key,required=True)
+    for key in ('kubectl','kubeconfig','context','namespace','ca','version'):parser.add_argument('--'+key,required=True)
     args=parser.parse_args();secret=json.load(sys.stdin)
     env=dict(os.environ)
     for key in ('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','http_proxy','https_proxy','all_proxy'):env.pop(key,None)
     env['NO_PROXY']='*'
-    kube=[args.kubectl,'--kubeconfig='+args.kubeconfig,'--context=kind-sunmoon-kind','--request-timeout=20s','-n',args.namespace]
+    kube=[args.kubectl,'--kubeconfig='+args.kubeconfig,'--context='+args.context,'--request-timeout=20s','-n',args.namespace]
     ctx=ssl.create_default_context(cafile=args.ca)
     require(ctx.check_hostname and ctx.verify_mode==ssl.CERT_REQUIRED,'Graph TLS verification required')
     host='neo4j.'+args.namespace+'.svc.cluster.local'

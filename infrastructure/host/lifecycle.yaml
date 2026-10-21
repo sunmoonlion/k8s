@@ -18,7 +18,7 @@
         that:
           - host_action in ['plan','install','enable-boot','start','stop','status']
           - not ansible_check_mode
-          - cluster_name == 'sunmoon-kind'
+          - cluster_name == 'sunmoon-' + site_name
           - host_runtime_dir == '/opt/sunmoon/host/' + cluster_name
           - windows_script_directory == '/mnt/c/wsl-disks/scripts/platform-kind-v1'
           - wsl_distribution == 'Ubuntu'
@@ -204,12 +204,12 @@
           block:
             - name: Create private lifecycle rollback directory
               ansible.builtin.file:
-                path: /mnt/sunmoon-data/backups/host
+                path: '{{ data_root }}/backups/host'
                 state: directory
                 mode: '0700'
             - name: Allocate one distinct maintenance rollback receipt
               ansible.builtin.tempfile:
-                path: /mnt/sunmoon-data/backups/host
+                path: '{{ data_root }}/backups/host'
                 state: directory
                 prefix: lifecycle-
               register: rollback

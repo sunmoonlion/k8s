@@ -8,7 +8,7 @@
       - object_storage_volume.uid == 1000
       - object_storage_port == 9000
       - object_storage_console_port == 9001
-      - object_storage_license_file == '/home/zymun/.config/sunmoonai/licenses/minio.license'
+      - object_storage_license_file == operator_home + '/.config/sunmoonai/licenses/minio.license'
 - name: Inspect license and preserved object storage input
   ansible.builtin.stat: {path: '{{ item }}', follow: false}
   loop: ['{{ object_storage_license_file }}', '{{ services_config_dir }}/object-storage.yaml', '{{ services_backup_dir }}/object-storage.yaml']

@@ -22,7 +22,7 @@
       - cfg.database_bootstrap_revision is match('^[a-z0-9-]{1,16}$')
       - cfg.migration_job_revision is match('^[a-z0-9-]{1,16}$')
       - cfg.private_dir == '/etc/sunmoon/applications/' + cluster_name + '/' + application_name
-      - cfg.backup_dir == '/mnt/sunmoon-data/backups/applications/' + cluster_name + '/' + application_name
+      - cfg.backup_dir == data_root + '/backups/applications/' + cluster_name + '/' + application_name
       - app_images.backend.repository == application_name + '-backend'
       - app_images.backend.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
       - app_images.web.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")

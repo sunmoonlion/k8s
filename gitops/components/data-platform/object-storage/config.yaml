@@ -10,7 +10,7 @@ object_storage_volume:
 object_storage_port: 9000
 object_storage_console_port: 9001
 object_storage_region: us-east-1
-object_storage_license_file: /home/zymun/.config/sunmoonai/licenses/minio.license
+object_storage_license_file: '{{ operator_home }}/.config/sunmoonai/licenses/minio.license'
 object_storage_resources:
   requests: {cpu: 100m, memory: 512Mi}
   limits: {cpu: '2', memory: 2Gi}

@@ -5,6 +5,6 @@ flux_enabled: true
 # 密钥引导准入；修改边界见同目录 README 的字段表。
 sops_enabled: true
 # 主解密身份目录；修改边界见同目录 README 的字段表。
-sops_config_dir: /etc/sunmoon/flux/sunmoon-kind
+sops_config_dir: /etc/sunmoon/flux/{{ cluster_name }}
 # 独立数据盘密钥副本；修改边界见同目录 README 的字段表。
-sops_backup_dir: /mnt/sunmoon-data/backups/flux/sunmoon-kind
+sops_backup_dir: '{{ data_root }}/backups/flux/{{ cluster_name }}'

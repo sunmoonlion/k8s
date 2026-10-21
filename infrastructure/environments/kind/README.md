@@ -1,13 +1,21 @@
 # KIND共享环境与晋级身份
 
-[site.yaml](site.yaml)只保存跨模块共用`cluster_name`、`registry_address`、`artifact_cache_root`及四个平台命名空间。模块参数在自身config，版本在锁，秘密在私有输入/SOPS；保持一个来源。
+[site.yaml](site.yaml) 保存**站点事实**（SDD 0039 第二版，C1 字段集）：跨模块共用、换一个站点就会变的值。模块参数在自身 config（只留模块常量与按站点值派生的路径），版本在锁，秘密在私有输入/SOPS；保持一个来源。规矩：站点文件里不许出现别的站点的值，代码里不许出现任何站点的值。
 
 | 字段 | 维护条件 |
 |---|---|
-| cluster_name | 集群/目录/receipt/私有输入相关身份；当前实现明确sunmoon-kind，不是任意重命名入口 |
-| registry_address | 公共仓库契约；域名/端口改变联动证书、镜像引用和节点/客户端信任 |
-| artifact_cache_root | 正式物料路径；先核锁内文件完整与生成依赖，再迁移路径 |
-| data/messaging/app/ingress_namespace | 共享运行位置；应用都用app_namespace；已有PVC/身份跨namespace不是热改配置 |
+| `site_name` / `site_role` | 目录名与命名空间后缀的来源：守卫核对 `cluster_name == 'sunmoon-' + site_name`、七个命名空间 `== '<层>-platform-' + site_role`。改它等于换站点 |
+| `cluster_name` | 集群/目录/receipt/私有输入相关身份；派生 `services_config_dir`、`sops_config_dir`、`host_runtime_dir`、应用 `private_dir`、各备份目录。不是任意重命名入口 |
+| `cluster_builder` / `cluster_context` | 建法（`kind` / `kubeadm`）与 kubectl 上下文名；kind 的上下文固定是 `kind-<cluster_name>`，kubeadm 的等于 `cluster_name`。所有 kubectl/flux 调用只认 `cluster_context` |
+| `cluster_kubeconfig` | 本集群独立访问文件（从 cluster/config.yaml 搬来） |
+| `cluster_operator` / `operator_home` | 宿主操作用户及其家目录：候选与构建产物属主、Jenkins 代理用户、MinIO 许可证位置 |
+| `data_root` | 数据盘挂载根：`backups/`、`jenkins/` 都在它下面派生；WSL 开发站点是 `/mnt/sunmoon-data`，虚拟机/云上是数据盘挂载点 |
+| `entry_cluster_backend` | 入口上非 Harbor 域名的默认后端（kind：节点 IP + 节点入口端口）。C4 起改由建群模块的身份回执给出 |
+| `registry_address` | 公共仓库契约；守卫核对它等于 `registry_hostname:entry_port`。域名/端口改变联动证书、镜像引用和节点/客户端信任 |
+| `artifact_cache_root` | 正式物料路径；先核锁内文件完整与生成依赖，再迁移路径 |
+| 七个 `*_namespace` | 共享运行位置；应用都用 `app_namespace`；已有 PVC/身份跨 namespace 不是热改配置 |
+
+C2 再加域名与端口（`site_domain`、`public_port`、`hostnames`、边缘），C4 加 kubeadm 的网段与节点表，见 [SDD 0039](../../../docs/design/SDD/modules/0039-c-site-parameterization.md)。
 
 Makefile显式加载模块/组件config再加载`SITE`，当前默认本文件。不要引入同名重复字段依赖覆盖顺序维持“两个默认值”。
 

@@ -13,7 +13,7 @@ def require(ok, reason):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for key in ['kubectl', 'kubeconfig', 'namespace']:
+    for key in ['kubectl', 'kubeconfig', 'context', 'namespace']:
         parser.add_argument('--' + key, required=True)
     args = parser.parse_args()
     require(args.namespace.startswith('sandbox-'), 'Unexpected sandbox namespace')
@@ -21,7 +21,7 @@ def main():
     probe = ("import json,sys,urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=10); "
              "sys.exit(0 if r.status == 200 and sys.stdout.write(r.read().decode()) is not None else 1)")
     result = subprocess.run(
-        [args.kubectl, '--kubeconfig', args.kubeconfig, '--request-timeout=30s',
+        [args.kubectl, '--kubeconfig', args.kubeconfig, '--context', args.context, '--request-timeout=30s',
          '-n', args.namespace, 'exec', 'deployment/sandbox-provisioner', '--', 'python', '-c', probe],
         check=False, capture_output=True, text=True)
     require(result.returncode == 0, result.stderr.strip() or 'provisioner healthz exec failed')

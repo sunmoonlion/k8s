@@ -14,7 +14,7 @@ def require(value, label):
 def checked_path(value):
     path = Path(value)
     require(path.is_absolute() and '..' not in path.parts, 'Invalid private account path')
-    require(str(path).startswith(('/etc/sunmoon/', '/mnt/sunmoon-data/backups/')), 'Account path outside private roots')
+    require(str(path).startswith(('/etc/sunmoon/', os.environ['SUNMOON_DATA_ROOT'].rstrip('/') + '/backups/')), 'Account path outside private roots')
     for parent in reversed(path.parents):
         if parent.exists():
             s = parent.lstat()

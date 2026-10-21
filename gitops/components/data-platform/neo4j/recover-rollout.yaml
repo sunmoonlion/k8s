@@ -53,7 +53,7 @@
           ansible.builtin.assert:
             quiet: true
             that:
-              - cluster_name == 'sunmoon-kind'
+              - cluster_name == 'sunmoon-' + site_name
               - graph_state.spec.replicas == 1
               - graph_state.spec.template.spec.enableServiceLinks == false
               - graph_pod.metadata.ownerReferences | selectattr('kind','equalto','StatefulSet') | selectattr('uid','equalto',graph_state.metadata.uid) | selectattr('controller','equalto',true) | list | length == 1

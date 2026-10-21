@@ -6,7 +6,7 @@
   vars:
     capacity_operation: sops-bootstrap
     tools: '{{ playbook_dir }}/../.tools/bin'
-    kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context={{ cluster_context }}', '--request-timeout=30s']
     images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
     probe_image: '{{ images.images | selectattr("id", "equalto", "haproxy") | first }}'
     evidence: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/evidence/foundations'
@@ -23,7 +23,7 @@
         quiet: true
         that:
           - not ansible_check_mode
-          - cluster_name == 'sunmoon-kind'
+          - cluster_name == 'sunmoon-' + site_name
           - sops_enabled | bool
     - name: Read independent cluster receipt
       ansible.builtin.slurp:

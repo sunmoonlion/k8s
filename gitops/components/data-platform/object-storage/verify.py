@@ -22,7 +22,7 @@ def require(ok, message):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    for field in ('kubectl', 'kubeconfig', 'namespace', 'mc', 'ca'):
+    for field in ('kubectl', 'kubeconfig', 'context', 'namespace', 'mc', 'ca'):
         ap.add_argument('--' + field, required=True)
     ap.add_argument('--application')
     ap.add_argument('--app-namespace')
@@ -37,7 +37,7 @@ def main():
     env['NO_PROXY'] = '*'
     env['HOME'] = '/nonexistent'
     host = 'object-storage.' + args.namespace + '.svc.cluster.local'
-    prefix = [args.kubectl, '--kubeconfig=' + args.kubeconfig, '--context=kind-sunmoon-kind', '-n', args.namespace]
+    prefix = [args.kubectl, '--kubeconfig=' + args.kubeconfig, '--context=' + args.context, '-n', args.namespace]
     tunnel = subprocess.Popen(prefix + ['port-forward','--address=127.0.0.1','service/object-storage','0:9000'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, env=env)
     try:
         with selectors.DefaultSelector() as selector:
@@ -72,7 +72,7 @@ def main():
             if args.application:
                 require(re.fullmatch(r'(knowfeed|knowbase|knowbench|knowlab)', args.application), 'Unsupported storage application')  # knowlab 的「我的数据」桶（0027 P5）
                 require(args.bucket == args.application + '-originals', 'Unexpected domain bucket')
-                runtime = subprocess.run([args.kubectl, '--kubeconfig=' + args.kubeconfig, '--context=kind-sunmoon-kind', '-n', args.app_namespace, 'exec', '-i', 'deployment/' + args.application + '-api', '--', 'python', '-'], input=Path(args.runtime_check).read_text(), text=True, capture_output=True, env=env, timeout=90)
+                runtime = subprocess.run([args.kubectl, '--kubeconfig=' + args.kubeconfig, '--context=' + args.context, '-n', args.app_namespace, 'exec', '-i', 'deployment/' + args.application + '-api', '--', 'python', '-'], input=Path(args.runtime_check).read_text(), text=True, capture_output=True, env=env, timeout=90)
                 result = json.loads(runtime.stdout)
                 try:
                     require(runtime.returncode == 0 and result.get('passed') is True, 'Actual application S3 acceptance failed')

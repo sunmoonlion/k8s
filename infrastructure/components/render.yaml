@@ -20,7 +20,7 @@
     recipient: '{{ lookup("file", playbook_dir + "/../environments/kind/sops-recipient.txt") | trim }}'
     image_lock: '{{ lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
     image_map: '{{ dict(image_lock.images | map(attribute="id") | zip(image_lock.images)) }}'
-    kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context={{ cluster_context }}', '--request-timeout=30s']
     selected_stages: '{{ component_stages | selectattr("name", "in", selection.selected_stages) | list }}'
     selected_objects: '{{ selected_stages | map(attribute="object") | unique | list }}'
     selected_paths: '{{ selected_stages | map(attribute="path") | unique | list }}'
@@ -57,17 +57,17 @@
         that:
           - not ansible_check_mode
           - services_enabled | bool or selection.services == ["foundations"]
-          - cluster_name == 'sunmoon-kind'
-          - data_namespace == 'data-platform-dev'
-          - messaging_namespace == 'messaging-platform-dev'
-          - app_namespace == 'app-platform-dev'
-          - ingress_namespace == 'ingress-platform-dev'
-          - ops_namespace == 'ops-platform-dev'
-          - relay_namespace == 'relay-platform-dev'
-          - sandbox_namespace == 'sandbox-platform-dev'
+          - cluster_name == 'sunmoon-' + site_name
+          - data_namespace == 'data-platform-' + site_role
+          - messaging_namespace == 'messaging-platform-' + site_role
+          - app_namespace == 'app-platform-' + site_role
+          - ingress_namespace == 'ingress-platform-' + site_role
+          - ops_namespace == 'ops-platform-' + site_role
+          - relay_namespace == 'relay-platform-' + site_role
+          - sandbox_namespace == 'sandbox-platform-' + site_role
           - rabbitmq_node_hostname is match('^[a-z0-9][a-z0-9.-]+$')
           - services_config_dir == '/etc/sunmoon/services/' + cluster_name
-          - services_backup_dir == '/mnt/sunmoon-data/backups/services/' + cluster_name
+          - services_backup_dir == data_root + '/backups/services/' + cluster_name
           - not services_casdoor_enabled or services_postgresql_enabled
           - casdoor_database is match('^[a-z][a-z0-9_]+$')
           - casdoor_database_user is match('^[a-z][a-z0-9_]+$')

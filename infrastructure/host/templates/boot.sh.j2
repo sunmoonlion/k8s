@@ -42,7 +42,7 @@ systemctl start sunmoon-platform.target
 {{ host_runtime_dir }}/check-nodes.sh ready
 # Availability is separate from application protocol acceptance.
 deadline=$((SECONDS + 600))
-kube=({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context=kind-{{ cluster_name }} --request-timeout=30s)
+kube=({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context={{ cluster_context }} --request-timeout=30s)
 until "${kube[@]}" get pods -A -o json | jq -e '
   [.items[] | select(.status.phase != "Succeeded")] as $pods |
   ($pods | length > 0) and all($pods[]; .status.phase == "Running" and

@@ -14,7 +14,7 @@
     flux: '{{ playbook_dir }}/../.tools/bin/flux'
     kubectl: '{{ playbook_dir }}/../.tools/bin/kubectl'
     build: '{{ playbook_dir }}/../.build/flux'
-    kube: ['{{ kubectl }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    kube: ['{{ kubectl }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context={{ cluster_context }}', '--request-timeout=30s']
   environment:
     HTTP_PROXY: ''
     HTTPS_PROXY: ''
@@ -32,7 +32,7 @@
           - not ansible_check_mode
           - flux_action in ['deploy', 'status']
           - flux_action != 'deploy' or flux_enabled | bool
-          - cluster_name == 'sunmoon-kind'
+          - cluster_name == 'sunmoon-' + site_name
           - cluster_enabled | bool and registry_enabled | bool
           - controllers | length == 4
     - name: Verify the installed CLI bytes before API operations
@@ -163,7 +163,7 @@
           changed_when: false
     - name: Run native Flux health and CRD checks
       ansible.builtin.command:
-        argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', check, --timeout=60s]
+        argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context={{ cluster_context }}', check, --timeout=60s]
       changed_when: false
       register: health
     - name: Read actual controller images and readiness

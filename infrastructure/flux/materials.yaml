@@ -32,7 +32,7 @@
           - flux_material_action != 'publish' or flux_enabled | bool
           - controllers | map(attribute='id') | sort == ['helm-controller', 'kustomize-controller', 'notification-controller', 'source-controller']
           - images.platform == 'linux/amd64'
-          - registry_address == 'harbor.sunmoonai.com:30443'
+          - registry_address == registry_hostname + ':' + (entry_port | string)
     - name: Validate immutable inputs
       ansible.builtin.assert:
         quiet: true

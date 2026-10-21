@@ -7,8 +7,8 @@ knowmart_backend_deployment:
   database_bootstrap_revision: v2
   migration_job_revision: v1
   expected_schema_revision: '20261018_0006'
-  private_dir: /etc/sunmoon/applications/sunmoon-kind/knowmart
-  backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/knowmart
+  private_dir: /etc/sunmoon/applications/{{ cluster_name }}/knowmart
+  backup_dir: '{{ data_root }}/backups/applications/{{ cluster_name }}/knowmart'
   deploy_budget_bytes: 2147483648
   redis_user: knowmart_runtime
   redis_key_pattern: 'knowmart:*'

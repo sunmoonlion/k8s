@@ -3,9 +3,9 @@
 # 首批服务动作准入；修改边界见同目录 README 的字段表。
 services_enabled: true
 # 平台私有输入/TLS目录；修改边界见同目录 README 的字段表。
-services_config_dir: /etc/sunmoon/services/sunmoon-kind
+services_config_dir: /etc/sunmoon/services/{{ cluster_name }}
 # 私有输入/TLS独立副本；修改边界见同目录 README 的字段表。
-services_backup_dir: /mnt/sunmoon-data/backups/services/sunmoon-kind
+services_backup_dir: '{{ data_root }}/backups/services/{{ cluster_name }}'
 
 # 本批平台镜像选择；具体版本/摘要唯一取 artifacts 锁。
 # RAGFlow配套物料按选版表备齐；镜像发布不等于运行声明/检索已验收。

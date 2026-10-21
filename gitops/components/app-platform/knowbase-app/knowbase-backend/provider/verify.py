@@ -2,10 +2,10 @@
 import argparse,json,os,re,selectors,shutil,subprocess,sys,tempfile,time,uuid
 from pathlib import Path
 ap=argparse.ArgumentParser()
-for key in ('kubectl','kubeconfig','app-namespace','data-namespace','mc','ca'):ap.add_argument('--'+key,required=True)
+for key in ('kubectl','kubeconfig','context','app-namespace','data-namespace','mc','ca'):ap.add_argument('--'+key,required=True)
 ap.add_argument('--http-service-identities',action='store_true')
 args=ap.parse_args();secret=json.load(sys.stdin);root=Path(__file__).resolve().parent
-kube=[args.kubectl,'--kubeconfig='+args.kubeconfig,'--context=kind-sunmoon-kind','--request-timeout=30s']
+kube=[args.kubectl,'--kubeconfig='+args.kubeconfig,'--context='+args.context,'--request-timeout=30s']
 env=dict(os.environ)
 for key in ['HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','http_proxy','https_proxy','all_proxy']:env.pop(key,None)
 env['NO_PROXY']='*'

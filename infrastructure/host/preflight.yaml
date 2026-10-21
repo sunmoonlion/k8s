@@ -12,7 +12,7 @@
           - storage_uuid is match('^[0-9a-f-]{36}$')
           - storage_mounts | length == 3
           - cluster_name is match('^[a-z0-9][a-z0-9-]+$')
-          - registry_address == 'harbor.sunmoonai.com:30443'
+          - registry_address == registry_hostname + ':' + (entry_port | string)
         fail_msg: Invalid site settings or Ansible version.
 
     - name: Read filesystem identity for each required mount

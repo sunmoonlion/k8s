@@ -5,7 +5,7 @@
 共享身份来自[site](../environments/kind/site.yaml)，参数在[config](config.yaml)，工具和节点身份取[artifacts锁](../artifacts/README.md)。当前正式开发环境sunmoon-kind；原始kind是受保护旧环境，不由此入口接管。
 
 ## 配置和存储
-当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
+当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。`cluster_kubeconfig`、`cluster_operator`、`cluster_context` 是站点事实，在 [环境参数](../environments/kind/README.md)（C1 起）。
 
 | 字段 | 类型 | 维护条件 |
 |---|---|---|
@@ -15,8 +15,6 @@
 | `cluster_pod_subnet` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
 | `cluster_service_subnet` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
 | `cluster_data_root` | 文本/表达式 | 目录责任；已有输入/数据需完整恢复和路径守卫，不能换空目录重建身份。 |
-| `cluster_kubeconfig` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
-| `cluster_operator` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
 | `cluster_create_budget_bytes` | 整数 | 操作预算/限时；调整须匹配真实峰值及当前容量检查。 |
 
 一个控制面、两个worker，每个节点都挂自己的宿主目录：`cluster_data_root/cluster_name/<节点>/static`→节点`/data/kind-local-storage`；`dynamic`→节点动态存储目录；公共CA目录只读挂载。完整对应以[kind.yaml.j2](kind.yaml.j2)为准。旧宿主`/data/kind-local-storage`不覆盖挂载。

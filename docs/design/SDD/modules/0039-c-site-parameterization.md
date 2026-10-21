@@ -78,6 +78,15 @@ environments/
 - 4 处 `registry_address == 'harbor.sunmoonai.com:30443'`、1 处 `entry_port == 30443` 改成核对站点值。
 - **验收**：改前改后在开发站点上 `components-render OBJECT=all`、`platform-plan OBJECT=all` 的输出逐字节相同（`.build/` 对比），render-check SUCCESS。
 
+**实施记录（2026-10-21，Fable）**，与上面设计的出入：
+
+- 字段名保留 `cluster_operator`、`cluster_kubeconfig`（搬进 site.yaml，不改名；第三节表里的 `operator_user` 即 `cluster_operator`），另加 `operator_home`（MinIO 许可证等宿主私有文件的位置）。
+- 硬断言不是改成「等于站点文件里的值」（那是同义反复），改成**跨字段核对**：`cluster_name == 'sunmoon-' + site_name`（8 处，含 gitops 里 upload.yaml、neo4j recover-rollout）、七个命名空间 `== '<层>-platform-' + site_role`、`registry_address == registry_hostname + ':' + entry_port`（4 处）、`entry_port == registry_address` 的端口（registry/publish）。路径断言全部改为从 `data_root` / `cluster_name` 派生（12 处）。
+- `--context`：模板里 20 处 `kind-{{ cluster_name }}` → `{{ cluster_context }}`；8 个 Python 脚本（verify-live、object-storage、text-embeddings、elk、neo4j、ragflow、knowbase provider、sandbox provisioner、agent-releases upload）原来写死 `kind-sunmoon-kind` 或不带上下文，现在都收 `--context` 参数，调用方传 `cluster_context`；elk 采集验收的 `cluster` 标签也改为参数。`check-dns.py` 只读站点文件。`ci/release.groovy` 的站点目录与 kubeconfig 从 `site` 参数（默认 `kind`）和站点文件取。
+- 账号私有路径守卫（`host/account_files.py`）的数据盘根从环境变量 `SUNMOON_DATA_ROOT` 来，由剧本传 `data_root`。
+- **没动**：`host/storage.py` 与 `host/config.yaml` 的 WSL 挂载布局、Windows 脚本目录、`cluster/` 的 kind 守卫、`registry_instance_dir: /data/harbor/platform-kind-v1`（两站都能用这个路径）——宿主层按建法分型（WSL / 虚拟机）在 C4 做。`entry_cluster_backend` 这轮只搬进站点文件，身份回执派生留到 C4（现在改要重跑建群才会写回执）。`applications/check-browser.py` 的 30443 随 C2 的端口参数一起改。
+- 远程机上 `platform-plan OBJECT=all` 已通过（它不依赖集群）；`components-render` 需要活集群，字节对比由本地卡 fable-c1 做。
+
 ### C2 域名与端口变参数（动 gitops/ 的 config 与模板）
 
 - 24 份 `config.yaml` 的 `origin: https://tpl.sunmoonai.com:30443` 改成 `origin: 'https://{{ hostnames.tpl_web }}.{{ site_domain }}:{{ public_port }}'`（`--extra-vars @file` 进来的值 Ansible 会在用到时模板化，已有先例 `entry_cluster_routes` 就这么写）；33 份模板里的字面量同样改。

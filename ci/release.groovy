@@ -2,7 +2,7 @@
 // 第 4 步（2026-10-20）：十二个阶段全接上。前半段（1–7）在一段 node 里，人批（8）在 node 外面不占执行器，
 // 后半段（9–12）另一段 node。入口只认 make 的公开目标，不认内部剧本名。D 段换 Argo 时第 7–10 阶段整段替换。
 
-def main(params, reposDir, approver, rootRepo = 'sunmoonun') {
+def main(params, reposDir, approver, rootRepo = 'sunmoonun', site = 'kind') {
     def apps = (params.APPS ?: '').trim() ? params.APPS.trim().split(/\s+/) as List : ['tpl', 'knowfeed', 'knowbase', 'knowbench', 'knowlab', 'knowmart']
     def branch = params.BRANCH.trim()
     def note = (params.NOTE ?: '').trim()
@@ -169,13 +169,13 @@ set -euo pipefail
 git checkout -q --detach '${state.commit}'
 test -s '${out}/7-source-candidate.yaml'
 echo "批准人 ${state.approvedBy}  \$(date -Is)" | tee '${out}/8-approval.txt'
-cp '${out}/7-source-candidate.yaml' infrastructure/environments/kind/flux-source.yaml
-git add infrastructure/environments/kind/flux-source.yaml
-git -c user.name=sunmoon-ci -c user.email=ci@sunmoonai.com commit -q -m "release(kind): 晋级到 \$(git rev-parse --short '${state.commit}')（release #${n}）"
+cp '${out}/7-source-candidate.yaml' infrastructure/environments/${site}/flux-source.yaml
+git add infrastructure/environments/${site}/flux-source.yaml
+git -c user.name=sunmoon-ci -c user.email=ci@sunmoonai.com commit -q -m "release(${site}): 晋级到 \$(git rev-parse --short '${state.commit}')（release #${n}）"
 git -c url.git@github.com:.insteadOf=https://github.com/ fetch -q --tags origin
 d=\$(date +%Y%m%d); k=\$(git tag -l "release-\$d-*" | wc -l); tag="release-\$d-\$((k+1))"
 git tag "\$tag"
-{ cat infrastructure/environments/kind/flux-source.yaml; echo "pointer-commit \$(git rev-parse HEAD)"; echo "tag \$tag"; } | tee '${out}/9-pointer.txt'
+{ cat infrastructure/environments/${site}/flux-source.yaml; echo "pointer-commit \$(git rev-parse HEAD)"; echo "tag \$tag"; } | tee '${out}/9-pointer.txt'
 """
                 state.pointerCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
                 state.tag = sh(script: "grep '^tag ' '${out}/9-pointer.txt' | awk '{print \$2}'", returnStdout: true).trim()
@@ -185,7 +185,7 @@ git tag "\$tag"
                 logged('10-apply', 'make -C infrastructure flux-source-apply')
                 sh """#!/bin/bash
 set -euo pipefail
-export KUBECONFIG="\$HOME/.kube/sunmoon-kind.config"
+export KUBECONFIG=\$(awk -F': *' '/^cluster_kubeconfig:/{print \$2}' "infrastructure/environments/${site}/site.yaml")
 K=infrastructure/.tools/bin/kubectl
 for app in ${apps.join(' ')}; do
   \$K -n flux-system get kustomizations -o name | grep -E "/\${app}-" | xargs -r \$K -n flux-system wait --for=condition=Ready --timeout=30m
@@ -220,7 +220,7 @@ r='${receipt}'
   echo "完整控制台与全部产物在 Jenkins 构建页；代理克隆里的分支 abandoned/release-${n} 推送成功后可删。"
 } > "\$r"
 git add "\$r"
-git -c user.name=sunmoon-ci -c user.email=ci@sunmoonai.com commit -q -m "release(kind): 回执 #${n}"
+git -c user.name=sunmoon-ci -c user.email=ci@sunmoonai.com commit -q -m "release(${site}): 回执 #${n}"
 cp "\$r" '${out}/'
 git -c url.git@github.com:.insteadOf=https://github.com/ push origin "HEAD:refs/heads/${branch}" "refs/tags/${state.tag}" 2>&1 | tee '${out}/12-push.txt'
 # 镜像站（代理准备时按源工位的第二个 push 地址加的 remote mirror）：尽力推，推不上只记下，不算发布失败——GitHub 是真相所在

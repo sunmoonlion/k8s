@@ -45,8 +45,8 @@
           - "(registry_https_port | int) not in ([jenkins_https_port, jenkins_http_port, jenkins_agent_port] | map('int'))"
           - jenkins_config_dir is match('^/etc/[a-zA-Z0-9_/-]+$')
           - jenkins_runtime_dir is match('^/opt/[a-zA-Z0-9_/-]+$')
-          - jenkins_data_dir is match('^' + (storage_mounts[0].target | regex_escape) + '/[a-zA-Z0-9_-]+$')
-          - jenkins_credential_backup_dir == storage_mounts[0].target + '/backups/jenkins/credentials'
+          - jenkins_data_dir is match('^' + (data_root | regex_escape) + '/[a-zA-Z0-9_-]+$')
+          - jenkins_credential_backup_dir == data_root + '/backups/jenkins/credentials'
           - "'..' not in jenkins_config_dir.split('/')"
           - "'..' not in jenkins_runtime_dir.split('/')"
           - jenkins_human_account.object == 'jenkins'

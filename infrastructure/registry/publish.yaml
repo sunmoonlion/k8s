@@ -30,7 +30,7 @@
         that:
           - not ansible_check_mode
           - registry_enabled | bool and entry_enabled | bool
-          - entry_port | int == 30443
+          - entry_port | int == registry_address.split(':')[1] | int
           - entry_listen_address == '0.0.0.0'
 
     - name: Verify formal endpoint routes to the new trusted Harbor before any writes

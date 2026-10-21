@@ -20,7 +20,7 @@ registry_instance_dir: /data/harbor/platform-kind-v1
 registry_log_rotation_approved: true
 
 # Human login policy; initial files are private inputs, not passwords in configuration.
-registry_credential_backup_dir: /mnt/sunmoon-data/backups/registry/platform-kind-v1/credentials
+registry_credential_backup_dir: '{{ data_root }}/backups/registry/platform-kind-v1/credentials'
 registry_human_account:
   object: registry
   id: admin
