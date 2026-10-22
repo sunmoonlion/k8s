@@ -18,7 +18,7 @@ knowmart_backend_deployment:
   identity_organization: built-in
   # 普通用户所在组织（决策 D21、SDD 0014）：网页端应用挂这里；管理端仍在 built-in。
   identity_user_organization: sunmoonai
-  identity_revision: v4
+  identity_revision: v5
   # 跨应用跳转（SDD 0027）：工作台带用户来「我的分身」选一位，按登记的回跳地址回去（knowbench 的工作台）
   cross_app_enabled: true
   domain_env:

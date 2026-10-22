@@ -18,7 +18,7 @@ knowlab_backend_deployment:
   identity_organization: built-in
   # 普通用户所在组织（决策 D21、SDD 0014）：网页端应用挂这里；管理端仍在 built-in。
   identity_user_organization: sunmoonai
-  identity_revision: v4
+  identity_revision: v5
   # 用户上传的数据只进自己的桶（SDD 0027 决定 4，机制在 common/backend/storage）；桶与身份的名字由机制规定。
   # 未接入 S3 前上传一律不收，不回退到容器本地目录
   object_storage:

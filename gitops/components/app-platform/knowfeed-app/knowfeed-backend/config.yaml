@@ -19,7 +19,7 @@ knowfeed_backend_deployment:
   identity_organization: built-in
   # 普通用户所在组织（决策 D21、SDD 0014）：网页端应用挂这里；管理端仍在 built-in。
   identity_user_organization: sunmoonai
-  identity_revision: v4
+  identity_revision: v5
   api_port: 8000
   api_replicas: 1
   worker_replicas: 1
