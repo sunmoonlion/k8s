@@ -35,6 +35,7 @@ def run():
     checked = []
     migrated = []
     sso_migrated = []
+    domain_migrated = []
     with httpx.Client(base_url=endpoint, headers={'Origin': origin}, trust_env=False, timeout=15) as client:
         def api(method, path, payload=None, params=None):
             response = client.request(method, path, json=payload, params=params)
@@ -146,6 +147,25 @@ def run():
                 require(changed == 'Affected', 'Single sign-on settings were not applied')
                 sso_migrated.append(surface)
                 existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
+            # SDD 0039 C2b: the third allowed migration, only when the site domain changed. The
+            # registered origin (homepageUrl) must be another exact HTTPS origin, and swapping it for
+            # the new origin in every registered redirect URI must give exactly the desired list.
+            # Client ID, secret, organization and every other field must already match.
+            domain_keys = {'redirectUris', 'homepageUrl'}
+            drift = {k for k, v in desired.items() if existing.get(k) != v}
+            old_origin = existing.get('homepageUrl') or ''
+            old = urlsplit(old_origin)
+            moved_uris = [config['origin'] + u[len(old_origin):] if u.startswith(old_origin + '/') else u
+                          for u in existing.get('redirectUris') or []]
+            if (drift and drift <= domain_keys and old_origin != config['origin']
+                    and old.scheme == 'https' and old.hostname and not old.username and not old.password
+                    and old.path in ('', '/') and not old.query and not old.fragment
+                    and moved_uris == desired['redirectUris']):
+                changed = api('POST', '/api/update-application', dict(existing, **{k: desired[k] for k in drift}),
+                              params={'id': 'admin/' + config['name']})
+                require(changed == 'Affected', 'Site domain move was not applied')
+                domain_migrated.append(surface)
+                existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
             require(existing and all(existing.get(k) == v for k, v in desired.items()),
                     'Existing browser application differs; explicit migration required')
             checked.append(surface)
@@ -160,7 +180,7 @@ def run():
         response = client.get(urlsplit(discovery['jwks_uri']).path)
         require(response.status_code == 200 and response.json().get('keys'), 'OIDC verification keys missing')
     print(json.dumps({'browser_clients': sorted(checked), 'created': created, 'migrated': migrated,
-                      'single_sign_on_migrated': sso_migrated, 'single_sign_on': ['web'],
+                      'single_sign_on_migrated': sso_migrated, 'domain_migrated': domain_migrated, 'single_sign_on': ['web'],
                       'admin_roles_created': roles_created, 'admin_role_members_added': role_members_added,
                       'user_organization': user_organization, 'admin_organization': organization,
                       'distinct_identities': True, 'exact_redirects': True, 'client_secrets_match': True,

@@ -27,7 +27,9 @@ if (!(jenkins.getSecurityRealm() instanceof HudsonPrivateSecurityRealm)) {
     jenkins.save()
 }
 def location = JenkinsLocationConfiguration.get()
-if (!location.getUrl()) {
-    location.setUrl('https://{{ jenkins_hostname }}:{{ entry_port }}/')
+// 根地址跟着站点走（C2b：换域名后旧值会一直留着，产物链接、通知链接都指旧名）：不同就改
+def desiredUrl = 'https://{{ jenkins_hostname }}:{{ entry_port }}/'
+if (location.getUrl() != desiredUrl) {
+    location.setUrl(desiredUrl)
     location.save()
 }

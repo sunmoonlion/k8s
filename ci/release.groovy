@@ -18,7 +18,7 @@ def main(params, reposDir, approver, rootRepo = 'sunmoonun', site = 'kind') {
     def k8s = "${reposDir}/${rootRepo}"   // 根仓的克隆（名字由引导从 jenkins_root_repo 传入）
     def n = env.BUILD_NUMBER
     def out = "infrastructure/.build/release/${n}"
-    def state = [commit: '', candidate: '', pointerCommit: '', tag: '', approvedBy: '', pushed: false, nothing: false]
+    def state = [commit: '', candidate: '', pointerCommit: '', tag: '', approvedBy: '', pushed: false, nothing: false, awaiting: false]
 
     // 每个 make 的输出进一个日志文件（也进控制台）
     def logged = { String name, String cmd ->
@@ -46,6 +46,12 @@ echo "total=\$n"
     def archive = { archiveArtifacts artifacts: "${out}/**", allowEmptyArchive: true }
 
     // ---------- 前半段：核对 → 改钉 → 构建 → 暂存 → 计划 → 提交 → 发布 ----------
+    // 桌面通知（所有者 Windows 右下角弹窗，点「打开」进页面）：只尽力而为，失败不影响发布。须在 node 里调用。
+    // note 已在上面校验过不含引号、$、反斜杠，可以放进单引号。
+    def notify = { String title, String body, String url, boolean sticky ->
+        sh(script: "bash ci/notify-desktop.sh '${title}' '${body}' '${url}' ${sticky ? 'sticky' : ''} || true", returnStatus: true)
+    }
+    def short_ = { String c -> c ? c.take(8) : '' }
     node('host') { dir(k8s) {
         def head = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
         currentBuild.displayName = "#${n} ${branch}@${head.take(10)} ${apps.join(',')}"
@@ -120,10 +126,13 @@ git -c user.name=sunmoon-ci -c user.email=ci@sunmoonai.com commit -q -m "deploy(
                     state.candidate = sh(script: "cat '${out}/7-source-candidate.yaml'", returnStdout: true).trim()
                     def rev = sh(script: "grep -E '^revision:' '${out}/7-source-candidate.yaml' | awk '{print \$2}'", returnStdout: true).trim()
                     if (rev != state.commit) { error "候选的 revision ${rev} 不是第 6 阶段的提交 ${state.commit}" }
+                    state.awaiting = true
+                    notify("发布 #${n} 等你批准", "${note ?: '按钉发布'}；提交 ${short_(state.commit)}；应用 ${apps.join(' ')}", "${env.BUILD_URL}input/", true)
                 }
             }
         } finally {
             stage('前半段收尾') {
+                if (!state.awaiting && !state.nothing) { notify("发布 #${n} 前半段失败", "${note ?: '按钉发布'}；没有到人批这一步，看控制台", "${env.BUILD_URL}console", false) }
                 def hit = scanSecrets()
                 archive()
                 if (!state.commit) {
@@ -141,7 +150,9 @@ git -c user.name=sunmoon-ci -c user.email=ci@sunmoonai.com commit -q -m "deploy(
 
     // ---------- 人批：不在 node 里，不占执行器 ----------
     stage('8 人批') {
-        def summary = """发布 #${n}  分支 ${branch}  应用 ${apps.join(', ')}
+        // 弹出框只显示第一行：把说明和提交号放在第一行，其余在控制台底部
+        def summary = """发布 #${n}：${note ?: '按钉发布'}（提交 ${short_(state.commit)}，应用 ${apps.join(' ')}）
+分支 ${branch}
 说明：${note ?: '(无)'}
 提交：${state.commit}
 候选：
@@ -154,6 +165,7 @@ ${state.candidate}
             }
         } catch (err) {
             currentBuild.result = 'ABORTED'
+            try { timeout(time: 2, unit: 'MINUTES') { node('host') { dir(k8s) { notify("发布 #${n} 没批，已中止", "${note ?: '按钉发布'}；拒绝或 ${approvalMinutes} 分钟超时，集群没动", "${env.BUILD_URL}", false) } } } } catch (ignored) { }
             currentBuild.description = "${note ? note + ' — ' : ''}第 8 阶段未获批准（拒绝或 ${approvalMinutes} 分钟超时）；提交留在代理克隆 abandoned/release-${n}，候选留在 Harbor，集群未动"
             throw err
         }
@@ -233,6 +245,7 @@ fi
                 state.pushed = true
                 def mirrorNote = sh(script: "grep -c 'MIRROR PUSH FAILED' '${out}/12-push.txt' || true", returnStdout: true).trim() == '0' ? '' : '；镜像站没推上，见 12-push.txt'
                 currentBuild.description = "${note ? note + ' — ' : ''}已发布：${state.tag}，指针 ${state.pointerCommit.take(10)}，回执 ${receipt}${mirrorNote}"
+                notify("发布 #${n} 完成", "${note ?: '按钉发布'}；${state.tag}${mirrorNote}", "${env.BUILD_URL}", false)
             }
         } finally {
             stage('后半段收尾') {
@@ -243,6 +256,7 @@ fi
                     // 用工作区的 HEAD，不用 state：第 9 阶段的 shell 块中途失败时 pointerCommit 还没赋值（b4 回执 #6）
                     def headNow = sh(script: 'git rev-parse --short=10 HEAD', returnStdout: true).trim()
                     currentBuild.description = "${note ? note + ' — ' : ''}后半段停下：${where}；提交留在代理克隆 abandoned/release-${n}（${headNow}）"
+                    notify("发布 #${n} 后半段失败", "${note ?: '按钉发布'}；${where}", "${env.BUILD_URL}console", true)
                     sh "git branch -f 'abandoned/release-${n}' HEAD"
                 }
                 if (hit) { error "秘密样子核查命中：${hit}" }
