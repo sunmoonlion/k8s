@@ -40,12 +40,16 @@
   ansible.builtin.set_fact:
     test_computer_image: '{{ lookup("file", playbook_dir + "/../../gitops/components/sandbox-platform/sandbox/image.lock.yaml") | from_yaml }}'
     test_computer_edge_ip: '{{ edge_public_ip }}'
+    # 测试电脑按安装包站点文件里的公网名经边缘连进来（Linux 包 edge-public），名字跟站点走（SDD 0039 C2b）
+    test_computer_hostnames: ['{{ "knowbench." + site_domain }}', '{{ relay_origin | urlsplit("hostname") }}']
 - name: Require a pinned image digest and an edge address
   ansible.builtin.assert:
     quiet: true
     that:
       - test_computer_image.digest is match('^sha256:[a-f0-9]{64}$')
       - test_computer_edge_ip is match('^[0-9]{1,3}(\.[0-9]{1,3}){3}$')
+      - test_computer_hostnames | length == 2
+      - test_computer_hostnames | select('match', '^[a-z0-9-]+\.' + (site_domain | regex_escape) + '$') | list | length == 2
 - name: Prepare test computer candidate directory
   ansible.builtin.file: {path: '{{ build }}/{{ application_object }}/test-computer', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
 - name: Encrypt the read-only download input for the init container

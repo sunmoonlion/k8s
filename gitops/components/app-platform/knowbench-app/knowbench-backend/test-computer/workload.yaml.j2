@@ -91,7 +91,7 @@ spec:
       # 只给这个 Pod 把两个名字钉到边缘地址（与下面出站策略放行的是同一个地址），不改集群 DNS
       hostAliases:
         - ip: '{{ test_computer_edge_ip }}'
-          hostnames: [knowbench.sunmoonai.com, relay.sunmoonai.com]
+          hostnames: {{ test_computer_hostnames | to_json }}
       enableServiceLinks: false
       securityContext: {runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001, seccompProfile: {type: RuntimeDefault}}
       initContainers:
