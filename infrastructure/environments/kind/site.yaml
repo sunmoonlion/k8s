@@ -15,7 +15,7 @@ operator_home: /home/zymun
 data_root: /mnt/sunmoon-data
 # 网络：站点域名与公网/入口端口（短名 tpl、casdoor、kibana… 两站相同，留在各模块 config 里拼成 '<短名>.{{ site_domain }}'）
 # Traefik 的 NodePort 30443 是入口组件常量，不是这个端口（生产 public_port=443 时 NodePort 仍是 30443）
-site_domain: sunmoonai.com
+site_domain: dev.sunmoonai.com
 public_port: 30443
 # 边缘：开发站点的公网入口在东京 VM（separate），生产宿主自带公网 IP 时为 local
 edge_mode: separate
