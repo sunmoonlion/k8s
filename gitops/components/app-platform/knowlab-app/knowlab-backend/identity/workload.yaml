@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'knowlab-identity-provision-v4', namespace: app-platform-dev}
+metadata: {name: 'knowlab-identity-provision-v5', namespace: app-platform-dev}
 data:
   provision.py: |
     """Register the two browser clients through Casdoor's supported API."""
@@ -40,6 +40,7 @@ data:
         checked = []
         migrated = []
         sso_migrated = []
+        domain_migrated = []
         with httpx.Client(base_url=endpoint, headers={'Origin': origin}, trust_env=False, timeout=15) as client:
             def api(method, path, payload=None, params=None):
                 response = client.request(method, path, json=payload, params=params)
@@ -151,6 +152,25 @@ data:
                     require(changed == 'Affected', 'Single sign-on settings were not applied')
                     sso_migrated.append(surface)
                     existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
+                # SDD 0039 C2b: the third allowed migration, only when the site domain changed. The
+                # registered origin (homepageUrl) must be another exact HTTPS origin, and swapping it for
+                # the new origin in every registered redirect URI must give exactly the desired list.
+                # Client ID, secret, organization and every other field must already match.
+                domain_keys = {'redirectUris', 'homepageUrl'}
+                drift = {k for k, v in desired.items() if existing.get(k) != v}
+                old_origin = existing.get('homepageUrl') or ''
+                old = urlsplit(old_origin)
+                moved_uris = [config['origin'] + u[len(old_origin):] if u.startswith(old_origin + '/') else u
+                              for u in existing.get('redirectUris') or []]
+                if (drift and drift <= domain_keys and old_origin != config['origin']
+                        and old.scheme == 'https' and old.hostname and not old.username and not old.password
+                        and old.path in ('', '/') and not old.query and not old.fragment
+                        and moved_uris == desired['redirectUris']):
+                    changed = api('POST', '/api/update-application', dict(existing, **{k: desired[k] for k in drift}),
+                                  params={'id': 'admin/' + config['name']})
+                    require(changed == 'Affected', 'Site domain move was not applied')
+                    domain_migrated.append(surface)
+                    existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
                 require(existing and all(existing.get(k) == v for k, v in desired.items()),
                         'Existing browser application differs; explicit migration required')
                 checked.append(surface)
@@ -165,7 +185,7 @@ data:
             response = client.get(urlsplit(discovery['jwks_uri']).path)
             require(response.status_code == 200 and response.json().get('keys'), 'OIDC verification keys missing')
         print(json.dumps({'browser_clients': sorted(checked), 'created': created, 'migrated': migrated,
-                          'single_sign_on_migrated': sso_migrated, 'single_sign_on': ['web'],
+                          'single_sign_on_migrated': sso_migrated, 'domain_migrated': domain_migrated, 'single_sign_on': ['web'],
                           'admin_roles_created': roles_created, 'admin_role_members_added': role_members_added,
                           'user_organization': user_organization, 'admin_organization': organization,
                           'distinct_identities': True, 'exact_redirects': True, 'client_secrets_match': True,
@@ -207,7 +227,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'knowlab-identity-57ac0aeb69b5-v4', namespace: app-platform-dev}
+metadata: {name: 'knowlab-identity-16b489d0aff6-v5', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -221,16 +241,16 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:57ac0aeb69b53a21c117413d4651511631be49fc7929bc7ef7d258e807951fe5
+          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:16b489d0aff64b2be7d076d647c1582ef415ef4dbf21dae60cacc7d9f4567eb8
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:
             - {name: CASDOOR_INTERNAL_ENDPOINT, value: 'http://casdoor.app-platform-dev.svc.cluster.local:8000'}
-            - {name: CASDOOR_ORIGIN, value: 'https://casdoor.sunmoonai.com:30443'}
+            - {name: CASDOOR_ORIGIN, value: 'https://casdoor.dev.sunmoonai.com:30443'}
             - {name: CASDOOR_ORGANIZATION, value: 'built-in'}
             - {name: CASDOOR_USER_ORGANIZATION, value: 'sunmoonai'}
             - name: BROWSER_CLIENTS
-              value: "{\"web\": {\"name\": \"sunmoonai-knowlab-web\", \"client_id\": \"sunmoon-kind-knowlab-web\", \"origin\": \"https://knowlab.sunmoonai.com:30443\"}, \"admin\": {\"name\": \"sunmoonai-knowlab-admin\", \"client_id\": \"sunmoon-kind-knowlab-admin\", \"origin\": \"https://knowlab-admin.sunmoonai.com:30443\"}}"
+              value: "{\"web\": {\"name\": \"sunmoonai-knowlab-web\", \"client_id\": \"sunmoon-kind-knowlab-web\", \"origin\": \"https://knowlab.dev.sunmoonai.com:30443\"}, \"admin\": {\"name\": \"sunmoonai-knowlab-admin\", \"client_id\": \"sunmoon-kind-knowlab-admin\", \"origin\": \"https://knowlab-admin.dev.sunmoonai.com:30443\"}}"
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
           volumeMounts:
@@ -239,7 +259,7 @@ spec:
             - {name: app, mountPath: /run/app, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: script, configMap: {name: 'knowlab-identity-provision-v4'}}
+        - {name: script, configMap: {name: 'knowlab-identity-provision-v5'}}
         - {name: admin, secret: {secretName: casdoor-initial-identity, items: [{key: init_data.json, path: init_data.json}], defaultMode: 0440}}
         - {name: app, secret: {secretName: knowlab-identity-provision, defaultMode: 0440}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}
@@ -248,18 +268,18 @@ apiVersion: v1
 kind: ConfigMap
 metadata: {name: knowlab-browser-identity, namespace: app-platform-dev}
 data:
-  CASDOOR_ENDPOINT: 'https://casdoor.sunmoonai.com:30443'
+  CASDOOR_ENDPOINT: 'https://casdoor.dev.sunmoonai.com:30443'
   CASDOOR_ORGANIZATION: 'built-in'
   WEB_CASDOOR_ORGANIZATIONS: 'sunmoonai'
   # 管理端业务页给 admin、operator 两个角色看（待办 98）；角色由注册脚本在 built-in 里建好
   ADMIN_AUTH_ROLE_ALLOWLIST: 'admin,operator'
   WEB_CASDOOR_APPLICATION: 'sunmoonai-knowlab-web'
   WEB_CASDOOR_CLIENT_ID: 'sunmoon-kind-knowlab-web'
-  WEB_CASDOOR_REDIRECT_URI: 'https://knowlab.sunmoonai.com:30443/api/auth/web/callback'
-  WEB_FRONTEND_BASE_URL: 'https://knowlab.sunmoonai.com:30443'
-  WEB_FRONTEND_ALLOWED_ORIGINS: 'https://knowlab.sunmoonai.com:30443'
+  WEB_CASDOOR_REDIRECT_URI: 'https://knowlab.dev.sunmoonai.com:30443/api/auth/web/callback'
+  WEB_FRONTEND_BASE_URL: 'https://knowlab.dev.sunmoonai.com:30443'
+  WEB_FRONTEND_ALLOWED_ORIGINS: 'https://knowlab.dev.sunmoonai.com:30443'
   ADMIN_CASDOOR_APPLICATION: 'sunmoonai-knowlab-admin'
   ADMIN_CASDOOR_CLIENT_ID: 'sunmoon-kind-knowlab-admin'
-  ADMIN_CASDOOR_REDIRECT_URI: 'https://knowlab-admin.sunmoonai.com:30443/api/auth/admin/callback'
-  ADMIN_FRONTEND_BASE_URL: 'https://knowlab-admin.sunmoonai.com:30443'
-  ADMIN_FRONTEND_ALLOWED_ORIGINS: 'https://knowlab-admin.sunmoonai.com:30443'
+  ADMIN_CASDOOR_REDIRECT_URI: 'https://knowlab-admin.dev.sunmoonai.com:30443/api/auth/admin/callback'
+  ADMIN_FRONTEND_BASE_URL: 'https://knowlab-admin.dev.sunmoonai.com:30443'
+  ADMIN_FRONTEND_ALLOWED_ORIGINS: 'https://knowlab-admin.dev.sunmoonai.com:30443'

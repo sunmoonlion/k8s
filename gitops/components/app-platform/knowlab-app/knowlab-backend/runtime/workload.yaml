@@ -4,8 +4,8 @@ metadata: {name: knowlab-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: knowlab
-  DEPLOYMENT_ID: "knowlab-backend-57ac0aeb69b53a21"
-  ALLOWED_HOSTS: "localhost,127.0.0.1,knowlab-api,knowlab-api.app-platform-dev.svc.cluster.local,knowlab.sunmoonai.com,knowlab-admin.sunmoonai.com,knowlab-tls.app-platform-dev.svc.cluster.local"
+  DEPLOYMENT_ID: "knowlab-backend-16b489d0aff64b2b"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,knowlab-api,knowlab-api.app-platform-dev.svc.cluster.local,knowlab.dev.sunmoonai.com,knowlab-admin.dev.sunmoonai.com,knowlab-tls.app-platform-dev.svc.cluster.local"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
   REDIS_DB: '0'
@@ -25,17 +25,17 @@ data:
   KNOWMART_DELIVER_SERVICE_APPLICATION: "sunmoonai-knowlab-knowmart-deliver"
   KNOWMART_DELIVER_SERVICE_CLIENT_ID: "sunmoon-knowlab-knowmart-deliver"
   KNOWMART_DELIVER_SERVICE_SCOPE: "knowmart:deliver"
-  KNOWMART_DELIVER_SERVICE_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  KNOWMART_DELIVER_SERVICE_DISCOVERY_URL: https://casdoor.dev.sunmoonai.com:30443/.well-known/openid-configuration
   KNOWMART_DELIVER_SERVICE_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
   KNOWBENCH_INTERNAL_URL: https://knowbench-tls.app-platform-dev.svc.cluster.local/api/internal/v1/knowbot-runtime
   KNOWBENCH_TESTRUN_SERVICE_APPLICATION: "sunmoonai-knowlab-knowbench-testrun"
   KNOWBENCH_TESTRUN_SERVICE_CLIENT_ID: "sunmoon-knowlab-knowbench-testrun"
   KNOWBENCH_TESTRUN_SERVICE_SCOPE: "knowbench:testrun"
-  KNOWBENCH_TESTRUN_SERVICE_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  KNOWBENCH_TESTRUN_SERVICE_DISCOVERY_URL: https://casdoor.dev.sunmoonai.com:30443/.well-known/openid-configuration
   KNOWBENCH_TESTRUN_SERVICE_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
   SERVICE_AUTH_READ_CALLERS: "knowbench"
   SERVICE_AUTH_READ_KNOWBENCH_CASDOOR_APPLICATION: "sunmoonai-knowbench-knowlab-read"
-  SERVICE_AUTH_READ_KNOWBENCH_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  SERVICE_AUTH_READ_KNOWBENCH_DISCOVERY_URL: https://casdoor.dev.sunmoonai.com:30443/.well-known/openid-configuration
   SERVICE_AUTH_READ_KNOWBENCH_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
   SERVICE_AUTH_READ_KNOWBENCH_AUDIENCE: "sunmoon-knowbench-knowlab-read"
   SERVICE_AUTH_READ_KNOWBENCH_SUBJECT_ALLOWLIST: "admin/sunmoonai-knowbench-knowlab-read"
@@ -75,7 +75,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: c90c098a3d60880df7bc9d45d71695b0d8c66114a1014c2d5a002d0edcdf0c49
+        sunmoonai.com/config-sha256: be8f0e5079f6e016696a805a49224bf4a93978a7f0f422eb4dbf2961563d0e0e
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -85,7 +85,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:57ac0aeb69b53a21c117413d4651511631be49fc7929bc7ef7d258e807951fe5
+          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:16b489d0aff64b2be7d076d647c1582ef415ef4dbf21dae60cacc7d9f4567eb8
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -141,7 +141,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: c90c098a3d60880df7bc9d45d71695b0d8c66114a1014c2d5a002d0edcdf0c49
+        sunmoonai.com/config-sha256: be8f0e5079f6e016696a805a49224bf4a93978a7f0f422eb4dbf2961563d0e0e
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -151,7 +151,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:57ac0aeb69b53a21c117413d4651511631be49fc7929bc7ef7d258e807951fe5
+          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:16b489d0aff64b2be7d076d647c1582ef415ef4dbf21dae60cacc7d9f4567eb8
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -203,7 +203,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: c90c098a3d60880df7bc9d45d71695b0d8c66114a1014c2d5a002d0edcdf0c49
+        sunmoonai.com/config-sha256: be8f0e5079f6e016696a805a49224bf4a93978a7f0f422eb4dbf2961563d0e0e
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -213,7 +213,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:57ac0aeb69b53a21c117413d4651511631be49fc7929bc7ef7d258e807951fe5
+          image: harbor.sunmoonai.com:30443/platform/knowlab-backend@sha256:16b489d0aff64b2be7d076d647c1582ef415ef4dbf21dae60cacc7d9f4567eb8
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]

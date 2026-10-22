@@ -20,16 +20,16 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/tpl-admin-frontend@sha256:f2e8ca667609c0a91e5a9f974d47e1a9550cff5c84520a1fbb07bee5ee6a3880
+          image: harbor.sunmoonai.com:30443/platform/tpl-admin-frontend@sha256:53ed12d5f5fc2bd13ec384529eeca4f6ccad564b1d0ff0a320fc9df518753ed4
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
             - {name: NODE_ENV, value: production}
             - {name: DEPLOYMENT_ENV, value: production}
             - {name: AUTH_APP, value: tpl}
-            - {name: APP_ORIGIN, value: "https://tpl-admin.sunmoonai.com:30443"}
+            - {name: APP_ORIGIN, value: "https://tpl-admin.dev.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://tpl-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "tpl-admin-frontend-f2e8ca667609c0a9"}
+            - {name: DEPLOYMENT_ID, value: "tpl-admin-frontend-53ed12d5f5fc2bd1"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
@@ -74,9 +74,9 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls: 'true'
 spec:
   ingressClassName: sunmoon
-  tls: [{hosts: [tpl-admin.sunmoonai.com], secretName: tpl-tls}]
+  tls: [{hosts: [tpl-admin.dev.sunmoonai.com], secretName: tpl-tls}]
   rules:
-    - host: tpl-admin.sunmoonai.com
+    - host: tpl-admin.dev.sunmoonai.com
       http:
         paths:
           # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）

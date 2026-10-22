@@ -4,8 +4,8 @@ metadata: {name: knowbase-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: knowbase
-  DEPLOYMENT_ID: "knowbase-backend-824476357d670cd1"
-  ALLOWED_HOSTS: "localhost,127.0.0.1,knowbase-api,knowbase-api.app-platform-dev.svc.cluster.local,knowbase.sunmoonai.com,knowbase-admin.sunmoonai.com,knowbase-tls.app-platform-dev.svc.cluster.local"
+  DEPLOYMENT_ID: "knowbase-backend-52e6b4ffea7b6af1"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,knowbase-api,knowbase-api.app-platform-dev.svc.cluster.local,knowbase.dev.sunmoonai.com,knowbase-admin.dev.sunmoonai.com,knowbase-tls.app-platform-dev.svc.cluster.local"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
   REDIS_DB: '0'
@@ -27,19 +27,19 @@ data:
   ARTIFACT_S3_ALLOWED_PREFIXES: "knowfeed/"
   SSL_CERT_FILE: /etc/sunmoon/provider/ca.crt
   INTERNAL_AUTH_CASDOOR_APPLICATION: "sunmoonai-knowfeed-knowbase-ingest"
-  INTERNAL_AUTH_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  INTERNAL_AUTH_DISCOVERY_URL: https://casdoor.dev.sunmoonai.com:30443/.well-known/openid-configuration
   INTERNAL_AUTH_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
   INTERNAL_AUTH_AUDIENCE: "sunmoon-knowfeed-knowbase-ingest"
   INTERNAL_AUTH_SUBJECT_ALLOWLIST: "admin/sunmoonai-knowfeed-knowbase-ingest"
   INTERNAL_AUTH_REQUIRED_SCOPE: "knowbase:ingest"
   RETRIEVAL_AUTH_CASDOOR_APPLICATION: "sunmoonai-knowbench-knowbase-retrieve"
-  RETRIEVAL_AUTH_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  RETRIEVAL_AUTH_DISCOVERY_URL: https://casdoor.dev.sunmoonai.com:30443/.well-known/openid-configuration
   RETRIEVAL_AUTH_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
   RETRIEVAL_AUTH_AUDIENCE: "sunmoon-knowbench-knowbase-retrieve"
   RETRIEVAL_AUTH_SUBJECT_ALLOWLIST: "admin/sunmoonai-knowbench-knowbase-retrieve"
   RETRIEVAL_AUTH_REQUIRED_SCOPE: "knowbase:retrieve"
-  CROSS_APP_TARGETS_JSON: "{\"knowfeed\": {\"web_base_url\": \"https://knowfeed.sunmoonai.com:30443\"}}"
-  CROSS_APP_SOURCES_JSON: "{\"knowbench\": {\"return_url\": \"https://knowbench.sunmoonai.com:30443/zh-CN/workbench?ref={ref}\"}, \"knowfeed\": {}}"
+  CROSS_APP_TARGETS_JSON: "{\"knowfeed\": {\"web_base_url\": \"https://knowfeed.dev.sunmoonai.com:30443\"}}"
+  CROSS_APP_SOURCES_JSON: "{\"knowbench\": {\"return_url\": \"https://knowbench.dev.sunmoonai.com:30443/zh-CN/workbench?ref={ref}\"}, \"knowfeed\": {}}"
   KNOWBASE_MCP_JWT_ISSUER: "sunmoon-workbench"
   KNOWBASE_MCP_RATE_PER_MINUTE: "120"
   KNOWBASE_DATASET_TITLE: "\u96f6\u552e\u7ecf\u8425\u5e93\uff08\u6700\u5c0f\u5b9e\u4f8b\uff09"
@@ -81,7 +81,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 45ff5508afbb70a66541a9919de5a9977f7e845acedbcd50bfb7f78ee581754d
+        sunmoonai.com/config-sha256: 9f3d153fddfcd9fcfa5f61e9222bce72a11cce9da38146b9df3db228bfa077ac
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -91,7 +91,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:824476357d670cd108cfa70928956d37e4c31e60f77dfbaf4211d4f38046afdf
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:52e6b4ffea7b6af1a25d0a9f448e8e16bfc70f471355314f8a68fd9fe9f82fae
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -145,7 +145,7 @@ spec:
         sunmoonai.com/ragflow-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 45ff5508afbb70a66541a9919de5a9977f7e845acedbcd50bfb7f78ee581754d
+        sunmoonai.com/config-sha256: 9f3d153fddfcd9fcfa5f61e9222bce72a11cce9da38146b9df3db228bfa077ac
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -155,7 +155,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:824476357d670cd108cfa70928956d37e4c31e60f77dfbaf4211d4f38046afdf
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:52e6b4ffea7b6af1a25d0a9f448e8e16bfc70f471355314f8a68fd9fe9f82fae
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -202,7 +202,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 45ff5508afbb70a66541a9919de5a9977f7e845acedbcd50bfb7f78ee581754d
+        sunmoonai.com/config-sha256: 9f3d153fddfcd9fcfa5f61e9222bce72a11cce9da38146b9df3db228bfa077ac
     spec:
       dnsConfig:
         options: [{name: ndots, value: '2'}]
@@ -212,7 +212,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:824476357d670cd108cfa70928956d37e4c31e60f77dfbaf4211d4f38046afdf
+          image: harbor.sunmoonai.com:30443/platform/knowbase-backend@sha256:52e6b4ffea7b6af1a25d0a9f448e8e16bfc70f471355314f8a68fd9fe9f82fae
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]

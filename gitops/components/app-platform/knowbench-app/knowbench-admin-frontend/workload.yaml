@@ -20,20 +20,20 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/knowbench-admin-frontend@sha256:8d87f3e4937c55bd04f0980c1e5281c9bcccdd68580f64851d8a3b6716f64cc0
+          image: harbor.sunmoonai.com:30443/platform/knowbench-admin-frontend@sha256:07ba70d1c2800ffc4439299ef74a6614774ca1125bdd205be1cb5bdcdcebb2d8
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
             - {name: NODE_ENV, value: production}
             - {name: DEPLOYMENT_ENV, value: production}
             - {name: AUTH_APP, value: knowbench}
-            - {name: APP_ORIGIN, value: "https://knowbench-admin.sunmoonai.com:30443"}
+            - {name: APP_ORIGIN, value: "https://knowbench-admin.dev.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://knowbench-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "knowbench-admin-frontend-8d87f3e4937c55bd"}
+            - {name: DEPLOYMENT_ID, value: "knowbench-admin-frontend-07ba70d1c2800ffc"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
-            - {name: KNOWFEED_ADMIN_URL, value: "https://knowfeed-admin.sunmoonai.com:30443"}
+            - {name: KNOWFEED_ADMIN_URL, value: "https://knowfeed-admin.dev.sunmoonai.com:30443"}
           startupProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 3, failureThreshold: 60}
           readinessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 10, timeoutSeconds: 3}
           livenessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 20, timeoutSeconds: 3}
@@ -75,9 +75,9 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls: 'true'
 spec:
   ingressClassName: sunmoon
-  tls: [{hosts: [knowbench-admin.sunmoonai.com], secretName: knowbench-tls}]
+  tls: [{hosts: [knowbench-admin.dev.sunmoonai.com], secretName: knowbench-tls}]
   rules:
-    - host: knowbench-admin.sunmoonai.com
+    - host: knowbench-admin.dev.sunmoonai.com
       http:
         paths:
           # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）

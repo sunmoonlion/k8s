@@ -20,16 +20,16 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/knowlab-web-frontend@sha256:5c43b733dbdfc22da11770620062697263afb27cb14f05c40a2ab591abeb9cc0
+          image: harbor.sunmoonai.com:30443/platform/knowlab-web-frontend@sha256:5df261c550b383290f19dac96294d1d374c6292499baca65fb1955e5ebee30d1
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
             - {name: NODE_ENV, value: production}
             - {name: DEPLOYMENT_ENV, value: production}
             - {name: AUTH_APP, value: knowlab}
-            - {name: APP_ORIGIN, value: "https://knowlab.sunmoonai.com:30443"}
+            - {name: APP_ORIGIN, value: "https://knowlab.dev.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://knowlab-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "knowlab-web-frontend-5c43b733dbdfc22d"}
+            - {name: DEPLOYMENT_ID, value: "knowlab-web-frontend-5df261c550b38329"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
@@ -74,9 +74,9 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls: 'true'
 spec:
   ingressClassName: sunmoon
-  tls: [{hosts: [knowlab.sunmoonai.com], secretName: knowlab-tls}]
+  tls: [{hosts: [knowlab.dev.sunmoonai.com], secretName: knowlab-tls}]
   rules:
-    - host: knowlab.sunmoonai.com
+    - host: knowlab.dev.sunmoonai.com
       http:
         paths:
           # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）

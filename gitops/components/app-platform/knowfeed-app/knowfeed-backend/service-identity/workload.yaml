@@ -125,7 +125,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
-metadata: {name: 'knowfeed-service-identity-27e634dd7c05-v1', namespace: app-platform-dev}
+metadata: {name: 'knowfeed-service-identity-515ccfdb37de-v1', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -139,12 +139,12 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/knowfeed-backend@sha256:27e634dd7c0514484f9fdaefb0800b04b2b4abd82744db9ab902aed8e650fc50
+          image: harbor.sunmoonai.com:30443/platform/knowfeed-backend@sha256:515ccfdb37de079cb03d9cfc6a08287b411f8a896ca724f51b0abf13ab80ede2
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:
             - {name: CASDOOR_INTERNAL_ENDPOINT, value: 'https://casdoor-tls.app-platform-dev.svc.cluster.local'}
-            - {name: CASDOOR_ORIGIN, value: 'https://casdoor.sunmoonai.com:30443'}
+            - {name: CASDOOR_ORIGIN, value: 'https://casdoor.dev.sunmoonai.com:30443'}
             - {name: CASDOOR_ORGANIZATION, value: 'sunmoon-workload-knowfeed-knowbase'}
             - name: SERVICE_DEFINITION
               value: "{\"enabled\": true, \"application\": \"sunmoonai-knowfeed-knowbase-ingest\", \"client_id\": \"sunmoon-knowfeed-knowbase-ingest\", \"organization\": \"sunmoon-workload-knowfeed-knowbase\", \"scope\": \"knowbase:ingest\", \"job_revision\": \"v1\", \"token_seconds\": 900}"

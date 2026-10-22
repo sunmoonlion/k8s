@@ -20,16 +20,16 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/knowmart-admin-frontend@sha256:1a2e27cafb31a599de1d0ac094c6f57c67407dafd5dbcdfee217eabf4948c5ee
+          image: harbor.sunmoonai.com:30443/platform/knowmart-admin-frontend@sha256:1af12695257e262dc53d4dac7755d18b4e2148ebde7387e688e997e41c893010
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
             - {name: NODE_ENV, value: production}
             - {name: DEPLOYMENT_ENV, value: production}
             - {name: AUTH_APP, value: knowmart}
-            - {name: APP_ORIGIN, value: "https://knowmart-admin.sunmoonai.com:30443"}
+            - {name: APP_ORIGIN, value: "https://knowmart-admin.dev.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://knowmart-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "knowmart-admin-frontend-1a2e27cafb31a599"}
+            - {name: DEPLOYMENT_ID, value: "knowmart-admin-frontend-1af12695257e262d"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
@@ -74,9 +74,9 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls: 'true'
 spec:
   ingressClassName: sunmoon
-  tls: [{hosts: [knowmart-admin.sunmoonai.com], secretName: knowmart-tls}]
+  tls: [{hosts: [knowmart-admin.dev.sunmoonai.com], secretName: knowmart-tls}]
   rules:
-    - host: knowmart-admin.sunmoonai.com
+    - host: knowmart-admin.dev.sunmoonai.com
       http:
         paths:
           # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）

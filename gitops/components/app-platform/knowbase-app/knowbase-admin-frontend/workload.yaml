@@ -20,16 +20,16 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/knowbase-admin-frontend@sha256:75bd503601b746e8421ff48b46d044b05e631f8e68a0edba3e67b58cd5854f17
+          image: harbor.sunmoonai.com:30443/platform/knowbase-admin-frontend@sha256:a8dcfbd497d4fe4745cfd59da0574259177ba62fabe1fca2962798d6a2a650a5
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
             - {name: NODE_ENV, value: production}
             - {name: DEPLOYMENT_ENV, value: production}
             - {name: AUTH_APP, value: knowbase}
-            - {name: APP_ORIGIN, value: "https://knowbase-admin.sunmoonai.com:30443"}
+            - {name: APP_ORIGIN, value: "https://knowbase-admin.dev.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://knowbase-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "knowbase-admin-frontend-75bd503601b746e8"}
+            - {name: DEPLOYMENT_ID, value: "knowbase-admin-frontend-a8dcfbd497d4fe47"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
@@ -74,9 +74,9 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls: 'true'
 spec:
   ingressClassName: sunmoon
-  tls: [{hosts: [knowbase-admin.sunmoonai.com], secretName: knowbase-tls}]
+  tls: [{hosts: [knowbase-admin.dev.sunmoonai.com], secretName: knowbase-tls}]
   rules:
-    - host: knowbase-admin.sunmoonai.com
+    - host: knowbase-admin.dev.sunmoonai.com
       http:
         paths:
           # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）

@@ -125,7 +125,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 # Job 名带后端镜像摘要（同 ../service-identity）：Job 的模板不可改，镜像一换名字就换
-metadata: {name: 'knowbench-knowlab-read-identity-c507cdfa9ff2-v1', namespace: app-platform-dev}
+metadata: {name: 'knowbench-knowlab-read-identity-cbd889f4674e-v1', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -139,12 +139,12 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provision
-          image: harbor.sunmoonai.com:30443/platform/knowbench-backend@sha256:c507cdfa9ff24ae1f3e7037997c812b2e5498066ac24a4801f797028ffe6373f
+          image: harbor.sunmoonai.com:30443/platform/knowbench-backend@sha256:cbd889f4674e1f52fd3c92e47f02132de71ad9a5b7eeb33e09ed0ce88ef19604
           imagePullPolicy: IfNotPresent
           command: [python, /script/provision.py]
           env:
             - {name: CASDOOR_INTERNAL_ENDPOINT, value: 'https://casdoor-tls.app-platform-dev.svc.cluster.local'}
-            - {name: CASDOOR_ORIGIN, value: 'https://casdoor.sunmoonai.com:30443'}
+            - {name: CASDOOR_ORIGIN, value: 'https://casdoor.dev.sunmoonai.com:30443'}
             - {name: CASDOOR_ORGANIZATION, value: 'sunmoon-workload-knowbench-knowlab-read'}
             - name: SERVICE_DEFINITION
               value: "{\"target\": \"knowlab\", \"relation\": \"read\", \"enabled\": true, \"roles\": [\"api\", \"worker\", \"runner\"], \"application\": \"sunmoonai-knowbench-knowlab-read\", \"client_id\": \"sunmoon-knowbench-knowlab-read\", \"organization\": \"sunmoon-workload-knowbench-knowlab-read\", \"scope\": \"knowlab:read\", \"job_revision\": \"v1\", \"token_seconds\": 900}"

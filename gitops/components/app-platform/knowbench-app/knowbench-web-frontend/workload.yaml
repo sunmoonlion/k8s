@@ -20,16 +20,16 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: harbor.sunmoonai.com:30443/platform/knowbench-web-frontend@sha256:6e1b4307eac329c1a281e103cded91cef4a3639e98c2cf47c2bc91d999811065
+          image: harbor.sunmoonai.com:30443/platform/knowbench-web-frontend@sha256:b73915d362578aee50c1c16bfc160829c2972633c9a1a5cc060ca0d93c67e9fd
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 3000}]
           env:
             - {name: NODE_ENV, value: production}
             - {name: DEPLOYMENT_ENV, value: production}
             - {name: AUTH_APP, value: knowbench}
-            - {name: APP_ORIGIN, value: "https://knowbench.sunmoonai.com:30443"}
+            - {name: APP_ORIGIN, value: "https://knowbench.dev.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://knowbench-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "knowbench-web-frontend-6e1b4307eac329c1"}
+            - {name: DEPLOYMENT_ID, value: "knowbench-web-frontend-b73915d362578aee"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
@@ -74,9 +74,9 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls: 'true'
 spec:
   ingressClassName: sunmoon
-  tls: [{hosts: [knowbench.sunmoonai.com], secretName: knowbench-tls}]
+  tls: [{hosts: [knowbench.dev.sunmoonai.com], secretName: knowbench-tls}]
   rules:
-    - host: knowbench.sunmoonai.com
+    - host: knowbench.dev.sunmoonai.com
       http:
         paths:
           # 内部接口不经公网：转给前端，前端没有这个页面，回 404（审读第 1 条；后端另按地址拦）
