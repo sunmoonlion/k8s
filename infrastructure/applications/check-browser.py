@@ -27,6 +27,10 @@ def require(value, label):
 def run(settings):
     origins = {surface: client['origin'] for surface, client in settings['clients'].items()}
     allowed = {urlsplit(o).hostname for o in [settings['provider'], *origins.values()]}
+    # URLs carry the site's public port; every connection still goes to the local entry_port.
+    public_port = urlsplit(settings['provider']).port
+    require(public_port and all(urlsplit(o).port == public_port for o in origins.values()),
+            'Provider and frontend origins disagree on the public port')
     context = ssl.create_default_context(cafile=settings['ca_file'])
 
     class Connection(http.client.HTTPSConnection):
@@ -42,9 +46,9 @@ def run(settings):
 
         def request(self, url, method='GET', data=None, headers=None):
             target = urlsplit(url)
-            require(target.scheme == 'https' and target.hostname in allowed and target.port == int(settings['entry_port']),
+            require(target.scheme == 'https' and target.hostname in allowed and target.port == public_port,
                     'Unexpected protocol destination')
-            connection = Connection(target.hostname, int(settings['entry_port']), timeout=15, context=context)
+            connection = Connection(target.hostname, public_port, timeout=15, context=context)
             request_headers = {'Host': target.netloc, **(headers or {})}
             jar = self.cookies.get(target.hostname, {})
             if jar:
