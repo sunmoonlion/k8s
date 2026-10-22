@@ -52,6 +52,16 @@
     force: false
     mode: preserve
   no_log: true
+# 上面整目录 copy 在备份目录已存在时不会补文件；证书被退役重签后（tls_retired）按文件刷新，平时只补缺的，不覆盖。
+- name: Refresh the backup certificate and request after a re-issue
+  ansible.builtin.copy:
+    src: '{{ services_config_dir }}/tls/{{ item }}'
+    dest: '{{ services_backup_dir }}/tls/{{ item }}'
+    remote_src: true
+    force: '{{ tls_retired | default(false) | bool }}'
+    mode: preserve
+  loop: [server.csr, server.crt]
+  no_log: true
 - name: Require matching TLS backup identities
   ansible.builtin.command:
     argv: [cmp, --silent, '{{ services_config_dir }}/tls/{{ item }}', '{{ services_backup_dir }}/tls/{{ item }}']

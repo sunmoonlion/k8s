@@ -15,8 +15,8 @@ Jenkins 是跑流水线的机器。我们把它装在本地机宿主上，分两
 
 ## 二、打开它
 
-1. **前提**：本机 Windows 的 hosts 文件里要有 `127.0.0.1 jenkins.sunmoonai.com`。10-20 晚已经加过；重装系统或换电脑要再加（`switch-test/windows_hosts_add.ps1`）。
-2. 浏览器开 **`https://jenkins.sunmoonai.com:30443/`**。证书是平台自己的 CA 签的，和 Harbor 一样，装过 CA 的浏览器不会报警。
+1. **前提**：本机 Windows 的 hosts 文件里要有 `127.0.0.1 jenkins.dev.sunmoonai.com`（10-21 晚 C2b 改名时已加；旧名 `jenkins.sunmoonai.com` 的那行留给将来的生产站点）；重装系统或换电脑要再加（`switch-test/windows_hosts_add.ps1`）。
+2. 浏览器开 **`https://jenkins.dev.sunmoonai.com:30443/`**（C2b 起开发站点全部用 `*.dev.sunmoonai.com`）。证书是平台自己的 CA 签的，和 Harbor 一样，装过 CA 的浏览器不会报警。
 3. 登录：用户名 `admin`，密码是密码修改表第 13 项。
 4. 只在内网能开。从公网（东京边缘）开同一个地址会报证书错误，这是对的，不是坏了。
 
