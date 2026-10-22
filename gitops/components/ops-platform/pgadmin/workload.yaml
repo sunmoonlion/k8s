@@ -16,7 +16,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: pgadmin, sunmoonai.com/postgresql-client: 'true'}
-      annotations: {sunmoonai.com/input-sha256: 'deed1cdf8d73d524deb24f5dcb8c3b9b66431bb2618d27f4727314f7cb2ec56e'}
+      annotations: {sunmoonai.com/input-sha256: 'fbe61041ae18b0d9462efbe0063578e43ab65c827cfc3ed7887d0dcdd1ac18a4'}
     spec:
       serviceAccountName: platform-runtime
       enableServiceLinks: false
@@ -58,7 +58,7 @@ spec:
   entryPoints: [websecure]
   routes:
     - kind: Rule
-      match: 'Host(`pgadmin.sunmoonai.com`)'
+      match: 'Host(`pgadmin.dev.sunmoonai.com`)'
       services: [{name: pgadmin, port: http, scheme: http}]
   tls: {secretName: pgadmin-tls}
 ---

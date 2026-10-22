@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: flower, sunmoonai.com/rabbitmq-client: 'true'}
-      annotations: {sunmoonai.com/input-sha256: 'ade1589f989146896ea2bd2c946ef28db326dee3a4329451229a77d283d58189'}
+      annotations: {sunmoonai.com/input-sha256: 'c73a732f5e21192def51e2a541679b978e21d318ab219c61d6e2995019c5c44e'}
     spec:
       serviceAccountName: platform-runtime
       enableServiceLinks: false
@@ -51,7 +51,7 @@ spec:
   entryPoints: [websecure]
   routes:
     - kind: Rule
-      match: 'Host(`flower.sunmoonai.com`)'
+      match: 'Host(`flower.dev.sunmoonai.com`)'
       services: [{name: flower, port: http, scheme: http}]
   tls: {secretName: flower-tls}
 ---

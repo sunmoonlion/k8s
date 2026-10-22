@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: object-storage}
-      annotations: {sunmoonai.com/input-sha256: '8d1fa9a5e57ce89bb90375a76eb93ec6e2c9f4dbb48bd58c1787658a8e4ff62e'}
+      annotations: {sunmoonai.com/input-sha256: '5ad47f149d005292c01da28c40c1f238865a1d34f1abe28aa3efad5c1614e82a'}
     spec:
       serviceAccountName: platform-runtime
       automountServiceAccountToken: false
@@ -36,7 +36,7 @@ spec:
             - {name: MINIO_ROOT_PASSWORD_FILE, value: /run/auth/root-password}
             - {name: MINIO_SITE_REGION, value: 'us-east-1'}
             - {name: HOME, value: /tmp}
-            - {name: MINIO_BROWSER_REDIRECT_URL, value: 'https://aistor.sunmoonai.com:30443'}
+            - {name: MINIO_BROWSER_REDIRECT_URL, value: 'https://aistor.dev.sunmoonai.com:30443'}
             - {name: MINIO_SERVER_URL, value: 'https://object-storage.data-platform-dev.svc.cluster.local:9000'}
           ports:
             - {name: https, containerPort: 9000}

@@ -128,7 +128,7 @@ spec:
   entryPoints: [websecure]
   routes:
     - kind: Rule
-      match: 'Host(`kibana.sunmoonai.com`)'
+      match: 'Host(`kibana.dev.sunmoonai.com`)'
       services: [{name: kibana, port: https, scheme: https, serversTransport: kibana-internal}]
   tls: {secretName: kibana-ui-tls}
 ---

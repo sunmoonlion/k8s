@@ -16,7 +16,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: redisinsight, sunmoonai.com/redis-client: 'true'}
-      annotations: {sunmoonai.com/input-sha256: 'cf4395fd7c6fd2a4eb788ab9905dfb7f242d678c5d164c759a94f2f9037d6e4e'}
+      annotations: {sunmoonai.com/input-sha256: 'a8e1d28ebe2372bac91dd6286d2dec5a2ff386d9de3bfc4824c41a4167dac805'}
     spec:
       serviceAccountName: platform-runtime
       enableServiceLinks: false
@@ -53,7 +53,7 @@ spec:
   entryPoints: [websecure]
   routes:
     - kind: Rule
-      match: 'Host(`redisinsight.sunmoonai.com`)'
+      match: 'Host(`redisinsight.dev.sunmoonai.com`)'
       services: [{name: redisinsight, port: http, scheme: http}]
   tls: {secretName: redisinsight-tls}
 ---

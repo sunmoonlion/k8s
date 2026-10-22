@@ -17,7 +17,7 @@ spec:
   entryPoints: [websecure]
   routes:
     - kind: Rule
-      match: 'Host(`aistor.sunmoonai.com`)'
+      match: 'Host(`aistor.dev.sunmoonai.com`)'
       services: [{name: object-storage, port: console, scheme: https, serversTransport: object-storage-console}]
   tls: {secretName: object-storage-ui-tls}
 ---

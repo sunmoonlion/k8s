@@ -16,7 +16,7 @@ data:
     [[proxies]]
     name = "knowbench"
     type = "http"
-    customDomains = ["knowbench.sunmoonai.com"]
+    customDomains = ["knowbench.dev.sunmoonai.com"]
     loadBalancer.group = "knowbench"
     loadBalancer.groupKey = "{{ .Envs.FRP_GROUP_KEY }}"
     [proxies.plugin]
@@ -27,7 +27,7 @@ data:
     [[proxies]]
     name = "casdoor"
     type = "http"
-    customDomains = ["casdoor.sunmoonai.com"]
+    customDomains = ["casdoor.dev.sunmoonai.com"]
     loadBalancer.group = "casdoor"
     loadBalancer.groupKey = "{{ .Envs.FRP_GROUP_KEY }}"
     [proxies.plugin]
@@ -38,7 +38,7 @@ data:
     [[proxies]]
     name = "relay"
     type = "http"
-    customDomains = ["relay.sunmoonai.com"]
+    customDomains = ["relay.dev.sunmoonai.com"]
     loadBalancer.group = "relay"
     loadBalancer.groupKey = "{{ .Envs.FRP_GROUP_KEY }}"
     [proxies.plugin]
@@ -62,7 +62,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: frpc}
-      annotations: {sunmoonai.com/input-sha256: '29fa62aeef57889b4bc138c9cfb5a0314dcd3abf7b03e3c00f9e8f2ea42b9569'}
+      annotations: {sunmoonai.com/input-sha256: '59b8ad7d742a327f44529749291dd543a459b7ee0ca3d281cfd0e93efe3a44d3'}
     spec:
       serviceAccountName: frpc
       enableServiceLinks: false
