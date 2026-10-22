@@ -137,6 +137,21 @@ environments/
 - `environments/prod/site.yaml` 按第三节填样例值；`platform-plan OBJECT=all SITE=environments/prod/site.yaml` 和 `platform-config` 能在**没有集群、没有宿主**的情况下算出计划（plan 本来就不碰集群）。
 - 门禁 `site-gate.py`：`infrastructure/`、`gitops/`、`ci/` 里不许出现 `environments/` 下任何站点文件里的值（集群名、域名、端口、IP、数据根、用户名），白名单只有 `environments/` 自己和历史文档。进 `.githooks`。
 
+**C2b 实施记录（2026-10-22，Fable 起、Opus 收尾；回执 `scripts/results/fable-c2b.20261022-2130.md`）**：开发站点已在 `*.dev.sunmoonai.com` 上运行，发布 #13（六应用，tag `release-20261022-4`）与 #15（knowbench，`release-20261022-6`）SUCCESS；所有者浏览器登录、六应用 `application-check`、东京公网入口、Windows 本地代理与测试电脑重连都已验过。实际比上面的计划多走了几步，按根因记：
+
+| 撞上的 | 根因 | 处置 |
+| --- | --- | --- |
+| 证书重签被旧证书挡住 | 证书任务只在缺文件时签发；SAN 换名要先退旧证书，Jenkins 控制器的钥匙与 CSR 成对 | `components/tasks/tls-retire.yaml`（可选连私钥一起退），casdoor 备份按文件刷新（5551dc2c、47bd654d、65a7b8f5） |
+| #8 第 3 阶段：Windows 容量守卫不放行 | C 盘余量要覆盖数据盘长到 230 GiB + 计划字节 + 10 GiB 底线 | 所有者授权 prune 构建缓存与镜像、离线压缩 WSL 盘，C 盘 192→313 GB |
+| prune 之后平台起不来 | `pull=never` 的工具镜像（Harbor 准备探针、skopeo）只在本地，被 prune 掉 | `make prepare-harbor-materials`；skopeo 从 `~/k8s-packages` 核摘要后 `docker load`（待办账 162） |
+| #9 第 10 阶段：六个身份任务失败 | Casdoor 里登记的还是旧域名的回调，注册脚本只认两种显式迁移 | 第三种迁移 `domain_migrated`：只有 origin 部分不同才更新（1a15cadb） |
+| #11 第 10 阶段：根同步等 600 s 超时 | 改了注册脚本却没升 `identity_revision`，Job 名不变，Flux 一直看 #9 留下的失败 Job（违反 C-R11） | 六应用 v4→v5（edab078f1）；v4 的失败 Job 与 ConfigMap 按名单精确删除（prune: false 不会自动清） |
+| #12 第 11 阶段：浏览器验收 `Unexpected protocol destination` | C2a 把 `check-browser.py` 的 30443 换成了 `entry_port`，而它本该是网址里的公网端口（本节代码清单③写的就是「端口从目标 origin 取」，实现走偏）；C2a 只跑渲染对比，没跑真实 application-check | 公网端口取自 provider 网址、套接字仍连 `entry_port`（a68cdbea2） |
+| 验收：本地代理连不上 | sunmoon-link 仓的站点文件写死旧名，C2 摸底只扫了本仓；测试电脑的 `hostAliases` 也写死 | 代理 0.5.1（sunmoon-link 7d1e2fc）重打两种包、上传；`hostAliases` 改派生（e91ca24c）；两台都要重新配对（待办账 158、159） |
+| #14 第 12 阶段：推送被拒 | 发布运行中往 fable 推了待办账提交；推送不先拉取，且分支与 tag 不是原子推送（tag `release-20261022-5` 单独上去了） | 再发 #15 写回 Git；规矩写进 `docs/ops/jenkins-使用说明.md` 第七节（待办账 160） |
+
+另：第 8 阶段原来没有任何提醒，C2b 期间加了桌面通知（`ci/notify-desktop.sh`，1a15cadb）；Windows 勿扰/专注开着时会被收进通知中心。`entry_cluster_backend` 指向已不存在的 172.18.0.5，只影响未列出的域名（待办账 161）。
+
 ## 五、顺序与停点
 
 | 停点 | 内容 | 验 | 谁 |

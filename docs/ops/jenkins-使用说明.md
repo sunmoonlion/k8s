@@ -138,6 +138,9 @@ Jenkins 是跑流水线的机器。我们把它装在本地机宿主上，分两
 - 不要在任务页 **Configure** 里改脚本；要改就改仓里 `ci/render-check.groovy`，下一次构建自动用新的。
 - 不要在页面上建新任务、建凭据。将来的 `release` 任务也由首启脚本建。
 - 看到 `diff.txt` 有差异，不要自己去点什么「发布」——现在也没有这个按钮；发布是 B3 以后的 `release` 任务，带人批。
+- 构建页左侧的 **Pause/resume** 不要点：它是 Jenkins 自带的「冻结流水线」开关，构建在跑时一直在，和第 8 阶段的批准无关；点了流水线停在当前一步，部署中途点会把集群晾在半新半旧。是不是在等批，只看左侧有没有 **Paused for Input**、Stage View 第 8 列有没有弹框、Console Output 最后一行是不是 `批准发布 or Abort`。要停一次发布，在第 8 阶段点 Abort。
+- **Delete Pipeline**、**Delete build** 不要点：前者删整个任务连同全部历史（每次发布的日志、产物、审批记录），后者删一次的记录，跑着的会当场中止。任务由首启脚本按“没有就建”重建（`infrastructure/jenkins/templates/03-render-check.groovy.j2`、`04-release.groovy.j2`），历史找不回；要清旧历史就在模板里配保留规则。
+- **发布在跑时不往发布分支推任何提交**（文档、待办账也不行）：第 12 阶段从代理克隆直接 `git push origin HEAD:<分支>`，不先拉取；中途推一条会让它在部署之后推送被拒（2026-10-22 #14），只能再发一次补 Git。
 
 ## 八、维护者命令对照（本地机 `~/worktrees/fable/sunmoonun`）
 
